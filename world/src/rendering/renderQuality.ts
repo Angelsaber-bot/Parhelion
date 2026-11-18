@@ -1,4 +1,6 @@
 /** Resolution policy is separate from effect quality: no hidden degradation of the default image. */
+/** Post passes that run below the composer's resolution (fraction of each axis). */
+export const POST_SCALE = { ao: 0.5 } as const;
 export type ResolutionMode = 'crisp' | 'balanced' | 'adaptive';
 export function resolutionMode(value: unknown): ResolutionMode {
   return value === 'crisp' || value === 'adaptive' ? value : 'balanced';

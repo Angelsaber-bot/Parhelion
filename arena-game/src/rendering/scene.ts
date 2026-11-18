@@ -28,6 +28,7 @@ import { CHARACTERS, SHIELD, WEAPONS, type Team } from '../../shared/content.ts'
 import type { MapPresentation, Vec3 } from '../../shared/map.ts';
 import type { PlayerSnap, Shield } from '../../shared/match.ts';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { scalePassResolution } from '../../../shared-client/postScale.ts';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
@@ -173,7 +174,8 @@ export class ArenaScene {
     }
     this.smokeVolume=new SmokeVolumePass(this.camera);this.smokeVolume.sync(this.smokes,0);this.composer.addPass(this.smokeVolume);
     if(this.quality==='high'){
-      this.bloom=new UnrealBloomPass(new THREE.Vector2(256,256),this.atmo.bloom,.55,this.atmo.bloomThreshold);this.composer.addPass(this.bloom);
+      // Bloom is a wide blur: its mip chain starts at a quarter of the frame instead of half.
+      this.bloom=scalePassResolution(new UnrealBloomPass(new THREE.Vector2(256,256),this.atmo.bloom,.55,this.atmo.bloomThreshold),.5);this.composer.addPass(this.bloom);
     }
     this.composer.addPass(new OutputPass());
     this.fxaa=new ShaderPass(FXAAShader);this.composer.addPass(this.fxaa);

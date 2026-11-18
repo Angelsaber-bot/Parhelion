@@ -16,6 +16,7 @@
     "test:arena": "npm test --prefix arena-game",
     "test:site": "npm test --prefix site",
     "test": "npm run test:arena && npm run test:world && npm run test:site",
-    "verify": "npm run build && npm test"
+    "verify": "npm run build && npm test",
+    "perf": "python3 tools/perf/bench.py"
   }
 }

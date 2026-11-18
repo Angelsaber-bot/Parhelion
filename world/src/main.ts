@@ -216,7 +216,8 @@ import { FrameWorkBudget } from './rendering/frameWorkBudget';
 import { LocalLightPool } from './rendering/localLightPool';
 import { detachConsumedSourceNodes } from './rendering/consumedSourceNodes';
 import './ui/actions.css';
-import { AdaptiveResolution, targetDpr } from './rendering/renderQuality';
+import { AdaptiveResolution, POST_SCALE, targetDpr } from './rendering/renderQuality';
+import { scalePassResolution } from '../../shared-client/postScale';
 import { readResolutionMode, attachRenderSettings } from './rendering/renderSettings';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
@@ -225,6 +226,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { MsaaScenePass } from './rendering/msaaScenePass';
 import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts } from './rendering/fx';
 import { settlementGrassClearance } from './map/grassClearance';
 import {createArmoryWorkshop,ARMORY_WORKSHOP} from './story/armoryWorkshop';
@@ -378,14 +380,19 @@ function snapShadowCenter(at: THREE.Vector3, toSun: THREE.Vector3, out: THREE.Ve
 }
 const twilight = new KingdomTwilight(sky, sun, hemisphere, scene);
 
-// post: MSAA → GTAO (high only) → bloom → sun shafts → output.  ?nopost disables, ?q=low keeps bloom only
+// post: MSAA scene → GTAO (high only) → bloom → sun shafts → output.  ?nopost disables, ?q=low keeps bloom only
+// High (4× MSAA) multisamples only the scene pass and keeps the composer's buffers single-sample
+// (see MsaaScenePass: measured ~2× faster there). Medium's 2× MSAA measured no better that way, so it
+// keeps multisampled composer buffers.
 const composer = params.has('nopost') ? null : new EffectComposer(renderer, new THREE.WebGLRenderTarget(
-  innerWidth, innerHeight, { samples: highQ ? 4 : lowQ ? 0 : 2, type: THREE.HalfFloatType }));
+  innerWidth, innerHeight, { samples: highQ || lowQ ? 0 : 2, type: THREE.HalfFloatType }));
 const shafts = makeSunShafts();
 if (composer) {
-  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(highQ ? new MsaaScenePass(scene, camera, 4) : new RenderPass(scene, camera));
   if (highQ) {
-    const ao = new GTAOPass(scene, camera, innerWidth, innerHeight);
+    // Ambient occlusion is low-frequency shading: its normal pre-pass, AO and denoise run at half
+    // resolution and blend back up. The scene itself keeps full resolution (tools/perf/bench.py).
+    const ao = scalePassResolution(new GTAOPass(scene, camera, innerWidth, innerHeight), POST_SCALE.ao);
     ao.updateGtaoMaterial({ radius: 0.9, distanceExponent: 1.4, thickness: 1.2, scale: 1.1, samples: 12, distanceFallOff: 0.6 });
     ao.blendIntensity = 0.75;
     composer.addPass(ao);
