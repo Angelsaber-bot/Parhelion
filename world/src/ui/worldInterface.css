@@ -16,6 +16,8 @@ body.world-interface{font-family:Inter,-apple-system,BlinkMacSystemFont,"PingFan
 #world-enter:hover{background:#ecddbc}
 .world-menu-navigation{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .world-menu-navigation button{text-align:center;padding:10px 4px;min-width:0}
+.world-menu .world-menu-coop{display:block;width:100%;margin:0;font:inherit;font-size:13px;text-align:center;background:rgba(255,255,255,.035);color:inherit;border:1px solid var(--world-line);padding:10px 8px;border-radius:8px;cursor:pointer;overflow-wrap:anywhere}
+.world-menu .world-menu-coop:hover,.world-menu .world-menu-coop:focus-visible{border-color:var(--world-accent)}
 .world-menu #settings-open{position:static;z-index:auto;margin:0;pointer-events:auto;font:inherit;font-size:13px;background:rgba(255,255,255,.035);color:inherit;border:1px solid var(--world-line);padding:10px 4px;border-radius:8px}
 .world-menu #world-more-journey{max-height:min(31vh,270px)!important;overflow:auto!important;padding:0!important;background:none!important;border-radius:0!important;text-align:left!important;border-top:1px solid var(--world-line)}
 #world-more-journey summary{padding:14px 0 0;color:var(--world-muted);font-size:12px;cursor:pointer;list-style:none}
@@ -122,6 +124,9 @@ body.world-dialogue-open :is(#crosshair,#guide,#world-vitals,#world-boss,#prompt
 #world-coop p,#world-coop li{font-size:13px;line-height:1.65}
 #world-coop ul{text-align:left;padding-left:20px;margin:8px 0 12px;color:#c6d6df}
 #world-coop button{display:block;margin:10px auto;min-width:180px}
+#world-coop button{font:inherit;font-size:13px;min-height:38px;padding:8px 16px;border:1px solid var(--world-line,#8194a2);border-radius:8px;background:rgba(255,255,255,.05);color:#edf4f7;cursor:pointer}
+#world-coop button:hover,#world-coop button:focus-visible{background:rgba(255,255,255,.1);border-color:var(--world-accent,#dfcc9e)}
+#world-coop #world-coop-create{background:var(--world-accent,#dfcc9e);border-color:transparent;color:#182a36;font-weight:600}
 #world-coop [hidden]{display:none!important}
 #world-coop-status{color:#ffd69e}
 #world-coop-code{font:700 34px/1.2 ui-monospace,Menlo,monospace;letter-spacing:.32em;margin:6px 0 4px;color:#fff3c4;user-select:all}

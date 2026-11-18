@@ -2575,7 +2575,7 @@ const coopPanel=createCoopPanel({
   canOpen:()=>!bootFailed&&!worldExited&&!graphicsRecovery?.blocked&&!ultimateDirector?.active,
 });
 const coopOpen=document.createElement('button');coopOpen.type='button';coopOpen.id='world-coop-open';
-const renderCoopButton=()=>{const s=coop.session.status;coopOpen.textContent=s==='paired'?bilingual(`双人联机 · 已连接 ${coop.session.code}`,`Co-op · Connected ${coop.session.code}`):s==='waiting'?bilingual(`双人联机 · 房间 ${coop.session.code} 等待中`,`Co-op · Room ${coop.session.code} waiting`):bilingual('双人联机','Co-op');};renderCoopButton();
+const renderCoopButton=()=>{const s=coop.session.status;coopOpen.textContent=s==='paired'?bilingual(`双人联机 · 已连接 ${coop.session.code}`,`Co-op · Connected ${coop.session.code}`):s==='waiting'?bilingual(`双人联机 · 房间 ${coop.session.code} 等待中`,`Co-op · Room ${coop.session.code} waiting`):bilingual('双人联机 · 开房间 / 输入房间号','Co-op · Open a room / Enter a room code');};renderCoopButton();
 const unsubscribeCoop=onLanguageChange(renderCoopButton);
 coopOpen.onclick=event=>{event.stopPropagation();coopPanel.show();};start.append(coopOpen);
 {const room=normalizeRoomCode(params.get('room')??'');if(room)coop.join(room);}

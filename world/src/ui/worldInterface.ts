@@ -23,11 +23,12 @@ export function installWorldInterface(options:InterfaceOptions){
  navigation.append(get('world-quest-journal-open'),get('world-travel-open'),get('settings-open'));
  const claimsOpen=document.getElementById('world-servant-claims-open');if(claimsOpen)navigation.insertBefore(claimsOpen,get('world-travel-open'));
  more.append(get('world-adventure-continue'),get('servant-open'));
- const coopOpen=document.getElementById('world-coop-open');const summary=more.querySelector('summary');if(coopOpen){if(summary)summary.after(coopOpen);else more.prepend(coopOpen);}
+ // Co-op sits on its own row under the main navigation (it used to hide inside the collapsed "More").
+ const coopOpen=document.getElementById('world-coop-open');coopOpen?.classList.add('world-menu-coop');
  const locale=document.querySelector<HTMLElement>('body > .parhelion-language');
  const bottom=document.createElement('div');bottom.className='world-menu-bottom';if(locale)bottom.append(locale);
  const footer=document.createElement('div');footer.id='world-shortcuts';footer.className='hud';
- panel.append(brand,loading,enter,dragEntry,navigation,more,bottom);start.append(panel);document.body.append(footer);
+ panel.append(brand,loading,enter,dragEntry,navigation,...(coopOpen?[coopOpen]:[]),more,bottom);start.append(panel);document.body.append(footer);
  const iconPaths:Record<string,string>={
   melee:'M5 4l13 13m-1-13L6 17M4 15l5 5m6-5l5 5M5 4l4 1-3 3M17 4l-4 1 3 3',
   evade:'M5 8h10m-4-4 4 4-4 4M19 16H9m4-4-4 4 4 4',
