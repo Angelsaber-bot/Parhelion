@@ -13,6 +13,8 @@
     "test": "vitest run",
     "train:bot": "node --import tsx test/bench/trainTactics.ts",
     "train:human": "python3 tools/train-human-combat.py",
+    "train:neural": "node --import tsx scripts/neural-training.ts",
+    "eval:neural": "node --import tsx test/bench/evaluate-neural.ts",
     "worker:dev": "wrangler dev -c worker/wrangler.toml",
     "worker:train": "node scripts/local-training.mjs",
     "worker:deploy": "wrangler deploy -c worker/wrangler.toml",

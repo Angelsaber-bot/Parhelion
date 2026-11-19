@@ -1,5 +1,8 @@
 import { expect, it } from 'vitest';
 import { Bot, BOT_SKILL, predictContact } from '../shared/bot.ts';
+import { explorationScene, EXPLORATION_TICKS, newExplorationCheckpoint, trainExploration } from '../shared/exploration.ts';
+import { HUMAN_FEATURES } from '../shared/humanCombat.ts';
+import { BTN } from '../shared/sim.ts';
 import { tacticScore, TACTIC_FEATURES } from '../shared/botTactics.ts';
 import tacticsModel from '../shared/botTacticsModel.json';
 import { buildMap, lineOfSight, type MapObject } from '../shared/map.ts';
@@ -62,4 +65,38 @@ it('predicts a known track for a short time and never extrapolates it across a w
   expect(predictContact(match, [[0, 0, 2], [.2, 0, 2], [.4, 0, 2]], 9)).toEqual([2.2, 0, 2]);
   expect(predictContact(match, [[0, 0, -3], [0, 0, -3.2]], 12)).toEqual([0, 0, -3.2]);
   expect(predictContact(match, [[0, 0, 2]], 121)).toBeNull();
+});
+
+it('uses learned turns with nobody in view and reacquires an opponent behind it', () => {
+  const match = new Match(map, '1v1');
+  match.addPlayer('a', { name: 'a', team: 'A', char: 0, skins: [], bot: true });
+  match.addPlayer('b', { name: 'b', team: 'B', char: 0, skins: [], bot: false });
+  const me = match.player('a')!, foe = match.player('b')!;
+  Object.assign(me, { x: 0, y: 0, z: 0, yaw: 0 });
+  Object.assign(foe, { x: 0, y: 0, z: 6 });
+  match.phase = 'live';
+  const model = newExplorationCheckpoint();
+  const obs = HUMAN_FEATURES.map(() => 0);
+  const rows = Array.from({ length: EXPLORATION_TICKS }, () => [1, ...obs, .12, 0, .25, .6, 0, 0]);
+  trainExploration(model, rows, [[0, ...explorationScene(map, me)]], 0, false);
+
+  const bot = new Bot(17, BOT_SKILL.hard, undefined, undefined, model);
+  const first = bot.think(match, 'a');
+  Object.assign(foe, { x: 6, z: 0 });
+  const differentUnseenPosition = new Bot(17, BOT_SKILL.hard, undefined, undefined, model).think(match, 'a');
+  expect(differentUnseenPosition).toEqual(first);
+  expect(first.yaw).toBeCloseTo(.12);
+  expect(first.mz).toBeCloseTo(.6);
+  expect(first.buttons & BTN.FIRE).toBe(0);
+
+  Object.assign(foe, { x: 0, z: 6 });
+  me.yaw = first.yaw;
+  let fired = false;
+  for (match.tick = 1; match.tick <= 160; match.tick++) {
+    const next = bot.think(match, 'a');
+    me.yaw = next.yaw; me.pitch = next.pitch;
+    if (next.buttons & BTN.FIRE) { fired = true; break; }
+  }
+  expect(fired).toBe(true);
+  expect(Math.abs(me.yaw)).toBeGreaterThan(2.9);
 });

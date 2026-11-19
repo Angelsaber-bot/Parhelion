@@ -8,6 +8,8 @@ import { Bot, BOT_SKILL, navFor } from '../../shared/bot.ts';
 import { learnedTactics } from '../../shared/botTactics.ts';
 import tacticsModel from '../../shared/botTacticsModel.json';
 import { HUMAN_FEATURES, type HumanCombatModel } from '../../shared/humanCombat.ts';
+import type { ExplorationModel } from '../../shared/exploration.ts';
+import type { NeuralPolicyModel } from '../../shared/neuralPolicy.ts';
 import { randomBotHero, DT, SNAPSHOT_EVERY, TEAM_CAPACITY, randomBotLoadout, randomBotUtility, type Team } from '../../shared/content.ts';
 import type { ArenaMap } from '../../shared/map.ts';
 import { Match, type Snapshot } from '../../shared/match.ts';
@@ -176,7 +178,8 @@ const offlineCombat = humanModel?.version === 1 && humanModel.rulesVersion === R
   humanModel.features.join() === HUMAN_FEATURES.join() ? humanModel : undefined;
 
 /** `rand` picks the bots' kits: every legal loadout, re-rolled for each rematch. */
-export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKILL, rand: () => number = Math.random): Session {
+export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKILL, rand: () => number = Math.random,
+  exploration?: ExplorationModel, neural?: NeuralPolicyModel): Session {
   const match = new Match(getMap(opts.map), opts.layout);
   navFor(match); // build the nav grid up front so the first bot tick doesn't hitch
   const team: Team = opts.team === 'B' ? 'B' : 'A';
@@ -188,7 +191,7 @@ export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKI
     for (let i = match.teamCount(t); i < TEAM_CAPACITY[opts.layout][t]; i++) {
       const n = seed++, k = kit();
       const bot = new Bot(n, BOT_SKILL[difficulty], difficulty === 'easy' ? undefined : offlineTactics,
-        difficulty === 'normal' ? offlineCombat : undefined);
+        difficulty === 'normal' ? offlineCombat : undefined, exploration, neural);
       match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: randomBotHero([...match.slots.values()].map(s => ({ team: s.info.team, char: s.state.char })), t, rand), skins: [n % 2, n % 2, n % 2], loadout: k.loadout, utility: k.utility, bot: true }, bot);
     }
   }

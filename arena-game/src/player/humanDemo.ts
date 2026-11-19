@@ -1,5 +1,6 @@
 import { TICK_HZ } from '../../shared/content.ts';
 import { HUMAN_FEATURES, wrapAngle } from '../../shared/humanCombat.ts';
+import { EXPLORATION_TICKS, type ExplorationSample, type LastObservedBearing } from '../../shared/exploration.ts';
 import { RULES_VERSION } from '../../shared/protocol.ts';
 import { BTN, type Input, type PlayerState } from '../../shared/sim.ts';
 import { TRAINING_BATCH_TICKS, type TrainingBatch, type TrainingView } from '../../shared/trainingData.ts';
@@ -9,10 +10,11 @@ const VIEW_WIDTH = 192, VIEW_HEIGHT = 108;
 const PIXEL_COLS = 16, PIXEL_ROWS = 9;
 const VIEW_INTERVAL = TICK_HZ / 6;
 const round = (n: number) => Math.round(n * 10000) / 10000;
+const newCapture = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), n => n.toString(16).padStart(2, '0')).join('');
 
-/** Feature vectors and game inputs only. Temporary memory until the player requests a download. */
+/** Samples the player's observations and inputs, with optional automatic transmission. */
 export class HumanDemo {
-  private readonly capture = Array.from(crypto.getRandomValues(new Uint8Array(16)), n => n.toString(16).padStart(2, '0')).join('');
+  private capture = newCapture();
   private frames: number[][] = [];
   private lastSeq = -2;
   private life = -1;
@@ -22,8 +24,11 @@ export class HumanDemo {
   private views: [number, number, string, string][] = [];
   private nextView = 1;
   private trainingViews: TrainingView[] = [];
+  private exploration: ExplorationSample[] = [];
   private recorded = 0;
   private sequence = 0;
+  private seenBearing = 0;
+  private seenAt = -Infinity;
 
   constructor(private readonly map: string, private readonly transmit?: (batch: TrainingBatch) => void) {}
 
@@ -32,26 +37,42 @@ export class HumanDemo {
 
   pause() { this.lastSeq = -2; this.flush(); }
 
+  beginRound() {
+    if (!this.automatic || !this.recorded) return;
+    this.pause();
+    this.capture = newCapture();
+    this.recorded = this.sequence = this.segment = 0;
+    this.nextView = 1;
+    this.trainingViews = [];
+  }
+
   flush() {
     if (!this.transmit || !this.frames.length) return;
     const start = this.size - this.frames.length;
     const views = this.trainingViews.filter(view => view[0] >= start - 18);
-    this.transmit({ version: 1, rulesVersion: RULES_VERSION, capture: this.capture, map: this.map, sequence: this.sequence++, start, rows: this.frames, views });
+    this.transmit({ version: 1, rulesVersion: RULES_VERSION, capture: this.capture, map: this.map, sequence: this.sequence++, start, rows: this.frames, views,
+      ...(this.exploration.length ? { exploration: this.exploration } : {}) });
     this.frames = [];
     this.trainingViews = views.slice(-1);
+    this.exploration = [];
   }
 
-  record(me: PlayerState, input: Input, observe: (previous: readonly [number, number]) => number[]) {
+  record(me: PlayerState, input: Input, observe: (previous: readonly [number, number]) => number[], scene?: (lastContact: LastObservedBearing) => number[]) {
     if (!this.automatic && this.size >= MAX_FRAMES) return;
     if (this.life !== me.lifeId || input.seq !== this.lastSeq + 1) {
       this.segment++;
       this.life = me.lifeId;
       this.previous = [0, 0];
+      this.seenAt = -Infinity;
     }
     this.lastSeq = input.seq;
     const features = observe(this.previous);
     const yaw = wrapAngle(input.yaw - me.yaw), pitch = input.pitch - me.pitch;
     const actions = this.automatic ? [round(input.mx), round(input.mz), input.buttons, input.weapon ?? me.weaponSlot] : [Number(!!(input.buttons & BTN.FIRE))];
+    if (this.automatic && scene) {
+      if (features[0]) { this.seenBearing = me.yaw + features[1]; this.seenAt = this.size; }
+      if (this.size % EXPLORATION_TICKS === 0) this.exploration.push([this.size, ...scene([this.seenBearing, this.size - this.seenAt]).map(round)]);
+    }
     this.frames.push([this.segment, ...features.map(round), round(yaw), round(pitch), ...actions]);
     this.recorded++;
     this.previous = [yaw, pitch];

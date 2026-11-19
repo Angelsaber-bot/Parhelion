@@ -1,10 +1,15 @@
 import fs from 'node:fs/promises';
+import { constants } from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 
 export const APP_ID = 'parhelion-local-website';
 export const projectId = (root) => createHash('sha256').update(root).digest('hex');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.glb': 'model/gltf-binary', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.gz': 'application/octet-stream', '.bin': 'application/octet-stream' };
+const neuralArtifacts = new Map([
+  ['/__parhelion/arena-neural/model', ['candidate.json', 24 * 1024 ** 2]],
+  ['/__parhelion/arena-neural/status', ['status.json', 512 * 1024]],
+]);
 
 export function isLocalRequest(req) {
   // Defend against DNS rebinding as well as cross-site matchmaking requests.
@@ -40,6 +45,22 @@ export async function createStaticHandler(root, buildId = 'development') {
     if (route === '/__parhelion/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(req.method === 'HEAD' ? '' : JSON.stringify({ app: APP_ID, projectId: id, buildId, ready: true }));
+    }
+    const artifact = neuralArtifacts.get(route);
+    if (artifact) {
+      const [name, limit] = artifact;
+      try {
+        const directory = path.resolve(root, '../arena-game/.scratch/neural');
+        if (await fs.realpath(directory) !== directory) return reply(404, 'Neural artifact unavailable');
+        const file = await fs.open(path.join(directory, name), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+        try {
+          const stat = await file.stat();
+          if (!stat.isFile() || stat.size > limit) return reply(404, 'Neural artifact unavailable');
+          const body = req.method === 'HEAD' ? undefined : await file.readFile();
+          res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': stat.size });
+          return res.end(body);
+        } finally { await file.close(); }
+      } catch { return reply(404, 'Neural artifact unavailable'); }
     }
     if (route === '/arena' || route === '/world') {
       const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';

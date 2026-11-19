@@ -37,7 +37,7 @@ jobs:
         run: |
           if [ -n "$BEFORE" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ]; then
             if git cat-file -e "$BEFORE^{commit}" 2>/dev/null || git fetch --no-tags --depth=1 origin "$BEFORE"; then
-              if git diff --quiet "$BEFORE" HEAD -- arena arena-game arena-maps shared-client; then
+            if git diff --quiet "$BEFORE" HEAD -- arena arena-game arena-maps shared-client .github/workflows/deploy.yml; then
                 echo "worker=false" >> "$GITHUB_OUTPUT"
                 exit 0
               fi
@@ -72,7 +72,17 @@ jobs:
       - name: Deploy Arena Worker
         if: steps.secrets.outputs.ok == 'true' && steps.scope.outputs.worker == 'true'
         working-directory: arena-game
-        run: npm run worker:deploy
+        env:
+          ARENA_NEURAL_CORPUS_TOKEN: ${{ secrets.ARENA_NEURAL_CORPUS_TOKEN }}
+        run: |
+          if [ -z "$ARENA_NEURAL_CORPUS_TOKEN" ]; then
+            npm run worker:deploy
+            exit
+          fi
+          secret_file=$(mktemp)
+          trap 'rm -f "$secret_file"' EXIT
+          python3 -c 'import json, os; print(json.dumps({"ARENA_NEURAL_CORPUS_TOKEN": os.environ["ARENA_NEURAL_CORPUS_TOKEN"]}))' > "$secret_file"
+          npm run worker:deploy -- --secrets-file "$secret_file"
       - name: Smoke test public Arena server
         if: steps.secrets.outputs.ok == 'true' && steps.scope.outputs.worker == 'true'
         working-directory: arena-game

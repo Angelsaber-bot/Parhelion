@@ -28,7 +28,7 @@ import {FrameGate,worldRenderVisible} from './rendering/renderScheduling.ts';
 import { ArenaScene } from './rendering/scene.ts';
 import { joinOnline, startOffline, startRange, type Session } from './network/session.ts';
 import { postStats } from './network/stats.ts';
-import { submitTraining } from './network/training.ts';
+import { fetchExplorationModel, fetchNeuralModel, submitTraining } from './network/training.ts';
 import { RANGE_MAP_ID } from '../shared/trainingRange.ts';
 import { GUN_IDS, MELEE_IDS, type Loadout, type UtilityId } from '../shared/content.ts';
 import asterThumb from './assets/maps/aster.jpg';
@@ -331,7 +331,6 @@ $('play').onclick = async () => {
   };
   const server = $<HTMLInputElement>('server').value.trim();
   if (attempt.mode === 'online' && roomCode) opts.room = roomCode;
-  const difficulty = $<HTMLSelectElement>('difficulty').value as 'easy' | 'normal' | 'hard';
   const recordDemo = attempt.mode !== 'range' && !lessonRequested && trainingConsent.checked;
   const current = () => activeStart?.id === attempt.id && !pageExited;
   let ownedSession: Session | null = null;
@@ -348,7 +347,10 @@ $('play').onclick = async () => {
     await scene.prepareLoadout(loadoutStore.value.map(weaponIndex),skins);
     if (!current()) return;
     attempt.phase = 'join'; renderStartupStatus();
-    ownedSession = attempt.mode === 'online' ? await joinOnline(server, opts) : attempt.mode === 'range' ? startRange(opts) : startOffline(opts, difficulty);
+    const [neural, exploration] = attempt.mode === 'offline' && !lessonRequested
+      ? await Promise.all([fetchNeuralModel(), fetchExplorationModel()]) : [];
+    if (!current()) return;
+    ownedSession = attempt.mode === 'online' ? await joinOnline(server, opts) : attempt.mode === 'range' ? startRange(opts) : startOffline(opts, 'normal', Math.random, exploration, neural);
     if (attempt.mode === 'offline' && !localHost) ownedSession.onStats = postStats;
     if (!current()) { closeOwned(); return; }
     // A private room plays the map its first player chose: show that one.
@@ -362,7 +364,16 @@ $('play').onclick = async () => {
     const session = ownedSession;
     rangeSession = session.practice ? session : null;
     if (rangeSession) { rangeChoice = { loadout: loadoutStore.value, utility: loadoutStore.utility, skins: skins.slice() }; renderRangePanel(); }
-    game = new Game(session, scene, controls, hud, (reason) => backToLobby(reason), recordDemo ? new HumanDemo(session.mapId ?? mapId, submitTraining) : undefined);
+    const receipt = $('training-receipt');
+    if (recordDemo) receipt.classList.add('hidden');
+    game = new Game(session, scene, controls, hud, (reason) => backToLobby(reason), recordDemo ? new HumanDemo(session.mapId ?? mapId, batch => {
+      submitTraining(batch, status => {
+        receipt.textContent = status === 202 ? bilingual('训练数据已收到', 'Training data received')
+          : status === 400 ? bilingual('训练数据提交失败，请刷新 Arena 后重试', 'Training upload rejected. Refresh Arena and try again.')
+          : bilingual('训练数据暂时未能上传', 'Training data could not be uploaded');
+        receipt.classList.toggle('hidden', !trainingConsent.checked);
+      });
+    }) : undefined);
     if(lessonRequested&&session.match){
       const m=session.match,bot=[...m.slots.values()].find(s=>s.info.bot);if(bot){bot.info.char=bot.state.char=8;bot.state.ability.readyAt=0;const brain=new Bot(41,BOT_SKILL.easy);bot.controller={think(match,id){const i=brain.think(match,id),p=match.player(id)!,enemy=match.player(session.id)!;if(p.alive&&enemy.alive&&match.heroes.visible([p.x,p.y+1,p.z],[enemy.x,enemy.y+1,enemy.z])&&Math.hypot(p.x-enemy.x,p.z-enemy.z)<16&&p.shieldCd===0&&!(p.prevButtons&BTN.SHIELD)){i.buttons=BTN.SHIELD;i.pitch=0;}return i;}};}
       game.lesson=new HeroLesson(session.id);lessonRequested=false;

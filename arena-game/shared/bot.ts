@@ -13,6 +13,9 @@
 
 import { CHARACTERS, FRAG, GRENADE, HERO_COMBAT, INTERP_TICKS, TICK_HZ, WEAPONS, falloff, loadoutWeapon, type WeaponDef } from './content.ts';
 import { tacticalCandidates, TACTIC_INTERVAL, TACTIC_MEMORY_TICKS, TACTIC_TICKS, type TacticalPolicy } from './botTactics.ts';
+import { neuralBotControl } from './botNeuralControl.ts';
+import type { NeuralPolicyModel } from './neuralPolicy.ts';
+import { explorationAction, explorationScene, EXPLORATION_TICKS, type ExplorationModel } from './exploration.ts';
 import { smokeBlocks } from './grenade.ts';
 import { humanCombatPolicy, humanObservation, type CombatContact, type HumanCombatModel } from './humanCombat.ts';
 /** Melee reach including most of the windup lunge. */
@@ -78,6 +81,7 @@ function rng(seed: number) {
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 const HISTORY = 24;
 const CONTACT_MEMORY = 2 * TICK_HZ;
+const CAMERA_HALF_FOV = Math.atan(Math.tan(39 * Math.PI / 180) * 16 / 9);
 
 /** Predict briefly from observed positions only. A wall truncates the extrapolation. */
 export function predictContact(match: Match, trail: readonly Vec3[], age: number): Vec3 | null {
@@ -155,10 +159,19 @@ export class Bot implements Controller {
   private humanLastVisible = -Infinity;
   private humanPrior: [number, number] = [0, 0];
   private humanContacts: CombatContact[][] = [];
+  private explorationTurn?: ReturnType<typeof explorationAction>;
+  private explorationNext = 0;
+  private readonly explorationRandom: () => number;
+  private explorationPrior: [number, number] = [0, 0];
+  private observedBearing = 0;
+  private readonly neural?: ReturnType<typeof neuralBotControl>;
 
-  constructor(seed: number, readonly skill: BotSkill = BOT_SKILL.normal, private readonly tactics?: TacticalPolicy, humanModel?: HumanCombatModel) {
+  constructor(seed: number, readonly skill: BotSkill = BOT_SKILL.normal, private readonly tactics?: TacticalPolicy, humanModel?: HumanCombatModel,
+    private readonly explorationModel?: ExplorationModel, neuralModel?: NeuralPolicyModel) {
     this.rand = rng(seed);
+    this.explorationRandom = rng(seed ^ 0x3ab1289);
     if (humanModel) this.humanCombat = humanCombatPolicy(humanModel, rng(seed ^ 0x52e27a3d));
+    if (neuralModel) this.neural = neuralBotControl(neuralModel);
     const r = this.rand();
     this.style = r < 0.36 ? 'rusher' : r < 0.7 ? 'holder' : 'flanker';
     this.aggression = this.style === 'rusher' ? 0.75 + this.rand() * 0.25 : this.style === 'holder' ? 0.2 + this.rand() * 0.3 : 0.45 + this.rand() * 0.3;
@@ -173,6 +186,16 @@ export class Bot implements Controller {
   think(match: Match, id: string): Input {
     const me = match.player(id)!;
     const inp: Input = { seq: ++this.seq, mx: 0, mz: 0, yaw: this.yaw, pitch: this.pitch, buttons: 0, weapon: me.weaponSlot, view: match.tick };
+    if (this.neural) {
+      if (match.phase === 'live' && me.alive) {
+        const output = this.neural.apply(match, me, inp);
+        this.yaw = output.yaw;
+        this.pitch = output.pitch;
+        this.wasAlive = true;
+        return output;
+      }
+      this.neural.reset();
+    }
     if (this.humanCombat && (this.humanLife !== me.lifeId || match.phase !== 'live' || !me.alive)) {
       this.humanLife = me.lifeId;
       this.humanContacts.length = 0;
@@ -192,6 +215,8 @@ export class Bot implements Controller {
       this.throwPlan = null;
       this.lastHp = CHARACTERS[me.char].hp;
       this.wasAlive = false;
+      this.explorationTurn = undefined;
+      this.explorationPrior = [0, 0];
       return inp;
     }
     if (!this.wasAlive) { this.yaw = me.yaw; this.pitch = 0; this.wasAlive = true; this.holdT = 0; }
@@ -200,6 +225,7 @@ export class Bot implements Controller {
     const tookDamage = me.hp < this.lastHp;
     this.lastHp = me.hp;
     const maxHp = CHARACTERS[me.char].hp;
+    const explorationModel = match.phase === 'live' ? this.explorationModel : undefined;
 
     // --- perception: nearest enemy it can see inside its view cone (or that just hit it / is very close) ---
     let target: PlayerState | null = null;
@@ -211,7 +237,7 @@ export class Bot implements Controller {
       if (oid === id || o.team === me.team || !o.alive) continue;
       const d = Math.hypot(o.x - me.x, o.y - me.y, o.z - me.z);
       const off = Math.abs(wrap(Math.atan2(-(o.x - me.x), -(o.z - me.z)) - this.yaw));
-      if (off > 1.3 && !tookDamage && d > 3 && oid !== this.targetId) continue;
+      if (explorationModel ? off > CAMERA_HALF_FOV : off > 1.3 && !tookDamage && d > 3 && oid !== this.targetId) continue;
       const h = playerHitbox(o.crouched);
       const chest: Vec3 = [o.x, o.y + (o.crouched ? 0.65 : 1.1), o.z], head: Vec3 = [o.x, o.y + h.headY, o.z];
       const clear = match.heroes.visible(eye, chest) || match.heroes.visible(eye, head);
@@ -233,6 +259,7 @@ export class Bot implements Controller {
       this.trail.push([target.x, target.y, target.z]);
       if (this.trail.length > HISTORY) this.trail.shift();
       this.lastSeen = [target.x, target.y, target.z];
+      this.observedBearing = Math.atan2(me.x - target.x, me.z - target.z);
       this.lastObserved = match.tick;
       if (this.throwPlan && me.utility === 'frag') this.throwPlan = null;
       this.holdT = 0;
@@ -246,6 +273,13 @@ export class Bot implements Controller {
     // Team scan marks are sampled positions, never a live target behind cover.
     const mark = !target && match.heroes.marks.find(m => m.team === me.team && m.expires > match.tick);
     const search: Vec3 | null = predicted ?? (mark ? [mark.x, mark.y, mark.z] : null);
+    const exploring = !!explorationModel && !target;
+    if (exploring && (!this.explorationTurn || match.tick >= this.explorationNext)) {
+      const observation = humanObservation(match.map, me, [], () => false, this.explorationPrior);
+      const scene = explorationScene(match.map, me, [this.observedBearing, contactAge]);
+      this.explorationTurn = explorationAction(explorationModel, observation, scene, this.explorationRandom);
+      this.explorationNext = match.tick + EXPLORATION_TICKS;
+    } else if (!exploring) this.explorationTurn = undefined;
     // the reaction time grows with distance; being shot makes it react a bit faster
     const reaction = this.skill.reaction * (1 + Math.min(bestD, 40) / 35) * (tookDamage ? 0.75 : 1) * (glimpse ? 1.6 : 1);
     const engaged = !!target && this.seenFor > reaction * 0.5;
@@ -273,7 +307,7 @@ export class Bot implements Controller {
     if (this.tactics && match.phase === 'live' && match.tick >= this.nextTactic) {
       this.tacticPath = null;
       const age = match.tick - this.lastObserved;
-      if ((engaged || (!target && age <= TACTIC_MEMORY_TICKS)) && this.lastSeen && me.grounded) {
+      if (!exploring && (engaged || (!target && age <= TACTIC_MEMORY_TICKS)) && this.lastSeen && me.grounded) {
         const [x, y, z] = this.lastSeen;
         const threat: Vec3 = [x, y + (target ? playerEye(match.map, target) : match.map.eye), z];
         const spare = loadoutWeapon(me.loadout, me.weaponSlot === 0 ? 1 : 0);
@@ -293,8 +327,8 @@ export class Bot implements Controller {
     let goal: Vec3 | null;
     const hurt = me.hp < maxHp * (this.style === 'holder' ? 0.55 : this.style === 'flanker' ? 0.4 : 0.25);
     const reloading = me.reload > 0;
-    if (target && !hurt && !reloading) this.tacticPath = null;
-    if (this.tacticPath) goal = null;
+    if (exploring || (target && !hurt && !reloading)) this.tacticPath = null;
+    if (exploring || this.tacticPath) goal = null;
     else if (target && (hurt || (reloading && this.aggression < 0.6))) goal = this.coverAway(match, me, target);
     else if (target && (WEAPONS[want].kind === 'melee' || this.style === 'rusher') && bestD > (WEAPONS[want].kind === 'melee' ? WEAPONS[want].range * .7 : 7) && engaged) goal = [target.x, target.y, target.z];
     else if (target) goal = null; // fight where it stands
@@ -343,18 +377,19 @@ export class Bot implements Controller {
       }
     }
 
+    let escape = false;
     // A frag about to go off nearby overrides the route: get out of its radius.
     for (const g of match.grenades) {
       if (g.kind !== 'frag' || g.fuse > 1.4 * TICK_HZ) continue;
       const gx = me.x - g.x, gz = me.z - g.z, gd = Math.hypot(gx, gz);
-      if (gd < FRAG.radius + .8) { moveX = gd > .05 ? gx / gd : 1; moveZ = gd > .05 ? gz / gd : 0; break; }
+      if (gd < FRAG.radius + .8) { moveX = gd > .05 ? gx / gd : 1; moveZ = gd > .05 ? gz / gd : 0; escape = true; break; }
     }
 
     // React only to a visible, public warning after the bot's normal reaction delay.
     for(const e of match.heroes.entities){
       if(e.kind!=='edict'||e.team===me.team||match.tick-e.created<Math.min(this.skill.reaction,HERO_COMBAT.edict.arm-4))continue;
       const dx=me.x-e.x,dz=me.z-e.z,d=Math.hypot(dx,dz);
-      if(d<HERO_COMBAT.edict.radius+.6&&lineOfSight(match.map,eye,[e.x,e.y+.1,e.z])&&!smokeBlocks(match.smokes,eye,[e.x,e.y+.1,e.z])){moveX=d>.05?dx/d:1;moveZ=d>.05?dz/d:0;break;}
+      if(d<HERO_COMBAT.edict.radius+.6&&lineOfSight(match.map,eye,[e.x,e.y+.1,e.z])&&!smokeBlocks(match.smokes,eye,[e.x,e.y+.1,e.z])){moveX=d>.05?dx/d:1;moveZ=d>.05?dz/d:0;escape=true;break;}
     }
 
     // Replan before giving an opponent a long window to shoot a stationary bot.
@@ -456,10 +491,25 @@ export class Bot implements Controller {
     if (w.kind === 'gun' && !target && me.ammo[me.weapon] < w.mag * 0.5 && (me.prevButtons & BTN.RELOAD) === 0) inp.buttons |= BTN.RELOAD;
     if (this.humanCombat && match.phase === 'live') this.applyHumanCombat(match, me, inp);
 
+    const turn = this.explorationTurn;
+    let magnitude = 1;
+    if (turn && !this.throwPlan && !(inp.buttons & BTN.THROW)) {
+      this.yaw = wrap(me.yaw + turn.yaw);
+      this.pitch = Math.max(-1.45, Math.min(1.45, me.pitch + turn.pitch));
+      inp.yaw = Math.round(this.yaw * 10000) / 10000;
+      inp.pitch = Math.round(this.pitch * 10000) / 10000;
+      inp.buttons &= ~BTN.FIRE;
+      if (!escape) {
+        const [x, z] = forward(inp.yaw);
+        [moveX, moveZ] = safeDirection(match, me, x * turn.mz - z * turn.mx, z * turn.mz + x * turn.mx, this.strafe);
+        magnitude = Math.min(1, Math.hypot(turn.mx, turn.mz));
+      }
+    }
+    if (explorationModel) this.explorationPrior = [wrap(inp.yaw - me.yaw), inp.pitch - me.pitch];
     // Input physics rotates movement by the new aim yaw, including a learned turn.
     const [fx, fz] = forward(inp.yaw);
-    inp.mz = moveX * fx + moveZ * fz;
-    inp.mx = moveX * -fz + moveZ * fx;
+    inp.mz = (moveX * fx + moveZ * fz) * magnitude;
+    inp.mx = (moveX * -fz + moveZ * fx) * magnitude;
 
     // --- abilities, used sparingly ---
     if (target && tookDamage && me.dashCharges > 0 && me.dashT === 0 && this.rand() < 0.12 + this.aggression * 0.1) inp.buttons |= BTN.DASH;

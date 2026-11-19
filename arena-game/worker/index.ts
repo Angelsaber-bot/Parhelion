@@ -24,6 +24,7 @@ export interface Env {
   WORLD: DurableObjectNamespace<WorldRoomDO>;
   STATS: DurableObjectNamespace<ArenaStats>;
   TRAINING: DurableObjectNamespace<ArenaTraining>;
+  ARENA_NEURAL_CORPUS_TOKEN?: string;
 }
 
 const statsStore = (env: Env) => env.STATS.get(env.STATS.idFromName('stats'));
@@ -49,7 +50,9 @@ export default {
     if (url.pathname === '/' || url.pathname === '/health') {
       return new Response('Parhelion Arena server OK', { headers: CORS });
     }
-    if (url.pathname === '/training' || url.pathname === '/training/status') return trainingRequest(req, env.TRAINING);
+    if (url.pathname === '/training' || url.pathname === '/training/status' || url.pathname === '/training/exploration' || url.pathname === '/training/corpus' || url.pathname === '/training/neural') {
+      return trainingRequest(req, env.TRAINING, env.ARENA_NEURAL_CORPUS_TOKEN);
+    }
     if (url.pathname === '/stats') {
       if (req.method === 'OPTIONS') return new Response(null, { headers: { ...CORS, 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type' } });
       if (req.method === 'GET') {
@@ -141,10 +144,19 @@ export class ArenaRoomDO extends DurableObject<Env> {
     const pair = new WebSocketPair();
     const [client, ws] = [pair[0], pair[1]];
     ws.accept();
-    this.core ??= new RoomCore(opts, 'online');
+    if (!this.core) await this.ctx.blockConcurrencyWhile(async () => {
+      if (this.core) return;
+      if (!opts.bots) { this.core = new RoomCore(opts, 'online'); return; }
+      const trainer = trainingStore(this.env.TRAINING);
+      try {
+        const model = await trainer.botNeuralModel();
+        const exploration = model ? null : await trainer.botExplorationModel();
+        this.core = new RoomCore(opts, 'online', model ?? undefined, exploration ?? undefined);
+      } catch { this.core = new RoomCore(opts, 'online'); }
+    });
     const id = `p${++this.seq}-${crypto.randomUUID().slice(0, 6)}`;
     try {
-      const welcome = this.core.join(id, opts);
+      const welcome = this.core!.join(id, opts);
       this.sockets.set(id, ws);
       ws.send(JSON.stringify({ t: 'welcome', d: welcome }));
     } catch (e) {

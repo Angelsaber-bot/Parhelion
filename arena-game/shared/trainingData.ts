@@ -1,4 +1,5 @@
 import { HUMAN_FEATURES } from './humanCombat.ts';
+import { EXPLORATION_SCENE_SIZE, EXPLORATION_TICKS, newExplorationCheckpoint, trainExploration, type ExplorationCheckpoint, type ExplorationSample } from './exploration.ts';
 import { RULES_VERSION } from './protocol.ts';
 
 export const TRAINING_BATCH_TICKS = 240;
@@ -17,6 +18,7 @@ export interface TrainingBatch {
   map: string;
   rows: number[][];
   views: TrainingView[];
+  exploration?: ExplorationSample[];
 }
 
 const integer = (x: unknown, lo: number, hi: number): x is number => Number.isInteger(x) && (x as number) >= lo && (x as number) <= hi;
@@ -39,8 +41,19 @@ export function parseTrainingBatch(raw: unknown): TrainingBatch | null {
         !integer(view[1], 0, 1e9) || typeof view[2] !== 'string' || !/^[A-Za-z0-9+/]{192}$/.test(view[2])) return null;
     last = view[0];
   }
+  if (b.exploration !== undefined) {
+    if (!Array.isArray(b.exploration) || b.exploration.length > Math.ceil(b.rows.length / EXPLORATION_TICKS)) return null;
+    let previous = b.start - EXPLORATION_TICKS;
+    for (const sample of b.exploration) {
+      if (!Array.isArray(sample) || sample.length !== EXPLORATION_SCENE_SIZE + 1 ||
+          !integer(sample[0], previous + EXPLORATION_TICKS, b.start + b.rows.length - 1) ||
+          !sample.slice(1).every(n => Number.isFinite(n) && Math.abs(n) <= 1)) return null;
+      previous = sample[0];
+    }
+  }
   // Strip unknown fields before retaining any payload. New transports cannot smuggle chat or names.
-  return { version: b.version, rulesVersion: b.rulesVersion, capture: b.capture, sequence: b.sequence, start: b.start, map: b.map, rows: b.rows, views: b.views };
+  return { version: b.version, rulesVersion: b.rulesVersion, capture: b.capture, sequence: b.sequence, start: b.start, map: b.map, rows: b.rows, views: b.views,
+    ...(b.exploration ? { exploration: b.exploration } : {}) };
 }
 
 const outputs = 14;
@@ -51,6 +64,7 @@ export interface TrainingCheckpoint {
   heldOut: number;
   recentLoss: number | null;
   recentHoldoutLoss: number | null;
+  exploration?: ExplorationCheckpoint;
 }
 
 export const newTrainingCheckpoint = (): TrainingCheckpoint => ({
@@ -76,6 +90,7 @@ function viewFeatures(view: TrainingView | undefined): number[] {
 /** A small streaming imitation learner. Held-out recordings score it without updating weights. */
 export function trainArenaBatch(state: TrainingCheckpoint, batch: TrainingBatch): void {
   const heldOut = trainingHoldout(batch.capture);
+  if (batch.exploration?.length) trainExploration(state.exploration ??= newExplorationCheckpoint(), batch.rows, batch.exploration, batch.start, heldOut);
   let loss = 0;
   let latestView: TrainingView | undefined, cursor = 0;
   let visual = viewFeatures(undefined);

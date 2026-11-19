@@ -9,6 +9,7 @@ import { bilingual } from '../../shared-client/i18n.ts';
 import { DT, INTERP_TICKS, TICK_HZ, WEAPONS } from '../shared/content.ts';
 import { hiddenFromView } from './rendering/edictReveal.ts';
 import { humanObservation, type CombatContact } from '../shared/humanCombat.ts';
+import { explorationScene } from '../shared/exploration.ts';
 import { rayPlayer, rayShield } from '../shared/hit.ts';
 import { tacticalArea, raycastMap, lineOfSight, type ArenaMap, type Vec3 } from '../shared/map.ts';
 import { type NetEvent, type PlayerSnap, type Snapshot } from '../shared/match.ts';
@@ -108,6 +109,8 @@ export class Game {
   private onSnapshot(s: Snapshot) {
     if (!this.running || (this.latest && s.tick <= this.latest.tick)) return;
     const previousPhase = this.latest?.phase;
+    if (s.phase === 'live' && previousPhase !== 'live') this.humanDemo?.beginRound();
+    if (s.phase === 'ended' && previousPhase !== 'ended') this.humanDemo?.pause();
     if ((previousPhase === 'ended' && s.phase !== 'ended') || (s.phase === 'live' && previousPhase !== 'live')) {
       const wasEnded = this.ended;
       this.pending = []; this.outbox = []; this.snaps = []; this.remotes = []; this.sentAt.clear(); this.rtt = 0;
@@ -393,7 +396,8 @@ export class Game {
       return !frame.shields.some(s => rayShield(from, ray, s.x, s.y, s.z, s.yaw) < distance);
     };
     const { fov, aspect } = this.scene.camera;
-    demo.record(me, input, previous => humanObservation(this.map, me, contacts, canSee, previous, fov * Math.PI / 180, aspect));
+    demo.record(me, input, previous => humanObservation(this.map, me, contacts, canSee, previous, fov * Math.PI / 180, aspect),
+      lastContact => explorationScene(this.map, me, lastContact));
   }
 
   /** Latest authoritative enemy positions, so a predicted melee lunge stops where the server's does. */

@@ -93,6 +93,32 @@ Arena Worker 在独立的 Durable Object 中排队、增量训练，并保存模
 
 本机执行 `npm run worker:train --prefix arena-game` 启动训练服务。通过 localhost 打开的 Arena 会把已授权的录制发到本机 Worker，数据和模型重启后可继续使用。
 
+搜索模型从真人没有看见敌人的片段学习。每个片段配对连续视角和移动输入、玩家朝向、近处几何以及上次实际看到敌人的方向。`/training/status` 的 `exploration` 显示训练及留出片段数和角度误差（弧度，`stillYawError` 为视角不动的参考误差）。旧版批次仍能训练原模型，新版开始提供搜索模型所需的场景特征。
+
+Arena 使用一个 Bot 难度。新对局自动载入已发布的神经网络模型；积累足够留出样本并通过误差检查的搜索模型作为后备，由它控制接敌前的视角和移动。基础 Bot 策略在模型准备期间提供对战。
+
+### Arena 神经网络训练
+
+Arena 的 PyTorch Transformer 用最近 8 个观测窗预测下一段视角、移动、7 个动作按键和武器槽位。每窗间隔 12 个输入步。训练窗覆盖未发现敌人、丢失目标和交战，观测包含视野内目标、附近地图几何、角色状态和上次目击方向。模型按完整录制切分训练和留出集。它能使用 CPU、Apple MPS 或 CUDA。浏览器使用同一套权重进行推理，所有输入仍由原游戏物理裁决。
+
+从仓库根目录运行以下命令，可用独立的 Python 环境安装训练依赖：
+
+```bash
+python3 -m venv arena-game/.scratch/neural/.venv
+arena-game/.scratch/neural/.venv/bin/python -m pip install 'torch>=2.5,<3'
+```
+
+在两个终端分别启动本机采集和训练：
+
+```bash
+ARENA_NEURAL_CORPUS=1 npm run worker:train --prefix arena-game
+npm run train:neural --prefix arena-game -- --watch
+```
+
+在 Arena 大厅勾选「自动贡献对局训练数据」，开始至少两局。「再来一局」也会新建独立录制。获授权的本机批次进入 `arena-game/.scratch/training/corpus`。公网批次先进 Arena Worker 的私有队列，最多保留 4,096 批和 30 天。操作者可用 `npm run train:neural --prefix arena-game -- --watch --public` 从公网拉取数据，持久化后才确认取走。公网模式从 `.scratch/neural/public.token` 读取专用令牌。训练完成会生成 `.scratch/neural/candidate.json`、`metrics.json`、`simulation.json` 和 `checkpoint.pt`。公网只接收通过真人留出评估和模拟对照阈值的权重。合成测试权重专用于验证。
+
+本机进度见 `/__parhelion/arena-neural/status`，公网进度见 Arena Worker 的 `/training/status`。`npm run eval:neural --prefix arena-game -- /path/to/model.json` 可单独重跑模拟对照。要自定义模型尺寸或继续训练检查点，可运行虚拟环境的 `python arena-game/tools/train-arena-policy.py --help`。
+
 ## 武器外观 / 开镜 / 下蹲 / 设置（本地源码集成）
 
 - Lumen AR → 曙光、Corona SG → 余辉、Halo DMR → 子午线；保留已有武器名称、皮肤选项和全部枪械数值。

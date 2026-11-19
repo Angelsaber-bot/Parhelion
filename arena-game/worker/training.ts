@@ -1,6 +1,8 @@
 import { DurableObject } from 'cloudflare:workers';
 import { MAX_TRAINING_BODY, newTrainingCheckpoint, parseTrainingBatch, trainArenaBatch, type TrainingBatch, type TrainingCheckpoint } from '../shared/trainingData.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
+import { parseExplorationModel } from '../shared/exploration.ts';
+import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import type { Env } from './index.ts';
 import { makeSelfPlayBatch } from './trainingSelfPlay.ts';
 
@@ -8,25 +10,70 @@ const QUEUE_LIMIT = 96;
 const BATCHES_PER_ALARM = 8;
 const DEDUP_WINDOW = 24 * 60 * 60 * 1000;
 const SELF_PLAY_INTERVAL = 5 * 60 * 1000;
+const CORPUS_LIMIT = 4096;
+const CORPUS_RETENTION = 30 * DEDUP_WINDOW;
+const CORPUS_READ_LIMIT = 8;
+const MAX_MODEL_BODY = 12 * 1024 ** 2;
+const MODEL_CHUNK = 240 * 1024;
+const PUBLIC_ORIGIN = 'https://parhelion-game.pages.dev';
+const PUBLIC_TRAINER = 'parhelion-arena.lejiazhang-us.workers.dev';
+
+const loopback = (hostname: string) => hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+function localOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  try {
+    const url = new URL(origin);
+    return loopback(url.hostname) && (url.protocol === 'http:' || url.protocol === 'https:');
+  } catch { return false; }
+}
 
 /** The trainer owns its storage and CPU budget, separate from live rooms. */
 export class ArenaTraining extends DurableObject<Env> {
+  private currentModel: NeuralPolicyModel | null | undefined;
+
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS batches (id TEXT PRIMARY KEY, at INTEGER NOT NULL, payload TEXT)');
     ctx.storage.sql.exec('CREATE INDEX IF NOT EXISTS pending_batches ON batches(at) WHERE payload IS NOT NULL');
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS checkpoint (id INTEGER PRIMARY KEY, model TEXT NOT NULL, interval INTEGER NOT NULL DEFAULT 0)');
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS neural_model (part INTEGER PRIMARY KEY, body TEXT NOT NULL)');
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS neural_release (id INTEGER PRIMARY KEY, digest TEXT NOT NULL, at INTEGER NOT NULL)');
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS corpus (id INTEGER PRIMARY KEY AUTOINCREMENT, batch TEXT NOT NULL UNIQUE, at INTEGER NOT NULL, payload TEXT NOT NULL)');
   }
 
-  async enqueue(batch: TrainingBatch): Promise<boolean> {
+  async enqueue(batch: TrainingBatch, retain = false): Promise<boolean> {
     const sql = this.ctx.storage.sql;
     const id = `${batch.capture}:${batch.sequence}`;
     if (!sql.exec('SELECT 1 FROM batches WHERE id = ?', id).toArray().length) {
       if (this.pending() >= QUEUE_LIMIT) return false;
-      sql.exec('INSERT INTO batches (id, at, payload) VALUES (?, ?, ?)', id, Date.now(), JSON.stringify(batch));
+      const now = Date.now(), payload = JSON.stringify(batch);
+      this.ctx.storage.transactionSync(() => {
+        sql.exec('INSERT INTO batches (id, at, payload) VALUES (?, ?, ?)', id, now, payload);
+        if (retain && batch.exploration?.length) {
+          sql.exec('INSERT OR IGNORE INTO corpus (batch, at, payload) VALUES (?, ?, ?)', id, now, payload);
+          this.pruneCorpus(now);
+        }
+      });
     }
     if (this.pending() && await this.ctx.storage.getAlarm() === null) await this.ctx.storage.setAlarm(Date.now() + 3000);
     return true;
+  }
+
+  private pruneCorpus(now: number) {
+    const sql = this.ctx.storage.sql;
+    sql.exec('DELETE FROM corpus WHERE at < ?', now - CORPUS_RETENTION);
+    sql.exec('DELETE FROM corpus WHERE id IN (SELECT id FROM corpus ORDER BY id DESC LIMIT -1 OFFSET ?)', CORPUS_LIMIT);
+  }
+
+  async corpusRows() {
+    if (!this.env.ARENA_NEURAL_CORPUS_TOKEN) return [];
+    this.pruneCorpus(Date.now());
+    return this.ctx.storage.sql.exec<{ id: number; payload: string }>('SELECT id,payload FROM corpus ORDER BY id LIMIT ?', CORPUS_READ_LIMIT).toArray()
+      .map(({ id, payload }) => ({ id, batch: JSON.parse(payload) as TrainingBatch }));
+  }
+
+  async acknowledgeCorpus(through: number) {
+    if (this.env.ARENA_NEURAL_CORPUS_TOKEN) this.ctx.storage.sql.exec('DELETE FROM corpus WHERE id <= ?', through);
   }
 
   async alarm(): Promise<void> {
@@ -65,27 +112,86 @@ export class ArenaTraining extends DurableObject<Env> {
     sql.exec('INSERT OR REPLACE INTO checkpoint (id, model, interval) VALUES (2, ?, ?)', JSON.stringify(model), interval);
   }
 
-  async status() {
-    const { trained, heldOut, recentLoss, recentHoldoutLoss } = this.checkpoint();
-    return { queuedBatches: this.pending(), trainedTicks: trained, holdoutTicks: heldOut, recentLoss, recentHoldoutLoss,
-      selfPlayTicks: this.checkpoint(2).trained, shadow: true };
+  async status(rulesVersion = RULES_VERSION, collecting = false) {
+    const { trained, heldOut, recentLoss, recentHoldoutLoss, exploration } = this.checkpoint();
+    const neural = this.release();
+    const corpus = this.ctx.storage.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM corpus').one().n;
+    return { rulesVersion, queuedBatches: this.pending(), trainedTicks: trained, holdoutTicks: heldOut, recentLoss, recentHoldoutLoss,
+      selfPlayTicks: this.checkpoint(2).trained, shadow: !neural, neural, pendingNeuralBatches: corpus, neuralCollection: collecting,
+      neuralExportConfigured: !!this.env.ARENA_NEURAL_CORPUS_TOKEN, exploration: {
+        trainedWindows: exploration?.trained ?? 0, holdoutWindows: exploration?.heldOut ?? 0,
+        yawError: exploration?.heldOut ? exploration.yawError / exploration.heldOut : null,
+        stillYawError: exploration?.heldOut ? exploration.stillYawError / exploration.heldOut : null,
+      } };
+  }
+
+  async explorationModel() {
+    return parseExplorationModel(this.checkpoint().exploration) ?? null;
+  }
+
+  async botExplorationModel() {
+    const state = this.checkpoint().exploration;
+    return state && state.heldOut >= 240 && state.yawError < state.stillYawError ? parseExplorationModel(state) ?? null : null;
+  }
+
+  private release() {
+    return this.ctx.storage.sql.exec<{ digest: string; at: number }>('SELECT digest, at FROM neural_release WHERE id=1').toArray()[0] ?? null;
+  }
+
+  private modelText() {
+    return this.ctx.storage.sql.exec<{ body: string }>('SELECT body FROM neural_model ORDER BY part').toArray().map(row => row.body).join('');
+  }
+
+  async botNeuralModel(): Promise<NeuralPolicyModel | null> {
+    if (this.currentModel !== undefined) return this.currentModel;
+    const body = this.modelText();
+    return this.currentModel = body ? parseNeuralPolicy(JSON.parse(body)) ?? null : null;
+  }
+
+  async fetch(req: Request): Promise<Response> {
+    const release = this.release();
+    if (req.method === 'GET') {
+      if (!release) return new Response(null, { status: 404 });
+      const etag = `"${release.digest}"`;
+      const headers = { 'content-type': 'application/json', 'cache-control': 'public, max-age=120', etag };
+      return req.headers.get('if-none-match') === etag ? new Response(null, { status: 304, headers }) : new Response(this.modelText(), { headers });
+    }
+    if (req.method !== 'PUT') return new Response(null, { status: 405 });
+    const body = await readText(req, MAX_MODEL_BODY);
+    if (typeof body !== 'string') return new Response(null, { status: body === false ? 413 : 400 });
+    let model: NeuralPolicyModel | undefined;
+    try { model = parseNeuralPolicy(JSON.parse(body)); } catch { /* rejected below */ }
+    if (!model || model.synthetic) return new Response(null, { status: 400 });
+    const weights = JSON.stringify(model);
+    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(weights));
+    const digest = Array.from(new Uint8Array(hash), n => n.toString(16).padStart(2, '0')).join('');
+    if (release?.digest === digest) return Response.json(release);
+    const sql = this.ctx.storage.sql;
+    const at = Date.now();
+    this.ctx.storage.transactionSync(() => {
+      sql.exec('DELETE FROM neural_model');
+      for (let start = 0; start < weights.length; start += MODEL_CHUNK) sql.exec('INSERT INTO neural_model VALUES (?, ?)', start, weights.slice(start, start + MODEL_CHUNK));
+      sql.exec('INSERT OR REPLACE INTO neural_release VALUES (1, ?, ?)', digest, at);
+    });
+    this.currentModel = model;
+    return Response.json({ digest, at });
   }
 }
 
-export function trainingStore(storage: DurableObjectNamespace<ArenaTraining>) {
-  return storage.get(storage.idFromName(`arena-v1-rules-${RULES_VERSION}`));
+export function trainingStore(storage: DurableObjectNamespace<ArenaTraining>, rulesVersion = RULES_VERSION) {
+  return storage.get(storage.idFromName(`arena-v1-rules-${rulesVersion}`));
 }
 
 function allowedOrigin(origin: string): boolean {
-  if (origin === 'https://parhelion-game.pages.dev') return true;
+  if (origin === PUBLIC_ORIGIN) return true;
   try {
     const url = new URL(origin);
     return /^https?:$/.test(url.protocol) && /^(localhost|127\.0\.0\.1|\[::1\]|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)$/.test(url.hostname);
   } catch { return false; }
 }
 
-async function readBatch(req: Request): Promise<TrainingBatch | null | 'oversize'> {
-  if (Number(req.headers.get('content-length')) > MAX_TRAINING_BODY) return 'oversize';
+async function readText(req: Request, limit: number): Promise<string | false | null> {
+  if (Number(req.headers.get('content-length')) > limit) return false;
   if (!req.body) return null;
   const reader = req.body.getReader(), decoder = new TextDecoder();
   let n = 0, body = '';
@@ -93,23 +199,53 @@ async function readBatch(req: Request): Promise<TrainingBatch | null | 'oversize
     const { value, done } = await reader.read();
     if (done) break;
     n += value.length;
-    if (n > MAX_TRAINING_BODY) { void reader.cancel().catch(() => {}); return 'oversize'; }
+    if (n > limit) { void reader.cancel().catch(() => {}); return false; }
     body += decoder.decode(value, { stream: true });
   }
-  try { return parseTrainingBatch(JSON.parse(body + decoder.decode())); } catch { return null; }
+  return body + decoder.decode();
 }
 
-export async function trainingRequest(req: Request, storage: DurableObjectNamespace<ArenaTraining>): Promise<Response> {
+export async function trainingRequest(req: Request, storage: DurableObjectNamespace<ArenaTraining>, corpusToken?: string): Promise<Response> {
+  const url = new URL(req.url);
   const origin = req.headers.get('origin');
+  const local = loopback(url.hostname);
+  const publicService = url.hostname === PUBLIC_TRAINER && url.protocol === 'https:';
+  const administrator = !origin && (local || publicService) && !!corpusToken && req.headers.get('authorization') === `Bearer ${corpusToken}`;
+  if (url.pathname === '/training/corpus') {
+    if (!administrator) return new Response(null, { status: 404 });
+    const object = trainingStore(storage);
+    if (req.method === 'GET') return Response.json({ records: await object.corpusRows() }, { headers: { 'cache-control': 'no-store' } });
+    const through = Number(url.searchParams.get('through'));
+    if (req.method !== 'DELETE') return new Response(null, { status: 405 });
+    if (!Number.isSafeInteger(through) || through < 1) return new Response(null, { status: 400 });
+    await object.acknowledgeCorpus(through);
+    return new Response(null, { status: 204 });
+  }
   const headers: HeadersInit = origin && allowedOrigin(origin) ? { 'access-control-allow-origin': origin, vary: 'origin' } : {};
   if ((origin && !allowedOrigin(origin)) || (req.method === 'POST' && !origin)) return new Response(null, { status: 403 });
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...headers, 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type' } });
   const object = trainingStore(storage);
-  const pathname = new URL(req.url).pathname;
-  if (pathname === '/training/status' && req.method === 'GET') return Response.json(await object.status(), { headers: { ...headers, 'cache-control': 'no-store' } });
+  const pathname = url.pathname;
+  if (pathname === '/training/neural') {
+    if (req.method !== 'GET' && !(req.method === 'PUT' && administrator)) return new Response(null, { status: 404 });
+    const response = await object.fetch(req);
+    const output = new Headers(response.headers);
+    for (const [name, value] of Object.entries(headers)) output.set(name, value);
+    return new Response(response.body, { status: response.status, headers: output });
+  }
+  if (pathname === '/training/status' && req.method === 'GET') {
+    const version = url.searchParams.has('rules') ? Number(url.searchParams.get('rules')) : RULES_VERSION;
+    if (!Number.isInteger(version) || version < 41 || version > RULES_VERSION) return new Response(null, { status: 404, headers });
+    const selected = version === RULES_VERSION ? object : trainingStore(storage, version);
+    return Response.json(await selected.status(version, version === RULES_VERSION && (publicService || (local && !!corpusToken))), { headers: { ...headers, 'cache-control': 'no-store' } });
+  }
+  if (pathname === '/training/exploration' && req.method === 'GET') return Response.json(await (url.searchParams.has('active') ? object.botExplorationModel() : object.explorationModel()), { headers: { ...headers, 'cache-control': 'no-store' } });
   if (pathname !== '/training' || req.method !== 'POST') return new Response(null, { status: 405, headers });
-  const result = await readBatch(req);
-  if (result === 'oversize') return new Response(null, { status: 413, headers });
+  const body = await readText(req, MAX_TRAINING_BODY);
+  if (body === false) return new Response(null, { status: 413, headers });
+  let result: TrainingBatch | null = null;
+  try { if (body) result = parseTrainingBatch(JSON.parse(body)); } catch { /* invalid JSON */ }
   if (!result) return new Response(null, { status: 400, headers });
-  return new Response(null, { status: await object.enqueue(result) ? 202 : 429, headers });
+  const retain = (publicService && origin === PUBLIC_ORIGIN) || (!!corpusToken && local && localOrigin(origin));
+  return new Response(null, { status: await object.enqueue(result, retain) ? 202 : 429, headers });
 }
