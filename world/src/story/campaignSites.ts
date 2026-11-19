@@ -4,6 +4,7 @@
  */
 import * as THREE from 'three';
 import { mergeParts } from '../settlements/merge';
+import { fieldPropParts, timberSlab } from '../environment/fieldPropArt';
 import type { RegionId, SettlementPlacement, PlacedNpcSocket, Localized } from '../settlements/types';
 import type { Marker } from '../core/types';
 import { settlementPoint, settlementMatrix } from '../settlements/frame';
@@ -28,6 +29,7 @@ type Layer = 'ground' | 'body' | 'metal' | 'glow' | 'briefed' | 'choiceA' | 'cho
 const cube = new THREE.BoxGeometry(1, 1, 1);
 const cylinder = new THREE.CylinderGeometry(1, 1, 1, 10);
 /** Colours are per vertex, allowing richly differentiated props without a material per colour. */
+const SITE_ART_AUDIT = !!(import.meta as { env?: { DEV?: boolean } }).env?.DEV;
 export class SiteArt {
   readonly root = new THREE.Group();
   readonly solids: THREE.BufferGeometry[] = [];
@@ -48,8 +50,24 @@ export class SiteArt {
     if (!part.attributes.uv) part.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(part.attributes.position.count * 2), 2));
     const bin = this.bins.get(layer) ?? []; bin.push(part); this.bins.set(layer, bin);
     if (solid) this.solids.push(new THREE.BufferGeometry().setAttribute('position', part.attributes.position.clone()));
+    // Dev-only part boxes for the floating-piece audit (see validation/site-art-support notes in DEVELOPMENT.md).
+    if (SITE_ART_AUDIT) { part.computeBoundingBox(); (this.auditParts ??= []).push(part.boundingBox!.clone()); }
   }
-  box(p: V3, size: V3, color: string, solid = false, layer: Layer = 'body', rotation: V3 = [0, 0, 0]) { this.add(cube, color, p, size, solid, layer, rotation); }
+  private auditParts?: THREE.Box3[];
+  box(p: V3, size: V3, color: string, solid = false, layer: Layer = 'body', rotation: V3 = [0, 0, 0]) {
+    // Large plain timber slabs (decks, shutters, bridge spans) render as boards with end posts and battens;
+    // collision keeps the single block. They used to read as unfinished grey-brown boxes across every realm.
+    if (layer === 'body' && timberSlab(size, color)) {
+      if (solid) { const block = cube.clone().applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(...p), new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation)), new THREE.Vector3(...size))); this.solids.push(new THREE.BufferGeometry().setAttribute('position', block.attributes.position.clone())); block.dispose(); }
+      const turn = new THREE.Euler(...rotation), offset = new THREE.Vector3(), trim = '#' + new THREE.Color(color).multiplyScalar(.62).getHexString();
+      for (const part of fieldPropParts(size)) {
+        offset.set(...part.at).applyEuler(turn);
+        this.add(cube, part.layer === 0 ? color : part.layer === 1 ? trim : '#3a3631', [p[0] + offset.x, p[1] + offset.y, p[2] + offset.z], part.size, false, part.layer === 2 ? 'metal' : 'body', rotation);
+      }
+      return;
+    }
+    this.add(cube, color, p, size, solid, layer, rotation);
+  }
   cyl(p: V3, r: number, h: number, color: string, solid = false, layer: Layer = 'body', rotation: V3 = [0, 0, 0]) { this.add(cylinder, color, p, [r, h, r], solid, layer, rotation); }
   beam(a: V3, b: V3, w: number, color: string, solid = false, layer: Layer = 'body') {
     const from = new THREE.Vector3(...a), to = new THREE.Vector3(...b), d = to.clone().sub(from);
@@ -84,6 +102,7 @@ export class SiteArt {
   }
   finish(region: RegionId) {
     this.root.name = `CampaignSite_${region}`;
+    if (this.auditParts) { this.root.userData.siteArtParts = this.auditParts; this.root.userData.siteArtRegion = region; }
     for(const [layer,parts] of this.bins){
       const geometry=mergeParts(parts);for(const part of parts)part.dispose();
       const material=layer==='metal'?this.materials.metal:layer==='glow'?this.materials.glow:this.materials.body;

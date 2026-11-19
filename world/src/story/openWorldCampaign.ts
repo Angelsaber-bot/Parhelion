@@ -1,4 +1,6 @@
 import {gateGuide} from './kingdomGate';
+import {fieldChapterGuide} from './fieldChapters';
+import {KINGDOM_K04} from './kingdomBackPassage';
 import { FLAGSHIP_WORKS as F, flagshipBridgeLowered } from './flagshipWorks';
 import { KYOTO_STREET as K, kyotoStreetReady } from './kyotoStreetWorks';
 import {kingdomWorksEnded,kingdomWorksNext} from './kingdomWorks';
@@ -69,6 +71,9 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
   const works=kingdomWorksNext(done);if(works)return at(region,title,works.text,works.id);
   if(done.has('sun_core'))return null;
   if(!done.has('saber_contract'))return at(region,title,['在圣剑湖与 Saber 正式契约。','Make your pact with Saber at Sword Lake.'],'saber_contract');
+  // K01–K04 are this chapter's own steps. The HUD inside the kingdom already followed them while this guide
+  // (shown from the Valley and on the map) still pointed at the gate, so the two disagreed at the border.
+  const field=fieldChapterGuide(KINGDOM_K04.set,done);if(field)return at(region,title,field.label,field.id);
   const gate=gateGuide(done);if(gate)return at(region,title,gate.text,gate.targetId);
   if(!done.has('hall_brazier_1')){return at(region,title,['归人已经到家。到圆桌大厅点燃第一盏誓火，确认封锁命令的源头。','The residents are home. Light the first Round Table hearth and trace the blockade orders.'],'hall_brazier_1');}
   return at(region,title,['到卡姆兰挑战空位之王，终止仍在征召的命令。','Challenge the Vacant King at Camlann and end the repeated summons.'],'sun_core');

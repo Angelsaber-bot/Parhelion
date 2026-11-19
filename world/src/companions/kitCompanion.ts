@@ -5,7 +5,7 @@ import type { Collider } from '../player/player';
 import { validSkillPose, type SkillPoseCommand } from '../combat/skillPose';
 import { MountedCharge } from './mountedCharge';
 import { CompanionNavigation } from './companionNavigation';
-import { CompanionFollow } from './companionFollow';
+import { CompanionFollow, PursuitMemory } from './companionFollow';
 import { COMPANION_MOTION, companionGait, turnCompanion } from '../characters/companionMotion';
 
 type Target = { id: string; position: THREE.Vector3 } | null;
@@ -18,7 +18,7 @@ export interface KitCompanionOptions {
   target: (position: THREE.Vector3, range: number, targetId?: string) => Target;
   strike: (position: THREE.Vector3, range: number, damage: number, targetId: string) => Target;
   /** Enemy to go after (lock-on radius around the player); null keeps the follow slot. */
-  engage?: (player: THREE.Vector3, from?: THREE.Vector3) => Target;
+  engage?: (player: THREE.Vector3, from?: THREE.Vector3, skip?: (id: string) => boolean) => Target;
   track?: (position: THREE.Vector3, range: number, targetId: string) => Target;
   onRejoin?: () => void;
   /** Default remains the story companion's left slot; optional models can use the right. */
@@ -36,6 +36,7 @@ export class KitCompanion {
   private activeLast = false;
   private navigation: CompanionNavigation;
   private follow = new CompanionFollow();
+  private pursuit = new PursuitMemory();
   private attackAge = 0;
   private separatedFor = 0;
   private pursuing = false;
@@ -163,7 +164,10 @@ export class KitCompanion {
     this.rejoinRetry=Math.max(0,this.rejoinRetry-dt);
     if(this.rejoinPlayer.distanceToSquared(player)>4){this.rejoinRetry=0;this.rejoinPlayer.copy(player);}
     let separation=root.position.distanceTo(player);
-    this.follow.update(separation,player,dt);
+    // A committed attack tracks its own target; no engagement rescan until it ends.
+    const committed=actor.state==='attack'&&this.attackTarget!==null;
+    const candidate=committed ? null : this.options.engage?.(player,root.position,this.options.range>5?undefined:this.pursuit.skip) ?? null;
+    this.follow.update(separation,player,dt,!!candidate||(actor.state==='attack'&&this.attackTarget!==null));
     if(this.follow.prioritizePlayer && (this.attackTarget || this.pursuing)){
       actor.play(actor.definition.defaultState);this.attackTarget=null;this.pursuing=false;this.navigation.reset();
     }
@@ -191,8 +195,9 @@ export class KitCompanion {
     this.attackTarget=null;
     const side = this.options.followSide ?? 1;
     const destination = player.clone().add(new THREE.Vector3(-Math.cos(yaw)*2.4*side-Math.sin(yaw)*.8,0,Math.sin(yaw)*2.4*side-Math.cos(yaw)*.8));
-    const prey=this.follow.prioritizePlayer ? null : this.options.engage?.(player,root.position);
+    const prey=this.follow.prioritizePlayer ? null : candidate;
     this.pursuing=!!prey;
+    if(this.options.range<=5)this.pursuit.update(dt,prey?.id ?? null,prey?Math.hypot(prey.position.x-root.position.x,prey.position.z-root.position.z):Infinity,this.navigation.stuckSeconds);
     if(prey && separation<24) destination.copy(prey.position).add(root.position.clone().sub(prey.position).setY(0).normalize().multiplyScalar(this.options.range>5?this.options.range*.65:1));
     const frameYaw=root.rotation.y;
     const normalSpeed=Math.min(6,(actor.definition.clips.run?.nominalSpeed??2)*COMPANION_MOTION.maxRate);

@@ -1,5 +1,6 @@
 import type { FieldAction, FieldChapterContent } from './fieldChapters';
 import { adventureActive } from './openWorldCampaign';
+import { dramaBriefed } from './journeyDrama';
 import { WINTER_WITHDRAWAL, winterWithdrawalReady } from './winterWithdrawal';
 
 /** Winter W01–W05 and the W08 handover: the true light, the battery, a warm room, the empty arch,
@@ -13,7 +14,7 @@ export const WC = {
   key: 'w08_key', pole: 'w08_pole',
 } as const;
 const W = WC;
-const before = (d: ReadonlySet<string>) => adventureActive(d) && !d.has('winter_core') && !d.has('napoleon_contract');
+const before = (d: ReadonlySet<string>) => adventureActive(d) && !d.has('winter_core') && !d.has('napoleon_contract') && dramaBriefed('winter', d, [W.lights, W.w01]);
 const after = (d: ReadonlySet<string>) => adventureActive(d) && d.has('winter_core');
 const a = (chapter: string, x: Omit<FieldAction, 'region' | 'chapter'>): FieldAction => ({ region: 'winter', chapter, gate: before, ...x });
 export const WINTER_CHAPTER_ACTIONS: readonly FieldAction[] = [

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { Marker } from '../core/types';
 import type { FieldChapterContent } from '../story/fieldChapters';
 import { createSettlementNpcs } from '../settlements/npcs';
+import { buildFieldProp, supportPosts } from './fieldPropArt';
 
 type P = [number, number, number];
 /** Standing points come from existing layout markers, then a short search for supported, clear ground. */
@@ -35,12 +36,24 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
   const PALETTE: Record<string, [number, number, number]> = { britain: [0x8e8a82, .22, .88], winter: [0xb8d0e0, .28, .7], blacksail: [0x4f6b66, .25, .9],
     kyoto: [0xa8452f, .18, .6], egypt: [0xd8b98a, .25, .85], orleans: [0x9a8566, .18, .86], qin: [0x8c7356, .25, .92], alpha: [0xe0dccf, .1, .78] };
   const modelMaterials: THREE.Material[] = [], animated: THREE.Object3D[] = []; let clock = 0;
-  function box(size: readonly number[], color: number, region = 'alpha') {
-    const g = new THREE.BoxGeometry(size[0], size[1], size[2]); geo.add(g);
-    const [tint, amount, roughness] = PALETTE[region] ?? PALETTE.alpha, key = `${color}:${region}`;
-    let m = mat.get(key); if (!m) { m = new THREE.MeshStandardMaterial({ color: new THREE.Color(color).lerp(new THREE.Color(tint), amount), roughness }); mat.set(key, m); }
-    const mesh = new THREE.Mesh(g, m); mesh.castShadow = true; mesh.receiveShadow = true; root.add(mesh); return mesh;
+  function material(key: string, make: () => THREE.MeshStandardMaterial) { let m = mat.get(key); if (!m) { m = make(); mat.set(key, m); } return m; }
+  function palette(color: number, region: string) {
+    const [tint, amount, roughness] = PALETTE[region] ?? PALETTE.alpha, base = new THREE.Color(color).lerp(new THREE.Color(tint), amount);
+    return {
+      body: material(`${color}:${region}`, () => new THREE.MeshStandardMaterial({ color: base, roughness })),
+      trim: material(`${color}:${region}:trim`, () => new THREE.MeshStandardMaterial({ color: base.clone().multiplyScalar(.62), roughness: Math.min(1, roughness + .05) })),
+      iron: material(`iron:${region}`, () => new THREE.MeshStandardMaterial({ color: new THREE.Color(0x34322f).lerp(new THREE.Color(tint), .12), roughness: .5, metalness: .55 })),
+    };
   }
+  /** A built object of the prop's exact size (see fieldPropArt); a shot target gets an invisible box to hit. */
+  function crafted(size: readonly number[], color: number, region = 'alpha', shootable = false) {
+    const group = buildFieldProp(size, palette(color, region), geo); root.add(group);
+    let hit: THREE.Mesh | undefined;
+    if (shootable) { const g = new THREE.BoxGeometry(size[0], size[1], size[2]); geo.add(g); hit = new THREE.Mesh(g, hidden); hit.name = 'FieldPropHitBox'; group.add(hit); }
+    return { group, hit };
+  }
+  const hidden = new THREE.MeshBasicMaterial({ visible: false });
+  const posts: { prop: (typeof content)[number]['props'][number]; mesh: THREE.Object3D }[] = [];
   const props = content.flatMap(({ set, props: list }) => list.flatMap(prop => {
     const at = points.get(prop.at); if (!at) return [];
     let mesh: THREE.Object3D;
@@ -51,7 +64,15 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
       else model = prop.model === 'chaser' ? makeChaserShip(prop.size, geo, modelMaterials) : prop.model === 'pennant' ? makeRelayPennant(prop.size, geo, modelMaterials) : makeWavingStandard(prop.size, geo, modelMaterials);
       root.add(model); mesh = model; animated.push(model);
     }
-    else mesh = box(prop.size, prop.color, set.region);
+    else {
+      const built = crafted(prop.size, prop.color, set.region, !!prop.target); mesh = built.group; hitBox = built.hit;
+      // A prop left hanging in the air (a raised rack, a lifted gate) stands on two posts instead of floating.
+      if (!riders.has(prop.at)) for (const post of supportPosts(prop, at, ground)) {
+        const height = post.top - post.bottom, g = new THREE.BoxGeometry(.2, height, .2); geo.add(g);
+        const leg = new THREE.Mesh(g, palette(prop.color, set.region).trim); leg.castShadow = true; leg.receiveShadow = true;
+        leg.position.set(post.x, post.bottom + height / 2, post.z); leg.name = `FieldPropPost_${prop.at}`; root.add(leg); posts.push({ prop, mesh: leg });
+      }
+    }
     mesh.name = `FieldProp_${prop.at}`;
     // A modelled target is shot through its invisible hit box; the model hides with it.
     const shootable = hitBox ?? (mesh instanceof THREE.Mesh ? mesh : undefined);
@@ -80,6 +101,7 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
         if (prop.target) mesh.visible &&= !d.has(prop.target);
         if (hitBox) hitBox.visible = mesh.visible;
       }
+      for (const { prop, mesh } of posts) mesh.visible = prop.show ? prop.show(d) : true;
       for (const { actors: list } of content) for (const actor of list) {
         const where = actor.place(d), at = where && points.get(where[0]);
         if (!at) { actors.pose(actor.id, [0, -500, 0], 0); continue; }
@@ -111,6 +133,6 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
         mesh.rotation.set(r0[0] + (r1[0] - r0[0]) * k, r0[1] + (r1[1] - r0[1]) * k, r0[2] + (r1[2] - r0[2]) * k);
       }
     },
-    dispose() { actors.dispose(); geo.forEach(g => g.dispose()); mat.forEach(m => m.dispose()); modelMaterials.forEach(m => m.dispose()); root.removeFromParent(); },
+    dispose() { actors.dispose(); geo.forEach(g => g.dispose()); mat.forEach(m => m.dispose()); modelMaterials.forEach(m => m.dispose()); hidden.dispose(); root.removeFromParent(); },
   };
 }

@@ -73,16 +73,14 @@ export class CompanionNavigation {
     this.ray.origin.copy(from);this.ray.direction.copy(to).sub(from);const length=this.ray.direction.length();
     if(length<1e-6)return true;this.ray.direction.divideScalar(length);return !this.hit(Math.max(0,length-.05));
   }
-  /** Capsule-width sweep approximated by parallel body rays, followed by local floor sampling. */
+  /** Local floor sampling, then a capsule-width sweep approximated by parallel body rays.
+   * The body rays run parallel to the sampled ground (start floor to end floor). They used to be level, so on
+   * any uphill grade above about 6° the low ray met the slope itself and every step uphill read as a wall: a
+   * companion stood below a fight on a hillside and never reached the enemies above it. */
   path(from:THREE.Vector3,to:THREE.Vector3):boolean {
     const dx=to.x-from.x,dz=to.z-from.z,length=Math.hypot(dx,dz);
     if(length<1e-6)return true;
     const ux=dx/length,uz=dz/length;
-    this.ray.direction.set(ux,0,uz);
-    for(const height of HEIGHTS) for(const side of BODY_SIDES) {
-      this.ray.origin.set(from.x-uz*side,from.y+height,from.z+ux*side);
-      if(this.hit(length+.36))return false;
-    }
     // A clear horizontal ray alone must never let an actor cross a pit or a tall step.
     let y=from.y;
     const samples=Math.max(1,Math.ceil(length/.5));
@@ -95,6 +93,12 @@ export class CompanionNavigation {
       this.ray.direction.set(0,1,0);
       if(this.hit(1.65))return false;
       y=ground;
+    }
+    const rise=y-from.y,run=length+.36,span=Math.hypot(run,rise*run/length);
+    this.ray.direction.set(ux*run,rise*run/length,uz*run).divideScalar(span);
+    for(const height of HEIGHTS) for(const side of BODY_SIDES) {
+      this.ray.origin.set(from.x-uz*side,from.y+height,from.z+ux*side);
+      if(this.hit(span))return false;
     }
     return true;
   }

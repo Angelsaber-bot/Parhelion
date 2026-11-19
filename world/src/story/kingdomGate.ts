@@ -62,7 +62,7 @@ export function createKingdomGateRuntime(h:GateHooks){
    const next=Math.min(1,escort+Math.min(Math.max(frame.dt,0),.05)/16);
    if(!Number.isFinite(next)||!advance(next))return;
    escort=next;
-   if(escort>=1){commit(KINGDOM_GATE.rescued);if(h.encounter()===KINGDOM_GATE.encounter)h.cancel();h.toast(['居民已穿门抵达，归人补给点亮灯。下一站：圆桌大厅第一盏誓火。','The residents arrive through the gate; the supply lamp is lit. Next: the first oath hearth in the Round Table Hall.']);}
+   if(escort>=1){commit(KINGDOM_GATE.rescued);if(h.encounter()===KINGDOM_GATE.encounter)h.cancel();h.toast(['居民已穿门抵达，归人补给点亮灯。','The residents arrive through the gate; the supply lamp is lit.']);}
   },
   interrupt(){channel.reset(h.damage());channeling=false;},
   reset(){this.interrupt();escort=0;},

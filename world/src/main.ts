@@ -1818,7 +1818,7 @@ const servant = new ContractServant({ scene, renderer, marker: markers.get('sabe
   target: (position, targetId?: string) => { const hit = combat.allyTarget(position, 3.5, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
   track: (position, targetId) => { const hit = combat.allyTrack(position, 3.5, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
   strike: (position, targetId) => { const hit = combat.allyStrike(position, 3.5, 14, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
-  engage: (_player, from) => { const hit = combat.allyEngage(15, from); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+  engage: (_player, from, skip) => { const hit = combat.allyEngage(15, from, skip); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
 });
 // Era servants are visual/animation actors attached to their existing quest
 // markers. They lazy-load only near the marker, share the normal scene
@@ -1828,7 +1828,7 @@ const companion = (range: number, damage: number, kind: 'melee' | 'ranged' = 'me
   target: (position, r, targetId) => { const hit = combat.allyTarget(position, r, targetId, kind); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
   track: (position, r, targetId) => { const hit = combat.allyTrack(position, r, targetId, kind); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
   strike: (position, r, dmg, targetId) => { const hit = combat.allyStrike(position, r, dmg, targetId, kind); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
-  engage: (_player, from) => { const hit = combat.allyEngage(15, from); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+  engage: (_player, from, skip) => { const hit = combat.allyEngage(15, from, skip); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
 });
 const eraActors: Array<{ markerId: string; servant: ServantId; kit: keyof typeof CHARACTER_KITS; follow: KitCompanion; actor?: CharacterKit; loading?: Promise<void>; error?: unknown; retryAt: number; failures: number; controller?: AbortController; lastNeeded?: number }> = [
   { markerId: 'blackbeard_meet', servant: 'blackbeard', kit: 'blackbeard', follow: companion(12, 12, 'ranged'), retryAt: 0, failures: 0 },
@@ -1935,7 +1935,7 @@ const modelCompanion = new ModelCompanion({ scene, colliders, environment: serva
     target: (position, range, targetId) => { const hit = combat.allyTarget(position, range, targetId, 'melee'); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x, hit.p.y, hit.p.z) } : null; },
     track: (position, range, targetId) => { const hit = combat.allyTrack(position, range, targetId, 'melee'); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x, hit.p.y, hit.p.z) } : null; },
     strike: (position, range, damage, targetId) => { const hit = combat.allyStrike(position, range, damage, targetId, 'melee'); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x, hit.p.y, hit.p.z) } : null; },
-    engage: (_player, from) => { const hit = combat.allyEngage(15, from); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x, hit.p.y, hit.p.z) } : null; },
+    engage: (_player, from, skip) => { const hit = combat.allyEngage(15, from, skip); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x, hit.p.y, hit.p.z) } : null; },
   },
 });
 const servantPanel = createServantPanel(servant, contract, () => { abortUltimate(); clearInput(); if (document.pointerLockElement) document.exitPointerLock(); }, modelCompanion);
@@ -5177,8 +5177,15 @@ function frame(now: number) {
   }
   if (ferry?.riding && gameplayActive()) interactionPrompt = bilingual('木舟航行中 · 靠岸后下船', 'Crossing Sword Lake · Disembark on arrival');
   if(orleansWorksRuntime?.active)interactionPrompt='';
+  // Many sites hold a story step, a resident errand and a side job within a few metres. The one the guide beacon
+  // stands on is marked as the story step; the rest read as optional, so "[F]" is never a guess.
+  const guideOnIt = !!interactionPrompt && gameplayActive() && !fortCannon.mounted && document.getElementById('guide')?.classList.contains('on') === true &&
+    (npcPrompt ? typeof guidedToNpc === 'function' && guidedToNpc(nearbyNpc!.position) : !!it && typeof guideBeam !== 'undefined' && Math.hypot(guideBeam.position.x - it.p[0], guideBeam.position.z - it.p[2]) < 1.6);
+  if (guideOnIt) interactionPrompt = `${bilingual('◆ 主线', '◆ Story')} · ${interactionPrompt}`;
+  else if (interactionPrompt && (npcPrompt || it) && document.getElementById('guide')?.classList.contains('on')) interactionPrompt = `${bilingual('可选', 'Optional')} · ${interactionPrompt}`;
   const prompt = $('prompt');
   if (prompt.textContent !== interactionPrompt) prompt.textContent = interactionPrompt;
+  prompt.classList.toggle('story-step', guideOnIt);
 
   const nowRegion = regionAt(player.pos.x, player.pos.z).id;
   if (nowRegion !== lastRegion) { lastRegion = nowRegion; renderObjective(); }

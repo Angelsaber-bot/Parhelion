@@ -29,7 +29,7 @@ export interface ModelCompanionOptions {
     target: (position: THREE.Vector3, range: number, targetId?: string) => { id: string; position: THREE.Vector3 } | null;
     track: (position: THREE.Vector3, range: number, targetId: string) => { id: string; position: THREE.Vector3 } | null;
     strike: (position: THREE.Vector3, range: number, damage: number, targetId: string) => { id: string; position: THREE.Vector3 } | null;
-    engage: (player: THREE.Vector3, from?: THREE.Vector3) => { id: string; position: THREE.Vector3 } | null;
+    engage: (player: THREE.Vector3, from?: THREE.Vector3, skip?: (id: string) => boolean) => { id: string; position: THREE.Vector3 } | null;
   };
 }
 

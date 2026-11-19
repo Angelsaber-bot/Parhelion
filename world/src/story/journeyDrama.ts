@@ -6,6 +6,9 @@ import { kingdomWorksEnded } from './kingdomWorks';
 /** New scenes augment the shipped rescue journey. They never manufacture combat,
  * transport, contract or resident-work completion. Old saves opt in explicitly. */
 export const JOURNEY_DRAMA={started:'journey_drama_v1',opening:'journey_opening',confession:'journey_confession',decision:'journey_watch_',brief:(r:RegionId)=>`journey_${r}_brief`,report:(r:RegionId)=>`journey_${r}_report`} as const;
+/** A region's own field chapters wait for its keeper's brief, so the local guide never runs past the person
+ * the chapter starts with. Runs that already began a chapter before this rule keep going (`started`). */
+export const dramaBriefed=(region:RegionId,done:ReadonlySet<string>,started:readonly string[]=[])=>!done.has(JOURNEY_DRAMA.started)||done.has(JOURNEY_DRAMA.brief(region))||started.some(flag=>done.has(flag));
 export const JOURNEY_CAST:Readonly<Record<RegionId,{npc:string;name:Localized;chapter:Localized;desire:Localized}>>={
  alpha:{npc:'alpha_signal_keeper',name:['岚','Lan'],chapter:['序章 · 有人在等回答','Prologue · Someone Is Waiting'],desire:['守住一个会有人回答的频道。','Keep a channel with someone listening.']},
  britain:{npc:'britain_oath_witness',name:['艾妲','Ada'],chapter:['第一章 · 迟到的名字','Chapter I · The Names That Arrived Late'],desire:['让回家的人拥有自己的名字。','Let the returners keep their own names.']},

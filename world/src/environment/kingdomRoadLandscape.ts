@@ -67,11 +67,16 @@ export function createKingdomRoadLandscape(ground: (x: number, z: number) => num
   // or anything placed at load (residents, chapter markers) can land on an invisible deck.
   frontCollider.enabled = false; front.root.visible = false;
   const gantry = new SiteArt();
+  // The slope falls away below the gate road (y 34), so each column and footing goes down to its own ground;
+  // they used to stop at 34 and hang about two metres above the grass until the cart bridge was built.
   for (const s of [-5, 5]) {
-    gantry.box(gatePoint(s, 15, 4.3), [.8, 8.6, .8], stone, true);
-    gantry.box(gatePoint(s, 15, .3), [1.6, .6, 1.6], stone, true);
+    const top = gatePoint(s, 15, 16.6), base = Math.min(34, (ground(top[0], top[2]) ?? 34)) - .25, height = top[1] - base;
+    gantry.box([top[0], base + height / 2, top[2]], [.8, height, .8], stone, true);
+    gantry.box([top[0], base + .55, top[2]], [1.6, .6, 1.6], stone, true);
   }
-  gantry.beam(gatePoint(-5, 15, 8.6), gatePoint(5, 15, 8.6), .5, wood);
+  // Tall enough to hold the stored 7.8 m shutter inside the frame (it used to sit above an 8.6 m beam).
+  gantry.beam(gatePoint(-5, 15, 16.6), gatePoint(5, 15, 16.6), .5, wood);
+  for (const s of [-5, 5]) gantry.beam(gatePoint(s, 15, 16.35), gatePoint(s * .55, 15, 16.35), .22, iron);
   finish(gantry, 'COL_KingdomOuterGateGantry', false);
   const gateMaterial = new THREE.MeshStandardMaterial({ color: wood, roughness: .9 });
   const outerGate = new THREE.Group(); outerGate.position.fromArray(gatePoint(0, 15, .22)); outerGate.rotation.y = Math.PI / 4; root.add(outerGate);
@@ -145,7 +150,7 @@ export function createKingdomRoadLandscape(ground: (x: number, z: number) => num
     const frontDone = completed && choice === 'front', sideDone = completed && choice === 'side';
     const open = choice === 'side'; hatch.root.visible = !open; hatchCollider.enabled = !open;
     front.root.visible = frontDone; frontCollider.enabled = frontDone;
-    outerGate.position.y = 34.22 + (frontDone ? 7 * (1 - t) : 7);
+    outerGate.position.y = 34.22 + (frontDone ? 8.4 * (1 - t) : 8.4);
     outerGate.rotation.x = frontDone ? Math.PI / 2 * t : 0;
     winch.root.visible = !frontDone; winchCollider.enabled = !frontDone;
     broken.root.visible = frontDone; brokenCollider.enabled = frontDone;

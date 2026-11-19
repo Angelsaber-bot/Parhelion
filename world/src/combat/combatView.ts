@@ -330,7 +330,8 @@ export class WorldCombat {
     let enemy: Enemy | undefined, nearest = Math.min(kind === 'ranged' ? 14 : 5, range);
     const from = { x: position.x, y: position.y + 1, z: position.z };
     for (const candidate of this.state.enemies) {
-      if (targetId && candidate.id !== targetId || !candidate.active || candidate.mode === 'dead' || candidate.pacified || Math.abs(candidate.p.y - position.y) >= 3) continue;
+      // A sword cannot reach a foe standing on a wall or ledge above; a gun can.
+      if (targetId && candidate.id !== targetId || !candidate.active || candidate.mode === 'dead' || candidate.pacified || Math.abs(candidate.p.y - position.y) >= (kind === 'ranged' ? 3 : 2.2)) continue;
       const distance = distanceXZ(candidate.p, position);
       if (distance >= nearest || !this.geometry.terrain.lineOfSight(from, { x: candidate.p.x, y: candidate.p.y + 1, z: candidate.p.z })) continue;
       nearest = distance; enemy = candidate;
@@ -342,12 +343,15 @@ export class WorldCombat {
     return this.allyCooldown > 0 ? null : this.allyTrack(position, range, targetId, kind);
   }
   /** Choose a reachable-height, visible enemy near the PLAYER, observing from the actual companion. */
-  allyEngage(radius = 15, from: Point3 = this.player): { id: string; p: Point3 } | null {
+  allyEngage(radius = 15, from: Point3 = this.player, skip?: (id: string) => boolean): { id: string; p: Point3 } | null {
     if (!this.playable || this.state.defeated || (!Number.isFinite(from.x)||!Number.isFinite(from.y)||!Number.isFinite(from.z)) || !Number.isFinite(radius) || radius <= 0 || distanceXZ(from,this.player)>25) return null;
     let enemy: Enemy | undefined, nearest = Math.min(20,radius);
     const sight = { x: from.x, y: from.y+1, z: from.z };
     for (const candidate of this.state.enemies) {
-      if (!candidate.active || candidate.mode === 'dead' || candidate.pacified || Math.abs(candidate.p.y - from.y) >= 3 || Math.abs(candidate.p.y-this.player.y)>=3) continue;
+      // Height is judged against the slope to it, not a flat 3 m: a foe 5 m up a 10 m hillside is reachable on
+      // foot (a wall or ledge is not, and the companion's own pursuit memory drops what it cannot reach).
+      const rise = (a: Point3) => Math.max(3, distanceXZ(candidate.p, a) * .58);
+      if (!candidate.active || candidate.mode === 'dead' || candidate.pacified || Math.abs(candidate.p.y - from.y) >= rise(from) || Math.abs(candidate.p.y-this.player.y)>=rise(this.player) || skip?.(candidate.id)) continue;
       const distance = distanceXZ(candidate.p, this.player);
       if (distance >= nearest || !this.geometry.terrain.lineOfSight(sight,{x:candidate.p.x,y:candidate.p.y+1,z:candidate.p.z})) continue;
       nearest=distance;enemy=candidate;

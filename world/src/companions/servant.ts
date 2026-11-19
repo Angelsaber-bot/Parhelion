@@ -12,7 +12,7 @@ import type { Collider } from '../player/player';
 import type { Marker } from '../core/types';
 import { ActionBlend } from '../characters/actionBlend';
 import { CompanionNavigation } from './companionNavigation';
-import { CompanionFollow } from './companionFollow';
+import { CompanionFollow, PursuitMemory } from './companionFollow';
 import { saberRunRate } from '../characters/saberStride';
 import { SaberStrideRuntime } from '../characters/saberStrideRuntime';
 import { SaberGroundedLocomotion } from '../characters/saberGroundedLocomotion';
@@ -57,7 +57,7 @@ export interface ServantOptions {
   onRejoin?: () => void;
   strike: (position: THREE.Vector3, targetId: string) => Target;
   /** Enemy to go after (lock-on radius around the player); null keeps the follow slot. */
-  engage?: (player: THREE.Vector3, from?: THREE.Vector3) => Target;
+  engage?: (player: THREE.Vector3, from?: THREE.Vector3, skip?: (id: string) => boolean) => Target;
   load?: (url: string) => Promise<GLTF>;
 }
 
@@ -82,6 +82,7 @@ export class ContractServant {
   private braceTarget = new THREE.Vector3();
   private navigation: CompanionNavigation;
   private follow = new CompanionFollow();
+  private pursuit = new PursuitMemory();
   private separatedFor = 0;
   private pursuing = false;
   private rejoinRetry = 0;
@@ -352,7 +353,9 @@ export class ContractServant {
     this.rejoinRetry=Math.max(0,this.rejoinRetry-dt);
     if(this.rejoinPlayer.distanceToSquared(player)>4){this.rejoinRetry=0;this.rejoinPlayer.copy(player);}
     let separation=this.root.position.distanceTo(player);
-    this.follow.update(separation,player,dt);
+    // A committed attack tracks its own target; no engagement rescan until it ends.
+    const candidate=this.attackTime>0 ? null : this.options.engage?.(player,this.root.position,this.pursuit.skip) ?? null;
+    this.follow.update(separation,player,dt,!!candidate||this.attackTime>0);
     if(this.follow.prioritizePlayer && (this.attackTime>0 || this.pursuing)){this.cancelAttack();this.pursuing=false;}
     const inCombat=!this.follow.prioritizePlayer && ((this.attackTime>0) || this.pursuing);
     this.separatedFor=separation>(inCombat?24:14)?this.separatedFor+dt:0;
@@ -366,8 +369,9 @@ export class ContractServant {
     if(separation>24 && this.attackTime>0)this.cancelAttack();
     if(this.attackTime>0){this.advanceAttack(dt);return;}
     const destination=player.clone().add(new THREE.Vector3(-Math.cos(yaw)*2.4-Math.sin(yaw)*.8,0,Math.sin(yaw)*2.4-Math.cos(yaw)*.8));
-    const prey=this.follow.prioritizePlayer ? null : this.options.engage?.(player,this.root.position);
+    const prey=this.follow.prioritizePlayer ? null : candidate;
     this.pursuing=!!prey; this.pursuitTargetId=prey?.id ?? null;
+    this.pursuit.update(dt,prey?.id ?? null,prey?Math.hypot(prey.position.x-this.root.position.x,prey.position.z-this.root.position.z):Infinity,this.navigation.stuckSeconds);
     if(prey && separation<24)destination.copy(prey.position).add(this.root.position.clone().sub(prey.position).setY(0).normalize().multiplyScalar(1));
     const frameYaw=this.root.rotation.y;
     const normalSpeed=Math.min(SERVANT_MOTION.followSpeed,SERVANT_MOTION.runSpeed*SERVANT_MOTION.maxRate);

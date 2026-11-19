@@ -224,7 +224,7 @@ export function createExploration(host: ExplorationHost) {
         puzzles.get(def.id)!.solved ? bilingual(`${def.title[0]} · 已解开`, `${def.title[1]} · Solved`) : bilingual(`转动棱镜柱 · ${def.title[0]}`, `Turn prism · ${def.title[1]}`));
     });
     const recv = receiverCrystal(); recv.position.set(def.receiver[0], recvY, def.receiver[1]); dyn(recv, 160);
-    const pillar = lightPillar(); pillar.position.set(def.receiver[0], recvY + 15, def.receiver[1]); pillar.visible = false; dyn(pillar, 400);
+    const pillar = lightPillar(); pillar.position.set(def.receiver[0], recvY + 15, def.receiver[1]); pillar.visible = false; pillar.userData.hidden = true; dyn(pillar, 150);
     const beam = new THREE.Mesh(new THREE.BufferGeometry(), FX.beamCore), glow = new THREE.Mesh(new THREE.BufferGeometry(), FX.beamGlow);
     beam.frustumCulled = glow.frustumCulled = false; root.add(beam, glow);
     const solved = done.has(flagPuzzle(def.id));
@@ -257,7 +257,9 @@ export function createExploration(host: ExplorationHost) {
     rt.crystals.forEach((c, i) => { c.material = crystalMaterial(trace.lit.has(i)); });
     const solvedNow = trace.solved;
     rt.recv.children.forEach(c => { (c as THREE.Mesh).material = crystalMaterial(solvedNow); });
-    rt.pillar.visible = solvedNow;
+    // The per-frame range pass rewrites `visible`; only `hidden` survives it. Unsolved receivers used to show
+    // their 30 m pillar anyway, so every puzzle near the road stood up as a second quest beacon.
+    rt.pillar.visible = solvedNow; rt.pillar.userData.hidden = !solvedNow;
     return solvedNow;
   }
   function rotatePrism(puzzleId: string, index: number) {
@@ -318,13 +320,13 @@ export function createExploration(host: ExplorationHost) {
   }
 
   // ───────────────────────── feathers ─────────────────────────
-  interface FeatherRt { id: string; obj: THREE.Group; p: THREE.Vector3; region: RegionId }
+  interface FeatherRt { id: string; obj: THREE.Group; p: THREE.Vector3; region: RegionId; shaft?: THREE.Object3D }
   const feathers: FeatherRt[] = [];
   for (const x of FEATHERS) {
     const obj = featherMesh(); const y = x.y ?? surface(...x.p) + 1.5 + (x.lift ?? 0);
     obj.position.set(x.p[0], y, x.p[1]); obj.visible = !done.has(flagFeather(x.id));
     dyn(obj, 260);
-    feathers.push({ id: x.id, obj, p: obj.position.clone(), region: x.region });
+    feathers.push({ id: x.id, obj, p: obj.position.clone(), region: x.region, shaft: obj.getObjectByName('FeatherShaft') });
   }
 
   // ───────────────────────── trials ─────────────────────────
@@ -663,6 +665,8 @@ export function createExploration(host: ExplorationHost) {
       const have = done.has(flagFeather(f.id));
       f.obj.userData.hidden = have; if (have) { f.obj.visible = false; continue; }
       f.obj.position.y = f.p.y + Math.sin(time * 1.8 + f.p.x) * .18; f.obj.rotation.y += dt * 1.4;
+      // The tall shaft is a local hint: from afar a dozen feather shafts read as quest beacons.
+      if (f.shaft) f.shaft.visible = Math.hypot(pp.x - f.p.x, pp.z - f.p.z) < 70;
       if (active && pp.distanceTo(f.obj.position) < 1.7) {
         done.add(flagFeather(f.id)); host.save(); host.sound('pickup');
         const spare = feathersSpare(done);

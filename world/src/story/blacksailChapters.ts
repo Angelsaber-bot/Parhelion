@@ -1,6 +1,7 @@
 import type { FieldAction, FieldChapterContent } from './fieldChapters';
 import { ADVENTURE, adventureActive } from './openWorldCampaign';
 import { harborReliefReady } from './harborRelief';
+import { dramaBriefed } from './journeyDrama';
 /** Mirrors FLAGSHIP_NAV in flagshipNavigation (kept as literals so story rules do not import scene code). */
 const FLAGSHIP_NAV = { shared: 'map_flagship_shared_pilot', fixed: 'map_flagship_fixed_harbor' } as const;
 
@@ -16,7 +17,7 @@ export const BC = {
   walk: 'b09_walk', cast: 'b09_cast', sign: 'b09_sign', b09: 'b09_complete',
 } as const;
 const B = BC;
-const before = (d: ReadonlySet<string>) => adventureActive(d) && !d.has('sea_core') && !d.has('blackbeard_contract');
+const before = (d: ReadonlySet<string>) => adventureActive(d) && !d.has('sea_core') && !d.has('blackbeard_contract') && dramaBriefed('blacksail', d, [B.observe, B.cut, B.b01]);
 const after = (d: ReadonlySet<string>) => adventureActive(d) && d.has('sea_core');
 const a = (chapter: string, x: Omit<FieldAction, 'region' | 'chapter'>): FieldAction => ({ region: 'blacksail', chapter, gate: before, ...x });
 export const BLACKSAIL_CHAPTER_ACTIONS: readonly FieldAction[] = [
