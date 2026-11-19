@@ -14,12 +14,16 @@ export const WC = {
   key: 'w08_key', pole: 'w08_pole',
 } as const;
 const W = WC;
-const before = (d: ReadonlySet<string>) => adventureActive(d) && !d.has('winter_core') && !d.has('napoleon_contract') && dramaBriefed('winter', d, [W.lights, W.w01]);
+const W05_YARD = 'warm_ember_6';
+const open = (d: ReadonlySet<string>) => adventureActive(d) && !d.has('winter_core') && !d.has('napoleon_contract');
+// The two signal lights stand at the realm's entrance, so W01 opens with them before Mara's brief at the aid post;
+// everything after waits for the brief. (Briefing first sent the player 200 m south, back north, then west.)
+const before = (d: ReadonlySet<string>) => open(d) && dramaBriefed('winter', d, [W.crossfire, W.w01]);
 const after = (d: ReadonlySet<string>) => adventureActive(d) && d.has('winter_core');
 const a = (chapter: string, x: Omit<FieldAction, 'region' | 'chapter'>): FieldAction => ({ region: 'winter', chapter, gate: before, ...x });
 export const WINTER_CHAPTER_ACTIONS: readonly FieldAction[] = [
   // W01 白雪中的回信
-  a('W01', { id: W.lights, near: 'warm_1', off: [-6, -6], label: ['雪幕 · 分辨两束信号灯', 'Snow curtain · Tell the two lights apart'],
+  a('W01', { id: W.lights, near: 'warm_1', off: [-6, -6], gate: open, label: ['雪幕 · 分辨两束信号灯', 'Snow curtain · Tell the two lights apart'],
     line: ['真灯旁有乱脚印、说话声，人在躲风口；另一束灯只沿直线走。跟上有人的那束。', 'The true light has uneven tracks and voices, people ducking the wind. The other only moves in a straight line. Follow the one with people.'] }),
   a('W01', { id: W.falseLight, near: 'disc_berezina', off: [5, 4], optional: true, after: [W.lights],
     label: ['空沟 · 跟着假灯走到底', 'Empty ditch · Follow the false light'],
@@ -90,27 +94,29 @@ export const WINTER_CHAPTER_ACTIONS: readonly FieldAction[] = [
   a('W04', { id: W.yard, near: 'warm_ember_2', off: [-4, 5], after: [W.aim], adds: [W.w04],
     label: ['生活侧门 · 带近处士兵离开行军方向', 'Yard door · Lead the soldiers out of the march'],
     line: ['士兵停步、转身，自己走向院里。玛拉认出排水道通磨坊路。瓦朗承认路不对，试图召回最后方阵——远处鼓声仍按原路前进。', 'The soldiers stop, turn, and walk into the yard on their own. Mara recognises the drain to the mill road. Valan admits the route was wrong and tries to recall the last square; far away the drums keep their course.'] }),
-  // W05 先过一个人
-  a('W05', { id: W.seal, near: 'winter_shelter_stove', off: [8, 4], after: [W.w04],
+  // W05 先过一个人: the receiving yard is the one the W04 soldiers walk into, beside the ember fire south of the gate,
+  // and the retreat order is given in the burned school's classroom. Both used to sit back at the northern aid post,
+  // 250 m from W04, so the chapter ended with a walk north and back.
+  a('W05', { id: W.seal, near: W05_YARD, off: [8, 4], after: [W.w04],
     label: ['接应院外 · 封存野战炮', 'Outside the yard · Seal the field gun'],
     line: ['封条贴上，炮口转离院门。拿破仑留在院外看守。', 'The seal goes on and the muzzle turns from the gate. Napoleon stays outside to guard it.'] }),
-  a('W05', { id: W.crate, near: 'winter_shelter_stove', off: [5, 8], after: [W.seal],
+  a('W05', { id: W.crate, near: W05_YARD, off: [5, 8], after: [W.seal],
     label: ['交接线 · 放下空药箱', 'Handover line · Set down the empty case'],
     line: ['空药箱放在线上。院里有人走过来看了一眼，又退回去等。', 'The empty case sits on the line. Someone from the yard looks, then steps back to wait.'] }),
-  a('W05', { id: W.stretcher, near: 'winter_shelter_stove', off: [-5, 8], kind: 'work', seconds: 8, after: [W.crate],
+  a('W05', { id: W.stretcher, near: W05_YARD, off: [-5, 8], kind: 'work', seconds: 8, after: [W.crate],
     label: ['担架 · 和卢克抬到中途安全台', 'Stretcher · Carry it to the middle platform with Luc'],
     line: ['担架放上安全台，玛拉从院内接手。', 'The stretcher reaches the platform and Mara takes it from inside.'] }),
-  a('W05', { id: W.check, near: 'winter_shelter_stove', off: [-8, 3], optional: true, after: [W.seal],
+  a('W05', { id: W.check, near: W05_YARD, off: [-8, 3], optional: true, after: [W.seal],
     label: ['检查平台 · 看炮口与封条', 'Inspection step · Check the muzzle and seal'],
     line: ['从平台上能看见：炮口朝外，封条完好。接应的人也在看同一样东西。', 'From the step you can see it: muzzle outward, seal intact. The receivers are looking at the same thing.'] }),
-  a('W05', { id: W.shadows, near: 'winter_shelter_stove', off: [9, -4], kind: 'fight', alt: 'w05_defend', after: [W.stretcher],
+  a('W05', { id: W.shadows, near: W05_YARD, off: [9, -4], kind: 'fight', alt: 'w05_defend', after: [W.stretcher],
     foes: [['stalker', ['旁路雪影', 'Side-path shadow']], ['lancer', ['雪影长枪', 'Shadow lancer']]],
     label: ['旁路雪影 · 借木棚挡视线迎击', 'Side-path shadows · Use the shed and your own gun'],
     line: ['雪影退了。炮一直封着，正面装卸门还开着。', 'The shadows fall back. The gun stayed sealed; the front loading gate is still open.'] }),
-  a('W05', { id: W.unseal, near: 'winter_shelter_stove', off: [10, 2], alt: 'w05_defend', after: [W.stretcher], adds: [W.broke],
+  a('W05', { id: W.unseal, near: W05_YARD, off: [10, 2], alt: 'w05_defend', after: [W.stretcher], adds: [W.broke],
     label: ['解封野战炮 · 更快退敌（接应院会关上正门）', 'Break the seal · Faster, but the yard shuts its front gate'],
     line: ['一炮退敌。接应院关上了正面装卸门，物资改走侧面石阶；伤员仍按约定从窄门接应。', 'One shot and they are gone. The yard shuts its front gate; supplies go round by the side steps, the wounded still pass the agreed narrow door.'] }),
-  a('W05', { id: W.order, near: 'field_winter_warm_house', off: [3, -4], any: [W.shadows, W.unseal], adds: [W.w05],
+  a('W05', { id: W.order, near: 'warm_winter_school', off: [-6, -2], any: [W.shadows, W.unseal], adds: [W.w05],
     label: ['教室 · 拿破仑当面下撤退令', 'Classroom · Napoleon gives the retreat order'],
     line: ['拿破仑：“城门已经打开。现在轮到我们出去。”瓦朗要每一组人有个负责人，卢克拿出自己记的床位表。', 'Napoleon: “The gate is open. Now it is our turn to leave.” Valan asks for a leader for every group; Luc brings out his bed list.'] }),
   // W08 最后方阵: Valan hands over the key before the square reaches the crossing.

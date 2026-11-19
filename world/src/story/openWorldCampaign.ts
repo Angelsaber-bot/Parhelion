@@ -101,7 +101,13 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
  if(region==='winter'){
   const title:Localized=['永冬之城 · 让药车通过','Winter City · Make Way for the Medicine'];
   if(!done.has('napoleon_meet')&&!done.has('winter_core')&&!done.has('napoleon_contract'))return at(region,title,['在皇帝帐篷确认药车的撤离方向。','Confirm the medicine convoy’s route at the emperor’s tent.'],'napoleon_meet');
-  if(!winterRouteReady(done))return at(region,title,['选择准备：点亮三座烽火建立暖路，或登钟楼取得观察记录（钟声碎片）。两条准备路线任选其一。','Prepare either by lighting all three beacons, or climbing the bell tower for its observation record (Bell fragment).'],`beacon_${[1,2,3].find(i=>!done.has(`beacon_${i}`))??1}`);
+  if(!winterRouteReady(done)){
+   // W03–W05 end in the south of the city, beside the bell tower scaffold; the beacons are 300 m west. Point at the
+   // tower unless the player already started on the beacons.
+   const lit=[1,2,3].filter(i=>done.has(`beacon_${i}`)).length;
+   if(!lit)return at(region,title,['选择准备：登上南边钟楼的脚手架取得观察记录（钟声碎片），或去西面点亮三座烽火。两条准备路线任选其一。','Prepare either by climbing the scaffold of the bell tower to the south for its observation record (Bell fragment), or by lighting the three beacons to the west.'],'shard_bell');
+   return at(region,title,['选择准备：点亮三座烽火建立暖路，或登钟楼取得观察记录（钟声碎片）。两条准备路线任选其一。','Prepare either by lighting all three beacons, or climbing the bell tower for its observation record (Bell fragment).'],`beacon_${[1,2,3].find(i=>!done.has(`beacon_${i}`))??1}`);
+  }
   if(!done.has(ADVENTURE.road))return at(region,title,['清开大道拒马：射断两处金色支架，或沿侧翼靠近拆闩。完整道路开放后才能放行。','Clear the roadblock: shoot both gold braces, or approach from the flank and release the latch. Open the whole corridor before signaling.'],'adventure_winter_latch');
   if (!winterWithdrawalReady(done)) {
    if (!winterWithdrawalSelected(done)) return at(region,title,['走到岔路，选择保留红堤道路，或把弃置的炮架用于修好磨坊跨峡桥。两条路都通向同一渡口。','At the fork, keep the redoubt road or use the abandoned gun carriage to brace the mill bridge. Both lead to the same crossing.'],W.mill);
