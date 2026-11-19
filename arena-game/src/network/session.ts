@@ -7,6 +7,7 @@ import { getMap, mapIdOf } from '../../shared/arenaMap.ts';
 import { Bot, BOT_SKILL, navFor } from '../../shared/bot.ts';
 import { learnedTactics } from '../../shared/botTactics.ts';
 import tacticsModel from '../../shared/botTacticsModel.json';
+import { HUMAN_FEATURES, type HumanCombatModel } from '../../shared/humanCombat.ts';
 import { randomBotHero, DT, SNAPSHOT_EVERY, TEAM_CAPACITY, randomBotLoadout, randomBotUtility, type Team } from '../../shared/content.ts';
 import type { ArenaMap } from '../../shared/map.ts';
 import { Match, type Snapshot } from '../../shared/match.ts';
@@ -170,6 +171,9 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
 }
 
 const offlineTactics = learnedTactics(tacticsModel.weights, tacticsModel.margin);
+const [humanModel] = Object.values(import.meta.glob<HumanCombatModel>('../../shared/botHumanModel.json', { eager: true, import: 'default' }));
+const offlineCombat = humanModel?.version === 1 && humanModel.rulesVersion === RULES_VERSION &&
+  humanModel.features.join() === HUMAN_FEATURES.join() ? humanModel : undefined;
 
 /** `rand` picks the bots' kits: every legal loadout, re-rolled for each rematch. */
 export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKILL, rand: () => number = Math.random): Session {
@@ -183,7 +187,9 @@ export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKI
   for (const t of ['A', 'B'] as Team[]) {
     for (let i = match.teamCount(t); i < TEAM_CAPACITY[opts.layout][t]; i++) {
       const n = seed++, k = kit();
-      match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: randomBotHero([...match.slots.values()].map(s => ({ team: s.info.team, char: s.state.char })), t, rand), skins: [n % 2, n % 2, n % 2], loadout: k.loadout, utility: k.utility, bot: true }, new Bot(n, BOT_SKILL[difficulty], difficulty === 'easy' ? undefined : offlineTactics));
+      const bot = new Bot(n, BOT_SKILL[difficulty], difficulty === 'easy' ? undefined : offlineTactics,
+        difficulty === 'normal' ? offlineCombat : undefined);
+      match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: randomBotHero([...match.slots.values()].map(s => ({ team: s.info.team, char: s.state.char })), t, rand), skins: [n % 2, n % 2, n % 2], loadout: k.loadout, utility: k.utility, bot: true }, bot);
     }
   }
   match.botKit = kit;

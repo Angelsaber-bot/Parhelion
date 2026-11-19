@@ -8,8 +8,9 @@ import { bilingual } from '../../shared-client/i18n.ts';
 
 import { DT, INTERP_TICKS, TICK_HZ, WEAPONS } from '../shared/content.ts';
 import { hiddenFromView } from './rendering/edictReveal.ts';
+import { humanObservation, type CombatContact } from '../shared/humanCombat.ts';
 import { rayPlayer, rayShield } from '../shared/hit.ts';
-import { tacticalArea, raycastMap, type ArenaMap, type Vec3 } from '../shared/map.ts';
+import { tacticalArea, raycastMap, lineOfSight, type ArenaMap, type Vec3 } from '../shared/map.ts';
 import { type NetEvent, type PlayerSnap, type Snapshot } from '../shared/match.ts';
 import { BackgroundTicker } from './network/backgroundTicker.ts';
 import { aimDir, applyInput, clonePlayer, playerEye, quantAngle, type Input, type PlayerState, type SimEvent } from '../shared/sim.ts';
@@ -24,6 +25,7 @@ import type { Session } from './network/session.ts';
 import {FrameGate} from './rendering/renderScheduling.ts';
 import { RangeStats } from './ui/rangeStats.ts';
 import { AIM_FOV } from './player/aim.ts';
+import type { HumanDemo } from './player/humanDemo.ts';
 
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
@@ -71,6 +73,7 @@ export class Game {
     private controls: Controls,
     private hud: Hud,
     private onExit: (reason: string) => void,
+    readonly humanDemo?: HumanDemo,
   ) {
     this.map = session.map;
     this.rangeStats = session.practice ? new RangeStats() : null;
@@ -289,7 +292,10 @@ export class Game {
   setPaused(p: boolean) {
     if (this.paused === p) return;
     this.paused = p;
-    if (p) this.resetAim();
+    if (p) {
+      this.resetAim();
+      this.humanDemo?.pause();
+    }
     this.session.setPaused(p);
     this.acc = 0;
   }
@@ -359,12 +365,32 @@ export class Game {
       weapon: c.weapon,
       view: Math.round(this.renderTick * 100) / 100,
     };
+    if (this.humanDemo && active && this.me?.alive && WEAPONS[this.me.weapon].kind === 'gun' && this.latest?.phase === 'live' && document.visibilityState === 'visible' && document.hasFocus()) {
+      this.recordHumanDemo(this.humanDemo, this.me, inp, this.latest);
+    }
     if (this.me) {predictAbility(this.map,this.me,inp,this.latest);for (const e of applyInput(this.map, this.me, inp, this.foes(this.me))) this.onLocal(e);}
     this.pending.push(inp);
     if (this.pending.length > 240) this.pending.shift();
     this.outbox.push(inp);
     this.sentAt.set(inp.seq, performance.now());
     if (this.sentAt.size > 600) this.sentAt.delete(this.sentAt.keys().next().value!);
+  }
+
+  private recordHumanDemo(demo: HumanDemo, me: PlayerState, input: Input, frame: Snapshot) {
+    const contacts: CombatContact[] = this.remotes.filter(r => r.snap.alive).map(r => ({ team: r.snap.team, crouched: r.snap.crouched, feet: r.pos }));
+    for (const effect of frame.entities ?? []) {
+      if (effect.kind === 'decoy') contacts.push({ team: effect.team, crouched: false, feet: [effect.x, effect.y, effect.z] });
+    }
+    const canSee = (from: Vec3, to: Vec3) => {
+      if (!lineOfSight(this.map, from, to) || smokeBlocks(frame.smokes ?? [], from, to)) return false;
+      const dx = to[0] - from[0], dy = to[1] - from[1], dz = to[2] - from[2];
+      const distance = Math.hypot(dx, dy, dz);
+      if (distance < .001) return true;
+      const ray: Vec3 = [dx / distance, dy / distance, dz / distance];
+      return !frame.shields.some(s => rayShield(from, ray, s.x, s.y, s.z, s.yaw) < distance);
+    };
+    const { fov, aspect } = this.scene.camera;
+    demo.record(me, input, previous => humanObservation(this.map, me, contacts, canSee, previous, fov * Math.PI / 180, aspect));
   }
 
   /** Latest authoritative enemy positions, so a predicted melee lunge stops where the server's does. */

@@ -15,6 +15,7 @@ import { CHARACTERS, PLAYABLE_HERO_INDICES, playableHero, ABILITIES, WEAPONS, we
 import { DEFAULT_PORT, PUBLIC_SERVER, RULES_VERSION, newRoomCode, normalizeRoomCode, type JoinOptions } from '../shared/protocol.ts';
 import { sfx } from './rendering/audio.ts';
 import { Controls } from './player/controls.ts';
+import { HumanDemo } from './player/humanDemo.ts';
 import { ACTIONS, SettingsStore, createSettingsPanel } from '../../shared-client/settings.ts';
 import '../../shared-client/settings.css';
 import { Game } from './game.ts';
@@ -327,6 +328,7 @@ $('play').onclick = async () => {
   const server = $<HTMLInputElement>('server').value.trim();
   if (attempt.mode === 'online' && roomCode) opts.room = roomCode;
   const difficulty = $<HTMLSelectElement>('difficulty').value as 'easy' | 'normal' | 'hard';
+  const recordDemo = attempt.mode !== 'range' && !lessonRequested && $<HTMLInputElement>('record-human-demo').checked;
   const current = () => activeStart?.id === attempt.id && !pageExited;
   let ownedSession: Session | null = null;
   const closeOwned = () => { const session = ownedSession; ownedSession = null; try { session?.close(); } catch { /* best effort for a failed/stale startup */ } };
@@ -356,7 +358,8 @@ $('play').onclick = async () => {
     const session = ownedSession;
     rangeSession = session.practice ? session : null;
     if (rangeSession) { rangeChoice = { loadout: loadoutStore.value, utility: loadoutStore.utility, skins: skins.slice() }; renderRangePanel(); }
-    game = new Game(session, scene, controls, hud, (reason) => backToLobby(reason));
+    game = new Game(session, scene, controls, hud, (reason) => backToLobby(reason), recordDemo ? new HumanDemo(session.mapId ?? mapId) : undefined);
+    renderDemoExport();
     if(lessonRequested&&session.match){
       const m=session.match,bot=[...m.slots.values()].find(s=>s.info.bot);if(bot){bot.info.char=bot.state.char=8;bot.state.ability.readyAt=0;const brain=new Bot(41,BOT_SKILL.easy);bot.controller={think(match,id){const i=brain.think(match,id),p=match.player(id)!,enemy=match.player(session.id)!;if(p.alive&&enemy.alive&&match.heroes.visible([p.x,p.y+1,p.z],[enemy.x,enemy.y+1,enemy.z])&&Math.hypot(p.x-enemy.x,p.z-enemy.z)<16&&p.shieldCd===0&&!(p.prevButtons&BTN.SHIELD)){i.buttons=BTN.SHIELD;i.pitch=0;}return i;}};}
       game.lesson=new HeroLesson(session.id);lessonRequested=false;
@@ -364,6 +367,7 @@ $('play').onclick = async () => {
     ownedSession = null; // Game now owns exactly one session.
     $('lobby').classList.add('hidden'); hud.show(true);
     game.onEnded = (title) => {
+      renderDemoExport();
       rematchRequested = false; resultsBoard.setEnded(true); renderResultsBoard();
       endTitleSource = title; $('endtitle').textContent = localizeText(endTitleSource);
       $('pause').classList.add('hidden');
@@ -416,12 +420,23 @@ function backToLobby(reason: string) {
   pointerLockFailed = false; renderPointerLockNote();
   game = null; rematchRequested = false; resultsBoard.setEnded(false); renderResultsBoard();
   hud.show(false);
+  renderDemoExport();
   $('pause').classList.add('hidden');
   $('endcard').classList.add('hidden');
   $('lobby').classList.remove('hidden');
   if (document.pointerLockElement) document.exitPointerLock();
   if (reason) showError(reason);
 }
+
+function renderDemoExport() {
+  for (const id of ['pause-demo', 'end-demo']) {
+    const button = $<HTMLButtonElement>(id);
+    button.classList.toggle('hidden', !game?.humanDemo);
+    button.disabled = !game?.humanDemo?.size;
+  }
+}
+
+for (const id of ['pause-demo', 'end-demo']) $(id).onclick = () => game?.humanDemo?.download();
 
 controls.onLockChange = (locked) => {
   if (!game || game.ended || pageExited || settingsPanel.open) {
@@ -432,6 +447,7 @@ controls.onLockChange = (locked) => {
   }
   if (locked) { pointerLockFailed = false; renderPointerLockNote(); }
   $('pause').classList.toggle('hidden', locked);
+  if (!locked) renderDemoExport();
   // offline: Esc freezes everything (bots, bullets, clock, effects); online the server keeps going
   game.setPaused(!locked && !game.online);
 };

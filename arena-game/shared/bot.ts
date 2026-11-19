@@ -11,9 +11,10 @@
 // - personality (from the seed): rusher, holder or flanker, which changes where it roams, how
 //   long it holds an angle, how close it wants to fight and when it backs off.
 
-import { CHARACTERS, FRAG, GRENADE, HERO_COMBAT, TICK_HZ, WEAPONS, falloff, loadoutWeapon, type WeaponDef } from './content.ts';
+import { CHARACTERS, FRAG, GRENADE, HERO_COMBAT, INTERP_TICKS, TICK_HZ, WEAPONS, falloff, loadoutWeapon, type WeaponDef } from './content.ts';
 import { tacticalCandidates, TACTIC_INTERVAL, TACTIC_MEMORY_TICKS, TACTIC_TICKS, type TacticalPolicy } from './botTactics.ts';
 import { smokeBlocks } from './grenade.ts';
+import { humanCombatPolicy, humanObservation, type CombatContact, type HumanCombatModel } from './humanCombat.ts';
 /** Melee reach including most of the windup lunge. */
 const meleeReach = (w: WeaponDef) => w.range + (w.lunge ?? 0) * (w.windup ?? 0) / TICK_HZ * .7;
 import { playerHitbox } from './hit.ts';
@@ -116,9 +117,15 @@ export class Bot implements Controller {
   private tacticPath: NavNode[] | null = null;
   private tacticExpires = 0;
   private lastObserved = -Infinity;
+  private readonly humanCombat?: ReturnType<typeof humanCombatPolicy>;
+  private humanLife = -1;
+  private humanLastVisible = -Infinity;
+  private humanPrior: [number, number] = [0, 0];
+  private humanContacts: CombatContact[][] = [];
 
-  constructor(seed: number, readonly skill: BotSkill = BOT_SKILL.normal, private readonly tactics?: TacticalPolicy) {
+  constructor(seed: number, readonly skill: BotSkill = BOT_SKILL.normal, private readonly tactics?: TacticalPolicy, humanModel?: HumanCombatModel) {
     this.rand = rng(seed);
+    if (humanModel) this.humanCombat = humanCombatPolicy(humanModel, rng(seed ^ 0x52e27a3d));
     const r = this.rand();
     this.style = r < 0.36 ? 'rusher' : r < 0.7 ? 'holder' : 'flanker';
     this.aggression = this.style === 'rusher' ? 0.75 + this.rand() * 0.25 : this.style === 'holder' ? 0.2 + this.rand() * 0.3 : 0.45 + this.rand() * 0.3;
@@ -133,6 +140,13 @@ export class Bot implements Controller {
   think(match: Match, id: string): Input {
     const me = match.player(id)!;
     const inp: Input = { seq: ++this.seq, mx: 0, mz: 0, yaw: this.yaw, pitch: this.pitch, buttons: 0, weapon: me.weaponSlot, view: match.tick };
+    if (this.humanCombat && (this.humanLife !== me.lifeId || match.phase !== 'live' || !me.alive)) {
+      this.humanLife = me.lifeId;
+      this.humanContacts.length = 0;
+      this.humanPrior = [0, 0];
+      this.humanLastVisible = -Infinity;
+      this.humanCombat.reset();
+    }
     if (this.tactics && (this.tacticLife !== me.lifeId || match.phase !== 'live' || !me.alive)) {
       this.tacticLife = me.lifeId;
       this.tacticPath = null;
@@ -408,6 +422,7 @@ export class Bot implements Controller {
       }
     } else if (!target) { this.burstT = 0; this.pauseT = Math.max(this.pauseT, 6); }
     if (w.kind === 'gun' && !target && me.ammo[me.weapon] < w.mag * 0.5 && (me.prevButtons & BTN.RELOAD) === 0) inp.buttons |= BTN.RELOAD;
+    if (this.humanCombat && match.phase === 'live') this.applyHumanCombat(match, me, inp);
 
     // --- abilities, used sparingly ---
     if (target && tookDamage && me.dashCharges > 0 && me.dashT === 0 && this.rand() < 0.12 + this.aggression * 0.1) inp.buttons |= BTN.DASH;
@@ -421,6 +436,36 @@ export class Bot implements Controller {
       if(wants)inp.buttons|=BTN.SHIELD;
     }
     return inp;
+  }
+
+  private applyHumanCombat(match: Match, me: PlayerState, input: Input) {
+    const combat = this.humanCombat!;
+    const contacts: CombatContact[] = [];
+    for (const { state } of match.slots.values()) {
+      if (state.alive && state.team !== me.team) contacts.push({ team: state.team, crouched: state.crouched, feet: [state.x, state.y, state.z] });
+    }
+    this.humanContacts.push(contacts);
+    if (this.humanContacts.length > INTERP_TICKS + 1) this.humanContacts.shift();
+    if (WEAPONS[me.weapon].kind !== 'gun' || WEAPONS[loadoutWeapon(me.loadout, input.weapon)].kind !== 'gun') {
+      combat.reset();
+      this.humanLastVisible = -Infinity;
+      this.humanPrior = [0, 0];
+      return;
+    }
+    input.buttons &= ~BTN.FIRE;
+    const decoys = match.heroes.decoys().map<CombatContact>(s => ({ team: s.team, crouched: s.crouched, feet: [s.x, s.y, s.z] }));
+    const features = humanObservation(match.map, me, [...this.humanContacts[0], ...decoys], (a, b) => match.heroes.visible(a, b), this.humanPrior);
+    // Sample invisible frames too so the history includes the transition at contact loss or acquisition.
+    const turn = combat.think(features);
+    if (features[0]) this.humanLastVisible = match.tick;
+    if (match.tick - this.humanLastVisible <= 12 && !this.throwPlan && !(input.buttons & BTN.THROW)) {
+      this.yaw = wrap(me.yaw + turn.yaw);
+      this.pitch = Math.max(-1.45, Math.min(1.45, me.pitch + turn.pitch));
+      input.yaw = Math.round(this.yaw * 10000) / 10000;
+      input.pitch = Math.round(this.pitch * 10000) / 10000;
+      if (turn.fire) input.buttons |= BTN.FIRE;
+    }
+    this.humanPrior = [wrap(input.yaw - me.yaw), input.pitch - me.pitch];
   }
 
   private coverAway(match: Match, me: PlayerState, enemy: PlayerState): Vec3 | null {

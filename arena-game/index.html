@@ -52,6 +52,7 @@
       <div id="range-panel" class="rangeOnly" data-no-i18n></div>
       <button id="resume" class="primary">继续</button>
       <button id="settings-pause" type="button">操作设置</button>
+      <button id="pause-demo" type="button" class="hidden" data-no-i18n><span data-ui-zh="导出真人训练样本" data-ui-en="Export human training sample">导出真人训练样本</span></button>
       <button id="leave">退出到大厅</button>
       <button id="pause-world" type="button" class="hidden">返回世界</button>
     </div>
@@ -64,6 +65,7 @@
       <p class="muted" id="end-score-hint">读取计分板按键…</p>
       <button id="endscores" type="button">查看计分板 (S)</button>
       <button id="rematch" class="primary">再来一局</button>
+      <button id="end-demo" type="button" class="hidden" data-no-i18n><span data-ui-zh="导出真人训练样本" data-ui-en="Export human training sample">导出真人训练样本</span></button>
       <button id="endleave">返回大厅</button>
       <button id="end-world" type="button" class="hidden">返回世界</button>
     </div>
@@ -123,6 +125,7 @@
             <label class="offlineOnly notRange">Bot 难度<select id="difficulty"><option value="easy">简单</option><option value="normal" selected>普通</option><option value="hard">困难</option></select></label>
             <label class="onlineOnly server-field">服务器<input id="server" /></label><label class="onlineOnly room-field">房间号<span class="room-row"><input id="room-code" maxlength="7" placeholder="留空即快速匹配" autocomplete="off" spellcheck="false" aria-describedby="room-help" /><button type="button" id="room-new">新建</button></span><small id="room-help">同一房间号的玩家进入同一房间，地图和对局以先进入的人为准。</small></label><label class="onlineOnly check"><input type="checkbox" id="bots" /> 空位用 Bot 补齐</label>
           </div>
+          <label class="notRange check" data-no-i18n><input type="checkbox" id="record-human-demo" autocomplete="off" /><span data-ui-zh="记录真人训练样本（手动导出）" data-ui-en="Record a human training sample (manual export)">记录真人训练样本（手动导出）</span></label>
           <button id="deployment-hero" class="deployment-hero" type="button" data-no-i18n><span class="deploy-glyph" aria-hidden="true"></span><span><small data-ui-zh="出战从者" data-ui-en="YOUR HERO">出战从者</small><b id="deploy-name"></b><em id="deploy-ability"></em></span><i aria-hidden="true">↗</i></button>
           <button id="deployment-loadout" type="button" data-no-i18n><span data-ui-zh="当前配装" data-ui-en="YOUR LOADOUT">当前配装</span><strong id="deploy-loadout"></strong><i aria-hidden="true">↗</i></button>
           <div id="match-briefing" data-no-i18n><p id="match-rules" class="muted"></p><details><summary data-ui-zh="对局与连接说明" data-ui-en="Match & connection details">对局与连接说明</summary><p id="match-teams" class="muted"></p><p id="match-connection" class="muted"></p></details></div>
