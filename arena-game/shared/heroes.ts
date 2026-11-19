@@ -10,7 +10,7 @@ import { freshAbility, type HeroEvent, type ReconMark, type TacticalEntity } fro
 
 export const BARRAGE_KILL = 101, WIND_KILL=102, BROADSIDE_KILL=103, SOLAR_KILL=104, EDICT_KILL=105, SWALLOW_KILL=106;
 export const HERO_KILL_NAMES:Record<number,[string,string]>={101:['战争之神','God of war'],102:['风王铁槌','Wind king’s hammer'],103:['接舷钩','Boarding hook'],104:['日轮审判','Solar judgement'],105:['定身令','Edict of stillness'],106:['燕返','Swallow cut']};
-/** Swallow cut: the furthest standing point up to six metres straight along the aim, or null when there is no room. */
+/** Swallow cut: the furthest standing point up to nine metres straight along the aim, or null when there is no room. */
 export function swallowTarget(map:ArenaMap,p:PlayerState,yaw:number):Vec3|null {
   const [dx,dz]=forward(yaw);
   let result:Vec3|null=null;for(let d=.1;d<=H.decoy.distance+.001;d+=.1){const dest:Vec3=[p.x+dx*d,p.y,p.z+dz*d];if(!returnPathClear(map,p,dest,H.decoy.distance))break;result=dest;}
@@ -171,14 +171,23 @@ export class HeroSystem {
   private cancel(p:PlayerState) {this.emit(p,'cancel');this.recover(p,0);}
   damaged(p:PlayerState) {p.lastDamageTick=this.m.tick;if(p.ability.phase==='channel')this.cancel(p);}
   /** Historical eligibility, current shared per-cast budget: history never refunds absorbed damage. */
-  absorb(p:PlayerState,raw:number,origin:Vec3,pose?:{yaw:number;pitch:number;guardSeq:number;guard:boolean;life:number;x:number;y:number;z:number}):number {
+  absorb(p:PlayerState,raw:number,origin:Vec3,pose?:{yaw:number;pitch:number;guardSeq:number;guard:boolean;life:number;x:number;y:number;z:number},by?:string):number {
     const a=p.ability,valid=pose?pose.guard&&pose.life===p.lifeId:a.phase==='guard';
     if(!valid||!guardFaces(pose?.yaw??p.yaw,pose?.pitch??p.pitch,origin,pose?[pose.x,pose.y+1.1,pose.z]:[p.x,p.y+1.1,p.z]))return raw;
     const seq=pose?.guardSeq??a.castSeq,key=`${p.id}:${p.lifeId}:${seq}`,spent=this.guardSpent.get(key)??0,absorb=Math.min(raw,Math.max(0,H.guard.budget-spent));
     this.guardSpent.set(key,spent+absorb);
     if(seq===a.castSeq){a.guardBudget=H.guard.budget-spent-absorb;if(a.guardBudget<=0&&a.phase==='guard')this.windSlash(p);}
-    if(absorb>0)this.emit(p,'blocked',at(p),absorb);
+    if(absorb>0){
+      // The block shows where it landed: on the guard, between her and the attack.
+      const cx=pose?.x??p.x,cy=(pose?.y??p.y)+1.1,cz=pose?.z??p.z,dx=origin[0]-cx,dy=origin[1]-cy,dz=origin[2]-cz,len=Math.hypot(dx,dy,dz)||1,r=Math.min(.6,len);
+      this.m.emit({t:'ability',id:p.id,castSeq:seq,kind:'guard',action:'blocked',at:[cx+dx/len*r,cy+dy/len*r,cz+dz/len*r],amount:absorb,by});
+    }
     return raw-absorb;
+  }
+  /** Ability damage that comes from a point: a front guard takes it like a bullet. */
+  heroHit(owner:string,team:PlayerState['team'],victim:PlayerState,damage:number,weapon:number,origin:Vec3){
+    const left=this.m.spawnProtected(victim.id)?0:this.absorb(victim,damage,origin,undefined,owner);
+    if(left>0)this.m.heroDamage(owner,team,victim.id,left,weapon);
   }
   visible(a:Vec3,b:Vec3,allowGlimpse=false):boolean {
     if(!lineOfSight(this.m.map,a,b))return false;
@@ -190,7 +199,7 @@ export class HeroSystem {
     const amount=H.guard.damage+Math.round((H.guard.budget-p.ability.guardBudget)/H.guard.budget*H.guard.bonus),origin:Vec3=[p.x,p.y+1.1,p.z];
     this.recover(p,abilityFor(p.char).recovery);this.emit(p,'pulse',at(p),amount);
     for(const {state:enemy} of this.m.slots.values())if(enemy.alive&&enemy.team!==p.team&&distance(at(p),at(enemy))<=H.guard.range&&Math.abs(angle(Math.atan2(-(enemy.x-p.x),-(enemy.z-p.z))-p.ability.yaw))<=H.guard.halfAngle&&this.visible(origin,[enemy.x,enemy.y+1.1,enemy.z])){
-      this.m.heroDamage(p.id,p.team,enemy.id,amount,WIND_KILL);
+      this.heroHit(p.id,p.team,enemy,amount,WIND_KILL,origin);
       // The wind throws survivors straight away from her.
       const dx=enemy.x-p.x,dz=enemy.z-p.z,len=Math.hypot(dx,dz)||1,v=H.guard.push/H.guard.pushTicks*60;
       if(enemy.alive&&!this.m.spawnProtected(enemy.id))Object.assign(enemy,{pullT:H.guard.pushTicks,pullX:dx/len*v,pullZ:dz/len*v,dashT:0,dashQueue:[]});
@@ -255,7 +264,7 @@ export class HeroSystem {
         for(const {state:p} of this.m.slots.values()) {
           if(!p.alive||p.team===e.team||distance([e.x,e.y+1.3,e.z],[p.x,p.y+1.1,p.z])>H.lens.range)continue;
           if(Math.abs(angle(Math.atan2(-(p.x-e.x),-(p.z-e.z))-e.yaw))>H.lens.halfAngle+1e-8||!this.visible([e.x,e.y+1.3,e.z],[p.x,p.y+1.1,p.z]))continue;
-          this.m.heroDamage(e.owner,e.team,p.id,H.lens.damage,SOLAR_KILL);
+          this.heroHit(e.owner,e.team,p,H.lens.damage,SOLAR_KILL,[e.x,e.y+1.3,e.z]);
           this.marks.push({id:`${e.id}:${e.pulse}:${p.id}:${p.lifeId}`,source:e.id,team:e.team,victim:p.id,lifeId:p.lifeId,x:p.x,y:p.y,z:p.z,expires:tick+H.lens.mark});
         }
       }
@@ -283,7 +292,8 @@ export class HeroSystem {
       if(!v.alive||v.team===p.team||struck.includes(v.id)||Math.abs(v.y-p.y)>1.6||segmentDistance(from,to,v.x,v.z)>H.decoy.width)continue;
       if(!lineOfSight(this.m.map,[p.x,p.y+1,p.z],[v.x,v.y+1,v.z]))continue;
       struck.push(v.id);this.m.emit({t:'ability',id:p.id,castSeq:a.castSeq,kind:'decoy',action:'pulse',at:[v.x,v.y+1,v.z]});
-      this.m.heroDamage(p.id,p.team,v.id,H.decoy.damage,SWALLOW_KILL);
+      const dx=to[0]-from[0],dz=to[2]-from[2],dl=Math.hypot(dx,dz)||1;
+      this.heroHit(p.id,p.team,v,H.decoy.damage,SWALLOW_KILL,[v.x-dx/dl*2,p.y+1.1,v.z-dz/dl*2]);
       if(!v.alive){a.readyAt=this.m.tick;this.emit(p,'trigger',at(p));}
     }
   }
@@ -311,7 +321,7 @@ export class HeroSystem {
   /** Artoria's guard: a cannonball or hook meeting her from the front is absorbed into the guard and stops there. */
   private guardStops(e:TacticalEntity,p:PlayerState,damage:number,from:Vec3):boolean{
     if(p.ability.phase!=='guard')return false;
-    const left=this.absorb(p,damage,from);if(left>=damage)return false;
+    const left=this.absorb(p,damage,from,undefined,e.owner);if(left>=damage)return false;
     if(left>0)this.m.heroDamage(e.owner,e.team,p.id,left,e.kind==='barrage'?BARRAGE_KILL:BROADSIDE_KILL);
     e.x=p.x;e.y=p.y+1.1;e.z=p.z;e.hp=0;this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'break',at:[p.x,p.y+1.1,p.z]});
     return true;
@@ -358,7 +368,7 @@ export class HeroSystem {
   }
   private strike(e:TacticalEntity,point:Vec3,radius:number,damage:number,weapon:number,damaged=new Set<string>(),spared:unknown=null){
     this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'pulse',at:point});const blast={...e,x:point[0],y:point[1],z:point[2]};
-    for(const {state:p} of this.m.slots.values())if(p.alive&&p.team!==e.team&&!damaged.has(p.id)&&this.blastVisible(blast,p,radius)){damaged.add(p.id);this.m.heroDamage(e.owner,e.team,p.id,damage,weapon);}
+    for(const {state:p} of this.m.slots.values())if(p.alive&&p.team!==e.team&&!damaged.has(p.id)&&this.blastVisible(blast,p,radius)){damaged.add(p.id);this.heroHit(e.owner,e.team,p,damage,weapon,point);}
     for(const d of this.entities)if(d!==e&&d!==spared&&this.destructible(d))this.points(d).forEach((pos,index)=>{if(distance(point,pos)<=radius&&lineOfSight(this.m.map,[point[0],point[1]+.2,point[2]],pos))this.hit(d,damage,index);});
     for(const shield of this.m.shields)if(shield!==spared&&distance(point,at(shield))<=radius&&lineOfSight(this.m.map,[point[0],point[1]+.2,point[2]],[shield.x,shield.y+.5,shield.z]))this.m.damageShield(shield,damage);
   }

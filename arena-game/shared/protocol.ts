@@ -36,7 +36,8 @@ export const ROOM_NAME = 'arena';
 //      to the caster's team for 3 s; the zone stays 5 s and slows enemies inside by 35%. Player state gains revealedUntil.
 // v40: Qin's edict roots and slows through walls, buildings and smoke; damage boost and reveal last 5 s, as long as the zone.
 // v41: the edict reaches every floor and roots enemies who walk into the zone later (once per life); private room codes.
-export const RULES_VERSION = 41;
+// v42: Musashi's swallow cut reaches 9 m for 90 (7.5 s); Artoria guards 1 s against every frontal ability hit, a full guard hits up to 130.
+export const RULES_VERSION = 42;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);

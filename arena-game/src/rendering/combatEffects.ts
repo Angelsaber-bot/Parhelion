@@ -9,17 +9,17 @@ export const ARENA_EFFECT_BUDGET = {
   high: { tracers: 96, sparks: 384, numbers: 48 },
   low: { tracers: 48, sparks: 192, numbers: 32 },
 } as const;
-export interface NumberSurface { texture: THREE.Texture; paint(value: number, head: boolean, kill: boolean): void; }
+export interface NumberSurface { texture: THREE.Texture; paint(value: number, head: boolean, kill: boolean, blocked?: boolean): void; }
 export function createNumberSurface(): NumberSurface {
   const canvas = document.createElement('canvas'); canvas.width = 128; canvas.height = 64;
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Damage-number canvas unavailable');
   const texture = new THREE.CanvasTexture(canvas);
-  return { texture, paint(value, head, kill) {
+  return { texture, paint(value, head, kill, blocked = false) {
     context.clearRect(0, 0, 128, 64);
     context.font = `900 ${head || kill ? 46 : 38}px sans-serif`; context.textAlign = 'center';
     context.lineWidth = 6; context.strokeStyle = '#1a1030';
-    context.fillStyle = kill ? '#ff5d7a' : head ? '#ffd34d' : '#ffffff';
+    context.fillStyle = blocked ? '#8fd0ff' : kill ? '#ff5d7a' : head ? '#ffd34d' : '#ffffff';
     const text = String(Math.round(value)); context.strokeText(text, 64, 48); context.fillText(text, 64, 48);
     texture.needsUpdate = true;
   } };
@@ -125,7 +125,7 @@ export class ArenaCombatEffects {
     if (gravity !== undefined) slot.gravity = gravity;
     this.parent.add(slot.sprite);
   }
-  damageNumber(at: Vec3, value: number, head: boolean, kill: boolean) {
+  damageNumber(at: Vec3, value: number, head: boolean, kill: boolean, blocked = false) {
     if (this.disposed || !finitePoint(at) || !Number.isFinite(value)) return;
     let slot: DamageLabel | undefined;
     try {
@@ -135,8 +135,8 @@ export class ArenaCombatEffects {
         sprite.name = 'Arena pooled damage label'; sprite.renderOrder = 20;
         return { sprite, surface, life: 0, vy: 0, key: '', order: 0 };
       }, 'numbers');
-      const key = `${Math.round(value)}:${head ? 1 : 0}:${kill ? 1 : 0}`;
-      if (slot.key !== key) { slot.surface.paint(value, head, kill); slot.key = key; }
+      const key = `${Math.round(value)}:${head ? 1 : 0}:${kill ? 1 : 0}:${blocked ? 1 : 0}`;
+      if (slot.key !== key) { slot.surface.paint(value, head, kill, blocked); slot.key = key; }
     } catch {
       // Missing canvas support must not turn an authoritative hit into a client failure.
       if (slot) { slot.life = 0; slot.sprite.removeFromParent(); }

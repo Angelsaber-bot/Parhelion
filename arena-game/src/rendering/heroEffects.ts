@@ -9,6 +9,7 @@ import { disposeTree } from '../weapons/weaponArt.ts';
 import { FIGHTER_PALETTES } from '../player/fighter.ts';
 import { puffTexture } from './grenades.ts';
 
+const GUARD_COLD=new THREE.Color(0xc3deff),GUARD_FULL=new THREE.Color(0xffe6a3);
 const now=()=>typeof performance!=='undefined'?performance.now():Date.now();
 function mesh(g:THREE.BufferGeometry,color:number,opacity=1) {return new THREE.Mesh(g,new THREE.MeshBasicMaterial({color,transparent:opacity<1,opacity,depthWrite:opacity===1,side:THREE.DoubleSide}));}
 function ring(radius:number,color:number,opacity=.8){const m=mesh(new THREE.RingGeometry(radius-.04,radius,48),color,opacity);m.rotation.x=-Math.PI/2;return m;}
@@ -50,6 +51,11 @@ export class HeroEffects {
       const kind=CHARACTERS[p.char].ability;if(kind!=='guard'&&kind!=='prayer')continue;
       if(self&&p.team!==self.team&&smokeBlocks(snap.smokes??[],[self.x,self.y+1.62,self.z],[p.x,p.y+1.1,p.z]))continue;
       const g=get(`p${p.id}`,()=>{const o=new THREE.Group();if(kind==='guard'){const r=mesh(new THREE.TorusGeometry(.53,.025,6,40,140*Math.PI/180),0xc3deff,.9);r.rotation.z=.35;r.position.set(0,1.05,-.4);o.add(r);}else {o.add(ring(.65,0xc5b5f7));const pole=mesh(new THREE.CylinderGeometry(.014,.014,1.2,6),0xd8daec);pole.position.set(-.4,1,0);const flag=mesh(new THREE.PlaneGeometry(.45,.32),0xc3a8e6,.8);flag.position.set(-.17,1.4,0);o.add(pole,flag);}return o;});g.position.set(p.x,p.y+.025,p.z);g.rotation.y=p.yaw;
+      if(kind==='guard'&&p.ability.phase==='guard'){
+        // The guard swells and warms from blue to gold as it fills toward a full counter.
+        const k=Math.min(1,Math.max(0,1-(p.ability.guardBudget??H.guard.budget)/H.guard.budget)),r=g.children[0] as THREE.Mesh;
+        r.scale.setScalar(1+k*.45);(r.material as THREE.MeshBasicMaterial).color.lerpColors(GUARD_COLD,GUARD_FULL,k);
+      }
     }
     for(const p of snap.players)if(p.alive&&(p.rootUntil??0)>snap.tick) {
       if(self&&p.team!==self.team&&smokeBlocks(snap.smokes??[],[self.x,self.y+1.62,self.z],[p.x,p.y+1.1,p.z]))continue;
@@ -121,6 +127,13 @@ export class HeroEffects {
     return g;
   }
   event(event:HeroEvent,tick:number,yaw=0){
+    if(event.action==='blocked'&&event.kind==='guard'){
+      // A struck guard: a blue-white flash where the hit met it, bigger for heavier blows.
+      const group=new THREE.Group();group.position.set(...event.at);this.puffs??=[puffTexture(11),puffTexture(29),puffTexture(47,1.6)];
+      const size=.55+Math.min(1,(event.amount??20)/70)*.75;
+      for(const [color,scale] of [[0x8fd0ff,size],[0xffffff,size*.45]] as const){const flash=new THREE.Sprite(new THREE.SpriteMaterial({map:this.puffs[2],color,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));flash.scale.setScalar(scale);group.add(flash);}
+      this.parent.add(group);this.bursts.push({object:group,start:tick,life:10,kind:'block'});return;
+    }
     if(event.action!=='pulse'&&event.action!=='heal'&&event.action!=='break'&&!(event.action==='trigger'&&(event.kind==='edict'||event.kind==='barrage')))return;
     if(event.action==='break'&&event.kind==='barrage')return;
     if(event.action==='trigger'&&event.kind==='barrage'){const group=new THREE.Group();group.position.set(...event.at);this.puffs??=[puffTexture(11),puffTexture(29),puffTexture(47,1.6)];const flash=new THREE.Sprite(new THREE.SpriteMaterial({map:this.puffs[2],color:0xffb15e,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));flash.scale.setScalar(1.5);group.add(flash);this.parent.add(group);this.bursts.push({object:group,start:tick,life:12,kind:event.kind});return;}

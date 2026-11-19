@@ -3,7 +3,7 @@ import {HeroDemo} from '../src/ui/heroDemo.ts';
 import {BTN,type Input} from '../shared/sim.ts';
 import {abilityFor} from '../shared/content.ts';
 function input(seq:number,buttons=0,mx=0):Input{return {seq,mx,mz:0,yaw:0,pitch:0,buttons,weapon:0,view:0};}
-for(const [char,z,damage,maxTicks] of [[2,-7,80,5],[3,-7,30,12],[4,-3,70,8],[5,-7,70,11],[7,-10,30,22]])it(`hero ${char}: a single tap produces an opening in the first firefight`,()=>{
+for(const [char,z,damage,maxTicks] of [[2,-7,80,5],[3,-7,30,12],[4,-3,90,8],[5,-7,70,11],[7,-10,30,22]])it(`hero ${char}: a single tap produces an opening in the first firefight`,()=>{
  const m=new HeroDemo(char).match,enemy=m.player('target')!;enemy.z=z;let first=0;
  for(let i=0;i<maxTicks;i++){m.queueInputs('hero',[input(i+1,i===0?BTN.SHIELD:0)]);m.step();if(enemy.hp<200&&!first)first=i+1;}
  expect(first).toBeGreaterThan(0);expect(first).toBeLessThanOrEqual(maxTicks);expect(enemy.hp).toBe(200-damage);expect(m.player('hero')!.ability.castSeq).toBe(1);
@@ -21,7 +21,7 @@ it('the hook is a projectile: a sidestep before it arrives makes it miss and ref
 it('swallow cut keeps gunfire available, cannot stack a dash or jump, and a kill readies it again',()=>{
  const m=new HeroDemo(4).match,p=m.player('hero')!;
  for(let i=0;i<20;i++){m.queueInputs('hero',[input(i+1,BTN.FIRE|(i===0?BTN.SHIELD|BTN.DASH|BTN.JUMP:0),1)]);m.step();}
- expect(p.dashCharges).toBe(3);expect(p.dashT).toBe(0);expect(p.y).toBe(0);expect(p.z).toBeCloseTo(-6,1);expect(p.x).toBeLessThan(1);expect(p.ammo[0]).toBeLessThan(30);
+ expect(p.dashCharges).toBe(3);expect(p.dashT).toBe(0);expect(p.y).toBe(0);expect(p.z).toBeCloseTo(-9,1);expect(p.x).toBeLessThan(1);expect(p.ammo[0]).toBeLessThan(30);
  const k=new HeroDemo(4).match,enemy=k.player('target')!,hero=k.player('hero')!;enemy.z=-3;enemy.hp=60;
  for(let i=0;i<12;i++){k.queueInputs('hero',[input(i+1,i===0?BTN.SHIELD:0)]);k.step();}
  expect(enemy.alive).toBe(false);expect(hero.ability.readyAt).toBeLessThanOrEqual(k.tick);

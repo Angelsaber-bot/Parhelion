@@ -41,7 +41,7 @@ describe('guard, smoke and echo',()=>{
  it('Saber holding Q multiplies ordinary movement and rejects dash/reload',()=>{const m=fixture(2),p=m.player('a')!;p.weapon=5;p.weaponSlot=2;cast(m);step(m,6);const x=p.x;input(m,'a',BTN.SHIELD|BTN.DASH|BTN.RELOAD,{mx:1});expect(p.x-x).toBeCloseTo(5.2*1.2*.8/60,3);expect(p.dashCharges).toBe(3);expect(p.reload).toBe(0);});
  it('both sphere smoke and rotated curtains use identical segment and inside semantics',()=>{const s={id:1,owner:'a',x:0,y:0,z:0,life:120,box:{yaw:Math.PI/2,width:4,depth:1.2,height:2.4}};expect(smokeBlocks([s],[-5,1,0],[5,1,0])).toBe(true);expect(insideSmoke([s],[0,1,1.9])).toBe(true);expect(insideSmoke([s],[1,1,0])).toBe(false);expect(smokeBlocks([{...s,delay:2}],[-5,1,0],[5,1,0])).toBe(false);expect(smokeBlocks([s],[-5,3,0],[5,3,0])).toBe(false);});
  it('a hook that catches nothing raises no smoke and refunds 40% of its cooldown',()=>{const m=fixture(3),p=m.player('a')!;cast(m,.6);const paid=p.ability.readyAt;step(m,25);expect(m.smokes).toHaveLength(0);expect(m.heroes.entities).toHaveLength(0);expect(p.ability.readyAt).toBe(paid-240);});
- it('Musashi leaves no echo and cuts each enemy once per dash',()=>{const m=fixture(4),enemy=m.player('b')!;enemy.z=-3;cast(m);step(m,15);expect(enemy.hp).toBe(130);expect(m.heroes.entities).toHaveLength(0);expect(m.player('a')!.z).toBeCloseTo(-6,1);});
+ it('Musashi leaves no echo and cuts each enemy once per dash',()=>{const m=fixture(4),enemy=m.player('b')!;enemy.z=-3;cast(m);step(m,15);expect(enemy.hp).toBe(110);expect(m.heroes.entities).toHaveLength(0);expect(m.player('a')!.z).toBeCloseTo(-9,1);});
 });
 describe('barrage and prayer',()=>{
  it('the round shot arrives within a fifth of a second at ten metres and still lands after its gunner dies',()=>{const m=fixture(5),enemy=m.player('b')!;cast(m,-Math.atan2(.4,10));const start=m.tick;let hit=-1;for(let i=0;i<20&&hit<0;i++){m.step();if(enemy.hp<200)hit=m.tick-start;}expect(hit).toBeGreaterThan(0);expect(hit).toBeLessThanOrEqual(13);expect(enemy.hp).toBe(130);
@@ -154,9 +154,25 @@ describe('seven heroes: distinctive actions and counterplay',()=>{
    expect(m.player('b')!.hp).toBe(200);expect(m.player('b')!.pullT).toBe(0);expect(m.player('b')!.z).toBeCloseTo(-8,1);expect(m.player('d')!.hp).toBe(200);expect(m.heroes.entities.filter(e=>e.kind==='barrage'||e.kind==='curtain')).toHaveLength(0);}
  });
  it('wind guard releases a stronger slash after absorbing damage, never through a wall',()=>{
-  for(const wall of [false,true]){const m=fixture(2),p=m.player('a')!,enemy=m.player('b')!;enemy.z=-5;cast(m);step(m,6);m.heroes.absorb(p,60,[0,1,-5]);if(wall)m.shields.push({id:9,owner:'b',team:'B',x:0,y:0,z:-2,yaw:0,hp:180,life:300});input(m);expect(enemy.hp).toBe(wall?200:108);expect(p.ability.phase).toBe('recovery');}
+  for(const wall of [false,true]){const m=fixture(2),p=m.player('a')!,enemy=m.player('b')!;enemy.z=-5;cast(m);step(m,6);m.heroes.absorb(p,60,[0,1,-5]);if(wall)m.shields.push({id:9,owner:'b',team:'B',x:0,y:0,z:-2,yaw:0,hp:180,life:300});input(m);expect(enemy.hp).toBe(wall?200:100);expect(p.ability.phase).toBe('recovery');}
  });
- it('Musashi dashes six metres along the aim, not the movement keys, and stays vulnerable',()=>{const m=fixture(4),p=m.player('a')!;input(m,'a',BTN.SHIELD,{yaw:0,pitch:0,mx:1});step(m,15);expect(p.x).toBeCloseTo(0,2);expect(p.z).toBeCloseTo(-6,1);m.heroDamage('b','B','a',20,0);expect(p.hp).toBe(180);});
+ it('a full guard counters at once for 130, and the guard holds a full second',()=>{
+  const m=fixture(2),p=m.player('a')!,enemy=m.player('b')!;enemy.z=-5;cast(m);for(let i=0;i<50;i++)input(m,'a',BTN.SHIELD);expect(p.ability.phase).toBe('guard');
+  m.heroes.absorb(p,150,[0,1,-5],undefined,'b');expect(p.ability.phase).toBe('recovery');expect(enemy.hp).toBe(70);
+ });
+ it('a front guard swallows Musashi\'s cut, the solar judgement and a cannon burst, and says who it stopped',()=>{
+  const m=fixture(4),musashi=m.player('a')!,artoria=m.player('b')!;artoria.char=2;Object.assign(artoria,{z:-4,yaw:Math.PI});m.snapshot();
+  const both=(a:number,b:number)=>{m.queueInputs('a',[{seq:musashi.lastSeq+1,mx:0,mz:0,yaw:0,pitch:0,buttons:a,weapon:musashi.weaponSlot,view:m.tick}]);m.queueInputs('b',[{seq:artoria.lastSeq+1,mx:0,mz:0,yaw:Math.PI,pitch:0,buttons:b,weapon:artoria.weaponSlot,view:m.tick}]);m.step();};
+  for(let i=0;i<5;i++)both(0,BTN.SHIELD);expect(artoria.ability.phase).toBe('guard');
+  for(let i=0;i<14;i++)both(i===0?BTN.SHIELD:0,BTN.SHIELD);
+  expect(artoria.hp).toBe(200);expect(artoria.ability.guardBudget).toBe(60);
+  const blocked=m.snapshot().events.filter(e=>e.t==='ability'&&e.action==='blocked');expect(blocked).toHaveLength(1);expect(blocked[0]).toMatchObject({id:'b',by:'a',amount:90});
+  m.heroes.heroHit('a','A',artoria,30,104,[0,2.3,-1]);expect(artoria.hp).toBe(200);m.heroes.heroHit('a','A',artoria,35,101,[0,1,-1]);expect(artoria.hp).toBe(195);
+ });
+ it('Musashi\'s cut still lands on a guard turned away from it',()=>{
+  const m=fixture(4),artoria=m.player('b')!;artoria.char=2;Object.assign(artoria,{z:-4,yaw:0});m.heroes.heroHit('a','A',artoria,90,106,[0,1.1,-2]);expect(artoria.hp).toBe(110);
+ });
+ it('Musashi dashes nine metres along the aim, not the movement keys, and stays vulnerable',()=>{const m=fixture(4),p=m.player('a')!;input(m,'a',BTN.SHIELD,{yaw:0,pitch:0,mx:1});step(m,15);expect(p.x).toBeCloseTo(0,2);expect(p.z).toBeCloseTo(-9,1);m.heroDamage('b','B','a',20,0);expect(p.hp).toBe(180);});
  it('Blackbeard hooks an enemy, drags them to 2.5 m in front and slows them; a second Q does nothing',()=>{const m=fixture(3),p=m.player('a')!,enemy=m.player('b')!;enemy.z=-7;cast(m,-Math.atan2(.4,7));const ready=p.ability.readyAt;step(m,12);expect(enemy.hp).toBe(170);expect(enemy.pullT).toBeGreaterThan(0);for(let i=0;i<20;i++)input(m,'b',0);expect(enemy.z).toBeCloseTo(-2.5,1);expect(enemy.slowUntil).toBeGreaterThan(m.tick-20);input(m);input(m,'a',BTN.SHIELD);expect(p.ability.readyAt).toBe(ready);expect(p.ability.castSeq).toBe(1);});
  it('Ozymandias can redirect the disc; each pulse damages only visible enemies in its cone',()=>{const m=fixture(7),p=m.player('a')!,enemy=m.player('b')!;Object.assign(enemy,{x:5,z:-4});cast(m,targetPitch(4));step(m,30);input(m);input(m,'a',BTN.SHIELD,{yaw:-Math.PI/2});const disc=m.heroes.entities[0];expect(disc.yaw).toBeCloseTo(-Math.PI/2);step(m,25);expect(enemy.hp).toBe(170);expect(m.heroes.marks).toHaveLength(1);expect(p.ability.castSeq).toBe(1);});
  it('the hook reaches an enemy 22 m away and drags them all the way in',()=>{const m=fixture(3),enemy=m.player('b')!;enemy.z=-22;cast(m,-Math.atan2(.4,22));step(m,22);expect(enemy.hp).toBe(170);expect(enemy.pullT).toBeGreaterThan(0);for(let i=0;i<40;i++)input(m,'b',0);expect(enemy.z).toBeCloseTo(-2.5,1);});

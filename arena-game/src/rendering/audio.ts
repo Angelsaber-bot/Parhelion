@@ -96,6 +96,7 @@ export const sfx = {
   ability(kind:string,action:string,dist=0) {
     const base:Record<string,number>={barrier:540,anchor:760,guard:420,curtain:160,decoy:920,barrage:110,prayer:660,lens:1040,edict:330};
     const v=Math.max(0,1-dist/26)*.09;if(!v)return;
+    if(action==='blocked'){tone(1320,.07,v*1.6,'triangle',.7);tone(880,.12,v*1.2,'sine',.8);noise(.05,5200,v*1.4,.8);return;}
     const f=base[kind]??440;
     tone(action==='break'?f*.55:f,action==='accepted'?.18:.12,v,'sine',action==='cancel'?.55:1.2);
     if(action==='pulse'||action==='trigger')noise(.12,kind==='barrage'?180:1800,v*.7);

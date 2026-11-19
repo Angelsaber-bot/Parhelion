@@ -525,7 +525,7 @@ export class Match {
     if (this.phase === 'ended') return;
     for (const [vid, { dmg, head, t }] of damage) {
       const v=this.player(vid)!,h=pos.get(vid)!;
-      const raw=this.spawnProtected(vid)?0:this.heroes.absorb(v,dmg,ev.origin,{x:h[0],y:h[1],z:h[2],life:h[5],yaw:h[6],pitch:h[7],guard:h[8],guardSeq:h[9]});
+      const raw=this.spawnProtected(vid)?0:this.heroes.absorb(v,dmg,ev.origin,{x:h[0],y:h[1],z:h[2],life:h[5],yaw:h[6],pitch:h[7],guard:h[8],guardSeq:h[9]},shooter.id);
       this.damage(slot,vid,Math.round(raw),head,ev.weapon,t);
     }
   }
@@ -624,7 +624,7 @@ export class Match {
     }
     if (victim) {
       if (human) this.stats.swingHit(p.id, attack.weapon, 'player');
-      this.damage(slot, victim, this.spawnProtected(victim)?0:this.heroes.absorb(this.player(victim)!,w.damage,origin), false, attack.weapon, nearest);
+      this.damage(slot, victim, this.spawnProtected(victim)?0:this.heroes.absorb(this.player(victim)!,w.damage,origin,undefined,p.id), false, attack.weapon, nearest);
       return true;
     }
     return false;

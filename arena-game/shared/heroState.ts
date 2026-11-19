@@ -22,4 +22,4 @@ export interface TacticalEntity {
   struck?:string[];
 }
 export interface ReconMark { id:string; source:number; team:Team; victim:string; lifeId:number; x:number; y:number; z:number; expires:number }
-export interface HeroEvent { t:'ability'; id:string; castSeq:number; kind:AbilityId; action:'accepted'|'spawn'|'break'|'pulse'|'cancel'|'heal'|'trigger'|'blocked'; at:Vec3; amount?:number }
+export interface HeroEvent { t:'ability'; id:string; castSeq:number; kind:AbilityId; action:'accepted'|'spawn'|'break'|'pulse'|'cancel'|'heal'|'trigger'|'blocked'; at:Vec3; amount?:number; /** blocked: who the guard stopped. */ by?:string }

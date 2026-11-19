@@ -164,7 +164,9 @@ export class Game {
     switch (e.t) {
       case 'ability':
         this.scene.heroEvent(e,this.latest?.tick??0,this.latest?.players.find(p=>p.id===e.id)?.yaw??0);
-        sfx.ability(e.kind,e.action,this.distance(e.at));
+        sfx.ability(e.kind,e.action,e.action==='blocked'&&(e.by===myId||e.id===myId)?0.5:this.distance(e.at));
+        // Whoever hit the guard sees how much it swallowed, in blue.
+        if(e.action==='blocked'&&e.by===myId&&e.amount)this.scene.damageNumber([e.at[0],e.at[1]+.5,e.at[2]],e.amount,false,false,true);
         break;
       case 'shot': {
         if (e.id === myId) break; // already shown by prediction

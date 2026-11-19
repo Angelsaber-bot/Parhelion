@@ -438,8 +438,8 @@ export class ArenaScene {
   }
 
   /** Floating damage labels reuse one private canvas texture per bounded slot. */
-  damageNumber(at: Vec3, dmg: number, head: boolean, kill: boolean) {
-    this.combatEffects.damageNumber(at, dmg, head, kill);
+  damageNumber(at: Vec3, dmg: number, head: boolean, kill: boolean, blocked = false) {
+    this.combatEffects.damageNumber(at, dmg, head, kill, blocked);
   }
 
   get combatEffectInventory() { return this.combatEffects.inventory; }
