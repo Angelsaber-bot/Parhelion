@@ -33,6 +33,11 @@ const execute = (binary: string, args: string[]) => runner(binary, args, { cwd: 
 const publicUrl = PUBLIC_SERVER.replace(/^wss:/, 'https:').replace(/\/arena$/, '/training');
 const token = values.public ? (process.env.ARENA_NEURAL_CORPUS_TOKEN ?? await readFile(path.join(output, 'public.token'), 'utf8')).trim() : '';
 if (values.public && !/^[a-f0-9]{64}$/.test(token)) throw new Error('Invalid Arena training credential configuration');
+const publicHeaders = {
+  authorization: `Bearer ${token}`,
+  'user-agent': 'Parhelion-Arena-Training/1.0',
+  accept: 'application/json',
+};
 type RemoteOptions = { method?: 'PUT'; body?: string; file?: string };
 const responseLimit = 16 * 1024 ** 2;
 
@@ -55,7 +60,7 @@ function curlRequest(url: string, options: RemoteOptions): Promise<Response> {
       if (code !== 0 || !Number.isInteger(status) || status < 200 || status > 599) { reject(new Error(`Arena HTTPS request failed (curl ${code})`)); return; }
       resolve(new Response(status === 204 || status === 304 ? null : body.slice(0, split), { status }));
     });
-    const config = [`header = ${JSON.stringify(`authorization: Bearer ${token}`)}`];
+    const config = Object.entries(publicHeaders).map(([name, value]) => `header = ${JSON.stringify(`${name}: ${value}`)}`);
     if (options.method) config.push(`request = ${options.method}`);
     if (options.file || options.body) config.push(`data-binary = ${JSON.stringify(options.file ? '@' + options.file : options.body)}`);
     child.stdin.end(config.join('\n') + '\n');
@@ -67,7 +72,7 @@ async function remote(route: string, options: RemoteOptions = {}) {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const response = await fetch(url, { method: options.method, body: options.file ? await readFile(options.file, 'utf8') : options.body,
-        redirect: 'error', headers: { authorization: `Bearer ${token}` },
+        redirect: 'error', headers: publicHeaders,
         signal: AbortSignal.any([stop.signal, AbortSignal.timeout(14000)]) });
       if ((response.status < 500 && response.status !== 429) || attempt === 2) return response;
       await response.body?.cancel();

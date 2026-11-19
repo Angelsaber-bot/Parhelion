@@ -24,7 +24,11 @@ jobs:
           import json, os, urllib.request
 
           endpoint = 'https://parhelion-arena.lejiazhang-us.workers.dev/training/status'
-          with urllib.request.urlopen(endpoint, timeout=20) as response:
+          request = urllib.request.Request(endpoint, headers={
+              'User-Agent': 'Parhelion-Arena-Training/1.0',
+              'Accept': 'application/json',
+          })
+          with urllib.request.urlopen(request, timeout=20) as response:
               status = json.load(response)
           dataset = status.get('dataset') or {}
           trained = (status.get('transformer') or {}).get('completedRevision', 0)
