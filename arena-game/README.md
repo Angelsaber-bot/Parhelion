@@ -115,7 +115,9 @@ ARENA_NEURAL_CORPUS=1 npm run worker:train --prefix arena-game
 npm run train:neural --prefix arena-game -- --watch
 ```
 
-在 Arena 大厅勾选「自动贡献对局训练数据」，开始至少两局。「再来一局」也会新建独立录制。获授权的本机批次进入 `arena-game/.scratch/training/corpus`。公网批次先进 Arena Worker 的私有队列，最多保留 4,096 批和 30 天。操作者可用 `npm run train:neural --prefix arena-game -- --watch --public` 从公网拉取数据，持久化后才确认取走。公网模式从 `.scratch/neural/public.token` 读取专用令牌。训练完成会生成 `.scratch/neural/candidate.json`、`metrics.json`、`simulation.json` 和 `checkpoint.pt`。公网只接收通过真人留出评估和模拟对照阈值的权重。合成测试权重专用于验证。
+在 Arena 大厅勾选「自动贡献对局训练数据」，开始至少两局。「再来一局」也会新建独立录制。获授权的本机批次进入 `arena-game/.scratch/training/corpus`。公网批次进入 Arena Worker 的私有档案，最多保留 4,096 批和 30 天。GitHub Actions 每 15 分钟检查新快照，只在有足够独立录制且数据发生变化时训练，并将状态回传给 Worker。批次和训练中间文件仅在临时运行器中处理。训练不会消费或删除 Worker 档案。优化器检查点单独存放在受限的 Worker 接口，可供下一次任务续训。公网只接收通过真人留出评估和模拟对照阈值的权重。合成测试权重专用于验证。
+
+本机操作者可用 `npm run train:neural --prefix arena-game -- --watch --public` 镜像公网语料并训练，从 `.scratch/neural/public.token` 读取专用令牌。训练完成会生成 `.scratch/neural/candidate.json`、`metrics.json`、`simulation.json` 和 `checkpoint.pt`。
 
 本机进度见 `/__parhelion/arena-neural/status`，公网进度见 Arena Worker 的 `/training/status`。`npm run eval:neural --prefix arena-game -- /path/to/model.json` 可单独重跑模拟对照。要自定义模型尺寸或继续训练检查点，可运行虚拟环境的 `python arena-game/tools/train-arena-policy.py --help`。
 

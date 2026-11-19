@@ -1,0 +1,65 @@
+name: Arena neural training
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: arena-public-neural-training
+  cancel-in-progress: false
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check for a new training snapshot
+        id: corpus
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+
+          endpoint = 'https://parhelion-arena.lejiazhang-us.workers.dev/training/status'
+          with urllib.request.urlopen(endpoint, timeout=20) as response:
+              status = json.load(response)
+          dataset = status.get('dataset') or {}
+          trained = (status.get('transformer') or {}).get('completedRevision', 0)
+          ready = status.get('neuralExportConfigured') and dataset.get('matches', 0) >= 2 and dataset.get('revision', 0) > trained
+          print(f"Archive: {dataset.get('matches', 0)} matches, {dataset.get('batches', 0)} batches; new eligible snapshot: {bool(ready)}")
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write('ready=' + ('true' if ready else 'false') + '\n')
+          PY
+      - uses: actions/checkout@v5
+        if: steps.corpus.outputs.ready == 'true'
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        if: steps.corpus.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: arena-game/package-lock.json
+      - uses: actions/setup-python@v5
+        if: steps.corpus.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Install training dependencies
+        if: steps.corpus.outputs.ready == 'true'
+        run: |
+          npm ci --prefix arena-game --no-audit --no-fund
+          python -m pip install --disable-pip-version-check --index-url https://download.pytorch.org/whl/cpu 'torch==2.15.0'
+      - name: Train and evaluate a private snapshot
+        if: steps.corpus.outputs.ready == 'true'
+        env:
+          ARENA_NEURAL_CORPUS_TOKEN: ${{ secrets.ARENA_NEURAL_CORPUS_TOKEN }}
+        run: |
+          test -n "$ARENA_NEURAL_CORPUS_TOKEN"
+          umask 077
+          training_dir=$(mktemp -d "$RUNNER_TEMP/arena-training.XXXXXX")
+          trap 'rm -rf "$training_dir"' EXIT
+          ARENA_NEURAL_RUN_DIR="$training_dir" ARENA_NEURAL_PYTHON=python \
+            npm run train:neural --prefix arena-game -- --public --cloud --epochs 20 --device cpu

@@ -15,8 +15,12 @@ const CORPUS_RETENTION = 30 * DEDUP_WINDOW;
 const CORPUS_READ_LIMIT = 8;
 const MAX_MODEL_BODY = 12 * 1024 ** 2;
 const MODEL_CHUNK = 240 * 1024;
+const MAX_CHECKPOINT_BODY = 8 * 1024 ** 2;
 const PUBLIC_ORIGIN = 'https://parhelion-game.pages.dev';
 const PUBLIC_TRAINER = 'parhelion-arena.lejiazhang-us.workers.dev';
+const RUN_STATES = ['training', 'evaluating', 'ready', 'error'] as const;
+type RunState = typeof RUN_STATES[number];
+interface TrainingRun { revision: number; state: RunState; at: number; completedRevision: number; trainWindows?: number; holdoutWindows?: number; published?: boolean }
 
 const loopback = (hostname: string) => hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
 function localOrigin(origin: string | null): boolean {
@@ -39,6 +43,9 @@ export class ArenaTraining extends DurableObject<Env> {
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS neural_model (part INTEGER PRIMARY KEY, body TEXT NOT NULL)');
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS neural_release (id INTEGER PRIMARY KEY, digest TEXT NOT NULL, at INTEGER NOT NULL)');
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS corpus (id INTEGER PRIMARY KEY AUTOINCREMENT, batch TEXT NOT NULL UNIQUE, at INTEGER NOT NULL, payload TEXT NOT NULL)');
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS training_run (id INTEGER PRIMARY KEY, run TEXT NOT NULL)');
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS optimizer_checkpoint (part INTEGER PRIMARY KEY, body TEXT NOT NULL)');
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS optimizer_revision (id INTEGER PRIMARY KEY, revision INTEGER NOT NULL)');
   }
 
   async enqueue(batch: TrainingBatch, retain = false): Promise<boolean> {
@@ -65,10 +72,10 @@ export class ArenaTraining extends DurableObject<Env> {
     sql.exec('DELETE FROM corpus WHERE id IN (SELECT id FROM corpus ORDER BY id DESC LIMIT -1 OFFSET ?)', CORPUS_LIMIT);
   }
 
-  async corpusRows() {
+  async corpusRows(after = 0, through = Number.MAX_SAFE_INTEGER) {
     if (!this.env.ARENA_NEURAL_CORPUS_TOKEN) return [];
     this.pruneCorpus(Date.now());
-    return this.ctx.storage.sql.exec<{ id: number; payload: string }>('SELECT id,payload FROM corpus ORDER BY id LIMIT ?', CORPUS_READ_LIMIT).toArray()
+    return this.ctx.storage.sql.exec<{ id: number; payload: string }>('SELECT id,payload FROM corpus WHERE id > ? AND id <= ? ORDER BY id LIMIT ?', after, through, CORPUS_READ_LIMIT).toArray()
       .map(({ id, payload }) => ({ id, batch: JSON.parse(payload) as TrainingBatch }));
   }
 
@@ -107,6 +114,7 @@ export class ArenaTraining extends DurableObject<Env> {
     const sql = this.ctx.storage.sql;
     const last = sql.exec<{ interval: number }>('SELECT interval FROM checkpoint WHERE id=2').toArray()[0]?.interval ?? -1;
     if (last >= interval) return;
+    this.pruneCorpus(Date.now());
     const model = this.checkpoint(2), batch = makeSelfPlayBatch(interval);
     if (batch.rows.length) trainArenaBatch(model, batch);
     sql.exec('INSERT OR REPLACE INTO checkpoint (id, model, interval) VALUES (2, ?, ?)', JSON.stringify(model), interval);
@@ -115,14 +123,38 @@ export class ArenaTraining extends DurableObject<Env> {
   async status(rulesVersion = RULES_VERSION, collecting = false) {
     const { trained, heldOut, recentLoss, recentHoldoutLoss, exploration } = this.checkpoint();
     const neural = this.release();
-    const corpus = this.ctx.storage.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM corpus').one().n;
+    const dataset = this.ctx.storage.sql.exec<{ batches: number; matches: number; revision: number }>(
+      'SELECT COUNT(*) AS batches, COUNT(DISTINCT substr(batch,1,32)) AS matches, COALESCE(MAX(id),0) AS revision FROM corpus',
+    ).one();
     return { rulesVersion, queuedBatches: this.pending(), trainedTicks: trained, holdoutTicks: heldOut, recentLoss, recentHoldoutLoss,
-      selfPlayTicks: this.checkpoint(2).trained, shadow: !neural, neural, pendingNeuralBatches: corpus, neuralCollection: collecting,
+      selfPlayTicks: this.checkpoint(2).trained, shadow: !neural, neural, pendingNeuralBatches: dataset.batches, dataset,
+      transformer: this.trainingRun(), neuralCollection: collecting,
       neuralExportConfigured: !!this.env.ARENA_NEURAL_CORPUS_TOKEN, exploration: {
         trainedWindows: exploration?.trained ?? 0, holdoutWindows: exploration?.heldOut ?? 0,
         yawError: exploration?.heldOut ? exploration.yawError / exploration.heldOut : null,
         stillYawError: exploration?.heldOut ? exploration.stillYawError / exploration.heldOut : null,
       } };
+  }
+
+  private trainingRun(): TrainingRun | null {
+    const saved = this.ctx.storage.sql.exec<{ run: string }>('SELECT run FROM training_run WHERE id=1').toArray()[0];
+    return saved ? JSON.parse(saved.run) as TrainingRun : null;
+  }
+
+  async reportTrainingRun(input: unknown): Promise<boolean> {
+    if (!input || typeof input !== 'object') return false;
+    const { revision, state, trainWindows, holdoutWindows, published } = input as Partial<TrainingRun>;
+    const numeric = (x: unknown) => typeof x === 'number' && Number.isSafeInteger(x) && x >= 0;
+    if (!numeric(revision) || !revision || !state || !RUN_STATES.includes(state) ||
+        (trainWindows !== undefined && !numeric(trainWindows)) || (holdoutWindows !== undefined && !numeric(holdoutWindows)) ||
+        (published !== undefined && typeof published !== 'boolean')) return false;
+    const previous = this.trainingRun();
+    if (previous && revision < previous.revision) return false;
+    const completedRevision = state === 'ready' ? revision : previous?.completedRevision ?? 0;
+    this.ctx.storage.sql.exec('INSERT OR REPLACE INTO training_run VALUES (1, ?)', JSON.stringify({
+      revision, state, at: Date.now(), completedRevision, trainWindows, holdoutWindows, published,
+    }));
+    return true;
   }
 
   async explorationModel() {
@@ -148,7 +180,30 @@ export class ArenaTraining extends DurableObject<Env> {
     return this.currentModel = body ? parseNeuralPolicy(JSON.parse(body)) ?? null : null;
   }
 
+  private async optimizerCheckpoint(req: Request): Promise<Response> {
+    const sql = this.ctx.storage.sql;
+    const saved = sql.exec<{ revision: number }>('SELECT revision FROM optimizer_revision WHERE id=1').toArray()[0];
+    if (req.method === 'GET') {
+      if (!saved) return new Response(null, { status: 404 });
+      const data = sql.exec<{ body: string }>('SELECT body FROM optimizer_checkpoint ORDER BY part').toArray().map(row => row.body).join('');
+      return Response.json({ revision: saved.revision, data }, { headers: { 'cache-control': 'no-store' } });
+    }
+    const version = Number(new URL(req.url).searchParams.get('revision'));
+    const body = await readText(req, MAX_CHECKPOINT_BODY);
+    if (!Number.isSafeInteger(version) || version <= 0 || typeof body !== 'string' || !body.length ||
+        body.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(body)) return new Response(null, { status: 400 });
+    const current = sql.exec<{ revision: number }>('SELECT revision FROM optimizer_revision WHERE id=1').toArray()[0];
+    if ((current?.revision ?? 0) > version || this.trainingRun()?.revision !== version) return new Response(null, { status: 409 });
+    this.ctx.storage.transactionSync(() => {
+      sql.exec('DELETE FROM optimizer_checkpoint');
+      for (let start = 0; start < body.length; start += MODEL_CHUNK) sql.exec('INSERT INTO optimizer_checkpoint VALUES (?, ?)', start, body.slice(start, start + MODEL_CHUNK));
+      sql.exec('INSERT OR REPLACE INTO optimizer_revision VALUES (1, ?)', version);
+    });
+    return new Response(null, { status: 204 });
+  }
+
   async fetch(req: Request): Promise<Response> {
+    if (new URL(req.url).pathname === '/training/checkpoint') return this.optimizerCheckpoint(req);
     const release = this.release();
     if (req.method === 'GET') {
       if (!release) return new Response(null, { status: 404 });
@@ -214,12 +269,29 @@ export async function trainingRequest(req: Request, storage: DurableObjectNamesp
   if (url.pathname === '/training/corpus') {
     if (!administrator) return new Response(null, { status: 404 });
     const object = trainingStore(storage);
-    if (req.method === 'GET') return Response.json({ records: await object.corpusRows() }, { headers: { 'cache-control': 'no-store' } });
+    if (req.method === 'GET') {
+      const after = Number(url.searchParams.get('after') ?? 0);
+      const through = Number(url.searchParams.get('through') ?? Number.MAX_SAFE_INTEGER);
+      if (!Number.isSafeInteger(after) || after < 0 || !Number.isSafeInteger(through) || through < after) return new Response(null, { status: 400 });
+      return Response.json({ records: await object.corpusRows(after, through) }, { headers: { 'cache-control': 'no-store' } });
+    }
     const through = Number(url.searchParams.get('through'));
     if (req.method !== 'DELETE') return new Response(null, { status: 405 });
     if (!Number.isSafeInteger(through) || through < 1) return new Response(null, { status: 400 });
-    await object.acknowledgeCorpus(through);
+    if (local) await object.acknowledgeCorpus(through);
     return new Response(null, { status: 204 });
+  }
+  if (url.pathname === '/training/job') {
+    if (!administrator || req.method !== 'PUT') return new Response(null, { status: 404 });
+    const body = await readText(req, 4096);
+    try {
+      if (typeof body === 'string' && await trainingStore(storage).reportTrainingRun(JSON.parse(body))) return new Response(null, { status: 204 });
+    } catch { /* invalid JSON */ }
+    return new Response(null, { status: 400 });
+  }
+  if (url.pathname === '/training/checkpoint') {
+    if (!administrator || !['GET', 'PUT'].includes(req.method)) return new Response(null, { status: 404 });
+    return trainingStore(storage).fetch(req);
   }
   const headers: HeadersInit = origin && allowedOrigin(origin) ? { 'access-control-allow-origin': origin, vary: 'origin' } : {};
   if ((origin && !allowedOrigin(origin)) || (req.method === 'POST' && !origin)) return new Response(null, { status: 403 });

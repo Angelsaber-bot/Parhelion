@@ -50,7 +50,7 @@ export default {
     if (url.pathname === '/' || url.pathname === '/health') {
       return new Response('Parhelion Arena server OK', { headers: CORS });
     }
-    if (url.pathname === '/training' || url.pathname === '/training/status' || url.pathname === '/training/exploration' || url.pathname === '/training/corpus' || url.pathname === '/training/neural') {
+    if (url.pathname === '/training' || url.pathname === '/training/status' || url.pathname === '/training/exploration' || url.pathname === '/training/corpus' || url.pathname === '/training/neural' || url.pathname === '/training/job' || url.pathname === '/training/checkpoint') {
       return trainingRequest(req, env.TRAINING, env.ARENA_NEURAL_CORPUS_TOKEN);
     }
     if (url.pathname === '/stats') {
