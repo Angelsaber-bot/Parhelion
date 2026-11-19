@@ -1,6 +1,6 @@
 // Rule-based baseline bot. Produces the same Input a human client sends, so it goes through the
-// identical server rules. This is the scripted baseline the trained cover-choice AI will be
-// evaluated against; a learned policy can replace it by implementing Controller.
+// identical server rules. A tactical policy can choose positioning while this controller
+// executes movement, perception and gunplay.
 //
 // It is deliberately human-shaped rather than optimal:
 // - perception: a target must stay visible for a reaction time that grows with distance and with
@@ -12,6 +12,7 @@
 //   long it holds an angle, how close it wants to fight and when it backs off.
 
 import { CHARACTERS, FRAG, GRENADE, HERO_COMBAT, TICK_HZ, WEAPONS, falloff, loadoutWeapon, type WeaponDef } from './content.ts';
+import { tacticalCandidates, TACTIC_INTERVAL, TACTIC_MEMORY_TICKS, TACTIC_TICKS, type TacticalPolicy } from './botTactics.ts';
 import { smokeBlocks } from './grenade.ts';
 /** Melee reach including most of the windup lunge. */
 const meleeReach = (w: WeaponDef) => w.range + (w.lunge ?? 0) * (w.windup ?? 0) / TICK_HZ * .7;
@@ -110,8 +111,13 @@ export class Bot implements Controller {
   private throwPlan: { yaw: number; pitch: number; t: number } | null = null;
   private readonly aggression: number;
   private readonly preferMul: number;
+  private nextTactic = 0;
+  private tacticLife = -1;
+  private tacticPath: NavNode[] | null = null;
+  private tacticExpires = 0;
+  private lastObserved = -Infinity;
 
-  constructor(seed: number, readonly skill: BotSkill = BOT_SKILL.normal) {
+  constructor(seed: number, readonly skill: BotSkill = BOT_SKILL.normal, private readonly tactics?: TacticalPolicy) {
     this.rand = rng(seed);
     const r = this.rand();
     this.style = r < 0.36 ? 'rusher' : r < 0.7 ? 'holder' : 'flanker';
@@ -127,6 +133,12 @@ export class Bot implements Controller {
   think(match: Match, id: string): Input {
     const me = match.player(id)!;
     const inp: Input = { seq: ++this.seq, mx: 0, mz: 0, yaw: this.yaw, pitch: this.pitch, buttons: 0, weapon: me.weaponSlot, view: match.tick };
+    if (this.tactics && (this.tacticLife !== me.lifeId || match.phase !== 'live' || !me.alive)) {
+      this.tacticLife = me.lifeId;
+      this.tacticPath = null;
+      this.nextTactic = 0;
+      this.lastObserved = -Infinity;
+    }
     if (!me.alive) {
       this.targetId = null; this.path = []; this.goal = null; this.lastSeen = null; this.trail = []; this.chase = null;
       this.lastHp = CHARACTERS[me.char].hp;
@@ -168,6 +180,7 @@ export class Bot implements Controller {
       this.trail.push([target.x, target.y, target.z]);
       if (this.trail.length > HISTORY) this.trail.shift();
       this.lastSeen = [target.x, target.y, target.z];
+      if (this.tactics && match.phase === 'live') this.lastObserved = match.tick;
       this.holdT = 0;
       this.chase = null;
     } else {
@@ -200,10 +213,32 @@ export class Bot implements Controller {
 
     // --- movement goal ---
     const nav = navFor(match);
+    if (match.tick >= this.tacticExpires) this.tacticPath = null;
+    if (this.tactics && match.phase === 'live' && match.tick >= this.nextTactic) {
+      this.tacticPath = null;
+      const age = match.tick - this.lastObserved;
+      if ((engaged || (!target && age <= TACTIC_MEMORY_TICKS)) && this.lastSeen && me.grounded) {
+        const [x, y, z] = this.lastSeen;
+        const threat: Vec3 = [x, y + (target ? playerEye(match.map, target) : match.map.eye), z];
+        const spare = loadoutWeapon(me.loadout, me.weaponSlot === 0 ? 1 : 0);
+        const choices = tacticalCandidates(match.map, nav, me, spare, this.aggression, threat, !!target, age, match.tick - me.lastDamageTick);
+        const choice = choices[this.tactics(choices)];
+        if (choice?.path.length) {
+          this.tacticPath = [...choice.path];
+          this.tacticExpires = match.tick + TACTIC_TICKS;
+          this.nextTactic = match.tick + TACTIC_INTERVAL;
+          this.path = [];
+          this.goal = null;
+        } else {
+          this.nextTactic = match.tick + 24;
+        }
+      }
+    }
     let goal: Vec3 | null;
     const hurt = me.hp < maxHp * (this.style === 'holder' ? 0.55 : this.style === 'flanker' ? 0.4 : 0.25);
     const reloading = me.reload > 0;
-    if (target && (hurt || (reloading && this.aggression < 0.6))) goal = this.coverAway(match, me, target);
+    if (this.tacticPath) goal = null;
+    else if (target && (hurt || (reloading && this.aggression < 0.6))) goal = this.coverAway(match, me, target);
     else if (target && (WEAPONS[want].kind === 'melee' || this.style === 'rusher') && bestD > (WEAPONS[want].kind === 'melee' ? WEAPONS[want].range * .7 : 7) && engaged) goal = [target.x, target.y, target.z];
     else if (target) goal = null; // fight where it stands
     else {
@@ -221,8 +256,12 @@ export class Bot implements Controller {
     if (!goal) { this.path = []; this.goal = null; }
 
     let moveX = 0, moveZ = 0;
-    while (this.path.length && Math.hypot(this.path[0].x - me.x, this.path[0].z - me.z) < 0.24 && Math.abs(this.path[0].y-me.y)<.6) this.path.shift();
-    if (this.holdT > 0) {
+    const travel = this.tacticPath ?? this.path;
+    while (travel.length && Math.hypot(travel[0].x - me.x, travel[0].z - me.z) < 0.24 && Math.abs(travel[0].y - me.y) < .6) travel.shift();
+    if (this.tacticPath) {
+      const next = travel[0];
+      if (next) { moveX = next.x - me.x; moveZ = next.z - me.z; }
+    } else if (this.holdT > 0) {
       this.holdT--; // holding an angle at a cover point
     } else if (this.path.length) {
       const look = this.path[0]; // Never cut a cabinet corner or skip a stair landing.
@@ -249,8 +288,10 @@ export class Bot implements Controller {
       const prefer = WEAPONS[want].kind === 'melee' ? WEAPONS[want].range * .65 : WEAPONS[want].falloffStart * 0.8 * this.preferMul;
       const toward = bestD > prefer + 6 ? 0.6 + this.aggression * 0.4 : bestD < Math.min(prefer, 5) ? -0.6 : 0;
       const side = this.stand ? 0 : this.strafe;
-      moveX += (-fz * side + fx * toward) * 2;
-      moveZ += (fx * side + fz * toward) * 2;
+      if (!this.tacticPath) {
+        moveX += (-fz * side + fx * toward) * 2;
+        moveZ += (fx * side + fz * toward) * 2;
+      }
     }
 
     // A frag about to go off nearby overrides the route: get out of its radius.
@@ -269,7 +310,13 @@ export class Bot implements Controller {
 
     // stuck detection: try jumping and re-pathing
     if (Math.hypot(me.x - this.lastPos[0], me.z - this.lastPos[1]) < 0.02 && (moveX || moveZ)) {
-      if (++this.stuckT > 20) { inp.buttons |= BTN.JUMP; this.strafe = -this.strafe; this.repath = 0; this.stuckT = 0; }
+      if (++this.stuckT > 20) {
+        inp.buttons |= BTN.JUMP;
+        this.strafe = -this.strafe;
+        this.repath = 0;
+        this.stuckT = 0;
+        this.tacticPath = null;
+      }
     } else this.stuckT = 0;
     const moving = Math.hypot(me.x - this.lastPos[0], me.z - this.lastPos[1]) > 0.02;
     this.lastPos = [me.x, me.z];

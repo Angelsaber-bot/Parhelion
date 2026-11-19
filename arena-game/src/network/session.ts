@@ -5,6 +5,8 @@ import {CONTENT_MANIFEST,assertContentManifest} from '../../shared/manifest.ts';
 import { Client } from '@colyseus/sdk';
 import { getMap, mapIdOf } from '../../shared/arenaMap.ts';
 import { Bot, BOT_SKILL, navFor } from '../../shared/bot.ts';
+import { learnedTactics } from '../../shared/botTactics.ts';
+import tacticsModel from '../../shared/botTacticsModel.json';
 import { randomBotHero, DT, SNAPSHOT_EVERY, TEAM_CAPACITY, randomBotLoadout, randomBotUtility, type Team } from '../../shared/content.ts';
 import type { ArenaMap } from '../../shared/map.ts';
 import { Match, type Snapshot } from '../../shared/match.ts';
@@ -167,6 +169,8 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
   });
 }
 
+const offlineTactics = learnedTactics(tacticsModel.weights, tacticsModel.margin);
+
 /** `rand` picks the bots' kits: every legal loadout, re-rolled for each rematch. */
 export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKILL, rand: () => number = Math.random): Session {
   const match = new Match(getMap(opts.map), opts.layout);
@@ -179,7 +183,7 @@ export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKI
   for (const t of ['A', 'B'] as Team[]) {
     for (let i = match.teamCount(t); i < TEAM_CAPACITY[opts.layout][t]; i++) {
       const n = seed++, k = kit();
-      match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: randomBotHero([...match.slots.values()].map(s => ({ team: s.info.team, char: s.state.char })), t, rand), skins: [n % 2, n % 2, n % 2], loadout: k.loadout, utility: k.utility, bot: true }, new Bot(n, BOT_SKILL[difficulty]));
+      match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: randomBotHero([...match.slots.values()].map(s => ({ team: s.info.team, char: s.state.char })), t, rand), skins: [n % 2, n % 2, n % 2], loadout: k.loadout, utility: k.utility, bot: true }, new Bot(n, BOT_SKILL[difficulty], difficulty === 'easy' ? undefined : offlineTactics));
     }
   }
   match.botKit = kit;
