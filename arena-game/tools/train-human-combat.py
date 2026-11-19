@@ -1,6 +1,7 @@
 """Fit human camera turns and the trigger using player-exported Arena demos."""
 
 import argparse
+import base64
 import json
 from pathlib import Path
 
@@ -12,6 +13,23 @@ BOUNDARIES = np.array([-.24, -.12, -.06, -.03, -.014, -.006, -.0015, .0015, .006
 BINS = len(BOUNDARIES) + 1
 ZERO = BINS // 2
 ARCHITECTURES = [((0,), 32), ((0, 2, 5, 10, 18), 48), ((0, 1, 2, 5, 10, 18, 28), 64)]
+VISUAL_SIZE = 16 * 9
+
+
+def align_views(frames, views):
+    aligned = np.zeros((len(frames), VISUAL_SIZE + 1), dtype=np.float32)
+    previous = -1
+    for next_input, segment, jpeg, grid in views:
+        pixels = np.frombuffer(base64.b64decode(grid, validate=True), dtype=np.uint8)
+        if not (previous < next_input <= len(frames)) or pixels.size != VISUAL_SIZE or not jpeg:
+            raise ValueError("Invalid or out-of-order first-person frame")
+        previous = next_input
+        for i in range(next_input, min(len(frames), next_input + 18)):
+            if frames[i, 0] != segment:
+                break
+            aligned[i, 0] = 1
+            aligned[i, 1:] = pixels / 255
+    return aligned
 
 
 def load(paths):
@@ -38,18 +56,18 @@ def load(paths):
             print(f"Skipping {path.name}: needs more visible opponents, aiming, or live trigger input")
             continue
         key = data["capture"]
-        if key not in captures or len(captures[key]) < len(frames):
-            captures[key] = frames
+        if key not in captures or len(captures[key][0]) < len(frames):
+            captures[key] = frames, align_views(frames, data.get("views", []))
     if len(captures) < 4:
         raise ValueError(f"Found {len(captures)} usable captures. Record at least four separately started matches.")
     return schema, [captures[key] for key in sorted(captures)]
 
 
 def examples(captures, offsets):
-    x, y = [], []
-    for capture in captures:
+    x, y, images = [], [], []
+    for capture, vision in captures:
         boundaries = np.flatnonzero(capture[:, 0][1:] != capture[:, 0][:-1]) + 1
-        for life in np.split(capture, boundaries):
+        for life, scene in zip(np.split(capture, boundaries), np.split(vision, boundaries)):
             i = np.arange(len(life))
             visible = life[:, 1] == 1
             since_visible = i - np.maximum.accumulate(np.where(visible, i, -100))
@@ -58,7 +76,8 @@ def examples(captures, offsets):
             history = np.maximum(0, rows[:, None] - np.asarray(offsets)[None, :])
             x.append(life[history, 1:-3].reshape(len(rows), len(offsets) * (life.shape[1] - 4)))
             y.append(life[rows, -3:])
-    return np.concatenate(x), np.concatenate(y)
+            images.append(scene[rows])
+    return np.concatenate(x), np.concatenate(y), np.concatenate(images)
 
 
 def labels(y):
@@ -94,7 +113,7 @@ def predict(x, params):
     return probabilities(np.tanh(x @ w + b) @ output + output_bias)
 
 
-def fit(x, y, val_x, val_y, hidden):
+def fit(x, y, val_x, val_y, hidden, teacher=None):
     rng = np.random.default_rng(SEED)
     w = rng.normal(0, .07, (x.shape[1], hidden)).astype(np.float32)
     b = np.zeros(hidden, dtype=np.float32)
@@ -116,6 +135,14 @@ def fit(x, y, val_x, val_y, hidden):
             yaw[indexes, by[:, 0]] -= 1
             pitch[indexes, by[:, 1]] -= 1
             grad = np.column_stack((yaw, pitch, fire - by[:, 2])).astype(np.float32) / len(by)
+            if teacher is not None:
+                target = teacher[batch]
+                active = target[:, -1:]
+                hard = np.zeros_like(grad)
+                hard[indexes, by[:, 0]] = 1
+                hard[indexes, BINS + by[:, 1]] = 1
+                hard[:, -1] = by[:, 2]
+                grad += .3 * active * (hard - target[:, :-1]) / len(by)
             dh = (grad @ output.T) * (1 - h * h)
             step += 1
             gradients = [bx.T @ dh, dh.sum(axis=0), h.T @ grad, grad.sum(axis=0)]
@@ -154,14 +181,28 @@ def main():
     train, val, test = shuffled[2 * holdout:], shuffled[:holdout], shuffled[holdout:2 * holdout]
     candidate = None
     for offsets, hidden in ARCHITECTURES:
-        x, raw = examples(train, offsets)
-        val_x, val_raw = examples(val, offsets)
+        x, raw, _ = examples(train, offsets)
+        val_x, val_raw, _ = examples(val, offsets)
         params, loss = fit(x, labels(raw), val_x, labels(val_raw), hidden)
         print(f"{len(offsets)} history observations · {hidden} hidden units · validation balanced NLL {loss:.5f}")
         if candidate is None or loss < candidate[0]:
-            candidate = loss, offsets, params, raw
-    validation_loss, offsets, params, raw = candidate
-    test_x, test_raw = examples(test, offsets)
+            candidate = loss, offsets, hidden, params, raw
+    validation_loss, offsets, hidden, params, raw = candidate
+    x, raw, views = examples(train, offsets)
+    val_x, val_raw, val_views = examples(val, offsets)
+    fitted_from_view = False
+    train_view_rows, val_view_rows = views[:, 0] == 1, val_views[:, 0] == 1
+    if train_view_rows.sum() >= 120 and val_view_rows.sum() >= 120:
+        vision_x = np.column_stack((x, views[:, 1:]))
+        vision_val = np.column_stack((val_x, val_views[:, 1:]))
+        visual_teacher, _ = fit(vision_x[train_view_rows], labels(raw)[train_view_rows],
+                                vision_val[val_view_rows], labels(val_raw)[val_view_rows], hidden)
+        hint = np.column_stack((*predict(vision_x, visual_teacher), train_view_rows))
+        distilled, loss = fit(x, labels(raw), val_x, labels(val_raw), hidden, hint)
+        print(f"Visual teacher · validation balanced NLL {loss:.5f} · {train_view_rows.sum()} image-aligned inputs")
+        if loss < validation_loss:
+            params, validation_loss, fitted_from_view = distilled, loss, True
+    test_x, test_raw, test_views = examples(test, offsets)
     metrics = measure(predict(test_x, params), labels(test_raw))
     print(f"Selected offsets {offsets}; unseen capture metrics: {metrics}")
     w, b, output, output_bias = params
@@ -170,6 +211,8 @@ def main():
         "weights": w.T.tolist(), "bias": b.tolist(), "output": output.T.tolist(), "outputBias": output_bias.tolist(),
         "centers": [centers(raw[:, 0]), centers(raw[:, 1])],
         "training": {"trainCaptures": len(train), "validationCaptures": len(val), "testCaptures": len(test),
+                     "visualTeacherSelected": fitted_from_view, "imageAlignedTrainingFrames": int(train_view_rows.sum()),
+                     "imageAlignedTestFrames": int(test_views[:, 0].sum()),
                      "trainFrames": len(raw), "validationBalancedNll": validation_loss, "test": metrics},
     }
     args.output.write_text(json.dumps(model, separators=(",", ":"), allow_nan=False) + "\n")

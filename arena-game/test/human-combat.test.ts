@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { ARENA_MAP } from '../shared/arenaMap.ts';
 import { HUMAN_FEATURES, humanCombatPolicy, humanObservation, type HumanCombatModel } from '../shared/humanCombat.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
@@ -21,6 +21,28 @@ it('records only derived game inputs, separating respawns and gaps in a capture'
   expect(data.frames.map((row: number[]) => row[0])).toEqual([1, 1, 2, 3]);
   expect(data.frames.map((row: number[]) => row.slice(-3))).toEqual(Array(4).fill([.03, 0, 1]));
   expect(data.frames.map((row: number[]) => row[1 + HUMAN_FEATURES.indexOf('previousYaw')])).toEqual([0, .03, 0, 0]);
+});
+
+it('tags a captured game frame with the next input index, not already consumed training labels', () => {
+  const buffer = {
+    getContext: () => ({ canvas: buffer, fillRect() {}, drawImage() {}, getImageData: () => ({ data: new Uint8ClampedArray(192 * 108 * 4).fill(40) }) }),
+    toDataURL: () => 'data:image/jpeg;base64,ZmFrZQ==',
+  };
+  vi.stubGlobal('document', { createElement: () => buffer });
+  try {
+    const demo = new HumanDemo('aster'), me = newPlayer('a', 'A', 0);
+    const observe = () => HUMAN_FEATURES.map(() => 0);
+    const input = { seq: 1, yaw: 0, pitch: 0, mx: 0, mz: 0, buttons: 0, weapon: 0, view: 0 };
+    const source = { width: 100, height: 100 } as HTMLCanvasElement;
+    demo.record(me, input, observe);
+    demo.captureView(source);
+    demo.captureView(source);
+    demo.record(me, { ...input, seq: 2 }, observe);
+    const { views } = JSON.parse(demo.serialize());
+    expect(views).toHaveLength(1);
+    expect(views[0].slice(0, 3)).toEqual([1, 1, 'ZmFrZQ==']);
+    expect(Array.from(atob(views[0][3]), c => c.charCodeAt(0))).toEqual(Array(16 * 9).fill(40));
+  } finally { vi.unstubAllGlobals(); }
 });
 
 it('does not expose a wall- or smoke-blocked target to the learned scorer', () => {

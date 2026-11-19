@@ -531,6 +531,9 @@ export class Game {
     this.scene.pruneAvatars(ids);
     this.scene.update(dt);
     this.scene.render(!!me?.alive);
+    if (this.humanDemo && me?.alive && this.controls.locked && this.latest?.phase === 'live' && document.visibilityState === 'visible' && document.hasFocus()) {
+      this.humanDemo.captureView(this.scene.renderer.domElement);
+    }
     const room = this.session.roomCode ? bilingual(`房间 ${this.session.roomCode} · `, `Room ${this.session.roomCode} · `) : '';
     const ping = room + (this.session.online ? bilingual(`延迟 ${this.rtt ? Math.round(this.rtt) : '—'} ms · 快照 ${Math.round(this.snapGap)} ms`, `Latency ${this.rtt ? Math.round(this.rtt) : '—'} ms · Snapshots ${Math.round(this.snapGap)} ms`) : bilingual('单机', 'Offline'));
     if (this.rangeStats && performance.now() - this.rangeStatsAt > 200) { this.rangeStatsAt = performance.now(); const panel = document.getElementById('range-stats'); if (panel) panel.innerHTML = this.rangeStats.render(performance.now() / 1000); }
