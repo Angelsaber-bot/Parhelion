@@ -158,7 +158,7 @@ function spreadDirs(p: PlayerState, seq: number, wi: number, moving: boolean): V
 }
 
 /** Test both the current capsule and the height of an automatic step beneath a low ceiling. */
-function canSlideTo(m: ArenaMap, p: PlayerState, x: number, z: number): boolean {
+export function canSlideTo(m: ArenaMap, p: PlayerState, x: number, z: number): boolean {
   const height = playerHeight(m, p);
   if (blockedAt(m, x, z, p.y, height)) return false;
   if (p.grounded && p.vy <= 0) {

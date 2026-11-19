@@ -2,6 +2,7 @@ import { TICK_HZ } from '../../shared/content.ts';
 import { HUMAN_FEATURES, wrapAngle } from '../../shared/humanCombat.ts';
 import { RULES_VERSION } from '../../shared/protocol.ts';
 import { BTN, type Input, type PlayerState } from '../../shared/sim.ts';
+import { TRAINING_BATCH_TICKS, type TrainingBatch, type TrainingView } from '../../shared/trainingData.ts';
 
 const MAX_FRAMES = 12 * 60 * TICK_HZ;
 const VIEW_WIDTH = 192, VIEW_HEIGHT = 108;
@@ -20,15 +21,28 @@ export class HumanDemo {
   private view: CanvasRenderingContext2D | null | undefined;
   private views: [number, number, string, string][] = [];
   private nextView = 1;
+  private trainingViews: TrainingView[] = [];
+  private recorded = 0;
+  private sequence = 0;
 
-  constructor(private readonly map: string) {}
+  constructor(private readonly map: string, private readonly transmit?: (batch: TrainingBatch) => void) {}
 
-  get size() { return this.frames.length; }
+  get size() { return this.recorded; }
+  get automatic() { return !!this.transmit; }
 
-  pause() { this.lastSeq = -2; }
+  pause() { this.lastSeq = -2; this.flush(); }
+
+  flush() {
+    if (!this.transmit || !this.frames.length) return;
+    const start = this.size - this.frames.length;
+    const views = this.trainingViews.filter(view => view[0] >= start - 18);
+    this.transmit({ version: 1, rulesVersion: RULES_VERSION, capture: this.capture, map: this.map, sequence: this.sequence++, start, rows: this.frames, views });
+    this.frames = [];
+    this.trainingViews = views.slice(-1);
+  }
 
   record(me: PlayerState, input: Input, observe: (previous: readonly [number, number]) => number[]) {
-    if (this.size >= MAX_FRAMES) return;
+    if (!this.automatic && this.size >= MAX_FRAMES) return;
     if (this.life !== me.lifeId || input.seq !== this.lastSeq + 1) {
       this.segment++;
       this.life = me.lifeId;
@@ -37,13 +51,16 @@ export class HumanDemo {
     this.lastSeq = input.seq;
     const features = observe(this.previous);
     const yaw = wrapAngle(input.yaw - me.yaw), pitch = input.pitch - me.pitch;
-    this.frames.push([this.segment, ...features.map(round), round(yaw), round(pitch), Number(!!(input.buttons & BTN.FIRE))]);
+    const actions = this.automatic ? [round(input.mx), round(input.mz), input.buttons, input.weapon ?? me.weaponSlot] : [Number(!!(input.buttons & BTN.FIRE))];
+    this.frames.push([this.segment, ...features.map(round), round(yaw), round(pitch), ...actions]);
+    this.recorded++;
     this.previous = [yaw, pitch];
+    if (this.frames.length >= TRAINING_BATCH_TICKS) this.flush();
   }
 
   /** Capture the frame the player has just seen. Its index is the next input that can use it. */
   captureView(canvas: HTMLCanvasElement) {
-    if (this.size < this.nextView || this.size >= MAX_FRAMES || !canvas.width || !canvas.height) return;
+    if (this.size < this.nextView || (!this.automatic && this.size >= MAX_FRAMES) || !canvas.width || !canvas.height) return;
     this.nextView = this.size + VIEW_INTERVAL;
     if (this.view === undefined) {
       const buffer = document.createElement('canvas');
@@ -58,7 +75,6 @@ export class HumanDemo {
       this.view.fillStyle = '#000';
       this.view.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
       this.view.drawImage(canvas, (VIEW_WIDTH - width) / 2, (VIEW_HEIGHT - height) / 2, width, height);
-      const jpeg = this.view.canvas.toDataURL('image/jpeg', .58);
       const rgba = this.view.getImageData(0, 0, VIEW_WIDTH, VIEW_HEIGHT).data;
       const light = new Uint8Array(PIXEL_COLS * PIXEL_ROWS);
       const cell = VIEW_WIDTH / PIXEL_COLS;
@@ -72,7 +88,9 @@ export class HumanDemo {
           light[row * PIXEL_COLS + col] = Math.round(sum / (cell / 3) ** 2);
         }
       }
-      this.views.push([this.size, this.segment, jpeg.split(',')[1], btoa(String.fromCharCode(...light))]);
+      const grid = btoa(String.fromCharCode(...light));
+      if (this.automatic) this.trainingViews.push([this.size, this.segment, grid]);
+      else this.views.push([this.size, this.segment, this.view.canvas.toDataURL('image/jpeg', .58).split(',')[1], grid]);
     } catch {
       this.view = null;
     }

@@ -28,6 +28,7 @@ import {FrameGate,worldRenderVisible} from './rendering/renderScheduling.ts';
 import { ArenaScene } from './rendering/scene.ts';
 import { joinOnline, startOffline, startRange, type Session } from './network/session.ts';
 import { postStats } from './network/stats.ts';
+import { submitTraining } from './network/training.ts';
 import { RANGE_MAP_ID } from '../shared/trainingRange.ts';
 import { GUN_IDS, MELEE_IDS, type Loadout, type UtilityId } from '../shared/content.ts';
 import asterThumb from './assets/maps/aster.jpg';
@@ -121,6 +122,9 @@ settings.subscribe(renderControlHints); renderControlHints();
 // ---------- lobby ----------
 
 const saved = (() => { try { const raw = JSON.parse(localStorage.getItem('arena-lobby') ?? '{}'); return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}; } catch { return {}; } })();
+const trainingConsent = $<HTMLInputElement>('record-human-demo');
+try { trainingConsent.checked = localStorage.getItem('arena-training-opt-in') === 'yes'; } catch { /* storage unavailable */ }
+trainingConsent.onchange = () => { try { localStorage.setItem('arena-training-opt-in', trainingConsent.checked ? 'yes' : 'no'); } catch { /* storage unavailable */ } };
 let char = typeof saved.heroId==='string' && CHARACTERS.some(c=>c.id===saved.heroId) ? CHARACTERS.findIndex(c=>c.id===saved.heroId) : Number.isInteger(saved.char) && CHARACTERS[saved.char] ? saved.char : 0;
 char = playableHero(heroFromWorld(params) ?? char);
 let mapId = mapIdOf(params.get('map') ?? saved.map);
@@ -328,7 +332,7 @@ $('play').onclick = async () => {
   const server = $<HTMLInputElement>('server').value.trim();
   if (attempt.mode === 'online' && roomCode) opts.room = roomCode;
   const difficulty = $<HTMLSelectElement>('difficulty').value as 'easy' | 'normal' | 'hard';
-  const recordDemo = attempt.mode !== 'range' && !lessonRequested && $<HTMLInputElement>('record-human-demo').checked;
+  const recordDemo = attempt.mode !== 'range' && !lessonRequested && trainingConsent.checked;
   const current = () => activeStart?.id === attempt.id && !pageExited;
   let ownedSession: Session | null = null;
   const closeOwned = () => { const session = ownedSession; ownedSession = null; try { session?.close(); } catch { /* best effort for a failed/stale startup */ } };
@@ -358,8 +362,7 @@ $('play').onclick = async () => {
     const session = ownedSession;
     rangeSession = session.practice ? session : null;
     if (rangeSession) { rangeChoice = { loadout: loadoutStore.value, utility: loadoutStore.utility, skins: skins.slice() }; renderRangePanel(); }
-    game = new Game(session, scene, controls, hud, (reason) => backToLobby(reason), recordDemo ? new HumanDemo(session.mapId ?? mapId) : undefined);
-    renderDemoExport();
+    game = new Game(session, scene, controls, hud, (reason) => backToLobby(reason), recordDemo ? new HumanDemo(session.mapId ?? mapId, submitTraining) : undefined);
     if(lessonRequested&&session.match){
       const m=session.match,bot=[...m.slots.values()].find(s=>s.info.bot);if(bot){bot.info.char=bot.state.char=8;bot.state.ability.readyAt=0;const brain=new Bot(41,BOT_SKILL.easy);bot.controller={think(match,id){const i=brain.think(match,id),p=match.player(id)!,enemy=match.player(session.id)!;if(p.alive&&enemy.alive&&match.heroes.visible([p.x,p.y+1,p.z],[enemy.x,enemy.y+1,enemy.z])&&Math.hypot(p.x-enemy.x,p.z-enemy.z)<16&&p.shieldCd===0&&!(p.prevButtons&BTN.SHIELD)){i.buttons=BTN.SHIELD;i.pitch=0;}return i;}};}
       game.lesson=new HeroLesson(session.id);lessonRequested=false;
@@ -367,7 +370,7 @@ $('play').onclick = async () => {
     ownedSession = null; // Game now owns exactly one session.
     $('lobby').classList.add('hidden'); hud.show(true);
     game.onEnded = (title) => {
-      renderDemoExport();
+      game?.humanDemo?.pause();
       rematchRequested = false; resultsBoard.setEnded(true); renderResultsBoard();
       endTitleSource = title; $('endtitle').textContent = localizeText(endTitleSource);
       $('pause').classList.add('hidden');
@@ -420,23 +423,12 @@ function backToLobby(reason: string) {
   pointerLockFailed = false; renderPointerLockNote();
   game = null; rematchRequested = false; resultsBoard.setEnded(false); renderResultsBoard();
   hud.show(false);
-  renderDemoExport();
   $('pause').classList.add('hidden');
   $('endcard').classList.add('hidden');
   $('lobby').classList.remove('hidden');
   if (document.pointerLockElement) document.exitPointerLock();
   if (reason) showError(reason);
 }
-
-function renderDemoExport() {
-  for (const id of ['pause-demo', 'end-demo']) {
-    const button = $<HTMLButtonElement>(id);
-    button.classList.toggle('hidden', !game?.humanDemo);
-    button.disabled = !game?.humanDemo?.size;
-  }
-}
-
-for (const id of ['pause-demo', 'end-demo']) $(id).onclick = () => game?.humanDemo?.download();
 
 controls.onLockChange = (locked) => {
   if (!game || game.ended || pageExited || settingsPanel.open) {
@@ -447,7 +439,6 @@ controls.onLockChange = (locked) => {
   }
   if (locked) { pointerLockFailed = false; renderPointerLockNote(); }
   $('pause').classList.toggle('hidden', locked);
-  if (!locked) renderDemoExport();
   // offline: Esc freezes everything (bots, bullets, clock, effects); online the server keeps going
   game.setPaused(!locked && !game.online);
 };

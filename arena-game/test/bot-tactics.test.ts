@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { Bot, BOT_SKILL } from '../shared/bot.ts';
+import { Bot, BOT_SKILL, predictContact } from '../shared/bot.ts';
 import { tacticScore, TACTIC_FEATURES } from '../shared/botTactics.ts';
 import tacticsModel from '../shared/botTacticsModel.json';
 import { buildMap, lineOfSight, type MapObject } from '../shared/map.ts';
@@ -55,4 +55,11 @@ it('scores reachable routes using the last sighting when a fighter moves behind 
   }
 
   expect(observe(-.75)).toEqual(observe(.75));
+});
+
+it('predicts a known track for a short time and never extrapolates it across a wall', () => {
+  const match = new Match(map, '1v1');
+  expect(predictContact(match, [[0, 0, 2], [.2, 0, 2], [.4, 0, 2]], 9)).toEqual([2.2, 0, 2]);
+  expect(predictContact(match, [[0, 0, -3], [0, 0, -3.2]], 12)).toEqual([0, 0, -3.2]);
+  expect(predictContact(match, [[0, 0, 2]], 121)).toBeNull();
 });

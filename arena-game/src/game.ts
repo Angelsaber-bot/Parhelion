@@ -92,6 +92,7 @@ export class Game {
     this.lesson?.dispose();this.lesson=null;
     if (!this.running) return;
     this.running = false;
+    this.humanDemo?.flush();
     cancelAnimationFrame(this.raf);
     this.background.stop();
     this.resetAim();
@@ -365,7 +366,7 @@ export class Game {
       weapon: c.weapon,
       view: Math.round(this.renderTick * 100) / 100,
     };
-    if (this.humanDemo && active && this.me?.alive && WEAPONS[this.me.weapon].kind === 'gun' && this.latest?.phase === 'live' && document.visibilityState === 'visible' && document.hasFocus()) {
+    if (this.humanDemo && active && this.me?.alive && (this.humanDemo.automatic || WEAPONS[this.me.weapon].kind === 'gun') && this.latest?.phase === 'live' && document.visibilityState === 'visible' && document.hasFocus()) {
       this.recordHumanDemo(this.humanDemo, this.me, inp, this.latest);
     }
     if (this.me) {predictAbility(this.map,this.me,inp,this.latest);for (const e of applyInput(this.map, this.me, inp, this.foes(this.me))) this.onLocal(e);}

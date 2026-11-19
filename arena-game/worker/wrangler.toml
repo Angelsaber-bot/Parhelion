@@ -4,6 +4,9 @@ name = "parhelion-arena"
 main = "index.ts"
 compatibility_date = "2026-10-01"
 
+[triggers]
+crons = ["*/5 * * * *"]
+
 [[durable_objects.bindings]]
 name = "LOBBY"
 class_name = "Lobby"
@@ -22,6 +25,10 @@ class_name = "WorldRoomDO"
 name = "STATS"
 class_name = "ArenaStats"
 
+[[durable_objects.bindings]]
+name = "TRAINING"
+class_name = "ArenaTraining"
+
 # SQLite-backed Durable Objects are available on the Workers free plan
 [[migrations]]
 tag = "v1"
@@ -34,3 +41,7 @@ new_sqlite_classes = ["WorldRoomDO"]
 [[migrations]]
 tag = "v3"
 new_sqlite_classes = ["ArenaStats"]
+
+[[migrations]]
+tag = "v4"
+new_sqlite_classes = ["ArenaTraining"]

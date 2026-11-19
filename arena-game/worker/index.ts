@@ -15,12 +15,15 @@ import { RoomCore } from '../shared/room.ts';
 import { assignRoom, reportRoom, ROOM_HEARTBEAT_MS, type OpenRoom } from './lobbyRooms.ts';
 import { WorldRelayCore, WORLD_COOP_VERSION, validWorldRoomCode } from './worldRelay.ts';
 import { sanitizeRecord, type MatchRecord } from '../shared/weaponStats.ts';
+import { trainingRequest, trainingStore, type ArenaTraining } from './training.ts';
+export { ArenaTraining } from './training.ts';
 
-interface Env {
+export interface Env {
   LOBBY: DurableObjectNamespace<Lobby>;
   ROOM: DurableObjectNamespace<ArenaRoomDO>;
   WORLD: DurableObjectNamespace<WorldRoomDO>;
   STATS: DurableObjectNamespace<ArenaStats>;
+  TRAINING: DurableObjectNamespace<ArenaTraining>;
 }
 
 const statsStore = (env: Env) => env.STATS.get(env.STATS.idFromName('stats'));
@@ -38,11 +41,15 @@ function roomKey(o: Partial<JoinOptions>) {
 }
 
 export default {
+  async scheduled(event: ScheduledController, env: Env): Promise<void> {
+    await trainingStore(env.TRAINING).selfPlay(event.scheduledTime);
+  },
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     if (url.pathname === '/' || url.pathname === '/health') {
       return new Response('Parhelion Arena server OK', { headers: CORS });
     }
+    if (url.pathname === '/training' || url.pathname === '/training/status') return trainingRequest(req, env.TRAINING);
     if (url.pathname === '/stats') {
       if (req.method === 'OPTIONS') return new Response(null, { headers: { ...CORS, 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type' } });
       if (req.method === 'GET') {

@@ -1,6 +1,6 @@
 /** Hero authority. Tick deadlines are world time, never client packet counts. */
 import { HERO_COMBAT as H, abilityFor, abilityAllowsGunplay, CHARACTERS, SHIELD, type AbilityId } from './content.ts';
-import { smokeBlocks } from './grenade.ts';
+import { smokeAllowsGlimpse, smokeBlocks } from './grenade.ts';
 import { playerHitbox, rayCapsule, rayPlayer, rayShield } from './hit.ts';
 import { blockedAt, groundAt, lineOfSight, raycastMap, type ArenaMap, type Vec3 } from './map.ts';
 import type { Match } from './match.ts';
@@ -180,8 +180,9 @@ export class HeroSystem {
     if(absorb>0)this.emit(p,'blocked',at(p),absorb);
     return raw-absorb;
   }
-  visible(a:Vec3,b:Vec3):boolean {
-    if(!lineOfSight(this.m.map,a,b)||smokeBlocks(this.m.smokes,a,b))return false;
+  visible(a:Vec3,b:Vec3,allowGlimpse=false):boolean {
+    if(!lineOfSight(this.m.map,a,b))return false;
+    if(smokeBlocks(this.m.smokes,a,b)&&!(allowGlimpse&&smokeAllowsGlimpse(this.m.smokes,a,b)))return false;
     const len=distance(a,b);if(len<.001)return true;const dir=b.map((v,i)=>(v-a[i])/len) as Vec3;
     return !this.m.shields.some(s=>s.hp>0&&s.life>0&&rayShield(a,dir,s.x,s.y,s.z,s.yaw)<len);
   }

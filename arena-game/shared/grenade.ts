@@ -153,4 +153,18 @@ export function smokeBlocks(smokes: readonly Smoke[], a: Vec3, b: Vec3): boolean
   }
   return false;
 }
+
+/** A close silhouette can show across a thin edge, but a long ray or a thick bank stays opaque. */
+export function smokeAllowsGlimpse(smokes: readonly Smoke[], a: Vec3, b: Vec3): boolean {
+  const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
+  const distance = Math.hypot(dx, dy, dz);
+  if (distance > 8 || !smokeBlocks(smokes, a, b)) return false;
+  const steps = Math.max(1, Math.ceil(distance / .18));
+  let inside = 0;
+  for (let i = 0; i < steps; i++) {
+    const t = (i + .5) / steps;
+    if (insideSmoke(smokes, [a[0] + dx * t, a[1] + dy * t, a[2] + dz * t]) && ++inside * distance / steps > .75) return false;
+  }
+  return true;
+}
 function smokeLocal(s:Smoke,p:readonly number[]):Vec3{const yaw=s.box!.yaw,x=p[0]-s.x,z=p[2]-s.z;return [x*Math.cos(yaw)-z*Math.sin(yaw),p[1]-s.y,x*Math.sin(yaw)+z*Math.cos(yaw)];}
