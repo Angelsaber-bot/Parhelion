@@ -156,8 +156,8 @@ describe('seven heroes: distinctive actions and counterplay',()=>{
  it('wind guard releases a stronger slash after absorbing damage, never through a wall',()=>{
   for(const wall of [false,true]){const m=fixture(2),p=m.player('a')!,enemy=m.player('b')!;enemy.z=-5;cast(m);step(m,6);m.heroes.absorb(p,60,[0,1,-5]);if(wall)m.shields.push({id:9,owner:'b',team:'B',x:0,y:0,z:-2,yaw:0,hp:180,life:300});input(m);expect(enemy.hp).toBe(wall?200:100);expect(p.ability.phase).toBe('recovery');}
  });
- it('a full guard counters at once for 130, and the guard holds a full second',()=>{
-  const m=fixture(2),p=m.player('a')!,enemy=m.player('b')!;enemy.z=-5;cast(m);for(let i=0;i<50;i++)input(m,'a',BTN.SHIELD);expect(p.ability.phase).toBe('guard');
+ it('a full guard counters at once for 130, and the guard holds two seconds',()=>{
+  const m=fixture(2),p=m.player('a')!,enemy=m.player('b')!;enemy.z=-5;cast(m);for(let i=0;i<110;i++)input(m,'a',BTN.SHIELD);expect(p.ability.phase).toBe('guard');
   m.heroes.absorb(p,150,[0,1,-5],undefined,'b');expect(p.ability.phase).toBe('recovery');expect(enemy.hp).toBe(70);
  });
  it('a front guard swallows Musashi\'s cut, the solar judgement and a cannon burst, and says who it stopped',()=>{
