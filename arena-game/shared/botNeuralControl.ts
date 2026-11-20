@@ -16,11 +16,25 @@ export interface NeuralAction {
 
 type SelectAction = (observation: number[], logits: number[], firstInLife: boolean) => NeuralAction;
 
-function greedyAction(_observation: number[], logits: number[]): NeuralAction {
+export function greedyAction(_observation: number[], logits: number[]): NeuralAction {
   const buttons = BUTTONS.reduce((mask, button, i) => logits[4 + i] > 0 ? mask | button : mask, 0);
   let weapon = 0;
   for (let i = 1; i < 3; i++) if (logits[11 + i] > logits[11 + weapon]) weapon = i;
   return { axes: logits, buttons, weapon };
+}
+
+/** Structured and rendered actors both emit ordinary player controls at the same cadence. */
+export function applyNeuralAction(input: Input, me: PlayerState, raw: NeuralAction, choose: boolean): Input {
+  const selected = WEAPONS[loadoutWeapon(me.loadout, raw.weapon)];
+  const edge = EDGE_BUTTONS | (selected.auto && selected.kind === 'gun' ? 0 : BTN.FIRE) |
+    (me.ability.phase === 'guard' ? 0 : BTN.SHIELD);
+  input.yaw = wrapAngle(me.yaw + Math.tanh(raw.axes[0]) * .9 / EXPLORATION_TICKS);
+  input.pitch = Math.max(-1.45, Math.min(1.45, me.pitch + Math.tanh(raw.axes[1]) * .55 / EXPLORATION_TICKS));
+  input.mx = Math.tanh(raw.axes[2]);
+  input.mz = Math.tanh(raw.axes[3]);
+  input.buttons = choose ? raw.buttons : raw.buttons & ~edge;
+  input.weapon = raw.weapon;
+  return input;
 }
 
 /** Use the same observations, actuator limits and decision interval in the live game and RL rollouts. */
@@ -28,7 +42,7 @@ export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectA
   const policy = createNeuralPolicy(model);
   let life = -1, next = -1, bearing = 0, seenAt = -Infinity;
   let prior: [number, number] = [0, 0];
-  let yaw = 0, pitch = 0, mx = 0, mz = 0, buttons = 0, weapon = 0;
+  let action: NeuralAction = { axes: [0, 0, 0, 0], buttons: 0, weapon: 0 };
 
   function reset() {
     if (life === -1) return;
@@ -54,25 +68,11 @@ export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectA
       if (choose) {
         const scene = explorationScene(match.map, me, [bearing, match.tick - seenAt]);
         const features = [...observation, ...scene];
-        const action = selectAction(features, policy.think(features), next === -1);
-        yaw = Math.tanh(action.axes[0]) * .9 / EXPLORATION_TICKS;
-        pitch = Math.tanh(action.axes[1]) * .55 / EXPLORATION_TICKS;
-        mx = Math.tanh(action.axes[2]);
-        mz = Math.tanh(action.axes[3]);
-        buttons = action.buttons;
-        weapon = action.weapon;
+        action = selectAction(features, policy.think(features), next === -1);
         next = match.tick + EXPLORATION_TICKS;
       }
-      const selected = WEAPONS[loadoutWeapon(me.loadout, weapon)];
-      const edge = EDGE_BUTTONS | (selected.auto && selected.kind === 'gun' ? 0 : BTN.FIRE) |
-        (me.ability.phase === 'guard' ? 0 : BTN.SHIELD);
-      input.yaw = wrapAngle(me.yaw + yaw);
-      input.pitch = Math.max(-1.45, Math.min(1.45, me.pitch + pitch));
-      input.mx = mx;
-      input.mz = mz;
-      input.buttons = choose ? buttons : buttons & ~edge;
-      input.weapon = weapon;
-      prior = [yaw, input.pitch - me.pitch];
+      applyNeuralAction(input, me, action, choose);
+      prior = [wrapAngle(input.yaw - me.yaw), input.pitch - me.pitch];
       return input;
     },
   };

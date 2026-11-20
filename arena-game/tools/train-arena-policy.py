@@ -440,7 +440,7 @@ def train(args):
     holdout_loader = DataLoader(holdout_set, batch_size=args.batch_size)
     positive = train_set.targets[:, 4:11].sum(dim=0)
     button_weights = ((len(train_set) - positive) / positive.clamp(min=1)).sqrt().clamp(1, 12).to(device)
-    vision = train_visual_teacher(train_set, holdout_set, args, device, button_weights, losses)
+    vision = train_visual_teacher(train_set, holdout_set, args, device, button_weights, losses, atomic_write)
     best, best_state = None, None
     start_epoch = saved["epoch"] if saved else 0
     for epoch in range(start_epoch + 1, start_epoch + args.epochs + 1):
@@ -491,6 +491,7 @@ def cli():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("dataset", type=Path, nargs="?", help="directory containing opted-in TrainingBatch v1 JSON files")
     parser.add_argument("--output", type=Path, required=True, help="game-format JSON weights")
+    parser.add_argument("--visual-output", type=Path, help="optional private pixel-only actor for the rendered audition")
     parser.add_argument("--rules-version", type=int, help="filter to one game rules version")
     parser.add_argument("--metrics", type=Path, help="held-out metrics JSON")
     parser.add_argument("--checkpoint", type=Path, help="save current model and optimizer after every epoch")
@@ -527,10 +528,10 @@ def cli():
         parser.error("invalid training settings")
     if args.rules_version is not None and not integer(args.rules_version, 1, 65535):
         parser.error("invalid rules version")
-    artifacts = [p.resolve() for p in (args.output, args.metrics, args.fixture, args.checkpoint) if p]
+    artifacts = [p.resolve() for p in (args.output, args.metrics, args.fixture, args.checkpoint, args.visual_output) if p]
     if len(set(artifacts)) != len(artifacts) or (args.dataset and any(p.is_relative_to(args.dataset.resolve()) for p in artifacts)):
         parser.error("use separate output paths outside the input corpus")
-    if args.resume and any(args.resume.resolve() == p.resolve() for p in (args.output, args.metrics, args.fixture) if p):
+    if args.resume and any(args.resume.resolve() == p.resolve() for p in (args.output, args.metrics, args.fixture, args.visual_output) if p):
         parser.error("do not use the resume checkpoint path for a JSON output")
     try:
         train(args)

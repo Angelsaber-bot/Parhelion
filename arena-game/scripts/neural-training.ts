@@ -195,6 +195,10 @@ async function train(data: Awaited<ReturnType<typeof corpusInfo>>) {
     if (!model || model.synthetic || metrics.data !== 'human-demonstrations' || !(metrics.trainWindows > 0 && metrics.holdoutWindows > 0)) {
       throw new Error('Candidate needs compatible weights and a held-out set of human demonstrations.');
     }
+    if (metrics.visualTeacher) {
+      const { trainWindows, holdoutWindows, detailTrainWindows } = metrics.visualTeacher;
+      console.log('[Arena vision]', JSON.stringify({ trainWindows, holdoutWindows, detailTrainWindows }));
+    }
     await status('evaluating', data);
     await reportCloud('evaluating', metrics);
     const run = await execute(process.execPath, ['--import', 'tsx', 'test/bench/evaluate-neural.ts', candidate, '--seeds', '1']);

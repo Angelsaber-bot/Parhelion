@@ -13,6 +13,16 @@ const VIEW_INTERVAL = TICK_HZ / 6;
 const round = (n: number) => Math.round(n * 10000) / 10000;
 const newCapture = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), n => n.toString(16).padStart(2, '0')).join('');
 
+/** Letterbox both human and visual-bot cameras identically before extracting model pixels. */
+export function readArenaCamera(view: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+  const scale = Math.min(VIEW_WIDTH / canvas.width, VIEW_HEIGHT / canvas.height);
+  const width = canvas.width * scale, height = canvas.height * scale;
+  view.fillStyle = '#000';
+  view.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  view.drawImage(canvas, (VIEW_WIDTH - width) / 2, (VIEW_HEIGHT - height) / 2, width, height);
+  return view.getImageData(0, 0, VIEW_WIDTH, VIEW_HEIGHT).data;
+}
+
 /** Samples the player's observations and inputs, with optional automatic transmission. */
 export class HumanDemo {
   private capture = newCapture();
@@ -99,13 +109,8 @@ export class HumanDemo {
       this.view = buffer.getContext('2d', { willReadFrequently: true });
     }
     if (!this.view) return;
-    const scale = Math.min(VIEW_WIDTH / canvas.width, VIEW_HEIGHT / canvas.height);
-    const width = canvas.width * scale, height = canvas.height * scale;
     try {
-      this.view.fillStyle = '#000';
-      this.view.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
-      this.view.drawImage(canvas, (VIEW_WIDTH - width) / 2, (VIEW_HEIGHT - height) / 2, width, height);
-      const rgba = this.view.getImageData(0, 0, VIEW_WIDTH, VIEW_HEIGHT).data;
+      const rgba = readArenaCamera(this.view, canvas);
       if (this.automatic) {
         this.trainingViews.push([this.size, this.segment, encodeDetailFrame(rgba)]);
         return;

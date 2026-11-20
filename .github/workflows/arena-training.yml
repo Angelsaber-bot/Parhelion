@@ -2,6 +2,11 @@ name: Arena neural training
 
 on:
   workflow_dispatch:
+    inputs:
+      pixel_audition:
+        description: Verify pixel-only controls in a private rendered smoke match
+        type: boolean
+        default: false
   schedule:
     - cron: '7,22,37,52 * * * *'
 
@@ -76,3 +81,10 @@ jobs:
         env:
           ARENA_NEURAL_CORPUS_TOKEN: ${{ secrets.ARENA_NEURAL_CORPUS_TOKEN }}
         run: python scripts/self-play-cycle.py --cloud --generations 3
+      - name: Verify direct pixel control in a rendered Arena match
+        if: github.event_name == 'workflow_dispatch' && inputs.pixel_audition && steps.work.outputs.install == 'true'
+        working-directory: arena-game
+        env:
+          ARENA_NEURAL_CORPUS_TOKEN: ${{ secrets.ARENA_NEURAL_CORPUS_TOKEN }}
+          ARENA_NEURAL_PYTHON: python
+        run: CHROMIUM_EXECUTABLE="$(command -v google-chrome)" python scripts/self-play-cycle.py --cloud --camera-audit-only

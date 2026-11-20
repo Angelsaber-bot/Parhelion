@@ -137,6 +137,9 @@ def cycle(args, service, work, progress):
     try:
         ts = ["node", "--import", "tsx"]
         run([sys.executable, TRAINER, "export", "--resume", checkpoint, "--output", actor])
+        parent_digest = hashlib.sha256(actor.read_bytes()).hexdigest()
+        if parent and parent_digest != old["digest"]:
+            raise ValueError("Restored actor differs from the last committed generation")
         collect = ts + ["scripts/self-play-rollout.ts", "--model", actor, "--seed", seed, "--output", rollout,
                         "--episodes", args.episodes, "--seconds", args.seconds]
         live = status.get("neural")
@@ -164,7 +167,8 @@ def cycle(args, service, work, progress):
         metrics = json.loads(metrics_file.read_bytes())
         model_text = candidate.read_text()
         digest = hashlib.sha256(model_text.encode()).hexdigest()
-        if metrics["generation"] != generation or actor.read_bytes() == candidate.read_bytes():
+        if (metrics["generation"] != generation or metrics["parentHash"] != parent_digest
+                or metrics["actorHash"] != digest or digest == parent_digest):
             raise RuntimeError("Optimizer did not advance the expected actor generation")
         failed = []
         promoted = False
@@ -212,9 +216,22 @@ def cycle(args, service, work, progress):
         raise
 
 
+def audit_camera(service, directory):
+    corpus = directory / "human"
+    status = service.request("/status")
+    if status["rulesVersion"] != RULES:
+        raise ValueError("Incompatible Arena rules")
+    service.download_corpus(status["dataset"]["revision"], corpus)
+    visual = directory / "visual.pt"
+    run([sys.executable, ROOT / "tools/train-arena-policy.py", corpus, "--rules-version", RULES,
+         "--output", directory / "student.json", "--visual-output", visual, "--epochs", 2, "--device", "cpu"])
+    run(["node", "tools/visual-audition.mjs", visual, "--smoke", "--seconds", 4])
+
+
 def main():
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument("--cloud", action="store_true")
+    cli.add_argument("--camera-audit-only", action="store_true", help="Test a private pixel-only actor in a rendered Arena match")
     cli.add_argument("--reference", type=Path, default=ROOT / ".scratch/neural/checkpoint.pt")
     cli.add_argument("--corpus", type=Path)
     cli.add_argument("--state", type=Path, default=ROOT / ".scratch/self-play")
@@ -229,8 +246,16 @@ def main():
         cli.error("Counts must be positive")
     if args.cloud and args.corpus:
         cli.error("Cloud evaluation loads the human corpus for its reference revision")
+    if args.corpus:
+        args.corpus = args.corpus.resolve()
     os.umask(0o077)
     service = Service() if args.cloud else None
+    if args.camera_audit_only:
+        if not service:
+            cli.error("Use --cloud to select the opted-in corpus for the audit")
+        with tempfile.TemporaryDirectory(prefix="arena-camera-") as directory:
+            audit_camera(service, Path(directory))
+        return
     progress = {}
     if not service:
         import fcntl

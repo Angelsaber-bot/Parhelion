@@ -133,7 +133,7 @@ npm run train:neural --prefix arena-game -- --watch
 arena-game/.scratch/neural/.venv/bin/python arena-game/scripts/self-play-cycle.py --generations 3
 ```
 
-视觉教师使用玩家同意贡献的游戏画面和对应输入。线上策略使用蒸馏后的结构化观测，部署的客户端和无渲染的 Worker 可运行同一份权重。
+视觉教师使用玩家同意贡献的游戏画面和对应输入。线上策略使用蒸馏后的结构化观测，部署的客户端和无渲染的 Worker 可运行同一份权重。要验证纯画面控制，可在 Arena neural training 工作流手动勾选 pixel_audition。该实验使用临时视觉模型从 Bot 自己的摄像机直接控制角色，记录烟雾造成的画面变化和实际操作步数。
 
 ## 武器外观 / 开镜 / 下蹲 / 设置（本地源码集成）
 
