@@ -1,7 +1,7 @@
 import {rayTactical} from '../shared/heroes.ts';
 import {predictAbility} from './player/abilityPrediction.ts';
 import type { HeroLesson } from './ui/heroLesson.ts';
-import { smokeBlocks } from '../shared/grenade.ts';
+import { smokeAllowsGlimpse, smokeBlocks } from '../shared/grenade.ts';
 import { bilingual } from '../../shared-client/i18n.ts';
 // Client game loop: fixed 60 Hz input ticks with local prediction of the own player, server
 // reconciliation (replay unacknowledged inputs), and ~100 ms interpolation of everyone else.
@@ -387,16 +387,19 @@ export class Game {
     for (const effect of frame.entities ?? []) {
       if (effect.kind === 'decoy') contacts.push({ team: effect.team, crouched: false, feet: [effect.x, effect.y, effect.z] });
     }
-    const canSee = (from: Vec3, to: Vec3) => {
-      if (!lineOfSight(this.map, from, to) || smokeBlocks(frame.smokes ?? [], from, to)) return false;
+    const canSee = (from: Vec3, to: Vec3, thinGlimpse = false) => {
+      if (!lineOfSight(this.map, from, to)) return false;
+      const smokes = frame.smokes ?? [];
+      if (smokeBlocks(smokes, from, to) && !(thinGlimpse && smokeAllowsGlimpse(smokes, from, to))) return false;
       const dx = to[0] - from[0], dy = to[1] - from[1], dz = to[2] - from[2];
       const distance = Math.hypot(dx, dy, dz);
       if (distance < .001) return true;
       const ray: Vec3 = [dx / distance, dy / distance, dz / distance];
-      return !frame.shields.some(s => rayShield(from, ray, s.x, s.y, s.z, s.yaw) < distance);
+      return !frame.shields.some(s => s.hp > 0 && s.life > 0 && rayShield(from, ray, s.x, s.y, s.z, s.yaw) < distance);
     };
     const { fov, aspect } = this.scene.camera;
-    demo.record(me, input, previous => humanObservation(this.map, me, contacts, canSee, previous, fov * Math.PI / 180, aspect),
+    demo.record(me, input, previous => humanObservation(this.map, me, contacts, canSee, previous, fov * Math.PI / 180, aspect,
+      (a, b) => canSee(a, b, true)),
       lastContact => explorationScene(this.map, me, lastContact));
   }
 

@@ -8,8 +8,23 @@ import { BTN, type Input, type PlayerState } from './sim.ts';
 const EDGE_BUTTONS = BTN.JUMP | BTN.DASH | BTN.RELOAD | BTN.THROW;
 const BUTTONS = [BTN.FIRE, BTN.JUMP, BTN.DASH, BTN.SHIELD, BTN.RELOAD, BTN.CROUCH, BTN.THROW];
 
-/** Convert predictions to player inputs. Match physics owns the outcome. */
-export function neuralBotControl(model: NeuralPolicyModel) {
+export interface NeuralAction {
+  axes: readonly number[]; // Four unsquashed camera and movement controls.
+  buttons: number; // Same mask as a player's Input.
+  weapon: number;
+}
+
+type SelectAction = (observation: number[], logits: number[], firstInLife: boolean) => NeuralAction;
+
+function greedyAction(_observation: number[], logits: number[]): NeuralAction {
+  const buttons = BUTTONS.reduce((mask, button, i) => logits[4 + i] > 0 ? mask | button : mask, 0);
+  let weapon = 0;
+  for (let i = 1; i < 3; i++) if (logits[11 + i] > logits[11 + weapon]) weapon = i;
+  return { axes: logits, buttons, weapon };
+}
+
+/** Use the same observations, actuator limits and decision interval in the live game and RL rollouts. */
+export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectAction = greedyAction) {
   const policy = createNeuralPolicy(model);
   let life = -1, next = -1, bearing = 0, seenAt = -Infinity;
   let prior: [number, number] = [0, 0];
@@ -33,18 +48,19 @@ export function neuralBotControl(model: NeuralPolicyModel) {
         if (state.alive && state.team !== me.team) contacts.push({ team: state.team, crouched: state.crouched, feet: [state.x, state.y, state.z] });
       }
       for (const decoy of match.heroes.decoys()) contacts.push({ team: decoy.team, crouched: decoy.crouched, feet: [decoy.x, decoy.y, decoy.z] });
-      const observation = humanObservation(match.map, me, contacts, (from, to) => match.heroes.visible(from, to), prior);
+      const observation = humanObservation(match.map, me, contacts, (from, to) => match.heroes.visible(from, to), prior,
+        undefined, undefined, (from, to) => match.heroes.visible(from, to, true));
       if (observation[0]) { bearing = me.yaw + observation[1]; seenAt = match.tick; }
       if (choose) {
         const scene = explorationScene(match.map, me, [bearing, match.tick - seenAt]);
-        const result = policy.think([...observation, ...scene]);
-        yaw = Math.tanh(result[0]) * .9 / EXPLORATION_TICKS;
-        pitch = Math.tanh(result[1]) * .55 / EXPLORATION_TICKS;
-        mx = Math.tanh(result[2]);
-        mz = Math.tanh(result[3]);
-        buttons = BUTTONS.reduce((mask, button, i) => result[4 + i] > 0 ? mask | button : mask, 0);
-        weapon = 0;
-        for (let i = 1; i < 3; i++) if (result[11 + i] > result[11 + weapon]) weapon = i;
+        const features = [...observation, ...scene];
+        const action = selectAction(features, policy.think(features), next === -1);
+        yaw = Math.tanh(action.axes[0]) * .9 / EXPLORATION_TICKS;
+        pitch = Math.tanh(action.axes[1]) * .55 / EXPLORATION_TICKS;
+        mx = Math.tanh(action.axes[2]);
+        mz = Math.tanh(action.axes[3]);
+        buttons = action.buttons;
+        weapon = action.weapon;
         next = match.tick + EXPLORATION_TICKS;
       }
       const selected = WEAPONS[loadoutWeapon(me.loadout, weapon)];

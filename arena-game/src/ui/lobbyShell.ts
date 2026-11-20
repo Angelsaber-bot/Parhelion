@@ -1,3 +1,4 @@
+import {mountTrainingStatus} from './trainingStatus.ts';
 import {heroIcon} from './heroIcon.ts';
 import {bilingual} from '../../../shared-client/i18n.ts';
 import {CHARACTERS,ABILITIES,type Loadout} from '../../shared/content.ts';
@@ -7,6 +8,7 @@ const $=(id:string)=>document.getElementById(id)!;
 const roles:Record<number,[string,string]>={2:['前线反击','VANGUARD'],3:['烟幕突击','BREACHER'],4:['高速游击','DUELIST'],5:['火力压制','ARTILLERY'],6:['战线支援','SUPPORT'],7:['扇面压制','SUN COMMAND'],8:['区域控制','CONTROLLER']};
 /** Changes presentation only. Existing map/hero/loadout stores remain authoritative. */
 export function mountLobbyShell(){
+  mountTrainingStatus();
   const tabs=[...document.querySelectorAll<HTMLButtonElement>('[data-pane]')];
   let current:LobbyPane='battlefield';
   const show=(pane:LobbyPane,focus=false)=>{current=pane;for(const tab of tabs){const active=tab.dataset.pane===pane;tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;$(`pane-${tab.dataset.pane}`).hidden=!active;if(active&&focus)tab.focus();}document.querySelector('.lobby-main')!.scrollTop=0;document.querySelector('.arena-workspace')!.scrollTop=0;};

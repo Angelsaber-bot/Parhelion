@@ -18,10 +18,11 @@ export interface CombatContact { team: PlayerState['team']; crouched: boolean; f
 export function humanObservation(
   map: ArenaMap, me: PlayerState, contacts: readonly CombatContact[], canSee: (from: Vec3, to: Vec3) => boolean,
   priorTurn: readonly [number, number], verticalFov = 78 * Math.PI / 180, aspect = 16 / 9,
+  thinGlimpse?: (from: Vec3, to: Vec3) => boolean,
 ): number[] {
   const eye: Vec3 = [me.x, me.y + playerEye(map, me), me.z];
   const hfov = Math.atan(Math.tan(verticalFov / 2) * aspect);
-  let found: CombatContact | undefined, yaw = 0, pitch = 0, distance = 0, best = Infinity;
+  let found: CombatContact | undefined, yaw = 0, pitch = 0, distance = 0, best = Infinity, confidence = 0;
   for (const contact of contacts) {
     if (contact.team === me.team) continue;
     const [x, y, z] = contact.feet;
@@ -33,17 +34,22 @@ export function humanObservation(
     const dpitch = Math.atan2((head + chest) / 2 - eye[1], horizontal) - me.pitch;
     if (Math.abs(dyaw) > hfov || Math.abs(dpitch) > verticalFov / 2) continue;
     const score = Math.hypot(dyaw, dpitch) + horizontal * .002;
-    if (score >= best || (!canSee(eye, [x, chest, z]) && !canSee(eye, [x, head, z]))) continue;
-    best = score;
+    const chestPoint: Vec3 = [x, chest, z], headPoint: Vec3 = [x, head, z];
+    const clear = canSee(eye, chestPoint) || canSee(eye, headPoint);
+    // Give clear contacts priority. A faint silhouette conveys a screen region, not exact targeting data.
+    const rank = score + (clear ? 0 : 2);
+    if (rank >= best || (!clear && !(thinGlimpse?.(eye, chestPoint) || thinGlimpse?.(eye, headPoint)))) continue;
+    best = rank;
     found = contact;
-    yaw = dyaw;
-    pitch = dpitch;
-    distance = horizontal;
+    confidence = clear ? 1 : .5;
+    yaw = clear ? dyaw : Math.round(dyaw / .15) * .15;
+    pitch = clear ? dpitch : Math.round(dpitch / .15) * .15;
+    distance = clear ? horizontal : Math.round(horizontal / 3) * 3;
   }
   const [fx, fz] = forward(me.yaw);
   const weapon = WEAPONS[me.weapon];
   return [
-    Number(!!found), yaw, pitch, bounded(distance, 45), Number(found?.crouched ?? false),
+    confidence, yaw, pitch, bounded(distance, 45), Number(confidence === 1 && found?.crouched),
     me.hp / CHARACTERS[me.char].hp, bounded(me.vx * fx + me.vz * fz, 8), bounded(-me.vx * fz + me.vz * fx, 8),
     me.ammo[me.weapon] / Math.max(1, weapon.mag), Number(me.reload > 0), bounded(me.fireCd, 100),
     Number(!!(me.prevButtons & BTN.FIRE)), Number(me.grounded), Number(me.crouched), Number(weapon.auto),

@@ -3,7 +3,8 @@ import { HUMAN_FEATURES, wrapAngle } from '../../shared/humanCombat.ts';
 import { EXPLORATION_TICKS, type ExplorationSample, type LastObservedBearing } from '../../shared/exploration.ts';
 import { RULES_VERSION } from '../../shared/protocol.ts';
 import { BTN, type Input, type PlayerState } from '../../shared/sim.ts';
-import { TRAINING_BATCH_TICKS, type TrainingBatch, type TrainingView } from '../../shared/trainingData.ts';
+import { MAX_TRAINING_BODY, TRAINING_BATCH_TICKS, type TrainingBatch, type TrainingView } from '../../shared/trainingData.ts';
+import { coarseFrame, COARSE_FRAME_CHARS, encodeDetailFrame } from '../../shared/trainingView.ts';
 
 const MAX_FRAMES = 12 * 60 * TICK_HZ;
 const VIEW_WIDTH = 192, VIEW_HEIGHT = 108;
@@ -50,8 +51,16 @@ export class HumanDemo {
     if (!this.transmit || !this.frames.length) return;
     const start = this.size - this.frames.length;
     const views = this.trainingViews.filter(view => view[0] >= start - 18);
-    this.transmit({ version: 1, rulesVersion: RULES_VERSION, capture: this.capture, map: this.map, sequence: this.sequence++, start, rows: this.frames, views,
-      ...(this.exploration.length ? { exploration: this.exploration } : {}) });
+    const batch: TrainingBatch = { version: 1, rulesVersion: RULES_VERSION, capture: this.capture, map: this.map,
+      sequence: this.sequence++, start, rows: this.frames, views, ...(this.exploration.length ? { exploration: this.exploration } : {}) };
+    let bytes = JSON.stringify(batch).length;
+    for (let i = 0; bytes > MAX_TRAINING_BODY && i < views.length; i++) {
+      const [tick, segment, frame] = views[i];
+      if (frame.length === COARSE_FRAME_CHARS) continue;
+      views[i] = [tick, segment, coarseFrame(frame)];
+      bytes -= frame.length - COARSE_FRAME_CHARS;
+    }
+    this.transmit(batch);
     this.frames = [];
     this.trainingViews = views.slice(-1);
     this.exploration = [];
@@ -97,6 +106,10 @@ export class HumanDemo {
       this.view.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
       this.view.drawImage(canvas, (VIEW_WIDTH - width) / 2, (VIEW_HEIGHT - height) / 2, width, height);
       const rgba = this.view.getImageData(0, 0, VIEW_WIDTH, VIEW_HEIGHT).data;
+      if (this.automatic) {
+        this.trainingViews.push([this.size, this.segment, encodeDetailFrame(rgba)]);
+        return;
+      }
       const light = new Uint8Array(PIXEL_COLS * PIXEL_ROWS);
       const cell = VIEW_WIDTH / PIXEL_COLS;
       for (let row = 0; row < PIXEL_ROWS; row++) {
@@ -110,8 +123,7 @@ export class HumanDemo {
         }
       }
       const grid = btoa(String.fromCharCode(...light));
-      if (this.automatic) this.trainingViews.push([this.size, this.segment, grid]);
-      else this.views.push([this.size, this.segment, this.view.canvas.toDataURL('image/jpeg', .58).split(',')[1], grid]);
+      this.views.push([this.size, this.segment, this.view.canvas.toDataURL('image/jpeg', .58).split(',')[1], grid]);
     } catch {
       this.view = null;
     }

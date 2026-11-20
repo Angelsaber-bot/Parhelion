@@ -17,53 +17,62 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - name: Check for a new training snapshot
-        id: corpus
+      - name: Select training work
+        id: work
         run: |
-          python3 - <<'PY'
+          python3 - <<'PYTHON'
           import json, os, urllib.request
-
           endpoint = 'https://parhelion-arena.lejiazhang-us.workers.dev/training/status'
-          request = urllib.request.Request(endpoint, headers={
-              'User-Agent': 'Parhelion-Arena-Training/1.0',
-              'Accept': 'application/json',
-          })
-          with urllib.request.urlopen(request, timeout=20) as response:
+          req = urllib.request.Request(endpoint, headers={'User-Agent': 'Parhelion-Arena-Training/1.0', 'Accept': 'application/json'})
+          with urllib.request.urlopen(req, timeout=25) as response:
               status = json.load(response)
-          dataset = status.get('dataset') or {}
-          trained = (status.get('transformer') or {}).get('completedRevision', 0)
-          ready = status.get('neuralExportConfigured') and dataset.get('matches', 0) >= 2 and dataset.get('revision', 0) > trained
-          print(f"Archive: {dataset.get('matches', 0)} matches, {dataset.get('batches', 0)} batches; new eligible snapshot: {bool(ready)}")
+          corpus = status['dataset']
+          previous = (status.get('transformer') or {}).get('completedRevision', 0)
+          ready = bool(status.get('neuralExportConfigured'))
+          # Bootstrap the first visual human reference once the self-play endpoint is deployed.
+          selfplay = ready and 'reinforcement' in status and (previous > 0 or corpus['matches'] >= 2)
+          refresh = selfplay and not status.get('reinforcement') and corpus['matches'] >= 2
+          reference = ready and corpus['matches'] >= 2 and (corpus['revision'] > previous or refresh)
+          print(f"Human revision {corpus['revision']}; update reference={reference}, run self-play={selfplay}")
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-              out.write('ready=' + ('true' if ready else 'false') + '\n')
-          PY
+              for key, flag in [('reference',reference), ('refresh',refresh), ('selfplay',selfplay), ('install',reference or selfplay)]:
+                  print(f"{key}={str(flag).lower()}", file=out)
+          PYTHON
       - uses: actions/checkout@v5
-        if: steps.corpus.outputs.ready == 'true'
+        if: steps.work.outputs.install == 'true'
         with:
           persist-credentials: false
       - uses: actions/setup-node@v5
-        if: steps.corpus.outputs.ready == 'true'
+        if: steps.work.outputs.install == 'true'
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: arena-game/package-lock.json
       - uses: actions/setup-python@v5
-        if: steps.corpus.outputs.ready == 'true'
+        if: steps.work.outputs.install == 'true'
         with:
           python-version: '3.12'
       - name: Install training dependencies
-        if: steps.corpus.outputs.ready == 'true'
+        if: steps.work.outputs.install == 'true'
         run: |
           npm ci --prefix arena-game --no-audit --no-fund
           python -m pip install --disable-pip-version-check --index-url https://download.pytorch.org/whl/cpu 'torch==2.15.0'
-      - name: Train and evaluate a private snapshot
-        if: steps.corpus.outputs.ready == 'true'
+      - name: Update private human reference
+        if: steps.work.outputs.reference == 'true'
         env:
           ARENA_NEURAL_CORPUS_TOKEN: ${{ secrets.ARENA_NEURAL_CORPUS_TOKEN }}
+          REFRESH: ${{ steps.work.outputs.refresh }}
         run: |
-          test -n "$ARENA_NEURAL_CORPUS_TOKEN"
           umask 077
           training_dir=$(mktemp -d "$RUNNER_TEMP/arena-training.XXXXXX")
           trap 'rm -rf "$training_dir"' EXIT
+          extra=()
+          if [ "$REFRESH" = true ]; then extra+=(--refresh-reference); fi
           ARENA_NEURAL_RUN_DIR="$training_dir" ARENA_NEURAL_PYTHON=python \
-            npm run train:neural --prefix arena-game -- --public --cloud --epochs 20 --device cpu
+            npm run train:neural --prefix arena-game -- --public --cloud --reference-only --epochs 20 --device cpu "${extra[@]}"
+      - name: Play fresh matches and optimize the neural policy
+        if: steps.work.outputs.selfplay == 'true' && !cancelled()
+        working-directory: arena-game
+        env:
+          ARENA_NEURAL_CORPUS_TOKEN: ${{ secrets.ARENA_NEURAL_CORPUS_TOKEN }}
+        run: python scripts/self-play-cycle.py --cloud --generations 3

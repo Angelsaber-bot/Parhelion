@@ -4,6 +4,8 @@ import { HUMAN_FEATURES, humanCombatPolicy, humanObservation, type HumanCombatMo
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { BTN, newPlayer } from '../shared/sim.ts';
 import { HumanDemo } from '../src/player/humanDemo.ts';
+import { MAX_TRAINING_BODY, parseTrainingBatch, type TrainingBatch } from '../shared/trainingData.ts';
+import { coarseFrame, DETAIL_FRAME_CHARS } from '../shared/trainingView.ts';
 
 it('records only derived game inputs, separating respawns and gaps in a capture', () => {
   const demo = new HumanDemo('aster');
@@ -52,6 +54,40 @@ it('does not expose a wall- or smoke-blocked target to the learned scorer', () =
   expect(humanObservation(ARENA_MAP, me, targets, () => true, [0, 0])[0]).toBe(1);
   expect(humanObservation(ARENA_MAP, me, targets, () => false, [0, 0])).toEqual(humanObservation(ARENA_MAP, me, [], () => true, [0, 0]));
   expect(humanObservation(ARENA_MAP, me, [{ ...targets[0], feet: [0, 0, 10] }], () => true, [0, 0])[0]).toBe(0);
+});
+
+it('retains bounded grayscale observations aligned to future controls in a consented batch', () => {
+  const rgba = new Uint8ClampedArray(192 * 108 * 4).fill(51);
+  const buffer = {
+    getContext: () => ({ fillRect() {}, drawImage() {}, getImageData: () => ({ data: rgba }) }),
+  };
+  vi.stubGlobal('document', { createElement: () => buffer });
+  try {
+    const batches: TrainingBatch[] = [], demo = new HumanDemo('aster', b => batches.push(b));
+    const me = newPlayer('a', 'A', 0), features = HUMAN_FEATURES.map(() => .1234);
+    for (let seq = 0; seq < 240; seq++) {
+      demo.record(me, { seq, yaw: .0091, pitch: -.003, mx: .2345, mz: .6789, buttons: 0, weapon: 1, view: 0 },
+        () => features, () => Array(12).fill(.2345));
+      demo.captureView({ width: 192, height: 108 } as HTMLCanvasElement);
+    }
+    const [batch] = batches;
+    expect(JSON.stringify(batch).length).toBeLessThanOrEqual(MAX_TRAINING_BODY);
+    expect(parseTrainingBatch(batch)).toEqual(batch);
+    const detail = batch.views.find(([, , bytes]) => bytes.length === DETAIL_FRAME_CHARS)!;
+    expect(detail[0]).toBeGreaterThanOrEqual(1);
+    expect(atob(coarseFrame(detail[2]))).toBe(String.fromCharCode(51).repeat(144));
+  } finally { vi.unstubAllGlobals(); }
+});
+
+it('returns only coarse silhouette cues at the edge and identical observations behind opaque smoke', () => {
+  const me = newPlayer('self', 'A', 0);
+  const enemy = (x: number) => ({ team: 'B' as const, crouched: true, feet: [x, 0, -4] as [number, number, number] });
+  const observe = (x: number, edge: boolean) => humanObservation(ARENA_MAP, me, [enemy(x)],
+    () => false, [0, 0], undefined, undefined, () => edge);
+  expect(observe(.36, true).slice(0, 5)).toEqual(observe(.38, true).slice(0, 5));
+  expect(observe(.36, true)[0]).toBe(.5);
+  expect(observe(.36, true)[4]).toBe(0);
+  expect(observe(.36, false)).toEqual(observe(-.9, false));
 });
 
 it('uses older observations when scoring a turn and resets history at a new life', () => {

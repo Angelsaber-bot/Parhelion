@@ -16,6 +16,32 @@ const CORPUS_READ_LIMIT = 8;
 const MAX_MODEL_BODY = 12 * 1024 ** 2;
 const MODEL_CHUNK = 240 * 1024;
 const MAX_CHECKPOINT_BODY = 8 * 1024 ** 2;
+const MAX_RL_BODY = 16 * 1024 ** 2;
+const RL_REASONS = ['shadow', 'evaluating', 'evaluation_failed', 'insufficient_evidence', 'passed'] as const;
+const RL_JOB_STATES = ['collecting', 'updating', 'evaluating', 'error'] as const;
+interface ReinforcementJob { parent: number; state: typeof RL_JOB_STATES[number]; at: number }
+interface ReinforcementEvaluation {
+  generation: number; at: number; reason: typeof RL_REASONS[number]; failedGates: string[]; published: boolean;
+}
+interface ReinforcementCommit {
+  rulesVersion: number; parent: number; generation: number; humanRevision: number;
+  episodes: number; environmentSteps: number; optimizerSteps: number;
+  digest: string; reason: typeof RL_REASONS[number]; failedGates: string[];
+  published: boolean; at: number; totalEpisodes: number; totalEnvironmentSteps: number; totalOptimizerSteps: number;
+  lastEvaluation: ReinforcementEvaluation | null;
+}
+
+function completedEvaluation({ generation, at, reason, failedGates, published }: ReinforcementEvaluation): ReinforcementEvaluation | null {
+  return reason === 'shadow' || reason === 'evaluating' ? null : { generation, at, reason, failedGates, published };
+}
+
+const counter = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+const base64Artifact = (value: unknown, max: number): value is string => typeof value === 'string' && value.length > 0 &&
+  value.length <= max && value.length % 4 === 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(value);
+async function sha256(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, '0')).join('');
+}
 const PUBLIC_ORIGIN = 'https://parhelion-game.pages.dev';
 const PUBLIC_TRAINER = 'parhelion-arena.lejiazhang-us.workers.dev';
 const RUN_STATES = ['training', 'evaluating', 'ready', 'error'] as const;
@@ -46,6 +72,9 @@ export class ArenaTraining extends DurableObject<Env> {
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS training_run (id INTEGER PRIMARY KEY, run TEXT NOT NULL)');
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS optimizer_checkpoint (part INTEGER PRIMARY KEY, body TEXT NOT NULL)');
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS optimizer_revision (id INTEGER PRIMARY KEY, revision INTEGER NOT NULL)');
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS rl_commit (id INTEGER PRIMARY KEY, metadata TEXT NOT NULL, request_hash TEXT NOT NULL)');
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS rl_artifacts (kind TEXT NOT NULL, part INTEGER NOT NULL, body TEXT NOT NULL, PRIMARY KEY(kind,part))');
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS rl_job (id INTEGER PRIMARY KEY, job TEXT NOT NULL)');
   }
 
   async enqueue(batch: TrainingBatch, retain = false): Promise<boolean> {
@@ -128,7 +157,8 @@ export class ArenaTraining extends DurableObject<Env> {
     ).one();
     return { rulesVersion, queuedBatches: this.pending(), trainedTicks: trained, holdoutTicks: heldOut, recentLoss, recentHoldoutLoss,
       selfPlayTicks: this.checkpoint(2).trained, shadow: !neural, neural, pendingNeuralBatches: dataset.batches, dataset,
-      transformer: this.trainingRun(), neuralCollection: collecting,
+      transformer: this.trainingRun(), reinforcement: this.reinforcementCommit()?.metadata ?? null,
+      reinforcementJob: this.reinforcementJob(), neuralCollection: collecting,
       neuralExportConfigured: !!this.env.ARENA_NEURAL_CORPUS_TOKEN, exploration: {
         trainedWindows: exploration?.trained ?? 0, holdoutWindows: exploration?.heldOut ?? 0,
         yawError: exploration?.heldOut ? exploration.yawError / exploration.heldOut : null,
@@ -170,6 +200,101 @@ export class ArenaTraining extends DurableObject<Env> {
     return this.ctx.storage.sql.exec<{ digest: string; at: number }>('SELECT digest, at FROM neural_release WHERE id=1').toArray()[0] ?? null;
   }
 
+  private reinforcementCommit() {
+    const row = this.ctx.storage.sql.exec<{ metadata: string; request_hash: string }>(
+      'SELECT metadata, request_hash FROM rl_commit WHERE id=1',
+    ).toArray()[0];
+    if (!row) return null;
+    const metadata = JSON.parse(row.metadata) as ReinforcementCommit;
+    metadata.lastEvaluation ??= completedEvaluation(metadata);
+    return { metadata, requestHash: row.request_hash };
+  }
+
+  private reinforcementJob(): ReinforcementJob | null {
+    const row = this.ctx.storage.sql.exec<{ job: string }>('SELECT job FROM rl_job WHERE id=1').toArray()[0];
+    return row ? JSON.parse(row.job) as ReinforcementJob : null;
+  }
+
+  private async reportReinforcementJob(req: Request): Promise<Response> {
+    const text = await readText(req, 1024);
+    if (typeof text !== 'string') return new Response(null, { status: text === false ? 413 : 400 });
+    let job;
+    try { job = JSON.parse(text); } catch { return new Response(null, { status: 400 }); }
+    if (job?.rulesVersion !== RULES_VERSION || !counter(job.parent) || !RL_JOB_STATES.includes(job.state))
+      return new Response(null, { status: 400 });
+    if ((this.reinforcementCommit()?.metadata.generation ?? 0) !== job.parent) return new Response(null, { status: 409 });
+    this.ctx.storage.sql.exec('INSERT OR REPLACE INTO rl_job VALUES (1,?)', JSON.stringify({ parent: job.parent, state: job.state, at: Date.now() }));
+    return new Response(null, { status: 204 });
+  }
+
+  private async reinforcementCheckpoint(req: Request): Promise<Response> {
+    const sql = this.ctx.storage.sql;
+    if (req.method === 'GET') {
+      const saved = this.reinforcementCommit();
+      if (!saved) return new Response(null, { status: 404 });
+      const artifact = (kind: string) => sql.exec<{ body: string }>('SELECT body FROM rl_artifacts WHERE kind=? ORDER BY part', kind)
+        .toArray().map(row => row.body).join('');
+      return Response.json({ ...saved.metadata, checkpoint: artifact('checkpoint'), history: artifact('history') || undefined },
+        { headers: { 'cache-control': 'no-store' } });
+    }
+    const text = await readText(req, MAX_RL_BODY);
+    if (typeof text !== 'string') return new Response(null, { status: text === false ? 413 : 400 });
+    let input;
+    try { input = JSON.parse(text); } catch { return new Response(null, { status: 400 }); }
+    if (!input || typeof input !== 'object' || Array.isArray(input)) return new Response(null, { status: 400 });
+    const { rulesVersion, parent, generation, humanRevision, episodes, environmentSteps, optimizerSteps,
+      digest, checkpoint, history, promote, expectedReleaseDigest } = input;
+    const reason = input.reason ?? (promote === undefined ? 'shadow' : 'passed');
+    const failedGates = input.failedGates ?? [];
+    if (rulesVersion !== RULES_VERSION || !counter(parent) || !counter(generation) || generation !== parent + 1 ||
+        !counter(humanRevision) || !counter(episodes) || !episodes || !counter(environmentSteps) || environmentSteps < episodes ||
+        !counter(optimizerSteps) || !optimizerSteps || typeof digest !== 'string' || !/^[a-f0-9]{64}$/.test(digest) ||
+        !base64Artifact(checkpoint, 12 * 1024 ** 2) || (history !== undefined && !base64Artifact(history, 8 * 1024 ** 2)) ||
+        !RL_REASONS.includes(reason) || !Array.isArray(failedGates) || failedGates.length > 24 ||
+        !failedGates.every((s: unknown) => typeof s === 'string' && /^[a-zA-Z0-9_.-]{1,64}$/.test(s)) ||
+        (promote !== undefined && (typeof promote !== 'string' || promote.length > MAX_MODEL_BODY || reason !== 'passed' ||
+          failedGates.length || !(expectedReleaseDigest === null || (typeof expectedReleaseDigest === 'string' && /^[a-f0-9]{64}$/.test(expectedReleaseDigest))))))
+      return new Response(null, { status: 400 });
+    let model: NeuralPolicyModel | undefined;
+    if (promote !== undefined) {
+      try { model = parseNeuralPolicy(JSON.parse(promote)); } catch { /* rejected below */ }
+      if (!model || model.synthetic || await sha256(promote) !== digest) return new Response(null, { status: 400 });
+    }
+    const requestHash = await sha256(text);
+    // All reads affecting CAS occur after the final await, with no yield through the commit.
+    const saved = this.reinforcementCommit();
+    if (saved?.requestHash === requestHash) return Response.json(saved.metadata);
+    const previous = saved?.metadata;
+    if (parent !== (previous?.generation ?? 0) || (previous && (digest === previous.digest || humanRevision < previous.humanRevision)) ||
+        (model && (this.release()?.digest ?? null) !== expectedReleaseDigest)) return new Response(null, { status: 409 });
+    const at = Date.now();
+    const metadata: ReinforcementCommit = { rulesVersion, parent, generation, humanRevision, episodes, environmentSteps, optimizerSteps,
+      digest, reason, failedGates, published: !!model, at, totalEpisodes: (previous?.totalEpisodes ?? 0) + episodes,
+      totalEnvironmentSteps: (previous?.totalEnvironmentSteps ?? 0) + environmentSteps,
+      totalOptimizerSteps: (previous?.totalOptimizerSteps ?? 0) + optimizerSteps,
+      lastEvaluation: completedEvaluation({ generation, at, reason, failedGates, published: !!model }) ?? previous?.lastEvaluation ?? null };
+    if (![metadata.totalEpisodes, metadata.totalEnvironmentSteps, metadata.totalOptimizerSteps].every(counter)) return new Response(null, { status: 400 });
+    this.ctx.storage.transactionSync(() => {
+      sql.exec('DELETE FROM rl_artifacts');
+      for (const [kind, data] of [['checkpoint', checkpoint], ['history', history]] as const) {
+        if (data) for (let i = 0; i < data.length; i += MODEL_CHUNK)
+          sql.exec('INSERT INTO rl_artifacts VALUES (?,?,?)', kind, i, data.slice(i, i + MODEL_CHUNK));
+      }
+      if (model) this.storeLiveModel(promote, digest, at);
+      sql.exec('INSERT OR REPLACE INTO rl_commit VALUES (1,?,?)', JSON.stringify(metadata), requestHash);
+      sql.exec('DELETE FROM rl_job');
+    });
+    if (model) this.currentModel = model;
+    return Response.json(metadata);
+  }
+
+  private storeLiveModel(weights: string, digest: string, at: number) {
+    const sql = this.ctx.storage.sql;
+    sql.exec('DELETE FROM neural_model');
+    for (let start = 0; start < weights.length; start += MODEL_CHUNK) sql.exec('INSERT INTO neural_model VALUES (?, ?)', start, weights.slice(start, start + MODEL_CHUNK));
+    sql.exec('INSERT OR REPLACE INTO neural_release VALUES (1, ?, ?)', digest, at);
+  }
+
   private modelText() {
     return this.ctx.storage.sql.exec<{ body: string }>('SELECT body FROM neural_model ORDER BY part').toArray().map(row => row.body).join('');
   }
@@ -203,7 +328,10 @@ export class ArenaTraining extends DurableObject<Env> {
   }
 
   async fetch(req: Request): Promise<Response> {
-    if (new URL(req.url).pathname === '/training/checkpoint') return this.optimizerCheckpoint(req);
+    const pathname = new URL(req.url).pathname;
+    if (pathname === '/training/checkpoint') return this.optimizerCheckpoint(req);
+    if (pathname === '/training/selfplay') return this.reinforcementCheckpoint(req);
+    if (pathname === '/training/selfplay/job') return this.reportReinforcementJob(req);
     const release = this.release();
     if (req.method === 'GET') {
       if (!release) return new Response(null, { status: 404 });
@@ -218,16 +346,10 @@ export class ArenaTraining extends DurableObject<Env> {
     try { model = parseNeuralPolicy(JSON.parse(body)); } catch { /* rejected below */ }
     if (!model || model.synthetic) return new Response(null, { status: 400 });
     const weights = JSON.stringify(model);
-    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(weights));
-    const digest = Array.from(new Uint8Array(hash), n => n.toString(16).padStart(2, '0')).join('');
+    const digest = await sha256(weights);
     if (release?.digest === digest) return Response.json(release);
-    const sql = this.ctx.storage.sql;
     const at = Date.now();
-    this.ctx.storage.transactionSync(() => {
-      sql.exec('DELETE FROM neural_model');
-      for (let start = 0; start < weights.length; start += MODEL_CHUNK) sql.exec('INSERT INTO neural_model VALUES (?, ?)', start, weights.slice(start, start + MODEL_CHUNK));
-      sql.exec('INSERT OR REPLACE INTO neural_release VALUES (1, ?, ?)', digest, at);
-    });
+    this.ctx.storage.transactionSync(() => this.storeLiveModel(weights, digest, at));
     this.currentModel = model;
     return Response.json({ digest, at });
   }
@@ -289,8 +411,9 @@ export async function trainingRequest(req: Request, storage: DurableObjectNamesp
     } catch { /* invalid JSON */ }
     return new Response(null, { status: 400 });
   }
-  if (url.pathname === '/training/checkpoint') {
+  if (url.pathname === '/training/checkpoint' || url.pathname === '/training/selfplay' || url.pathname === '/training/selfplay/job') {
     if (!administrator || !['GET', 'PUT'].includes(req.method)) return new Response(null, { status: 404 });
+    if (url.pathname.endsWith('/job') && req.method !== 'PUT') return new Response(null, { status: 405 });
     return trainingStore(storage).fetch(req);
   }
   const headers: HeadersInit = origin && allowedOrigin(origin) ? { 'access-control-allow-origin': origin, vary: 'origin' } : {};

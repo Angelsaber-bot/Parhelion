@@ -19,6 +19,8 @@ try:
 except ImportError as error:
     raise SystemExit("Install the Arena ML requirements (PyTorch) in your training environment.") from error
 
+from arena_vision import distillation_loss, frame_pair, train_visual_teacher
+
 
 OBSERVATIONS = 18
 SCENE = 12
@@ -82,7 +84,7 @@ def read_batch(path):
     return batch
 
 
-def load_captures(directory, rules):
+def load_captures(directory, rules, allow_empty=False):
     grouped = defaultdict(dict)
     versions = set()
     if not directory.is_dir():
@@ -107,6 +109,8 @@ def load_captures(directory, rules):
     if rules is None and len(versions) > 1:
         raise ValueError(f"The corpus has multiple rules versions {sorted(versions)}. Choose --rules-version.")
     if not grouped:
+        if allow_empty:
+            return rules, {}
         raise ValueError("No matching Arena batches. Play recorded matches first.")
     captures = {capture: [paths[sequence] for sequence in sorted(paths)] for capture, paths in grouped.items()}
     return rules if rules is not None else versions.pop(), captures
@@ -132,7 +136,7 @@ def synthetic_captures():
 
 def capture_windows(batches):
     """Yield causal inputs and contiguous labels. Gaps and respawns reset history."""
-    rows, scenes = [], []
+    rows, scenes, views = [], [], {}
     start = 0
     current_map = None
     for item in batches:
@@ -144,17 +148,28 @@ def capture_windows(batches):
         if rows and batch_start != start + len(rows):
             if batch_start < start + len(rows):
                 raise ValueError(f"{item}: overlapping input ranges within a capture")
-            yield from windows(rows, scenes, start)
-            rows, scenes = [], []
+            yield from windows(rows, scenes, start, views)
+            rows, scenes, views = [], [], {}
         if not rows:
             start = batch_start
         new_rows = batch_rows(batch, item)
+        for view in batch.get("views", []):
+            if (not isinstance(view, list) or len(view) != 3 or
+                    not integer(view[0], max(0, batch_start - 18), batch_start + len(new_rows)) or
+                    not integer(view[1], 0, 10**9) or not isinstance(view[2], str) or
+                    len(view[2]) not in (192, 1536) or re.fullmatch(r"[A-Za-z0-9+/]+", view[2]) is None):
+                raise ValueError(f"{item}: invalid visual frame")
+            # Neighboring batches can carry the same recent frame in either encoding.
+            if view[0] >= start and (view[0] not in views or len(view[2]) > len(views[view[0]][2])):
+                views[view[0]] = view
         scenes.extend(batch_scenes(batch, new_rows, batch_start, item))
         rows.extend(new_rows)
-    yield from windows(rows, scenes, start)
+    yield from windows(rows, scenes, start, views)
 
 
-def windows(rows, scenes, start):
+def windows(rows, scenes, start, views):
+    ticks = sorted(views)
+    frames = [views[tick] for tick in ticks]
     last_segment, last_tick = None, None
     for tick, *scene in scenes:
         index = tick - start
@@ -172,7 +187,7 @@ def windows(rows, scenes, start):
         buttons = [float(any(row[BUTTON_COLUMN] & (1 << flag) for row in chunk)) for flag in range(BUTTONS)]
         target = [max(-1, min(1, value)) for value in axes] + buttons + [float(chunk[-1][SLOT_COLUMN])]
         contiguous = last_segment == segment and last_tick is not None and tick - last_tick == CHUNK
-        yield obs + scene, target, contiguous
+        yield obs + scene, target, contiguous, frame_pair(frames, ticks, tick, segment)
         last_segment, last_tick = segment, tick
 
 
@@ -209,12 +224,14 @@ class ArenaDataset(Dataset):
 
     def __init__(self, examples, context):
         self.context = context
-        x, y, self.starts = [], [], []
+        x, y, self.starts, self.views = [], [], [], []
+        self.visual_targets = None
         for capture in examples:
-            for features, targets, contiguous in capture:
+            for features, targets, contiguous, pair in capture:
                 self.starts.append(self.starts[-1] if contiguous else len(x))
                 x.append(features)
                 y.append(targets)
+                self.views.append(pair)
         self.features = torch.tensor(x, dtype=torch.float32)
         self.targets = torch.tensor(y, dtype=torch.float32)
 
@@ -226,7 +243,10 @@ class ArenaDataset(Dataset):
         state = self.features[left:index + 1]
         if len(state) < self.context:
             state = F.pad(state, (0, 0, self.context - len(state), 0))
-        return state, self.targets[index]
+        if self.visual_targets is None:
+            return state, self.targets[index]
+        soft, mask = self.visual_targets
+        return state, self.targets[index], soft[index], mask[index]
 
 
 @dataclass(frozen=True)
@@ -271,11 +291,14 @@ class ArenaPolicy(nn.Module):
         self.norm = nn.LayerNorm(config.width, eps=1e-5)
         self.out = nn.Linear(config.width, OUTPUTS)
 
-    def forward(self, state):
+    def encode(self, state):
         state = self.embed(state) + self.position
         for layer in self.layers:
             state = layer(state)
-        return self.out(self.norm(state[:, -1]))
+        return self.norm(state[:, -1])
+
+    def forward(self, state):
+        return self.out(self.encode(state))
 
 
 def losses(logits, target, button_weights):
@@ -303,7 +326,7 @@ def evaluate(model, loader, device, button_weights):
         loss += losses(logits, actions, button_weights).sum().item()
         samples += len(states)
         errors = (logits[:, :4].tanh() - actions[:, :4]).abs()
-        visible = states[:, -1, 0] > .5
+        visible = states[:, -1, 0] > 0
         for key, mask in (("all", torch.ones_like(visible)), ("noContact", ~visible), ("visibleContact", visible)):
             counts = camera[key]
             counts[0] += mask.sum().item()
@@ -417,6 +440,7 @@ def train(args):
     holdout_loader = DataLoader(holdout_set, batch_size=args.batch_size)
     positive = train_set.targets[:, 4:11].sum(dim=0)
     button_weights = ((len(train_set) - positive) / positive.clamp(min=1)).sqrt().clamp(1, 12).to(device)
+    vision = train_visual_teacher(train_set, holdout_set, args, device, button_weights, losses)
     best, best_state = None, None
     start_epoch = saved["epoch"] if saved else 0
     for epoch in range(start_epoch + 1, start_epoch + args.epochs + 1):
@@ -424,10 +448,14 @@ def train(args):
         torch.manual_seed(args.seed + epoch)
         model.train()
         train_loss = 0.0
-        for states, targets in train_loader:
+        for states, targets, *visual in train_loader:
             states, targets = states.to(device), targets.to(device)
             optimizer.zero_grad(set_to_none=True)
-            loss = losses(model(states), targets, button_weights).mean()
+            logits = model(states)
+            loss = losses(logits, targets, button_weights).mean()
+            if visual:
+                soft, mask = (tensor.to(device) for tensor in visual)
+                loss = loss + .1 * (distillation_loss(logits, soft) * mask).mean()
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 1.0, error_if_nonfinite=True)
             optimizer.step()
@@ -451,6 +479,7 @@ def train(args):
         "rulesVersion": rules, "data": "synthetic-fixture" if args.synthetic else "human-demonstrations",
         "parameters": sum(parameter.numel() for parameter in model.parameters()),
         "trainCaptures": len(train_groups), "trainWindows": len(train_set),
+        "visualTeacher": vision,
         "holdoutCaptures": len(holdout_groups), "holdoutWindows": len(holdout_set), **best,
     }
     if args.metrics:

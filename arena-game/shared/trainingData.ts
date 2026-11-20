@@ -1,6 +1,7 @@
 import { HUMAN_FEATURES } from './humanCombat.ts';
 import { EXPLORATION_SCENE_SIZE, EXPLORATION_TICKS, newExplorationCheckpoint, trainExploration, type ExplorationCheckpoint, type ExplorationSample } from './exploration.ts';
 import { RULES_VERSION } from './protocol.ts';
+import { coarseFrame, COARSE_FRAME_CHARS, DETAIL_FRAME_CHARS } from './trainingView.ts';
 
 export const TRAINING_BATCH_TICKS = 240;
 export const MAX_TRAINING_BODY = 56 * 1024;
@@ -38,7 +39,8 @@ export function parseTrainingBatch(raw: unknown): TrainingBatch | null {
   let last = b.start - 19;
   for (const view of b.views) {
     if (!Array.isArray(view) || view.length !== 3 || !integer(view[0], Math.max(0, last + 1), b.start + b.rows.length) ||
-        !integer(view[1], 0, 1e9) || typeof view[2] !== 'string' || !/^[A-Za-z0-9+/]{192}$/.test(view[2])) return null;
+        !integer(view[1], 0, 1e9) || typeof view[2] !== 'string' ||
+        ![COARSE_FRAME_CHARS, DETAIL_FRAME_CHARS].includes(view[2].length) || !/^[A-Za-z0-9+/]+$/.test(view[2])) return null;
     last = view[0];
   }
   if (b.exploration !== undefined) {
@@ -78,7 +80,7 @@ export const trainingHoldout = (capture: string) => parseInt(capture.slice(-4), 
 function viewFeatures(view: TrainingView | undefined): number[] {
   const out = Array<number>(10).fill(0);
   if (!view) return out;
-  const data = atob(view[2]);
+  const data = atob(coarseFrame(view[2]));
   out[0] = 1;
   for (let i = 0; i < TRAINING_GRID_SIZE; i++) {
     const block = Math.floor(i / 48) * 3 + Math.min(2, Math.floor((i % 16) / 5.34));

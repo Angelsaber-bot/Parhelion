@@ -124,7 +124,12 @@
           </div>
           <label class="notRange check" data-no-i18n><input type="checkbox" id="record-human-demo" autocomplete="off" /><span data-ui-zh="自动贡献对局训练数据" data-ui-en="Contribute match training data automatically">自动贡献对局训练数据</span></label>
           <small id="training-receipt" class="notRange hidden" role="status" data-no-i18n></small>
-          <small class="notRange" data-ui-zh="开启后，Arena 操作、场景特征和低分辨率画面亮度会提交给训练服务，匿名批次最多保留 30 天。" data-ui-en="When enabled, Arena controls, scene features, and coarse view brightness go to the training service. Anonymous batches are retained for up to 30 days.">开启后，Arena 操作、场景特征和低分辨率画面亮度会提交给训练服务，匿名批次最多保留 30 天。</small>
+          <small class="notRange" data-ui-zh="开启后会自动提交 Arena 操作、场景特征和每秒最多 6 张游戏内灰度画面（最高 64×36）。匿名批次最多保留 30 天。" data-ui-en="When enabled, Arena uploads controls, scene features, and up to six grayscale game frames per second (up to 64×36). Anonymous batches are retained for up to 30 days.">开启后会自动提交 Arena 操作、场景特征和每秒最多 6 张游戏内灰度画面（最高 64×36）。匿名批次最多保留 30 天。</small>
+          <details id="training-status" data-no-i18n>
+            <summary data-ui-zh="AI 训练后台" data-ui-en="AI training status">AI 训练后台</summary>
+            <p class="training-notice" role="status"></p>
+            <dl></dl>
+          </details>
           <button id="deployment-hero" class="deployment-hero" type="button" data-no-i18n><span class="deploy-glyph" aria-hidden="true"></span><span><small data-ui-zh="出战从者" data-ui-en="YOUR HERO">出战从者</small><b id="deploy-name"></b><em id="deploy-ability"></em></span><i aria-hidden="true">↗</i></button>
           <button id="deployment-loadout" type="button" data-no-i18n><span data-ui-zh="当前配装" data-ui-en="YOUR LOADOUT">当前配装</span><strong id="deploy-loadout"></strong><i aria-hidden="true">↗</i></button>
           <div id="match-briefing" data-no-i18n><p id="match-rules" class="muted"></p><details><summary data-ui-zh="对局与连接说明" data-ui-en="Match & connection details">对局与连接说明</summary><p id="match-teams" class="muted"></p><p id="match-connection" class="muted"></p></details></div>

@@ -13,6 +13,7 @@ import { parseTrainingBatch } from '../shared/trainingData.ts';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const { values } = parseArgs({ options: {
   watch: { type: 'boolean' }, corpus: { type: 'string' }, public: { type: 'boolean' }, cloud: { type: 'boolean' },
+  'reference-only': { type: 'boolean' }, 'refresh-reference': { type: 'boolean' },
   interval: { type: 'string', default: '30' }, epochs: { type: 'string', default: '20' }, device: { type: 'string', default: 'auto' },
 } });
 const number = (value: string, min: number, max: number) => /^\d+$/.test(value) && +value >= min && +value <= max;
@@ -96,7 +97,7 @@ async function pullPublicCorpus() {
     throw new Error('Public training corpus API is not ready for this rules version.');
   }
   revision = dataset.revision;
-  if (!revision || (values.cloud && (dataset.matches < 2 || (transformer?.completedRevision ?? 0) >= revision))) {
+  if (!revision || (values.cloud && (dataset.matches < 2 || (!values['refresh-reference'] && (transformer?.completedRevision ?? 0) >= revision)))) {
     return false;
   }
   await mkdir(corpus, { recursive: true, mode: 0o700 });
@@ -216,12 +217,12 @@ async function train(data: Awaited<ReturnType<typeof corpusInfo>>) {
       evaluated.meanTimeToContactOrEndSeconds <= baseline.meanTimeToContactOrEndSeconds + 2 &&
       evaluated.stalls <= baseline.stalls + evaluated.rollouts && evaluated.offscreenFireFraction <= .04 &&
       evaluated.damageDealt >= baseline.damageDealt * .5;
-    if (values.public && passed) {
+    if (values.public && passed && !values['reference-only']) {
       const publication = await remote('/neural', { method: 'PUT', file: path.join(output, 'candidate.json') });
       if (!publication.ok) throw new Error(`Model publication returned HTTP ${publication.status}`);
       lastGood.published = await publication.json();
     }
-    await status('ready', data, values.public && passed ? 'Passed validation and published to Arena.' :
+    await status('ready', data, values['reference-only'] ? 'Human reference checkpoint saved.' : values.public && passed ? 'Passed validation and published to Arena.' :
       values.public ? 'Candidate evaluated. Public Arena loads models that pass the quality checks.' : 'Held-out replay and closed-loop comparison completed.');
     await reportCloud('ready', metrics, !!lastGood.published);
   } finally { await rm(stage, { recursive: true, force: true }); }
