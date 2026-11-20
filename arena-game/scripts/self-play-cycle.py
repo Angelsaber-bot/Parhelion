@@ -142,6 +142,15 @@ def cycle(args, service, work, progress):
             raise ValueError("Restored actor differs from the last committed generation")
         collect = ts + ["scripts/self-play-rollout.ts", "--model", actor, "--seed", seed, "--output", rollout,
                         "--episodes", args.episodes, "--seconds", args.seconds]
+        last_eval = old.get("lastEvaluation") or {}
+        previous_failures = set(last_eval.get("failedGates", []))
+        curriculum = {"wall": {"wallStalls"}, "rear": {"rearSearch", "human_search", "candidateHasSearch"},
+                      "smoke": {"smokeContact", "smokeOffscreenTrigger"}}
+        focus = [scenario for scenario, gates in curriculum.items() if gates & previous_failures]
+        for scenario in focus:
+            collect += ["--focus", scenario]
+        if focus:
+            print("Additional practice informed by last evaluation:", ", ".join(focus), flush=True)
         live = status.get("neural")
         incumbent = work / "incumbent.json"
         if live:
@@ -201,6 +210,8 @@ def cycle(args, service, work, progress):
                 record.update(promote=model_text, expectedReleaseDigest=live["digest"] if live else None)
             service.request("/selfplay", record)
         else:
+            record["lastEvaluation"] = (dict(generation=generation, failedGates=failed, published=promoted)
+                                        if evaluate else old.get("lastEvaluation"))
             tmp = args.state / "state.tmp"
             tmp.write_text(json.dumps(record, separators=(",", ":")))
             tmp.replace(args.state / "state.json")

@@ -8,15 +8,17 @@ import { learnedTactics } from '../shared/botTactics.ts';
 import tactics from '../shared/botTacticsModel.json';
 import { randomBotHero, randomBotLoadout, randomBotUtility, SMOKE, TICK_HZ, type Team, type TeamLayout } from '../shared/content.ts';
 import { settleSmoke, type Smoke } from '../shared/grenade.ts';
-import { lineOfSight } from '../shared/map.ts';
+import { blockedAt, groundAt, insideMovementBounds, lineOfSight, type ArenaMap } from '../shared/map.ts';
 import { Match, type Controller } from '../shared/match.ts';
+import type { NavNode } from '../shared/nav.ts';
 import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 
 const AXIS_STD = .35;
 const TACTICS = learnedTactics(tactics.weights, tactics.margin);
-const scenarios = ['spawn', 'encounter', 'rear', 'smoke'] as const;
+const scenarios = ['spawn', 'encounter', 'rear', 'smoke', 'wall'] as const;
 type Scenario = typeof scenarios[number];
+type Focus = 'wall' | 'rear' | 'smoke';
 interface Step {
   obs: number[]; reset: boolean;
   axes: number[]; buttons: number[]; weapon: number;
@@ -82,11 +84,42 @@ function learnedController(actor: FrozenActor, rand: () => number, record?: Step
   } };
 }
 
+// Stand at the end of an actual collider. One step forward is obstructed, but at least one
+// side leads to supported, walkable ground and can clear the end of the wall.
+function cornerStart(map: ArenaMap, node: NavNode, rand: () => number) {
+  const start = Math.floor(rand() * 4);
+  const directions = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+  const standable = (x: number, z: number) => insideMovementBounds(map, x, z) &&
+    Math.abs(groundAt(map, x, z, node.y) - node.y) < .12 && !blockedAt(map, x, z, node.y);
+  if (!standable(node.x, node.z)) return;
+  for (let i = 0; i < directions.length; i++) {
+    const [dx, dz] = directions[(start + i) % directions.length];
+    let x = node.x, z = node.z;
+    for (let step = 0; step < 10; step++) {
+      const nx = x + dx * .12, nz = z + dz * .12;
+      if (blockedAt(map, nx, nz, node.y)) {
+        for (const side of [-1, 1]) {
+          for (let stride = 1; stride <= 6; stride++) {
+            const sx = x + side * dz * stride * .25, sz = z - side * dx * stride * .25;
+            if (!standable(sx, sz)) break;
+            if (standable(sx + dx * .25, sz + dz * .25) && standable(sx + dx * .5, sz + dz * .5)) {
+              return { x, y: node.y, z, yaw: Math.atan2(-dx, -dz) };
+            }
+          }
+        }
+        break;
+      }
+      if (!standable(nx, nz)) break;
+      x = nx; z = nz;
+    }
+  }
+}
+
 // Start some episodes mid-round on walkable cells. Only the environment sees both positions.
 function placeEncounter(game: Match, scenario: Scenario, rand: () => number): { scenario: Scenario; smoke?: Smoke } {
   if (scenario === 'spawn') return { scenario };
   const nav = navFor(game);
-  for (let attempt = 0; attempt < 120; attempt++) {
+  for (let attempt = 0; attempt < 1500; attempt++) {
     const a = nav.nodes[Math.floor(rand() * nav.nodes.length)];
     if (!a?.links.length) continue;
     const direction = rand() * 2 * Math.PI, distance = 5 + rand() * 7;
@@ -94,7 +127,13 @@ function placeEncounter(game: Match, scenario: Scenario, rand: () => number): { 
     if (!b || Math.abs(a.y - b.y) > .6 || Math.hypot(a.x - b.x, a.z - b.z) < 4 ||
         !lineOfSight(game.map, [a.x, a.y + 1.3, a.z], [b.x, b.y + 1.3, b.z])) continue;
     const yaw = Math.atan2(a.x - b.x, a.z - b.z);
-    Object.assign(game.player('pilot')!, { x: a.x, y: a.y, z: a.z, yaw: yaw + (scenario === 'rear' ? Math.PI : 0) + (rand() - .5) * .7 });
+    const pose = scenario === 'wall' ? cornerStart(game.map, a, rand) :
+      { x: a.x, y: a.y, z: a.z, yaw: yaw + (scenario === 'rear' ? Math.PI : 0) + (rand() - .5) * .7 };
+    if (!pose) continue;
+    const occupied = [...game.slots.values()].some(({ state: p }) => p.id !== 'pilot' && p.id !== 'rival' &&
+      [pose, b].some(at => Math.abs(at.y - p.y) < game.map.height && Math.hypot(at.x - p.x, at.z - p.z) < 2 * game.map.radius));
+    if (occupied) continue;
+    Object.assign(game.player('pilot')!, pose);
     Object.assign(game.player('rival')!, { x: b.x, y: b.y, z: b.z, yaw: yaw + Math.PI + (rand() - .5) * 1.5 });
     for (const id of ['pilot', 'rival']) game.slots.get(id)!.spawnProtectedUntilTick = 0;
     if (scenario === 'smoke') {
@@ -104,7 +143,7 @@ function placeEncounter(game: Match, scenario: Scenario, rand: () => number): { 
     }
     return { scenario };
   }
-  return { scenario: 'spawn' };
+  throw Error(`Could not construct a playable ${scenario} scenario on ${game.map.data.mapId}`);
 }
 
 function play(actor: FrozenActor, opponent: FrozenActor | undefined, map: string, layout: TeamLayout, team: Team,
@@ -159,14 +198,37 @@ function boundedInteger(s: string, name: string, min: number, max: number) {
   return n;
 }
 
+function curriculum(count: number, focus: Focus[], rand: () => number) {
+  const schedule: { scenario: Scenario; focused: boolean }[] = [];
+  const budget = Math.min(Math.floor(count / 2), Math.max(0, count - scenarios.length));
+  const ordinary = focus.length && count >= scenarios.length ? count - budget : count;
+  const rotation = Math.floor(rand() * (scenarios.length - 1));
+  const filler: Scenario[] = Array.from({ length: scenarios.length - 1 }, (_, i) => scenarios[1 + (rotation + i) % (scenarios.length - 1)]);
+  // Small smoke-test batches still include a normal spawn and prioritize requested exercises.
+  const choices = count < scenarios.length ? [...new Set<Scenario>(['spawn', ...focus, ...filler])] : ['spawn' as const, ...filler];
+  for (let i = 0; i < ordinary; i++) schedule.push({ scenario: choices[i % choices.length], focused: false });
+  const offset = Math.floor(rand() * focus.length);
+  for (let i = ordinary; i < count; i++) schedule.push({ scenario: focus[(offset + i - ordinary) % focus.length], focused: true });
+  for (let i = schedule.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [schedule[i], schedule[j]] = [schedule[j], schedule[i]];
+  }
+  return schedule;
+}
+
 function main() {
   const { values } = parseArgs({ options: {
     model: { type: 'string' }, output: { type: 'string' }, opponent: { type: 'string', multiple: true, default: [] },
+    focus: { type: 'string', multiple: true, default: [] },
     seed: { type: 'string', default: '777' }, episodes: { type: 'string', default: '8' }, seconds: { type: 'string', default: '30' },
   } });
   if (!values.model || !values.output) throw Error('Specify --model actor.json --output trajectories.json');
   const seed = boundedInteger(values.seed, 'seed', 0, 4294967295);
   const count = boundedInteger(values.episodes, 'episodes', 1, 256), seconds = boundedInteger(values.seconds, 'seconds', 1, 300);
+  const focus = [...new Set(values.focus)].map(value => {
+    if (value === 'wall' || value === 'rear' || value === 'smoke') return value;
+    throw Error('Each --focus must be wall, rear or smoke');
+  });
   const actor = readActor(values.model);
   const pool: (FrozenActor | undefined)[] = [actor, undefined];
   for (const file of values.opponent) {
@@ -177,17 +239,18 @@ function main() {
   const mapOffset = Math.floor(random() * MAPS.length);
   const order = [...MAPS.slice(mapOffset), ...MAPS.slice(0, mapOffset)];
   const episodes = [];
-  const scenarioOffset = Math.floor(random() * scenarios.length);
+  const schedule = curriculum(count, focus, random);
   const opponentOffset = Math.floor(random() * pool.length);
   for (let i = 0; i < count; i++) {
     const layout = i % 4 === 1 || i % 4 === 2 ? '2v2' : '1v1';
     const team = i % 2 ? 'B' : 'A';
-    const scenario = scenarios[(scenarioOffset + i) % scenarios.length];
+    const { scenario, focused } = schedule[i];
     // Shuffle opponent assignments across layout/side each cycle.
     const opponent = pool[(opponentOffset + i + Math.floor(i / (2 * pool.length))) % pool.length];
-    episodes.push(play(actor, opponent, order[i % order.length].id, layout, team, scenario, Math.floor(random() * 4294967296), seconds));
+    const episode = play(actor, opponent, order[i % order.length].id, layout, team, scenario, Math.floor(random() * 4294967296), seconds);
+    episodes.push({ ...episode, focused });
   }
-  const payload = { version: 1, rulesVersion: RULES_VERSION, actorHash: actor.hash, axisStd: AXIS_STD, episodes };
+  const payload = { version: 1, rulesVersion: RULES_VERSION, actorHash: actor.hash, axisStd: AXIS_STD, focus, episodes };
   writeFileSync(values.output, JSON.stringify(payload), { mode: 0o600 });
   console.log(`Simulated ${count} matches, collected ${episodes.reduce((n, e) => n + e.steps.length, 0)} policy decisions.`);
 }
