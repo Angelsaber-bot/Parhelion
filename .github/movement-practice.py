@@ -10,16 +10,16 @@ review=import_module("review-match")
 fit=import_module("fit-match-movement").fit
 
 def inspect():
-    cutoff=1795379580000
+    cutoff=1795380074611
     get=review.client()
     maps=review.map_aliases()
-    selected=["camlann","frostcourt"]
-    stats=get(f"/stats?since={cutoff-24*3600*1000}&limit=1000")["records"]
+    selected=["camlann","frostcourt","blackflag","orleans"]
+    stats=get(f"/stats?since={1795379127162}&limit=1000")["records"]
     if len(stats)==1000: raise ValueError("Truncated results")
     records=sorted([r for r in stats if r["at"]<=cutoff and maps.get(r["map"]) in selected and r.get("humans")],key=lambda r:r["at"],reverse=True)
     revision=get("/training/status")["dataset"]["revision"]
     captures={}
-    after=max(0,revision-180)
+    after=max(0,revision-320)
     while after<revision:
         rows=get(f"/training/corpus?after={after}&through={revision}",private=True)["records"]
         if not rows: break
@@ -33,7 +33,7 @@ def inspect():
             cap["batches"].append(batch)
     selected_batches=[]; info=[]
     for name in selected:
-        matches=[r for r in records if maps[r["map"]]==name]
+        matches=[r for r in records if maps[r["map"]]==name and r["at"] in {1795379127163,1795379395927,1795379921120,1795380074611}]
         if not matches:return dict(error="missing score",map=name,recent=[(maps[r["map"]],r["at"]) for r in records[:4]])
         match=matches[0];lo,hi=review.window(match)
         same=[c for c in captures.values() if c["map"]==name]
@@ -45,6 +45,22 @@ def inspect():
         if len({b['capture'] for b in batches})!=1 or batches[0]['sequence']!=0:raise ValueError("Incomplete start")
         selected_batches.append(batches)
         info.append(dict(map=name,at=match["at"],score=match["score"],result=match["result"],ticks=match["ticks"],batches=len(batches),source=match["source"]))
+    # Reconstruct each sampled player's route from positions already visible to that player.
+    import math
+    for meta,batches in zip(info,selected_batches):
+        points=[]
+        for batch in batches:
+            for tick,x,_,z,*_ in batch.get("exploration",[]):
+                pos=tick-batch['start']
+                if 0<=pos<len(batch['rows']): points.append((tick,batch['rows'][pos][0],x,z))
+        cells=set();moving=0;unseen=0;revisits=0;turns=0
+        for tick,seg,x,z in points:
+            cell=(math.floor(x*10),math.floor(z*10))
+            if cell not in cells: unseen+=1
+            if moving and cell!=last:
+                revisits+=int(cell in cells);turns+=1
+            cells.add(cell);last=cell;moving+=1
+        meta['routeCells']=len(cells);meta['cellChanges']=turns;meta['revisitedChanges']=revisits
     result=fit(json.loads(Path('arena-game/shared/directPolicy.json').read_bytes()),selected_batches)
     for game,match in zip(result["games"],info):game.update(match)
     return result
