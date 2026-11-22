@@ -9,6 +9,7 @@ const scene = HUMAN_FEATURES.length;
 export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds'], period: number, tickRate: number) {
   const horizon = Math.max(2, Math.round(3 * tickRate / period));
   let count = 0, turn = 0, range = 0, startX = 0, startZ = 0, heading = 0;
+  let minimumYaw = 0, maximumYaw = 0, previousSearchStalled = false;
   let positiveCredits = 0, negativeCredits = 0, newCells = 0;
   const visited = new Set<string>();
   // A respawn starts a new segment but revisiting the same ground is still a revisit.
@@ -16,7 +17,7 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
   let route: string[] = [];
   for (let i = 0; i < steps.length; i++) {
     const { obs, reset } = steps[i];
-    if (reset) count = 0;
+    if (reset) { count = 0; previousSearchStalled = false; }
     const x = obs[scene] * (bounds.max[0] - bounds.min[0]) * .5;
     const z = obs[scene + 2] * (bounds.max[2] - bounds.min[2]) * .5;
     const yaw = Math.atan2(obs[scene + 3], obs[scene + 4]);
@@ -24,10 +25,14 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
     if (obs[0] > 0) {
       // A new approach that actually revealed a rival is more useful than distance alone.
       if (!reset && count >= 2 && range >= 2 && positiveCredits <= 10) { steps[i - 1].reward += .02; positiveCredits += 2; }
-      count = 0; visited.add(cell); continue;
+      count = 0; previousSearchStalled = false; visited.add(cell); continue;
     }
-    if (!count) { startX = x; startZ = z; turn = 0; range = 0; newCells = 0; route = []; }
-    else turn += wrapAngle(yaw - heading);
+    if (!count) { startX = x; startZ = z; turn = minimumYaw = maximumYaw = 0; range = 0; newCells = 0; route = []; }
+    else {
+      turn += wrapAngle(yaw - heading);
+      minimumYaw = Math.min(minimumYaw, turn);
+      maximumYaw = Math.max(maximumYaw, turn);
+    }
     heading = yaw;
     range = Math.max(range, Math.hypot(x - startX, z - startZ));
     if (!visited.has(cell)) newCells++;
@@ -35,8 +40,10 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
     if (++count >= horizon) {
       // Credit and debit remain small compared with a frag or the match outcome.
       if (newCells >= 2 && Math.hypot(x - startX, z - startZ) >= 4 && positiveCredits < 12) {
-        steps[i - 1].reward += .01; positiveCredits++;
-      } else if (range < 2.5 && Math.abs(turn) > Math.PI * .65 && negativeCredits < 8) {
+        // Give the actions that finally left a stagnant search area credit for the recovery.
+        const credits = Math.min(previousSearchStalled ? 2 : 1, 12 - positiveCredits);
+        steps[i - 1].reward += .01 * credits; positiveCredits += credits;
+      } else if (range < 2.5 && (maximumYaw - minimumYaw > Math.PI * .65 || previousSearchStalled) && negativeCredits < 8) {
         steps[i - 1].reward -= .015; negativeCredits++;
       }
       if (route.length >= 3) {
@@ -56,6 +63,7 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
           }
         }
       }
+      previousSearchStalled = range < 1.5;
       count = 0;
     }
     visited.add(cell);

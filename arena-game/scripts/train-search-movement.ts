@@ -1,105 +1,10 @@
 // Outcome-based fine tuning of the released actor. Only this offline exercise sees the
 // scoreboard and the path traveled. The actor uses its regular player-visible sensors.
 import fs from 'node:fs';
-import { getMap, MAPS } from '../shared/arenaMap.ts';
-import { greedyAction, neuralBotControl } from '../shared/botNeuralControl.ts';
-import { TICK_HZ } from '../shared/content.ts';
-import { wrapAngle } from '../shared/humanCombat.ts';
-import { learnedOpponent } from '../shared/learnedOpponent.ts';
-import { Match } from '../shared/match.ts';
+import { MAPS } from '../shared/arenaMap.ts';
 import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import { evaluateSmokeEdge } from './evaluation/evaluate-smoke-edge.ts';
-import { trialSeed } from './self-play-seeds.ts';
-
-function rng(seed: number) {
-  let value = seed >>> 0;
-  return () => ((value = (Math.imul(value, 1664525) + 1013904223) >>> 0) + .5) / 4294967296;
-}
-
-interface Trial { map: string; side: 'A' | 'B'; seed: number }
-function fixtures(maps: string[], seed: number, repeats: number): Trial[] {
-  return maps.flatMap(map => Array.from({ length: repeats }, (_, i) => (['A', 'B'] as const).map(side => ({
-    map, side, seed: trialSeed(seed, 'search-' + side, map, i),
-  }))).flat());
-}
-
-function play(model: NeuralPolicyModel, opponent: NeuralPolicyModel, trial: Trial, seconds: number) {
-  const game = new Match(getMap(trial.map), '1v1'), random = rng(trial.seed);
-  let visible = false, acquired = false, damage = 0, received = 0, spins = 0, windows = 0, stalled = 0, contacts = 0;
-  let travel = 0, heading = 0, reach = 0, bestReach = 0, life = -1, originX = 0, originZ = 0;
-  let startX = 0, startZ = 0, previousYaw = 0, windowRange = 0, unseen = true, frames = 0, seq = 0;
-  const cells = new Set<string>();
-  const openingRoute = new Set<string>();
-  const actor = neuralBotControl(model, (obs, logits) => {
-    visible = !!obs[0]; acquired ||= visible;
-    if (visible) contacts++;
-    return greedyAction(obs, logits);
-  });
-  const common = { skins: [], bot: true };
-  game.addPlayer('pilot', { ...common, name: 'pilot', team: trial.side, char: Math.floor(random() * 7) }, {
-    think(match, id) {
-      const me = match.player(id)!;
-      const input = { seq: ++seq, view: match.tick, yaw: me.yaw, pitch: me.pitch, mx: 0, mz: 0, buttons: 0, weapon: me.weaponSlot };
-      if (me.alive && match.phase === 'live') return actor.apply(match, me, input);
-      actor.reset(); return input;
-    },
-  });
-  game.addPlayer('rival', { ...common, name: 'rival', team: trial.side === 'A' ? 'B' : 'A', char: Math.floor(random() * 7) }, learnedOpponent(opponent));
-  game.phase = 'countdown'; game.phaseT = 1; game.step(); game.snapshot();
-  for (const slot of game.slots.values()) slot.state.yaw = wrapAngle(slot.state.yaw + (random() - .5) * Math.PI * 1.8);
-  for (let tick = 0; tick < seconds * TICK_HZ; tick++) {
-    const me = game.player('pilot')!, x = me.x, z = me.z;
-    game.step();
-    for (const ev of game.snapshot().events) if (ev.t === 'hit') {
-      if (ev.shooter === 'pilot') damage += ev.dmg;
-      if (ev.victim === 'pilot') received += ev.dmg;
-    }
-    if (!me.alive) continue;
-    if (life !== me.lifeId) {
-      life = me.lifeId; frames = 0; originX = me.x; originZ = me.z; previousYaw = me.yaw;
-      reach = 0;
-    }
-    if (frames === 0) { startX = me.x; startZ = me.z; windowRange = 0; unseen = true; heading = 0; }
-    reach = Math.max(reach, Math.hypot(me.x - originX, me.z - originZ)); bestReach = Math.max(bestReach, reach);
-    const cell = Math.floor(me.x / 3) + ',' + Math.floor(me.z / 3);
-    cells.add(cell);
-    if (tick < 8 * TICK_HZ && Math.hypot(me.x - originX, me.z - originZ) >= 3) openingRoute.add(cell);
-    travel += Math.min(1, Math.hypot(me.x - x, me.z - z));
-    heading += wrapAngle(me.yaw - previousYaw); previousYaw = me.yaw;
-    windowRange = Math.max(windowRange, Math.hypot(me.x - startX, me.z - startZ)); unseen &&= !visible;
-    if (++frames === 3 * TICK_HZ) {
-      if (unseen) {
-        windows++; if (windowRange < 1.5) stalled++;
-        if (windowRange < 2.5 && Math.abs(heading) > Math.PI * .65) spins++;
-      }
-      frames = 0;
-    }
-  }
-  return { openingRoute, cells: cells.size, reach: bestReach, spins, stalled, windows, acquired: Number(acquired), contacts, damage, received, travel };
-}
-
-function assess(model: NeuralPolicyModel, opponent: NeuralPolicyModel, trials: Trial[], seconds: number) {
-  const rows = trials.map(t => play(model, opponent, t, seconds));
-  const mean = (key: Exclude<keyof typeof rows[number], 'openingRoute'>) => rows.reduce((total, r) => total + r[key], 0) / rows.length;
-  const stats = {
-    cells: mean('cells'), reach: mean('reach'), spins: mean('spins'), stalled: mean('stalled'), windows: mean('windows'),
-    acquired: mean('acquired'), contacts: mean('contacts'), damage: mean('damage'), received: mean('received'), travel: mean('travel')
-  };
-  const score = stats.cells * .25 + stats.reach * .12 + stats.acquired * 6 + Math.min(40, stats.contacts) * .35 +
-    stats.damage * .085 - stats.received * .035 - stats.spins * 5 - stats.stalled * 2.5;
-  // Pair distinct starts on the same map and side. Two empty routes are equally repetitive.
-  let shared = 0, pairs = 0;
-  for (let i = 0; i < trials.length; i++) {
-    for (let j = i + 1; j < trials.length; j++) {
-      if (trials[i].map !== trials[j].map || trials[i].side !== trials[j].side) continue;
-      const a = rows[i].openingRoute, b = rows[j].openingRoute;
-      const union = new Set([...a, ...b]);
-      shared += union.size ? [...a].filter(cell => b.has(cell)).length / union.size : 1;
-      pairs++;
-    }
-  }
-  return { score, ...stats, openingPairs: pairs, openingOverlap: pairs ? shared / pairs : null };
-}
+import { assess, fixtures, rng } from './evaluation/evaluate-spawn-search.ts';
 
 // Search only the yaw and movement readouts. Other action heads and the shared perception network stay frozen.
 function mutate(parent: NeuralPolicyModel, random: () => number, scale: number, axes = [0, 2, 3]) {
@@ -151,22 +56,29 @@ if (mode === 'evaluate') {
 } else {
   const random = rng(61231), training = ['aster', 'sakura', 'blackflag', 'frostcourt', 'camlann', 'homeward'];
   let current = incumbent;
-  const benchmark = (candidate: NeuralPolicyModel, trials: Trial[], round: number) => {
-    const field = assess(candidate, incumbent, trials, 24);
-    const smoke = evaluateSmokeEdge(candidate, 247081 + (round % 5), ['camlann', 'sakura'], 5);
-    return { ...field, score: field.score + smoke.hit * 2 + smoke.hitUnder2s, smoke: smoke.hit };
-  };
+  const selection = fixtures(training, 943287, 3);
+  const selectionBaseline = assess(incumbent, incumbent, selection, 30);
+  let selected = incumbent, selectedScore = selectionBaseline.score;
   for (let round = 0; round < count; round++) {
     const maps = [training[round % 6], training[(round + 2) % 6], training[(round + 4) % 6]];
     const trials = fixtures(maps, 15431 + Math.floor(round / 2), 1);
-    let winner = current, best = benchmark(current, trials, round);
+    let winner = current, best = assess(current, incumbent, trials, 30);
     for (let sample = 0; sample < 12; sample++) {
-      const candidate = mutate(current, random, (sample % 2 ? .018 : .045) / (1 + round * .04));
-      const result = benchmark(candidate, trials, round);
+      const candidate = mutate(current, random, (sample % 2 ? .035 : .09), [2, 3]);
+      const result = assess(candidate, incumbent, trials, 30);
       if (result.score > best.score) { winner = candidate; best = result; }
     }
     current = winner;
-    fs.writeFileSync(output, JSON.stringify(current) + '\n');
+    const validation = assess(current, incumbent, selection, 30);
+    if (validation.score > selectedScore && validation.stalled <= selectionBaseline.stalled &&
+        validation.waitingAcquired >= selectionBaseline.waitingAcquired &&
+        validation.acquired >= selectionBaseline.acquired && validation.reach >= selectionBaseline.reach &&
+        validation.forwardMetersPerSecond > selectionBaseline.forwardMetersPerSecond) {
+      selectedScore = validation.score;
+      selected = current;
+    }
+    if ((round + 1) % 4 === 0) current = selected;
+    fs.writeFileSync(output, JSON.stringify(selected) + '\n');
     console.log(round, JSON.stringify(best));
   }
 }

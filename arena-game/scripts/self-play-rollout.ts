@@ -19,7 +19,7 @@ import { opponentLeague } from './self-play-league.ts';
 import { seedVersion, trainingSeed } from './self-play-seeds.ts';
 
 const AXIS_STD = .35;
-const scenarios = ['spawn', 'encounter', 'rear', 'smoke', 'wall', 'retreat', 'corner'] as const;
+const scenarios = ['spawn', 'encounter', 'rear', 'smoke', 'wall', 'retreat', 'corner', 'waiting'] as const;
 type Scenario = typeof scenarios[number];
 type Focus = 'wall' | 'rear' | 'smoke';
 interface Step {
@@ -131,6 +131,25 @@ function encounterYaw(yaw: number, scenario: Scenario, focused: boolean, draw: n
 // Start some episodes mid-round on walkable cells. Only the environment sees both positions.
 function placeEncounter(game: Match, scenario: Scenario, focused: boolean, rand: () => number): { scenario: Scenario; smoke?: Smoke; smokeTick?: number } {
   if (scenario === 'spawn') return { scenario };
+  if (scenario === 'waiting') {
+    // Mix ordinary spawns with a shorter, reachable search in 1v1.
+    // Position and path are used only to set up the exercise.
+    if (game.layout === '1v1' && rand() < .65) {
+      const nav = navFor(game), pilot = game.player('pilot')!, rival = game.player('rival')!;
+      const origin = nav.nearest(pilot.x, pilot.y, pilot.z);
+      for (let attempt = 0; origin && attempt < 40; attempt++) {
+        const angle = rand() * Math.PI * 2, distance = 8 + rand() * 14;
+        const node = nav.nearest(origin.x + distance * Math.cos(angle), origin.y, origin.z + distance * Math.sin(angle));
+        if (!node || Math.hypot(node.x - pilot.x, node.z - pilot.z) < 7 ||
+            lineOfSight(game.map, [pilot.x, pilot.y + game.map.eye, pilot.z], [node.x, node.y + 1.5, node.z])) continue;
+        const path = nav.path(origin, node, 2400);
+        if (!path || path.length > 64) continue;
+        Object.assign(rival, { x: node.x, y: node.y, z: node.z });
+        break;
+      }
+    }
+    return { scenario };
+  }
   const nav = navFor(game);
   for (let attempt = 0; attempt < 1500; attempt++) {
     const a = nav.nodes[Math.floor(rand() * nav.nodes.length)];
@@ -193,6 +212,12 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   game.phaseT = seconds * TICK_HZ;
   const start = placeEncounter(game, scenario, focused, rand);
   const firstTick = game.tick;
+  // Some players hold their spawn. In this exercise the learner has to initiate contact.
+  // The rival resumes its ordinary policy on first damage or when the sampled wait expires.
+  const waitingTicks = scenario === 'waiting' ? Math.round((12 + 18 * rand()) * TICK_HZ) : 0;
+  const waiting = [...game.slots.values()].filter(slot => waitingTicks && slot.info.team === enemy)
+    .map(slot => ({ slot, driver: slot.controller }));
+  for (const { slot } of waiting) slot.controller = undefined;
   const smokeWindow = { start: Infinity, end: Infinity };
   let rivalLifeEnd: number | undefined;
   // Timeout is the actual end of each shortened match in Match.stepPhase; there is no bootstrap tick.
@@ -208,6 +233,10 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
     game.step();
     if (start.smoke && rivalLifeEnd === undefined && !game.player('rival')!.alive) rivalLifeEnd = seats[0].steps.length;
     const events = game.snapshot().events;
+    if (waiting.length && (game.tick - firstTick >= waitingTicks || events.some(event => event.t === 'hit'))) {
+      for (const { slot, driver } of waiting) slot.controller = driver;
+      waiting.length = 0;
+    }
     const teamReward = .25 * (game.score[team] - game.score[enemy] - scoreDiff);
     for (const { id, steps, wasAlive } of seats) {
       const last = steps.at(-1);
@@ -301,7 +330,7 @@ function main() {
     const rival = league.select(i, layout);
     appearances[layout][rival] = (appearances[layout][rival] ?? 0) + 1;
     const episode = play(actor, pool.get(rival)!, order[i % order.length].id, layout, team, scenario, focused, trainingSeed(random(), version), seconds);
-    league.observe(rival, episode.outcome, layout);
+    if (scenario !== 'waiting') league.observe(rival, episode.outcome, layout);
     episodes.push({ ...episode, focused });
   }
   const payload = { version: 2, seedVersion: version, seed, rulesVersion: RULES_VERSION, actorHash: actor.hash, axisStd: AXIS_STD, focus, episodes };

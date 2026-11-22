@@ -1,3 +1,4 @@
+import { assess as assessSearch, fixtures as searchFixtures } from './evaluate-spawn-search.ts';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -492,6 +493,20 @@ function main() {
     contactTransitions = compareTransitions(trial(true), trial(false));
     Object.assign(gates, contactTransitions.gates);
   }
+  const searchTrials = incumbent && candidate.model.version === 4 && incumbent.model.version === 4
+    ? searchFixtures(maps, trialSeed(firstSeed, 'spawn-search', '', 0, version), 4) : [];
+  const spawnSearch = incumbent && searchTrials.length ? {
+    trials: searchTrials.length,
+    candidate: assessSearch(candidate.model, incumbent.model, searchTrials, 30),
+    opponent: assessSearch(incumbent.model, incumbent.model, searchTrials, 30),
+  } : undefined;
+  if (spawnSearch) {
+    const { candidate: pilot, opponent: rival } = spawnSearch;
+    gates.spawnSearchProgress = pilot.reach >= .9 * rival.reach &&
+      pilot.stalled / Math.max(1, pilot.windows) <= rival.stalled / Math.max(1, rival.windows) + .05 &&
+      pilot.waitingTrials === rival.waitingTrials &&
+      (!pilot.waitingTrials || pilot.waitingAcquired >= rival.waitingAcquired - 1 / pilot.waitingTrials);
+  }
   // Failed screens can produce a small diagnostic result; only the held-out tournament can approve release.
   const tournament = !values['screen-only'] && Object.values(gates).every(Boolean);
   let diagnostic = null;
@@ -526,7 +541,7 @@ function main() {
     gates.improved = Object.values(comparisons).every(s => s.blocks >= 6 && s.oneSidedP <= .05 && s.winFractionWithDraws > .5);
     gates.bothModes = Object.values(byMode).every(modes => MODES.every(mode => modes[mode].winFractionWithDraws >= .5));
   }
-  console.log(JSON.stringify({ passed: tournament && Object.values(gates).every(Boolean), gates, byMode, byMap, byScenario, comparisons, contactTransitions,
+  console.log(JSON.stringify({ passed: tournament && Object.values(gates).every(Boolean), gates, byMode, byMap, byScenario: { ...byScenario, ...(spawnSearch ? { spawnSearch } : {}) }, comparisons, contactTransitions,
     perceptionMatchedReference: !incumbent,
     candidate: candidate.sha256, incumbent: incumbent?.sha256 ?? 'baseline', comparedOpponent,
     config: { maps, tournamentMaps, seeds, incumbentSeeds, firstSeed, seedVersion: version, seconds, explorationDigest: publicFallback?.digest },
