@@ -21,7 +21,7 @@ import { seedVersion, trainingSeed } from './self-play-seeds.ts';
 const AXIS_STD = .35;
 const scenarios = ['spawn', 'encounter', 'rear', 'smoke', 'wall', 'retreat', 'corner', 'waiting'] as const;
 type Scenario = typeof scenarios[number];
-type Focus = 'wall' | 'rear' | 'smoke';
+type Focus = 'wall' | 'rear' | 'smoke' | 'waiting';
 interface Step {
   obs: number[]; reset: boolean;
   axes: number[]; buttons: number[]; weapon: number;
@@ -132,9 +132,9 @@ function encounterYaw(yaw: number, scenario: Scenario, focused: boolean, draw: n
 function placeEncounter(game: Match, scenario: Scenario, focused: boolean, rand: () => number): { scenario: Scenario; smoke?: Smoke; smokeTick?: number } {
   if (scenario === 'spawn') return { scenario };
   if (scenario === 'waiting') {
-    // Mix ordinary spawns with a shorter, reachable search in 1v1.
+    // Keep remedial trials at the real spawns. Ordinary 1v1 practice also includes shorter searches.
     // Position and path are used only to set up the exercise.
-    if (game.layout === '1v1' && rand() < .65) {
+    if (!focused && game.layout === '1v1' && rand() < .65) {
       const nav = navFor(game), pilot = game.player('pilot')!, rival = game.player('rival')!;
       const origin = nav.nearest(pilot.x, pilot.y, pilot.z);
       for (let attempt = 0; origin && attempt < 40; attempt++) {
@@ -214,7 +214,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   const firstTick = game.tick;
   // Some players hold their spawn. In this exercise the learner has to initiate contact.
   // The rival resumes its ordinary policy on first damage or when the sampled wait expires.
-  const waitingTicks = scenario === 'waiting' ? Math.round((12 + 18 * rand()) * TICK_HZ) : 0;
+  const waitingTicks = scenario === 'waiting' ? Math.round((focused ? 30 : 12 + 18 * rand()) * TICK_HZ) : 0;
   const waiting = [...game.slots.values()].filter(slot => waitingTicks && slot.info.team === enemy)
     .map(slot => ({ slot, driver: slot.controller }));
   for (const { slot } of waiting) slot.controller = undefined;
@@ -302,8 +302,8 @@ function main() {
   const version = seedVersion(values['seed-version']);
   const count = boundedInteger(values.episodes, 'episodes', 1, 256), seconds = boundedInteger(values.seconds, 'seconds', 1, 300);
   const focus = [...new Set(values.focus)].map(value => {
-    if (value === 'wall' || value === 'rear' || value === 'smoke') return value;
-    throw Error('Each --focus must be wall, rear or smoke');
+    if (value === 'wall' || value === 'rear' || value === 'smoke' || value === 'waiting') return value;
+    throw Error('Each --focus must be wall, rear, smoke or waiting');
   });
   const actor = readActor(values.model);
   if (actor.model.version !== 4 && actor.model.version !== 1) throw Error('Motor-assisted training is retired');
