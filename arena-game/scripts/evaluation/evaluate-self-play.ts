@@ -1,3 +1,4 @@
+import { closeContact } from './evaluate-close-contact.ts';
 import { assess as assessSearch, passesSpawnSearch, fixtures as searchFixtures } from './evaluate-spawn-search.ts';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -500,6 +501,7 @@ function main() {
     candidate: assessSearch(candidate.model, incumbent.model, searchTrials, 30),
     opponent: assessSearch(incumbent.model, incumbent.model, searchTrials, 30),
   } : undefined;
+  const near = spawnSearch && incumbent ? closeContact(candidate.model, incumbent.model, firstSeed) : undefined;
   if (spawnSearch) {
     const { candidate: pilot, opponent: rival } = spawnSearch;
     gates.spawnSearchProgress = passesSpawnSearch(pilot, rival);
@@ -538,7 +540,7 @@ function main() {
     gates.improved = Object.values(comparisons).every(s => s.blocks >= 6 && s.oneSidedP <= .05 && s.winFractionWithDraws > .5);
     gates.bothModes = Object.values(byMode).every(modes => MODES.every(mode => modes[mode].winFractionWithDraws >= .5));
   }
-  console.log(JSON.stringify({ passed: tournament && Object.values(gates).every(Boolean), gates, byMode, byMap, byScenario: { ...byScenario, ...(spawnSearch ? { spawnSearch } : {}) }, comparisons, contactTransitions,
+  console.log(JSON.stringify({ passed: tournament && Object.values(gates).every(Boolean), gates, byMode, byMap, byScenario: { ...byScenario, ...(spawnSearch ? { spawnSearch, closeContact: near } : {}) }, comparisons, contactTransitions,
     perceptionMatchedReference: !incumbent,
     candidate: candidate.sha256, incumbent: incumbent?.sha256 ?? 'baseline', comparedOpponent,
     config: { maps, tournamentMaps, seeds, incumbentSeeds, firstSeed, seedVersion: version, seconds, explorationDigest: publicFallback?.digest },

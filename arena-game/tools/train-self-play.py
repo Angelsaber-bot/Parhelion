@@ -52,6 +52,17 @@ def search_demonstrations(states, rules):
     return eligible, labels
 
 
+def search_imitation_loss(logits, controls, states):
+    # The caller supplies only empty views with expired contact memory. Give
+    # extra weight to the movement teacher when recent positions barely changed.
+    errors = F.smooth_l1_loss(logits[:, SEARCH_AXES].tanh(), controls, beta=.2, reduction="none").mean(dim=1)
+    history = states[:, -4:]
+    positions = history[:, :, [bc.OBSERVATIONS, bc.OBSERVATIONS + 2]]
+    excursion = (positions - positions[:, :1]).norm(dim=-1).amax(dim=1)
+    stalled = (history[:, :, 5] > 0).all(dim=1) & (excursion < .01)
+    return (errors * (1 + stalled.float())).mean()
+
+
 def load_practice(path):
     rows = torch.tensor(json.loads(path.read_bytes()), dtype=torch.float32)
     if rows.ndim != 2 or rows.shape[1] not in (bc.FEATURES + 3, 2 * bc.FEATURES + 3) or not torch.isfinite(rows).all():
@@ -278,7 +289,11 @@ def replay_weights(dataset):
     # Retain quiet responses as well as turns after losing sight. The labels always
     # come from the player. Keep the original natural-frequency mix and exposure cap.
     group = torch.where(contact, 4, turning.long() + 2 * lost.long())
-    counts = torch.bincount(group, minlength=5)
+    # Rebalance clear close contacts so their demonstrated strafe, yaw and weapon
+    # choices have coverage without sampling held-out players or adding labels.
+    near = (dataset.features[:, 0] == 1) & (dataset.features[:, 3] <= 12 / 45)
+    group = torch.where(near, 5, group)
+    counts = torch.bincount(group, minlength=6)
     balanced = len(dataset) / (counts[group] * counts.count_nonzero())
     return .5 + .5 * balanced.clamp_max(7)
 
@@ -480,7 +495,7 @@ def run(args):
                 eligible, controls = search_examples
                 mask = eligible[ix]
                 if mask.any():
-                    loss += .18 * F.smooth_l1_loss(logits[mask][:, SEARCH_AXES].tanh(), controls[ix[mask]], beta=.2)
+                    loss += .18 * search_imitation_loss(logits[mask], controls[ix[mask]], states[ix[mask]])
             if practice:
                 loss = loss + .12 * practice_loss(actor, len(ix), config.context, practice)
             if coach_weight:

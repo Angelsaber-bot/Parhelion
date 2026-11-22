@@ -35,6 +35,28 @@ class ContactMemoryTest(unittest.TestCase):
             self.assertIsNone(result)
         self.assertIsNone(rl.search_demonstrations(states, base["rulesVersion"] + 1))
 
+    def test_replay_balances_clear_close_contacts_with_other_sightings(self):
+        examples = []
+        for distance in [6, 18, 20, 25]:
+            x, y = [0.] * bc.FEATURES, [0.] * 12
+            x[0], x[3] = 1., distance / 45
+            examples.append((x, y, False, None))
+        data = bc.ArenaDataset([examples], context=2)
+        weights = rl.replay_weights(data)
+        self.assertGreater(weights[0].item(), weights[1].item())
+        torch.testing.assert_close(weights[1:], weights[1].expand(3))
+
+    def test_search_teacher_weights_stalls_only_with_real_history(self):
+        states = torch.zeros(3, 4, bc.FEATURES)
+        states[:, :, 5] = 1
+        states[1, 1, bc.OBSERVATIONS] = .1  # moved out and back
+        states[2, 0, 5] = 0  # reset padding
+        logits = torch.zeros(3, bc.OUTPUTS)
+        controls = torch.ones(3, 3)
+        losses = [rl.search_imitation_loss(logits[i:i+1], controls[i:i+1], states[i:i+1]) for i in range(3)]
+        torch.testing.assert_close(losses[0], 2 * losses[1])
+        torch.testing.assert_close(losses[1], losses[2])
+
     def test_history_expires_and_resets(self):
         examples = []
         for i in range(8):
