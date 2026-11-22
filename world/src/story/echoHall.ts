@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import {MeshBVH} from 'three-mesh-bvh';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { REGIONS, regionToWorld } from '../map/regions';
+import { ECHO_DESTINATIONS, echoMarkerId, echoMarkerRegion } from './echoDestinations';
+import { buildEchoStationArt } from '../environment/echoStationArt';
+import { SiteArt } from './campaignSites';
+import type { WorldRegionId } from '../core/regionIdentity';
 import {homeWorld} from '../map/homePlan';
 import type {Marker} from '../core/types';
 import type {Collider} from '../player/player';
@@ -8,40 +13,34 @@ import type {Localized} from '../settlements/types';
 import type {CompanionId} from '../companions/contracts';
 import type {createNarrativePanel} from '../ui/narrativePanel';
 
-/**
- * The Echo Hall (英灵演武场) at Homeward's North Practice Court: the World's door into Arena. Interacting saves the
- * World, then opens the Arena lobby in this tab with the active servant and the HOMEWARD map preselected (the player
- * still presses Start, and every hero stays selectable: no World power crosses over). Arena's "Back to World" returns
- * here: this tab remembers the hall, and the next World load puts the player on its steps.
- */
-export const ECHO_HALL_ID = 'home_echo_hall';
+/** The hall and field stations share a same-tab trip to their regional Arena lobby. */
+export const ECHO_HALL_ID = echoMarkerId('home');
 /** Hall centre (Homeward local), facing west onto the practice court, clear of the shooting lane to the north. */
-export const ECHO_HALL_CENTRE: [number, number, number] = [91, 16, -100];
-const YAW = -Math.PI / 2;
+export const ECHO_HALL_CENTRE: [number, number, number] = [ECHO_DESTINATIONS.home.x, 16, ECHO_DESTINATIONS.home.z];
+const YAW = ECHO_DESTINATIONS.home.yaw;
 /** Where the interaction is offered and where a returning player stands: on the steps, facing the hall. */
 export const ECHO_HALL_STEPS: [number, number, number] = [84.6, 17, -100];
 export const ECHO_RETURN_KEY = 'parhelion.world.returnTo';
-export const ECHO_ARENA_MAP = 'homeward';
 /** World companion ids → Arena hero ids. */
 export const ARENA_HERO: Record<CompanionId, string> = { saber: 'saber', blackbeard: 'blackbeard', napoleon: 'napoleon', musashi: 'musashi', jeanne: 'jeanne', ozymandias: 'ozymandias', qinShiHuang: 'qin' };
 
-export function echoHallHref(hero: CompanionId | null): string {
-  const q = new URLSearchParams({ mode: 'offline', from: 'world', map: ECHO_ARENA_MAP });
+export function echoHallHref(hero: CompanionId | null, region: WorldRegionId = 'home'): string {
+  const q = new URLSearchParams({ mode: 'offline', from: 'world', map: ECHO_DESTINATIONS[region].map });
   if (hero && ARENA_HERO[hero]) q.set('hero', ARENA_HERO[hero]);
   return `/arena/?${q}`;
 }
 
 type TabStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const tabStorage = (): TabStorage | null => { try { return typeof sessionStorage === 'undefined' ? null : sessionStorage; } catch { return null; } };
-/** Remember (for this tab only) that the player left through the hall. */
-export function markEchoDeparture(storage: TabStorage | null = tabStorage()) { try { storage?.setItem(ECHO_RETURN_KEY, ECHO_HALL_ID); } catch { /* private mode: the player simply starts at the usual spawn */ } }
-/** True once, when this load is the return from Arena through the hall; clears the note. */
-export function takeEchoReturn(params: URLSearchParams, storage: TabStorage | null = tabStorage()): boolean {
+/** Remember (for this tab only) the station the player left through. */
+export function markEchoDeparture(storage: TabStorage | null = tabStorage(), region: WorldRegionId = 'home') { try { storage?.setItem(ECHO_RETURN_KEY, echoMarkerId(region)); } catch { /* private mode: the player simply starts at the usual spawn */ } }
+/** Consume the station note only as a return destination for an Arena visit. */
+export function takeEchoReturn(params: URLSearchParams, storage: TabStorage | null = tabStorage()): WorldRegionId | undefined {
   try {
-    const noted = storage?.getItem(ECHO_RETURN_KEY) === ECHO_HALL_ID;
+    const noted = storage?.getItem(ECHO_RETURN_KEY);
     if (noted) storage?.removeItem(ECHO_RETURN_KEY);
-    return noted && params.get('from') === 'arena';
-  } catch { return false; }
+    return params.get('from') === 'arena' ? echoMarkerRegion(noted ?? null) : undefined;
+  } catch { return undefined; }
 }
 
 export interface EchoHallHost {
@@ -82,8 +81,28 @@ export function createEchoHall(host: EchoHallHost) {
   for (const x of [-3.8, 3.8]) for (const z of [-2.8, 2.8]) box('EchoHallPillar', [.55, 4.2, .55], [x, 2.6, z], stone, true);
   box('EchoHallLintel', [9, .5, .7], [0, 4.85, 2.8], dark);
   box('EchoHallLintelBack', [9, .5, .7], [0, 4.85, -2.8], dark);
-  box('EchoHallRoof', [10, .35, 7.6], [0, 5.25, 0], dark);
-  box('EchoHallRidge', [10.4, .25, .4], [0, 5.55, 0], brass);
+  const pavilion = new SiteArt();
+  const copper = '#537773', timber = '#564a41', gold = '#be9963';
+  // Standing-seam copper over timber trusses, with an open gable above the sign.
+  for (const side of [-1, 1]) {
+    const tilt = side * .29;
+    pavilion.box([0, 5.84, side * 2.0], [10.2,.17,4.25], copper, false, 'metal', [tilt,0,0]);
+    for (let x = -4.8; x <= 4.81; x += .8)
+      pavilion.box([x,5.95,side*2.0],[.045,.07,4.24], '#799690', false, 'metal', [tilt,0,0]);
+    for (const x of [-3.8, 0, 3.8])
+      pavilion.beam([x,6.35,0],[x,5.13,side*4],.19,timber);
+    for (const z of [-2.8,2.8]) {
+      pavilion.box([side*3.8,.69,z],[.83,.35,.83],'#827e72');
+      pavilion.box([side*3.8,4.57,z],[.85,.27,.84],gold,false,'metal');
+      pavilion.beam([side*3.8,3.7,z],[side*2.86,4.73,z],.19,timber);
+    }
+    pavilion.beam([side*2.86,4.65,2.80],[side*2.86,3.74,2.80],.036,gold);
+    pavilion.lantern(side*2.86,3.39,2.80);
+  }
+  pavilion.box([0,6.49,0],[10.45,.13,.19],gold,false,'metal');
+  pavilion.ring([0,7.22,0],.70,.085,gold);
+  pavilion.ring([0,7.22,0],.67,.045,'#8ccbc9','metal',[0,1.0,.32]);
+  pavilion.finish('home'); root.add(pavilion.root);
   // The simulation ring on the floor: a slowly turning disc of light where the echoes fight.
   const ringGeometry = new THREE.RingGeometry(1.4, 2.1, 48); geometries.push(ringGeometry);
   const ring = new THREE.Mesh(ringGeometry, rune); ring.rotation.x = -Math.PI / 2; ring.position.y = .52; ring.name = 'EchoHallRing'; root.add(ring);
@@ -107,37 +126,71 @@ export function createEchoHall(host: EchoHallHost) {
 
   const steps = new THREE.Vector3(...homeWorld(ECHO_HALL_STEPS)); steps.y = (host.ground(steps.x, steps.z) ?? steps.y - 1) + 1;
   const markers: Marker[] = [{ id: ECHO_HALL_ID, type: 'interact', label: '英灵演武场', p: [steps.x, steps.y, steps.z], radius: 3.2 }];
+  const stations = [pavilion];
+  const poses = new Map<WorldRegionId, {p: THREE.Vector3; yaw: number}>([['home', {p: steps, yaw: YAW}]]);
+  for (const def of REGIONS) {
+    if (def.id === 'home') continue;
+    const destination = ECHO_DESTINATIONS[def.id];
+    const [x,z] = regionToWorld(def, destination.x, destination.z);
+    const yaw = destination.yaw + (def.rotated ? Math.PI : 0);
+    const y = host.ground(x,z);
+    if (y === null) continue;
+    const art = buildEchoStationArt(def.id);
+    art.relocate(new THREE.Matrix4().makeRotationY(yaw).setPosition(x,y,z));
+    host.scene.add(art.root); stations.push(art);
+    const body = mergeGeometries(art.solids);
+    for (const part of art.solids.splice(0)) part.dispose();
+    if (body) {
+      geometries.push(body);
+      colliders.push({name: art.root.name, enabled: true, bvh: new MeshBVH(body)});
+    }
+    const frontX = x + 2.15 * Math.sin(yaw), frontZ = z + 2.15 * Math.cos(yaw);
+    const p = new THREE.Vector3(frontX, (host.ground(frontX, frontZ) ?? y) + .85, frontZ);
+    poses.set(def.id, {p, yaw});
+    markers.push({id: echoMarkerId(def.id), type:'interact', label: destination.title[0]+'演武台', p:p.toArray(), radius:2.5});
+  }
   let disposed = false, time = 0;
 
-  function leave(withServant: boolean) {
-    if (disposed || !host.canInteract(ECHO_HALL_ID) || !host.safe()) return;
-    if (!host.save()) { host.toast(['世界进度未能保存，暂时不能进入演武场。请在设置里重试保存或导出备份。', 'World progress could not be saved, so the hall stays closed for now. Retry saving or export a backup in Settings.']); return; }
-    markEchoDeparture();
-    host.navigate(echoHallHref(withServant ? host.servant() : null));
+  function leave(region: WorldRegionId, withServant: boolean) {
+    if (disposed || !host.canInteract(echoMarkerId(region)) || !host.safe()) return;
+    if (!host.save()) { host.toast(['世界进度未能保存，请在设置里重试保存或导出备份。', 'World progress could not be saved. Retry saving or export a backup in Settings.']); return; }
+    markEchoDeparture(undefined, region);
+    host.navigate(echoHallHref(withServant ? host.servant() : null, region));
   }
   function interact(id: string): boolean {
-    if (id !== ECHO_HALL_ID) return false;
+    const region = echoMarkerRegion(id);
+    if (!region || !poses.has(region)) return false;
     if (!host.canInteract(id)) return true;
-    if (!host.safe()) { host.toast(['先脱离危险，在稳固地面站好再进入演武场。', 'Leave danger and stand on safe ground before entering the hall.']); return true; }
+    if (!host.safe()) { host.toast(['先脱离危险，在稳固地面站好再开始演武。', 'Leave danger and stand on safe ground before sparring.']); return true; }
     const servant = host.servant(), name = servant ? host.servantName(servant) : null;
+    const [zh,en] = ECHO_DESTINATIONS[region].title;
     const choices: { id: string; label: Localized }[] = [];
-    if (servant && name) choices.push({ id: 'servant', label: [`与${name[0]}的英灵投影一同演武（HOMEWARD）`, `Spar as ${name[1]}'s echo (HOMEWARD)`] });
-    choices.push({ id: 'free', label: ['自选从者，进入演武场大厅', 'Choose any servant in the hall lobby'] }, { id: 'later', label: ['先去走走。', 'Maybe later.'] });
+    if (servant && name) choices.push({ id:'servant', label:[`以${name[0]}出战`, `Spar as ${name[1]}`] });
+    choices.push({ id:'free', label:['前往大厅选择从者','Choose a hero in the lobby'] }, { id:'later', label:['继续旅途','Continue the journey'] });
     host.prepareDialogue();
     host.dialogue.showChoices(
-      ['石台上的光环映出英灵的投影。在这里演武只是模拟：不会改变世界里的契约、装备和进度，所有从者在演武场里一律平等。离开前会先保存世界进度，结束后可从演武场返回这里。',
-        'The ring of light on the dais casts echoes of heroes. Sparring here is a simulation: it changes none of your World contracts, gear or progress, and every servant is equal in the hall. Your World progress is saved before you go, and the hall brings you back here afterwards.'],
-      ['英灵演武场', 'Echo Hall'], choices, choice => { if (choice === 'servant') leave(true); else if (choice === 'free') leave(false); });
+      [`铜环中映出${zh}。进入 Arena 前会保存旅程。在大厅按开始即可演武；训练结束后可从 Arena 返回此处。`,
+       `The bronze ring frames ${en}. Your journey will be saved before you leave. Press Start in the Arena lobby to spar, then use Return to World to come back here.`],
+      [`${zh} · 演武台`, `${en} · Echo station`], choices,
+      choice => { if (choice === 'servant' || choice === 'free') leave(region, choice === 'servant'); });
     return true;
   }
   return {
     root, markers, colliders,
     /** Where a player returning from Arena stands: on the steps, facing into the hall. */
-    returnPose: () => ({ p: steps.clone(), yaw: YAW }),
+    returnPose(region: WorldRegionId = 'home') {
+      const pose = poses.get(region);
+      return pose && {p: pose.p.clone(), yaw: pose.yaw};
+    },
     interact,
     update(dt: number) { if (disposed) return; time += dt; ring.rotation.z = time * .25; rune.emissiveIntensity = 1 + Math.sin(time * 1.6) * .25; },
     dispose() {
       if (disposed) return; disposed = true; root.removeFromParent();
+      for (const art of stations) {
+        art.root.removeFromParent();
+        for (const mesh of art.layers.values()) mesh.geometry.dispose();
+        for (const m of Object.values(art.materials)) m.dispose();
+      }
       geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); textures.forEach(t => t.dispose());
       for (const c of colliders) c.enabled = false;
     },

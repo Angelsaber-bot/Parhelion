@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { ARENA_HERO, ECHO_HALL_ID, ECHO_RETURN_KEY, createEchoHall, echoHallHref, markEchoDeparture, takeEchoReturn } from '../src/story/echoHall';
+import { ECHO_DESTINATIONS, echoMarkerId } from '../src/story/echoDestinations';
+import { WORLD_REGION_IDS } from '../src/core/regionIdentity';
+import { MAPS } from '../../arena-game/shared/arenaMap';
+import { regionAt } from '../src/map/regions';
 import { COMPANIONS } from '../src/companions/contracts';
 import { CHARACTERS, PLAYABLE_HERO_INDICES } from '../../arena-game/shared/content';
 import { cameFromWorld, heroFromWorld, WORLD_RETURN_HREF } from '../../arena-game/src/worldLink';
@@ -32,11 +36,11 @@ test('Arena remembers the World link for the tab and points back to the hall; un
 
 test('a return lands at the hall only once, and only after leaving through it', () => {
   const tab = memory(), back = new URLSearchParams('from=arena');
-  assert.equal(takeEchoReturn(back, tab), false);
+  assert.equal(takeEchoReturn(back, tab), undefined);
   markEchoDeparture(tab); assert.equal(tab.getItem(ECHO_RETURN_KEY), ECHO_HALL_ID);
-  assert.equal(takeEchoReturn(back, tab), true);
-  assert.equal(takeEchoReturn(back, tab), false);
-  markEchoDeparture(tab); assert.equal(takeEchoReturn(new URLSearchParams(''), tab), false);
+  assert.equal(takeEchoReturn(back, tab), 'home');
+  assert.equal(takeEchoReturn(back, tab), undefined);
+  markEchoDeparture(tab); assert.equal(takeEchoReturn(new URLSearchParams(''), tab), undefined);
 });
 
 test('the hall saves before leaving, refuses when saving fails, and offers the active servant', () => {
@@ -47,20 +51,35 @@ test('the hall saves before leaving, refuses when saving fails, and offers the a
     dialogue: { showChoices: (_l: unknown, _n: unknown, choices: { id: string }[], pick: (id: string) => void) => shown.push({ choices, pick }) } as never,
     servant: () => 'musashi', servantName: () => ['宫本武藏', 'Miyamoto Musashi'], ground: () => 16, save: () => saved, navigate: h => went.push(h),
   });
-  assert.equal(hall.markers[0].id, ECHO_HALL_ID); assert.equal(hall.colliders.length, 1);
+  assert.equal(hall.markers[0].id, ECHO_HALL_ID); assert.equal(hall.colliders.length, WORLD_REGION_IDS.length);
   assert.equal(hall.interact('elsewhere'), false);
   assert.equal(hall.interact(ECHO_HALL_ID), true);
   assert.deepEqual(shown[0].choices.map(c => c.id), ['servant', 'free', 'later']);
   saved = false; shown[0].pick('servant'); assert.equal(went.length, 0); assert.equal(toasts.length, 1);
   saved = true; shown[0].pick('servant'); assert.match(went[0], /hero=musashi/);
   shown[0].pick('later'); assert.equal(went.length, 1);
-  hall.dispose(); assert.equal(hall.colliders[0].enabled, false);
+  assert.deepEqual(new Set(Object.values(ECHO_DESTINATIONS).map(d => d.map)), new Set(MAPS.map(m => m.id)));
+  for (const region of WORLD_REGION_IDS) {
+    const marker = hall.markers.find(m => m.id === echoMarkerId(region))!;
+    const pose = hall.returnPose(region)!;
+    assert.deepEqual(pose.p.toArray(), marker.p);
+    assert.equal(regionAt(pose.p.x,pose.p.z).id,region);
+    assert.ok(hall.interact(marker.id));
+    shown.at(-1)!.pick('free');
+    const link = new URL(went.at(-1)!, 'https://example.test');
+    assert.equal(link.searchParams.get('map'), ECHO_DESTINATIONS[region].map);
+    assert.equal(link.searchParams.get('from'),'world');
+    const tab = memory(), back = new URLSearchParams('from=arena');
+    markEchoDeparture(tab, region);
+    assert.equal(takeEchoReturn(back, tab), region);
+    assert.equal(takeEchoReturn(back, tab), undefined);
+  }
+  hall.dispose(); assert.ok(hall.colliders.every(c => !c.enabled));
 });
 
 test('main.ts wires the hall into interaction, updates and the return spawn', () => {
   const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
   assert.match(main, /echoHall\?\.interact\(m\.id\)/);
   assert.match(main, /echoHall\?\.update\(dt\)/);
-  assert.match(main, /if\(echoReturn\)\{const pose=echoHall\.returnPose\(\)/);
-  assert.match(main, /\?\? \(echoReturn \? 'home' : 'alpha'\)/);
+  assert.match(main, /echoHall\.returnPose\(echoReturn\)/);
 });

@@ -95,7 +95,8 @@ import { isCampaignRegion, isExpansionRegion, type WorldRegionId } from './core/
 import { EXPANSION_PLANS, EXPANSION_GRASS_CLEARANCE, ORLEANS_PAVED_COURTS } from './map/worldPlan';
 import {HOME_BUILDINGS,HOME_SITES,HOME_ACTIONS,HOME_GRASS_PATHS} from './map/homePlan';
 import {createHomeTown,homeResidentSockets,homeSaberReady} from './story/homeTown';
-import {createEchoHall,takeEchoReturn} from './story/echoHall';
+import { ECHO_DESTINATIONS, echoMarkerRegion } from './story/echoDestinations';
+import {createEchoHall,echoHallHref,takeEchoReturn} from './story/echoHall';
 import {createServantPacts} from './story/servantPactRuntime';
 import {HOME_CIVIC_ACTIONS} from './map/homeActivities';
 import {createHomeResidentLife} from './map/homeResidents';
@@ -277,9 +278,9 @@ const requestedFov = Number(params.get('fov'));
 const baseFov = THREE.MathUtils.clamp(params.has('fov') && Number.isFinite(requestedFov) ? requestedFov : 75, 40, 110);
 // One open world: 幻日谷 + 落日王国 (west seam) + 黑帆尽头 (east pass) + 永冬之城 (north ice seam) +
 // 业火京都 (south torii seam). ?region=britain|blacksail|winter|kyoto starts there.
-// Back from Arena through Homeward's Echo Hall: start in Homeward, then stand on the hall's steps.
+// Load the departure region before placing the player at its Echo station.
 const echoReturn = takeEchoReturn(params);
-const startRegion = REGIONS.find((r) => r.id === params.get('region'))?.id ?? (echoReturn ? 'home' : 'alpha');
+const startRegion = REGIONS.find((r) => r.id === params.get('region'))?.id ?? (echoReturn ?? 'alpha');
 // Quality: ?q=low | med (default) | high. high adds GTAO + 4x MSAA + denser grass.
 const quality = (['low', 'med', 'high'] as const).find((q) => q === params.get('q')) ?? 'med';
 const lowQ = quality === 'low', highQ = quality === 'high';
@@ -461,7 +462,7 @@ if (borderStitch.samples && !params.has('nostitch')) {
 const streamStatus=document.createElement('div');streamStatus.id='world-region-loading';Object.assign(streamStatus.style,{position:'fixed',top:'18px',left:'50%',transform:'translateX(-50%)',padding:'8px 12px',background:'#172e3de8',color:'#edf5e8',borderRadius:'6px',zIndex:'30'});streamStatus.hidden=true;const streamText=document.createElement('span'),streamRetry=document.createElement('button');streamRetry.textContent=bilingual('重试地区加载','Retry region loading');streamRetry.hidden=true;streamStatus.append(streamText,streamRetry);document.body.append(streamStatus);let streamFailure='';
 const regionVisuals=new RegionVisualStreaming({parent:world,warm:root=>warmShaders(root),uploadBudget:(lowQ?3:6)*1048576,carve:(id,name,geometry)=>{const carved=clearProductionLandscape(id,name,geometry),def=REGIONS.find(r=>r.id===id);if(def&&borderStitch.samples&&!params.has('nostitch')&&ridesWithGround(name))borderStitch.apply(carved??geometry,(x,z)=>regionToWorld(def,x,z),def.offset);return carved;},eager:params.has('eager'),outlines:!params.has('noline'),lowQuality:lowQ,status:(id,error)=>{streamFailure=error?id:'';streamStatus.hidden=!id;streamText.textContent=error?bilingual('地区画面暂时未能加载，道路与进度已保留。','Region art could not load; routes and progress are retained.'):bilingual('正在载入前方地区…','Loading the region ahead…');streamRetry.hidden=!error;}});streamRetry.onclick=e=>{e.stopPropagation();if(streamFailure)void regionVisuals.retry(streamFailure);};
 addEventListener('pagehide',e=>{if(!e.persisted){regionVisuals.dispose();streamStatus.remove();}});
-const initialVisualRegion=params.get('region')??(typeof echoReturn!=='undefined'&&echoReturn?'home':'alpha');if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(REGIONS.some(r=>r.id===initialVisualRegion)?initialVisualRegion:'alpha')))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
+const initialVisualRegion=params.get('region')??(typeof echoReturn!=='undefined'?echoReturn??'alpha':'alpha');if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(REGIONS.some(r=>r.id===initialVisualRegion)?initialVisualRegion:'alpha')))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
 // From here on, newly entered regions install a few milliseconds per frame instead of freezing on arrival.
 regionVisuals.sliceMs=8;
 document.title = 'Parhelion · World';
@@ -1199,6 +1200,11 @@ function journeyMarkerActive(id: string) {
   return journeyStepReady(id, done);
 }
 function interactionLabel(marker: Marker) {
+  const echo = echoMarkerRegion(marker.id);
+  if (echo) {
+    const [zh,en] = ECHO_DESTINATIONS[echo].title;
+    return bilingual(`演武 · ${zh}`, `Arena · ${en}`);
+  }
   if (KINGDOM_ROAD_LABELS[marker.id]) return bilingual(...KINGDOM_ROAD_LABELS[marker.id]);
   if (marker.id === ESB.helm) {
     if (egyptSolarBoat.atFork) return bilingual('太阳舟 · 选择岔路', 'Solar boat · Choose a channel');
@@ -2298,7 +2304,10 @@ echoHall=createEchoHall({scene,dialogue:narrative,prepareDialogue:()=>{clearInpu
  save:()=>!bootFailed&&!worldExited&&!graphicsRecovery?.blocked&&!!save(),navigate:href=>location.assign(href)});
 layout.markers.push(...echoHall.markers);for(const marker of echoHall.markers)markers.set(marker.id,marker);colliders.push(...echoHall.colliders);
 addEventListener('pagehide',e=>{if(!e.persisted)echoHall?.dispose();});
-if(echoReturn){const pose=echoHall.returnPose();player.teleport(pose.p.x,pose.p.y+.2,pose.p.z,pose.yaw);}
+if (echoReturn) {
+  const pose = echoHall.returnPose(echoReturn);
+  if (pose) player.teleport(pose.p.x, pose.p.y+.2, pose.p.z, pose.yaw);
+}
 // Jeanne, Ozymandias and Qin Shi Huang: each now joins through a contract arc of its own (servantPacts.ts).
 servantPacts=createServantPacts({scene,done,dialogue:narrative,prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();},
  toast:line=>toast(bilingual(...line)),save:()=>!!save(),changed:()=>{applyWorldState();renderObjective();hudRevision++;},
@@ -2466,7 +2475,10 @@ const travelPanel = createTravelPanel({
   },
   onClose: () => { travelOpenState=false;clearInput(); },
 });
+const arenaRegion = () => regionAt(player.pos.x, player.pos.z).id;
 const arenaTrainingPanel=createArenaTrainingPanel({
+  destination:()=>ECHO_DESTINATIONS[arenaRegion()].title,
+  href:()=>echoHallHref(contract.selected, arenaRegion()),
   worldKey:action=>settings.label(action),
   arenaKey:action=>new SettingsStore('arena',{getItem:key=>progressStorage?.getItem(key)??null,setItem:()=>{}}).label(action),
   canOpen:()=>!bootFailed&&!worldExited&&!graphicsRecovery?.blocked&&!ultimateDirector?.active&&!compactRelayRuntime?.active,
@@ -5142,7 +5154,7 @@ function frame(now: number) {
   const mt: [number, number] | null = tgt ? [tgt.p[0], tgt.p[2]] : null;
   if (mapBudget.due(now, { active: true, revision: hudRevision })) {
     map.draw(mini, player.pos, player.yaw, { full: false, done, found, target: mt, partner: coop.partnerPoint });
-    if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt, partner: coop.partnerPoint, overlay: (ctx, project, unit, width) => drawExplorationIcons(ctx, done, project, unit, width, exploration.commissions) });
+    if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt, partner: coop.partnerPoint, overlay: (ctx, project, unit, width) => drawExplorationIcons(ctx, done, project, unit, width, exploration.commissions, echoHall?.markers) });
   } // big map stays readable: no monster dots
 
   timeUniform.value = now / 1000;

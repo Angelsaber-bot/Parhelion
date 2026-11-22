@@ -2,7 +2,6 @@
  * network, reward or simulation mutation. The user still chooses Start there.
  * arena-game/src/main.ts reads mode=online explicitly; all other values are offline.
  */
-export const ARENA_TRAINING_HREF = '/arena/?mode=offline';
 export type BridgeText = readonly [string, string];
 export interface ArenaBridgeRow { readonly id: string; readonly title: BridgeText; readonly world: BridgeText; readonly arena: BridgeText }
 export interface ArenaTrainingBriefing {
@@ -21,7 +20,7 @@ export function arenaTrainingBriefing(worldKey: (action: string) => string, aren
   const row = (id: string, title: BridgeText, world: BridgeText, arena: BridgeText): ArenaBridgeRow => ({ id, title, world, arena });
   return {
     title: ['竞技场战术模拟', 'Arena tactical simulation'],
-    introduction: ['在新标签打开离线竞技场大厅，选择简单 Bot 并点击开始；此处不会自动开局。世界现场留在本页，回来后继续。', 'Open the offline Arena lobby in a new tab, choose Easy bots and press Start. Nothing starts automatically. Your World session stays in this tab.'],
+    introduction: ['大厅会预选此地对应的地图和当前从者。确认配装后，点击开始演武。', 'The lobby selects this region’s map and your current hero. Check your loadout and press Start when ready.'],
     rows: [
       row('aim', ['瞄准与射击', 'Aim and fire'], [`${worldKey('aim')} 瞄准 · ${worldKey('fire')} 射击`, `${worldKey('aim')} aim · ${worldKey('fire')} fire`], [`${arenaKey('aim')} 瞄准 · ${arenaKey('fire')} 射击`, `${arenaKey('aim')} aim · ${arenaKey('fire')} fire`]),
       row('movement', ['机动方式不同', 'Different movement tools'], [`${worldKey('sprint')} 奔跑 · ${worldKey('evade')} 闪避`, `${worldKey('sprint')} sprint · ${worldKey('evade')} evade`], [`${arenaKey('dash')} 冲刺；不是持续奔跑`, `${arenaKey('dash')} dash, not sustained sprint`]),
@@ -30,7 +29,7 @@ export function arenaTrainingBriefing(worldKey: (action: string) => string, aren
       row('loadout', ['枪械与装填', 'Weapons and reload'], ['原有世界枪械与进度保持不变', 'Your existing World weapon and progress stay unchanged'], [`${arenaKey('weapon1')} / ${arenaKey('weapon2')} 两把枪 · ${arenaKey('reload')} 装填；在大厅选择配装`, `${arenaKey('weapon1')} / ${arenaKey('weapon2')} two guns · ${arenaKey('reload')} reload; choose your loadout in the lobby`]),
     ],
     practice: [
-      ['先在大厅查看两把枪与近战槽，再用简单 Bot 熟悉射击与装填。', 'Review the two guns and melee slot in the lobby, then practise firing and reloading against Easy bots.'],
+      ['先在大厅查看两把枪与近战槽，再与人机练习射击与装填。', 'Review the two guns and melee slot in the lobby, then practise firing and reloading against the practice opponent.'],
       ['利用掩体侧移，试一次冲刺与护盾，再切近战；这是练习建议，不会自动判定或发奖励。', 'Strafe around cover, try a dash and shield, then switch to melee. These are practice suggestions, not automatic objectives or rewards.'],
     ],
     warning: [`两种模式按键分别保存。回到世界后：${worldKey('reset')} 是重置进度确认，${[1,2,3].map(n => worldKey(`teleport${n}`)).join(' / ')} 是调试传送，不是装填或换枪。`, `Controls are saved separately. Back in World, ${worldKey('reset')} opens reset confirmation and ${[1,2,3].map(n => worldKey(`teleport${n}`)).join(' / ')} are debug teleports, not reload or weapon slots.`],

@@ -3,6 +3,7 @@
  * Mutable consequence props are visual only: choices never move a collider or gate.
  */
 import * as THREE from 'three';
+import type { WorldRegionId } from '../core/regionIdentity';
 import { mergeParts } from '../settlements/merge';
 import { fieldPropParts, timberSlab } from '../environment/fieldPropArt';
 import type { RegionId, SettlementPlacement, PlacedNpcSocket, Localized } from '../settlements/types';
@@ -100,7 +101,7 @@ export class SiteArt {
     for(const g of this.solids)g.applyMatrix4(matrix);
     return this;
   }
-  finish(region: RegionId) {
+  finish(region: WorldRegionId) {
     this.root.name = `CampaignSite_${region}`;
     if (this.auditParts) { this.root.userData.siteArtParts = this.auditParts; this.root.userData.siteArtRegion = region; }
     for(const [layer,parts] of this.bins){

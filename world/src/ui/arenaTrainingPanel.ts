@@ -1,6 +1,8 @@
-import { arenaTrainingBriefing, ARENA_TRAINING_HREF } from '../story/arenaTrainingBridge';
+import { arenaTrainingBriefing, type BridgeText } from '../story/arenaTrainingBridge';
 import { bilingual, onLanguageChange } from '../../../shared-client/i18n';
 export interface ArenaTrainingPanelOptions {
+  destination(): BridgeText;
+  href(): string;
   worldKey(action: string): string;
   arenaKey(action: string): string;
   canOpen(): boolean;
@@ -14,13 +16,14 @@ export function createArenaTrainingPanel(options: ArenaTrainingPanelOptions) {
   const title=document.createElement('h2'),intro=document.createElement('p'),rows=document.createElement('div'),practice=document.createElement('ol'),warning=document.createElement('p'),fairness=document.createElement('p'),status=document.createElement('p'),links=document.createElement('div'),close=document.createElement('button');
   title.id='world-arena-training-title';root.setAttribute('aria-labelledby',title.id);
   status.setAttribute('role','status');warning.style.color='#ffd69e';
-  const launch=document.createElement('a');launch.href=ARENA_TRAINING_HREF;launch.target='_blank';launch.rel='noopener noreferrer';launch.id='arena-training-new-tab';
-  const fallback=document.createElement('a');fallback.href=ARENA_TRAINING_HREF;fallback.id='arena-training-same-tab';fallback.style.display='block';fallback.style.marginTop='14px';
+  const launch=document.createElement('a');launch.target='_blank';launch.rel='noopener noreferrer';launch.id='arena-training-new-tab';
+  const fallback=document.createElement('a');fallback.id='arena-training-same-tab';fallback.style.display='block';fallback.style.marginTop='14px';
   const explanation=document.createElement('p');
   links.append(launch,explanation,fallback);root.append(title,intro,rows,practice,warning,fairness,status,links,close);document.body.append(root);
   function render(){
     const info=arenaTrainingBriefing(options.worldKey,options.arenaKey);
-    title.textContent=bilingual(...info.title);intro.textContent=bilingual(...info.introduction);
+    launch.href=fallback.href=options.href();
+    title.textContent=bilingual(...info.title)+' · '+bilingual(...options.destination());intro.textContent=bilingual(...info.introduction);
     rows.replaceChildren(...info.rows.map(row=>{const p=document.createElement('p');p.textContent=`${bilingual(...row.title)} — World: ${bilingual(...row.world)} / Arena: ${bilingual(...row.arena)}`;return p;}));
     practice.replaceChildren(...info.practice.map(line=>{const li=document.createElement('li');li.textContent=bilingual(...line);return li;}));
     warning.textContent=bilingual(...info.warning);fairness.textContent=bilingual(...info.fairness);

@@ -4,6 +4,7 @@
  * region's exploration percentage. The minimap stays a pure navigation view.
  */
 import { bilingual } from '../../../shared-client/i18n';
+import type { Marker } from '../core/types';
 import type { RegionId } from '../settlements/types';
 import { EMBER_ROUTES, FOXFIRES, SIGNALS, TREASURE_MAPS, flagDig, flagEmber, flagFox, flagSignal } from './regional';
 import { CAMPS, DOMAINS, PUZZLES, REGION_NAMES, STATUES, TRIALS, flagCamp, flagElite, flagPuzzle, flagTrial, regionExploration } from './catalog';
@@ -44,7 +45,7 @@ export function commissionPins(board: { day: string; list: readonly Commission[]
   return board.list.filter(c => c.at && !commissionDone(done, board.day, c.n)).map(c => ({ n: c.n, x: c.at![0], z: c.at![1] }));
 }
 
-export function drawExplorationIcons(ctx: CanvasRenderingContext2D, done: ReadonlySet<string>, project: Project, unit: number, width: number, board?: { day: string; list: readonly Commission[] }) {
+export function drawExplorationIcons(ctx: CanvasRenderingContext2D, done: ReadonlySet<string>, project: Project, unit: number, width: number, board?: { day: string; list: readonly Commission[] }, stations: readonly Marker[] = []) {
   ctx.save();
   for (const icon of explorationMapIcons(done)) {
     const { x, y } = project(icon.x, icon.z), u = unit;
@@ -103,10 +104,19 @@ export function drawExplorationIcons(ctx: CanvasRenderingContext2D, done: Readon
     ctx.lineWidth = 5 * u; ctx.strokeStyle = OUTLINE; ctx.stroke();
     ctx.lineWidth = 2 * u; ctx.strokeStyle = color; ctx.stroke();
   }
+  // The letter and circular brass bezel match the Arena key in the legend.
+  for (const station of stations) {
+    const {x,y} = project(station.p[0], station.p[2]);
+    ctx.beginPath(); ctx.arc(x,y,7.5*unit,0,Math.PI*2);
+    ctx.fillStyle = '#233b40'; ctx.fill();
+    ctx.strokeStyle = '#e9cb88'; ctx.lineWidth = 1.5*unit; ctx.stroke();
+    ctx.fillStyle = '#fff0c9'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `bold ${10*unit}px system-ui,sans-serif`; ctx.fillText('A', x, y);
+  }
   if (board) drawCommissions(ctx, board, done, project, unit, width);
   // legend: exploration percentage per region, bottom-left
   const regions: RegionId[] = ['alpha', 'britain', 'blacksail', 'winter', 'kyoto'];
-  const line = 17 * unit, pad = 10 * unit, boxW = 190 * unit, boxH = pad * 2 + line * regions.length;
+  const line = 17 * unit, pad = 10 * unit, boxW = 190 * unit, boxH = pad * 2 + line * (regions.length + (stations.length ? 1 : 0));
   const bx = 14 * unit, by = width - boxH - 14 * unit;
   ctx.fillStyle = '#141c30cc'; ctx.fillRect(bx, by, boxW, boxH);
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = `600 ${12 * unit}px system-ui, sans-serif`;
@@ -116,6 +126,10 @@ export function drawExplorationIcons(ctx: CanvasRenderingContext2D, done: Readon
     ctx.fillStyle = '#e8ecf2'; ctx.fillText(name ? bilingual(name[0], name[1]) : region, bx + pad, y);
     ctx.textAlign = 'right'; ctx.fillStyle = ex.percent >= 100 ? '#ffe08a' : '#b8c4d6'; ctx.fillText(`${ex.percent}%`, bx + boxW - pad, y); ctx.textAlign = 'left';
   });
+  if (stations.length) {
+    ctx.fillStyle = '#e9cb88';
+    ctx.fillText(bilingual('Ⓐ 演武台', 'Ⓐ Arena station'), bx + pad, by + boxH - pad - line*.5);
+  }
   ctx.restore();
 }
 
@@ -136,7 +150,7 @@ function drawCommissions(ctx: CanvasRenderingContext2D, board: { day: string; li
   // compact maps retain commission pins and the journal instead of a text box.
   if(width/u<800)return;
   const line = 17 * u, pad = 10 * u, boxW = 260 * u, boxH = pad * 2 + line * (board.list.length + 1);
-  const legendH=20*u+17*u*Object.keys(REGION_NAMES).length;
+  const legendH=20*u+17*u*(Object.keys(REGION_NAMES).length+1);
   const bx = 14 * u, by = width-legendH-boxH-42*u;
   ctx.fillStyle = '#141c30cc'; ctx.fillRect(bx, by, boxW, boxH);
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
