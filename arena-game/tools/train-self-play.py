@@ -20,8 +20,8 @@ bc = import_module("train-arena-policy")
 AXIS_STD = 0.35
 CHECKPOINT_KIND = "arena-self-play-v1"
 PREDICTION_HORIZON = 3
-CONTROLLER = "perceptual-options-v2"
-CONTROLLER_VERSIONS = {"perceptual-options-v1": 2, CONTROLLER: 3}
+CONTROLLER = "learned-input-v1"
+CONTROLLER_VERSIONS = {"perceptual-options-v1": 2, "perceptual-options-v2": 3, CONTROLLER: 4}
 UNLABELED = 2.0
 
 
@@ -163,7 +163,7 @@ def generalized_advantages(rewards, values, ends):
 def human_data(path, split, rules, context, include_holdout):
     _, batches = bc.load_captures(path, rules, allow_empty=True)
     eligible = {"train", "holdout"} if include_holdout else {"train"}
-    captures = bc.usable_captures({key: rows for key, rows in batches.items() if split.get(key) in eligible})
+    captures = bc.usable_captures({key: rows for key, rows in batches.items() if split.get(key) in eligible}, include_smoke=True)
     groups = [[rows for capture, rows in captures.items() if split.get(capture) == name]
               for name in ("train", "holdout")]
     if not groups[0]:
@@ -192,6 +192,18 @@ def load_saved(path):
     if saved.get("kind") not in (None, CHECKPOINT_KIND) or "signature" not in saved or "model" not in saved:
         raise ValueError("Expected an Arena imitation or self-play checkpoint")
     return saved
+
+
+def warm_start_controls(previous, reference):
+    """Carry the run lineage forward while starting the new action space from human demonstrations."""
+    if reference.get("kind") is not None or reference["signature"] != previous["signature"]:
+        raise ValueError("Direct controls require a compatible imitation checkpoint")
+    if any(group != previous["split"].get(capture, group) for capture, group in reference["split"].items()):
+        raise ValueError("Human reference reassigns a previously seen capture")
+    counters = {key: previous.get(key, 0) for key in
+                ("generation", "optimizerSteps", "totalSteps", "totalGames", "totalEnvironmentSteps")}
+    return {**counters, "signature": reference["signature"], "model": reference["model"],
+            "split": {**previous["split"], **reference["split"]}, "controller": CONTROLLER}
 
 
 def file_hash(path):
@@ -265,6 +277,10 @@ def rollout_kl(actor, states, old_logits):
 
 def run(args):
     saved = load_saved(args.resume)
+    if args.command == "warm-start":
+        initial = warm_start_controls(saved, load_saved(args.prior))
+        bc.atomic_write(args.output, lambda path: torch.save(initial, path))
+        return
     signature = saved["signature"]
     config = bc.Config(**signature["config"])
     generation = saved.get("generation", 0)
@@ -277,11 +293,15 @@ def run(args):
         bc.write_json(args.output, actor_json(actor, signature, saved.get("controller")))
         return
 
+    direct_controls = saved.get("controller") == CONTROLLER
+    output_controller = CONTROLLER if direct_controls else "perceptual-options-v2"
     parent_hash = file_hash(args.actor)
     if json.loads(args.actor.read_bytes()) != actor_json(actor, signature, saved.get("controller")):
         raise ValueError("Rollout actor and source checkpoint weights differ")
     states, actions, logged, rewards, ends, counts, successors, coaching = read_trajectories(
         args.rollout, parent_hash, signature["rulesVersion"], config.context)
+    if direct_controls and (coaching != UNLABELED).any():
+        raise ValueError("Direct controls train on human actions and match rewards; rollout contains scripted action labels")
     prior = load_saved(args.prior) if args.prior else saved
     if (args.prior and prior.get("kind") is not None) or prior["signature"] != signature:
         raise ValueError("Frozen reference must match the actor's model, rules, and human data split configuration")
@@ -296,14 +316,14 @@ def run(args):
         print("The retained corpus has no assigned human training captures. Continuing with the frozen reference.",
               file=sys.stderr)
     critic = nn.Linear(config.width, 1)
-    if generation:
+    if saved.get("kind") == CHECKPOINT_KIND:
         critic.load_state_dict(saved["critic"])
     else:
         nn.init.zeros_(critic.weight)
         nn.init.zeros_(critic.bias)
     params = list(itertools.chain(actor.parameters(), critic.parameters()))
     optimizer = torch.optim.Adam(params, lr=args.learning_rate)
-    if generation:
+    if saved.get("kind") == CHECKPOINT_KIND:
         optimizer.load_state_dict(saved["optimizer"])
         for group in optimizer.param_groups:
             group["lr"] = args.learning_rate
@@ -322,7 +342,7 @@ def run(args):
     coached_generations = saved.get("coachedGenerations", 0)
     coached_decisions = int((coaching != UNLABELED).any(dim=1).sum())
     coach_weight = args.coach_weight / math.sqrt(1 + coached_generations / 24) if coached_decisions else 0.
-    previous_coaching = saved.get("coachArchive")
+    previous_coaching = None if direct_controls else saved.get("coachArchive")
     coach_random = torch.Generator().manual_seed(seed + 9815)
     coach_replays = 0
     stopped = False
@@ -384,13 +404,13 @@ def run(args):
             behavior_kl = rollout_kl(actor, states, old_logits)
             for parameter in (actor.out.weight, actor.out.bias):
                 optimizer.state[parameter]["exp_avg"][0].zero_()
-    bc.write_json(args.output, actor_json(actor, signature, CONTROLLER))
+    bc.write_json(args.output, actor_json(actor, signature, output_controller))
     actor_hash = file_hash(args.output)
     if actor_hash == parent_hash:
         raise ValueError("Self-play update produced unchanged policy weights")
     archive = aggregate_corrections(previous_coaching, states, coaching, coach_random)
     metrics = {
-        "generation": generation + 1, "optimizerSteps": previous_updates + updates, "updates": updates,
+        "controller": output_controller, "generation": generation + 1, "optimizerSteps": previous_updates + updates, "updates": updates,
         **counts, "steps": len(rewards), "parentHash": parent_hash, "actorHash": actor_hash,
         "totalSteps": saved.get("totalSteps", 0) + len(rewards), "totalGames": saved.get("totalGames", 0) + counts["games"],
         "totalEnvironmentSteps": saved.get("totalEnvironmentSteps", 0) + counts["environmentSteps"],
@@ -413,7 +433,7 @@ def run(args):
                        referenceHoldout=bc.evaluate(reference, loader, "cpu", weights),
                        holdoutWindows=len(test), holdoutCaptures=capture_count)
     state = {"kind": CHECKPOINT_KIND, "signature": signature, "model": actor.state_dict(), "critic": critic.state_dict(),
-             "controller": CONTROLLER, "coachedGenerations": coached_generations + int(coach_weight > 0),
+             "controller": output_controller, "coachedGenerations": coached_generations + int(coach_weight > 0),
              "coachArchive": archive,
              "optimizer": optimizer.state_dict(), "reference": reference.state_dict(), "split": human_split,
              "dynamics": dynamics.state_dict(), "dynamicsOptimizer": dynamics_optimizer.state_dict(),
@@ -428,7 +448,9 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     export = commands.add_parser("export")
     update = commands.add_parser("update")
-    for command in (export, update):
+    warm_start = commands.add_parser("warm-start")
+    warm_start.add_argument("--prior", type=Path, required=True)
+    for command in (export, update, warm_start):
         command.add_argument("--resume", type=Path, required=True)
         command.add_argument("--output", type=Path, required=True)
     for name in ("actor", "rollout", "checkpoint", "metrics"):

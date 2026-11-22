@@ -126,7 +126,21 @@ def human_gates(metrics):
         return {"human_holdout": False}
     turns, quiet = (observed["cameraAndMovement"][group] for group in ("unseenTurn", "unseenQuiet"))
     ref_turns, ref_quiet = (reference["cameraAndMovement"][group] for group in ("unseenTurn", "unseenQuiet"))
+    direct_gates = {}
+    if metrics.get("controller") == "learned-input-v1":
+        for group, gate in (("visibleTrigger", "human_trigger"), ("lostContactTrigger", "human_lost_trigger")):
+            trigger, baseline = observed.get(group, {}), reference.get(group, {})
+            # Both models see the same held-out actions. Continued fire and releasing
+            # the trigger are scored against the recorded player, including after contact loss.
+            direct_gates[gate] = (trigger.get("windows", 0) > 0 and trigger["windows"] == baseline.get("windows")
+                                  and trigger["shotsRequested"] == baseline.get("shotsRequested")
+                                  and trigger["brier"] <= baseline["brier"] + .02)
+        contact = observed["cameraAndMovement"]["visibleContact"]
+        reference_contact = reference["cameraAndMovement"]["visibleContact"]
+        direct_gates["human_tracking"] = (contact["windows"] > 0 and all(
+            contact[axis] <= reference_contact[axis] * 1.1 + .002 for axis in ("yawMaeRad", "pitchMaeRad")))
     return {
+        **direct_gates,
         "human_holdout": metrics["holdoutWindows"] >= 60 and search["windows"] >= 30
                          and turns["windows"] >= 8 and quiet["windows"] >= 8,
         # During genuine search turns a stationary policy must lose. Quiet windows
@@ -223,6 +237,15 @@ def cycle(args, service, work, progress):
         parent_digest = hashlib.sha256(actor.read_bytes()).hexdigest()
         if parent and parent_digest != old["digest"]:
             raise ValueError("Restored actor differs from the last committed generation")
+        if json.loads(actor.read_bytes())["version"] != 4:
+            # Verify the original digest above before changing the rollout environment.
+            # A fresh critic and optimizer learn from actions actually executed by the new controller.
+            initial = work / "direct-controls.pt"
+            run([sys.executable, TRAINER, "warm-start", "--resume", checkpoint, "--prior", prior, "--output", initial])
+            checkpoint = initial
+            run([sys.executable, TRAINER, "export", "--resume", checkpoint, "--output", actor])
+            parent_digest = hashlib.sha256(actor.read_bytes()).hexdigest()
+            print("Training direct player controls from the human imitation checkpoint", flush=True)
         collect = ts + ["scripts/self-play-rollout.ts", "--model", actor, "--seed", seed, "--output", rollout,
                         "--episodes", args.episodes, "--seconds", args.seconds, "--league", league]
         last_eval = old.get("lastEvaluation") or {}
@@ -294,6 +317,7 @@ def cycle(args, service, work, progress):
                 promoted = False
             print("Evaluation", json.dumps({"passed": promoted, "failedGates": failed, "config": results["config"],
                   "byScenario": results["byScenario"], "byMap": results["byMap"],
+                  "contactTransitions": results.get("contactTransitions"),
                   "comparisons": results["comparisons"], "fullRounds": results["fullRounds"],
                   "diagnostic": results["diagnostic"]}), flush=True)
         # Keep one older anchor and a recent opponent. The incumbent and parent are also sampled.

@@ -1,4 +1,12 @@
 import { afterEach, expect, it, vi } from 'vitest';
+import { buildMap } from '../shared/map.ts';
+import { HUMAN_FEATURES } from '../shared/humanCombat.ts';
+import { SCENE_DEPTH_OFFSET } from '../shared/exploration.ts';
+import { getMap } from '../shared/arenaMap.ts';
+import { botGunRecoil, recoverRecoil, shotRecoil } from '../shared/aimRecoil.ts';
+import { neuralBotControl } from '../shared/botNeuralControl.ts';
+import { Match } from '../shared/match.ts';
+import { BTN, type Input } from '../shared/sim.ts';
 import { ArenaRoom } from '../server/ArenaRoom.ts';
 import { newExplorationCheckpoint } from '../shared/exploration.ts';
 import { createNeuralPolicy, NEURAL_FEATURE_COUNT, NEURAL_OUTPUT_COUNT, parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
@@ -39,6 +47,10 @@ it('rejects models that cannot run on this version of the game', () => {
   expect(parseNeuralPolicy(option)).toEqual(option);
   const smokeSearch = { ...model, version: 3, controller: 'perceptual-options-v2' };
   expect(parseNeuralPolicy(smokeSearch)).toEqual(smokeSearch);
+  const direct = { ...model, version: 4, controller: 'learned-input-v1' };
+  expect(parseNeuralPolicy(direct)).toEqual(direct);
+  expect(parseNeuralPolicy({ ...direct, version: 3 })).toBeUndefined();
+  expect(parseNeuralPolicy({ ...smokeSearch, version: 4 })).toBeUndefined();
   expect(parseNeuralPolicy({ ...option, version: 3 })).toBeUndefined();
   expect(parseNeuralPolicy({ ...smokeSearch, version: 2 })).toBeUndefined();
   expect(parseNeuralPolicy({ ...smokeSearch, controller: undefined })).toBeUndefined();
@@ -58,6 +70,89 @@ it('rejects models that cannot run on this version of the game', () => {
   const malformed = fixture();
   malformed.layers[0].down.weight[0].pop();
   expect(parseNeuralPolicy(malformed)).toBeUndefined();
+});
+
+it('uses the learned inputs throughout visible contact and loss of sight in v4', () => {
+  const match = new Match(getMap('aster'), '1v1');
+  match.addPlayer('pilot', { name: 'pilot', team: 'A', char: 0, bot: true, skins: [] });
+  match.addPlayer('target', { name: 'target', team: 'B', char: 0, bot: true, skins: [] });
+  const me = match.player('pilot')!, target = match.player('target')!;
+  Object.assign(me, { x: 0, y: 0, z: 0, yaw: 0, pitch: 0 });
+  Object.assign(target, { x: 0, y: 0, z: -1 });
+  vi.spyOn(match.heroes, 'visible').mockReturnValue(true);
+  const model = fixture();
+  // A constant output layer makes the real inference pipeline reproducible.
+  model.out.weight.forEach(row => row.fill(0));
+  model.out.bias.fill(-1);
+  model.out.bias.fill(0, 0, 4);
+  model.out.bias[11] = 1;
+  const actor = neuralBotControl({ ...model, version: 4, controller: 'learned-input-v1' });
+  for (let tick = 1; tick <= 64; tick++) {
+    match.tick = tick;
+    if (tick === 41) target.alive = false;
+    const input: Input = { seq: tick, view: tick, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: 0, weapon: 0 };
+    const result = actor.apply(match, me, input);
+    expect([result.mx, result.mz, result.yaw, result.pitch, result.buttons & BTN.FIRE, result.weapon]).toEqual([0, 0, 0, 0, 0, 0]);
+  }
+  model.out.bias[0] = .4;
+  model.out.bias[4] = 1;
+  const moving = neuralBotControl({ ...model, version: 4, controller: 'learned-input-v1' });
+  const result = moving.apply(match, me, { seq: 65, view: 65, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: 0, weapon: 0 });
+  expect(result.yaw).toBeGreaterThan(0);
+  expect(result.buttons & BTN.FIRE).toBe(BTN.FIRE);
+});
+
+it('observes only visible smoke at three quantized depths without locating occluded opponents', () => {
+  const empty = buildMap({ ...getMap('aster').data, objects: [] });
+  const wall = buildMap({ ...empty.data, objects: [{ id: 'wall', type: 'box', position: [0, 2, -2], size: [15, 4, .4], material: 'stone', role: 'wall', collision: true }] });
+  const smoke = { id: 1, owner: 'unknown', x: 0, y: 0, z: -6, life: 155, box: { yaw: 0, width: 4, height: 3, depth: 2 } };
+  const shield = { id: 1, owner: 'unknown', team: 'A' as const, x: 0, y: 0, z: -2, yaw: 0, life: 100, hp: 100 };
+  function perceive(map = empty, clouds = [smoke], targetX = 0, yaw = 0, legacy = false, shields: Match['shields'] = []) {
+    const match = new Match(map, '1v1');
+    match.addPlayer('pilot', { name: 'pilot', team: 'A', char: 0, bot: true, skins: [] });
+    match.addPlayer('target', { name: 'target', team: 'B', char: 0, bot: true, skins: [] });
+    const me = match.player('pilot')!, enemy = match.player('target')!;
+    Object.assign(me, { x: 0, y: 0, z: 0, yaw, pitch: 0 });
+    Object.assign(enemy, { x: targetX, y: 0, z: -10 });
+    match.smokes = clouds; match.shields = shields;
+    const model = fixture();
+    const actor = legacy ? model : { ...model, version: 4 as const, controller: 'learned-input-v1' as const };
+    let observed: number[] = [];
+    neuralBotControl(actor, values => {
+      observed = values;
+      return { axes: [0, 0, 0, 0], buttons: 0, weapon: 0 };
+    }).apply(match, me, { seq: 0, view: 0, mx: 0, mz: 0, yaw, pitch: 0, buttons: 0, weapon: 0 });
+    return observed;
+  }
+  const center = HUMAN_FEATURES.length + SCENE_DEPTH_OFFSET + 1;
+  expect(perceive()[0]).toBe(0);
+  expect(perceive()[center]).toBe(-3 / 8);
+  expect(perceive(empty, [smoke], .7)).toEqual(perceive());
+  expect(perceive(empty, [], 0, 0, true)).toEqual(perceive(empty, []));
+  expect(perceive(empty, [smoke], 0, 0, true)[center]).toBe(1);
+  expect(perceive(wall, [smoke])).toEqual(perceive(wall, []));
+  expect(perceive(empty, [smoke], 0, Math.PI)).toEqual(perceive(empty, [], 0, Math.PI));
+  expect(perceive(empty, [smoke], 0, 0, false, [shield])).toEqual(perceive(empty, [], 0, 0, false, [shield]));
+});
+
+it('applies the shared shot recoil only when the bot actually consumed ammunition', () => {
+  const match = new Match(getMap('aster'), '1v1');
+  match.addPlayer('pilot', { name: 'pilot', team: 'A', char: 0, bot: true, skins: [] });
+  const me = match.player('pilot')!, recoil = botGunRecoil();
+  const tick = () => {
+    const input: Input = { seq: 1, view: 1, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: BTN.FIRE, weapon: 0 };
+    recoil(me, input); return input;
+  };
+  expect(tick().pitch).toBe(0);
+  expect(tick().pitch).toBe(0);
+  me.ammo[me.weapon]--;
+  const shot = tick();
+  const min = shotRecoil(me.weapon, () => 0), max = shotRecoil(me.weapon, () => 1);
+  expect(shot.pitch).toBeGreaterThanOrEqual(min.pitch - recoverRecoil(min.debt, 1 / 60));
+  expect(shot.pitch).toBeLessThanOrEqual(max.pitch);
+  expect(tick().pitch).toBeLessThan(0);
+  me.lifeId++;
+  expect(tick().pitch).toBe(0);
 });
 
 it('executes causal attention with fixed positions, left padding and rolling history', () => {

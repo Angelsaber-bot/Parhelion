@@ -67,6 +67,26 @@ describe('automatic Arena data', () => {
     expect(state.exploration?.trained).toBe(1);
   });
 
+  it('retains smoke samples independently of the legacy exploration learner', () => {
+    const batches: TrainingBatch[] = [];
+    const demo = new HumanDemo('aster', batch => batches.push(batch));
+    const player = newPlayer('p', 'A', 0);
+    const scene = explorationScene(getMap('aster'), player);
+    for (let i = 0; i < EXPLORATION_TICKS; i++) {
+      demo.record(player, { ...input, seq: i }, observe, () => scene, () => [0, -.375, 0]);
+    }
+    demo.flush();
+    const batch = batches[0];
+    expect(parseTrainingBatch(batch)?.smokeDepths).toEqual([[0, 0, -.375, 0]]);
+    expect(parseTrainingBatch({ ...batch, smokeDepths: [[1, 0, -.375, 0]] })).toBeNull();
+    expect(parseTrainingBatch({ ...batch, smokeDepths: [[0, 0, 2, 0]] })).toBeNull();
+    expect(parseTrainingBatch({ ...batch, smokeDepths: [[0, 0, -.375, 0], [0, 0, -.375, 0]] })).toBeNull();
+    const old = newTrainingCheckpoint(), current = newTrainingCheckpoint();
+    trainArenaBatch(old, { ...batch, smokeDepths: undefined });
+    trainArenaBatch(current, batch);
+    expect(current).toEqual(old);
+  });
+
   it('updates actual weights from training input without fitting the held-out match', () => {
     const batches: TrainingBatch[] = [];
     const demo = new HumanDemo('aster', b => batches.push(b));

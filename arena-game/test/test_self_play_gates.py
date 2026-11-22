@@ -61,6 +61,40 @@ class HumanGateTest(unittest.TestCase):
         return dict(holdoutWindows=60, referenceHoldout=evaluate(.2, .02),
                     holdout=evaluate(candidate_turn, candidate_quiet))
 
+    def test_v4_trigger_follows_human_labels_after_contact_loss(self):
+        # Two clear frames, two recent losses and two unrelated empty views. Opposite
+        # human responses in each pair must both count, including suppression under cover.
+        states = torch.zeros(6, 3, bc.FEATURES)
+        states[:2, -1, 0] = 1
+        states[2:4, -2, 0] = 1
+        actual = torch.zeros(6, 12)
+        actual[::2, 4] = 1
+        states[:, -1, 2] = actual[:, 4] * 12 - 6
+        class Trigger(torch.nn.Module):
+            def __init__(self, blind_release):
+                super().__init__()
+                self.blind_release = blind_release
+
+            def forward(self, x):
+                out = x.new_zeros((len(x), bc.OUTPUTS))
+                out[:, 4] = x[:, -1, 2]
+                if self.blind_release:
+                    out[x[:, -1, 0] == 0, 4] = -6
+                return out
+
+        loader = DataLoader(TensorDataset(states, actual), batch_size=2)
+        reference = bc.evaluate(Trigger(False), loader, "cpu", torch.ones(bc.BUTTONS))
+        for group in ("visibleTrigger", "lostContactTrigger"):
+            self.assertEqual(reference[group]["windows"], 2)
+            self.assertEqual(reference[group]["shotsRequested"], 1)
+        m = dict(controller="learned-input-v1", holdoutWindows=6, referenceHoldout=reference, holdout=reference)
+        self.assertTrue(cycle.human_gates(m)["human_lost_trigger"])
+        m["holdout"] = bc.evaluate(Trigger(True), loader, "cpu", torch.ones(bc.BUTTONS))
+        self.assertTrue(cycle.human_gates(m)["human_trigger"])
+        self.assertFalse(cycle.human_gates(m)["human_lost_trigger"])
+        m["holdout"] = dict(reference, lostContactTrigger={"windows": 0})
+        self.assertFalse(cycle.human_gates(m)["human_lost_trigger"])
+
     def test_idle_dominance_cannot_approve_a_stationary_or_spinning_policy(self):
         good = self.metrics(.25, .01)
         self.assertEqual(good["holdout"]["cameraAndMovement"]["unseenTurn"]["windows"], 10)

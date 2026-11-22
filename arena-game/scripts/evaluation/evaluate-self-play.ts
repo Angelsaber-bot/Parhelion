@@ -131,7 +131,7 @@ function monitor(bot: Controller, counters: Counters, duration: number, wallSeat
     const confidence = decoys.length && realContact < 1 ? observe() : realContact;
     const visible = confidence > 0;
     if (confidence > 0 && confidence < 1) counters.glimpseTicks++;
-    if (realContact > 0 && !contact && me.lifeId === start.life) {
+    if (realContact === 1 && !contact && me.lifeId === start.life) {
       counters.firstContact += m.tick - firstLiveTick - duration;
       counters.acquired++;
       contact = true;
@@ -259,6 +259,80 @@ function hiddenTargetInvariant(map: ArenaMap, seed: number, model: NeuralPolicyM
     return result;
   }
   return JSON.stringify(actions(origin)) === JSON.stringify(actions(alternate));
+}
+
+/**
+ * Counterfactual camera replay: hide a previously visible player behind real smoke,
+ * move them to another visible lane while hidden, then reveal them. The warm-up pose
+ * is shared by both policies. On reveal, feed each controller its own camera turns.
+ * Stationary feet deliberately isolate the acquisition response from navigation.
+ */
+export function contactTransition(map: ArenaMap, seed: number, controller: Controller) {
+  const m = new Match(map, '1v1'), rand = random(seed);
+  for (const team of TEAMS) m.addPlayer(team + '0', { name: team, team, char: 2, skins: [], bot: true });
+  m.phase = 'live';
+  const me = m.player('A0')!, target = m.player('B0')!;
+  for (let attempt = 0; attempt < 48; attempt++) {
+    m.smokes = [];
+    place(m, 'smoke', rand);
+    const clouds = m.smokes.slice(), origin = { x: target.x, z: target.z };
+    const [dx, dz] = forward(me.yaw);
+    const offset = (.85 + rand() * 1.25) * (rand() < .5 ? -1 : 1);
+    const x = origin.x - dz * offset, z = origin.z + dx * offset;
+    if (!canSlideTo(map, target, x, z)) continue;
+    Object.assign(target, { x, z });
+    if (cameraContact(m, 'A0')[0] !== 0) continue;
+    m.smokes = [];
+    const [clear, yaw, pitch] = cameraContact(m, 'A0');
+    const initialError = Math.hypot(yaw, pitch);
+    if (clear !== 1 || Math.abs(yaw) < .08) continue;
+    Object.assign(target, origin);
+    // Randomize both transition phases against the model's decision cadence.
+    const warmTicks = 25 + Math.floor(rand() * 25);
+    const hiddenTicks = 24 + Math.floor(rand() * 35);
+    for (m.tick = 1; m.tick <= warmTicks; m.tick++) controller.think(m, 'A0');
+    m.smokes = clouds;
+    Object.assign(target, { x, z });
+    let hiddenGunTicks = 0;
+    for (let i = 0; i < hiddenTicks; i++, m.tick++) {
+      const input = controller.think(m, 'A0');
+      if ((input.buttons & BTN.FIRE) && WEAPONS[loadoutWeapon(me.loadout, input.weapon ?? me.weaponSlot)].kind === 'gun') hiddenGunTicks++;
+    }
+    m.smokes = [];
+    const targetYaw = me.yaw + yaw, targetPitch = me.pitch + pitch;
+    let firstError = initialError, bestError = initialError;
+    for (let i = 0; i < TICK_HZ; i++, m.tick++) {
+      const input = controller.think(m, 'A0');
+      me.yaw = input.yaw;
+      me.pitch = input.pitch;
+      const error = Math.hypot(wrapAngle(targetYaw - me.yaw), targetPitch - me.pitch);
+      if (!i) firstError = error;
+      bestError = Math.min(bestError, error);
+    }
+    return { hiddenGunTicks, hiddenTicks, initialError, firstError, bestError };
+  }
+  throw Error('Could not construct a smoke reappearance trial on ' + map.data.mapId);
+}
+
+type ContactTransition = ReturnType<typeof contactTransition>;
+
+function summarizeTransitions(trials: ContactTransition[]) {
+  const count = trials.length;
+  return {
+    count,
+    hiddenTriggerFraction: trials.reduce((n, t) => n + t.hiddenGunTicks, 0) / trials.reduce((n, t) => n + t.hiddenTicks, 0),
+    instantLockFraction: trials.filter(t => t.firstError < .015 && t.firstError < t.initialError * .1).length / count,
+    meanReacquisitionGain: trials.reduce((n, t) => n + 1 - t.bestError / t.initialError, 0) / count,
+  };
+}
+
+export function compareTransitions(candidate: ContactTransition[], reference: ContactTransition[]) {
+  const a = summarizeTransitions(candidate), b = summarizeTransitions(reference);
+  return { candidate: a, reference: b, gates: {
+    transitionCoverage: a.count >= 6 && a.count === b.count,
+    reappearanceInstantLock: a.instantLockFraction <= Math.min(.25, b.instantLockFraction + .1),
+    reappearanceTracking: a.meanReacquisitionGain >= Math.max(.2, b.meanReacquisitionGain - .35),
+  } };
 }
 
 /** Paired legs share seat seeds, roster, positions and skills. Only the policy assignment swaps. */
@@ -393,10 +467,31 @@ function main() {
     rearSearch: search.candidate.meanContactSeconds <= Math.min(seconds / 2, search.opponent.meanContactSeconds + 2),
     smokeContact: smoke.candidate.acquisitionFraction >= .5 && smoke.candidate.meanContactSeconds <=
       Math.min(3 + (seconds - 3) / 2, smoke.opponent.meanContactSeconds + 2),
-    smokeOffscreenTrigger: smoke.candidate.offscreenFireFraction <= Math.max(.04, smoke.opponent.offscreenFireFraction + .02) &&
-      smoke.candidate.smokeHidden >= smoke.candidate.pilots && smoke.candidate.smokeHiddenFireFraction <= Math.max(.04, smoke.opponent.smokeHiddenFireFraction + .02),
     wallStalls: clearsWall(wall.candidate, wall.opponent),
   };
+  // V4 trigger behavior is graded against held-out human decisions. The simulator
+  // measures smoke exposure and tests that hidden coordinates cannot affect inputs.
+  const smokeCoverage = smoke.candidate.smokeHidden >= smoke.candidate.pilots;
+  if (candidate.model.version < 4) {
+    gates.smokeOffscreenTrigger = smokeCoverage &&
+      smoke.candidate.offscreenFireFraction <= Math.max(.04, smoke.opponent.offscreenFireFraction + .02) &&
+      smoke.candidate.smokeHiddenFireFraction <= Math.max(.04, smoke.opponent.smokeHiddenFireFraction + .02);
+  } else {
+    gates.smokeCoverage = smokeCoverage;
+  }
+  let contactTransitions;
+  if (candidate.model.version >= 4) {
+    const trial = (isCandidate: boolean) => maps.flatMap(id => Array.from({ length: seeds }, (_, i) => {
+      const seed = trialSeed(firstSeed, 'reappearance', id, i, version);
+      const model = isCandidate ? candidate.model : incumbent?.model;
+      const fallback = !isCandidate && publicFallback;
+      const controller = new Bot(seed, BOT_SKILL.normal, fallback ? undefined : TACTICS,
+        undefined, fallback ? fallback.exploration : undefined, model);
+      return contactTransition(getMap(id), seed, model ? controller : cameraLimitedScript(controller));
+    }));
+    contactTransitions = compareTransitions(trial(true), trial(false));
+    Object.assign(gates, contactTransitions.gates);
+  }
   // Failed screens can produce a small diagnostic result; only the held-out tournament can approve release.
   const tournament = !values['screen-only'] && Object.values(gates).every(Boolean);
   let diagnostic = null;
@@ -431,7 +526,7 @@ function main() {
     gates.improved = Object.values(comparisons).every(s => s.blocks >= 6 && s.oneSidedP <= .05 && s.winFractionWithDraws > .5);
     gates.bothModes = Object.values(byMode).every(modes => MODES.every(mode => modes[mode].winFractionWithDraws >= .5));
   }
-  console.log(JSON.stringify({ passed: tournament && Object.values(gates).every(Boolean), gates, byMode, byMap, byScenario, comparisons,
+  console.log(JSON.stringify({ passed: tournament && Object.values(gates).every(Boolean), gates, byMode, byMap, byScenario, comparisons, contactTransitions,
     perceptionMatchedReference: !incumbent,
     candidate: candidate.sha256, incumbent: incumbent?.sha256 ?? 'baseline', comparedOpponent,
     config: { maps, tournamentMaps, seeds, incumbentSeeds, firstSeed, seedVersion: version, seconds, explorationDigest: publicFallback?.digest },

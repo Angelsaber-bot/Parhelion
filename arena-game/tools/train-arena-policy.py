@@ -61,7 +61,7 @@ def batch_rows(batch, path):
     return rows
 
 
-def batch_scenes(batch, rows, start, path):
+def batch_scenes(batch, rows, start, path, include_smoke=False):
     scenes = batch.get("exploration", [])
     if not isinstance(scenes, list) or len(scenes) > math.ceil(len(rows) / CHUNK):
         raise ValueError(f"{path}: invalid scene records")
@@ -72,7 +72,26 @@ def batch_scenes(batch, rows, start, path):
                 any(not bounded(value, 1) for value in scene[1:])):
             raise ValueError(f"{path}: invalid scene record")
         previous = scene[0]
-    return scenes
+    if not include_smoke or "smokeDepths" not in batch:
+        return scenes
+    # Sidecar samples overlay the v4 sensor only. Older captures and all legacy
+    # trainer consumers retain the static geometry measured in exploration.
+    overlays = batch["smokeDepths"]
+    if not isinstance(overlays, list) or len(overlays) > len(scenes):
+        raise ValueError(f"{path}: invalid smoke depth records")
+    by_tick = {scene[0]: scene.copy() for scene in scenes}
+    used = set()
+    for sample in overlays:
+        if (not isinstance(sample, list) or len(sample) != 4
+                or not integer(sample[0], start, start + len(rows) - 1)
+                or sample[0] not in by_tick or sample[0] in used
+                or any(not bounded(v, 1) or v > 0 or int(v * 8) != v * 8 for v in sample[1:])):
+            raise ValueError(f"{path}: invalid smoke depth sample")
+        used.add(sample[0])
+        for i, value in enumerate(sample[1:]):
+            if value < 0:
+                by_tick[sample[0]][7 + i] = value  # tick followed by six pose features, then depths
+    return list(by_tick.values())
 
 
 def read_batch(path):
@@ -135,7 +154,7 @@ def synthetic_captures():
     return result
 
 
-def capture_windows(batches):
+def capture_windows(batches, include_smoke=False):
     """Yield causal inputs and contiguous labels. Gaps and respawns reset history."""
     rows, scenes, views = [], [], {}
     start = 0
@@ -163,7 +182,7 @@ def capture_windows(batches):
             # Neighboring batches can carry the same recent frame in either encoding.
             if view[0] >= start and (view[0] not in views or len(view[2]) > len(views[view[0]][2])):
                 views[view[0]] = view
-        scenes.extend(batch_scenes(batch, new_rows, batch_start, item))
+        scenes.extend(batch_scenes(batch, new_rows, batch_start, item, include_smoke))
         rows.extend(new_rows)
     yield from windows(rows, scenes, start, views)
 
@@ -192,10 +211,10 @@ def windows(rows, scenes, start, views):
         last_segment, last_tick = segment, tick
 
 
-def usable_captures(captures):
+def usable_captures(captures, include_smoke=False):
     usable = {}
     for capture, batches in captures.items():
-        examples = list(capture_windows(batches))
+        examples = list(capture_windows(batches, include_smoke))
         if examples:
             usable[capture] = examples
     return usable
@@ -321,6 +340,8 @@ def evaluate(model, loader, device, button_weights):
     fp = torch.zeros(BUTTONS)
     fn = torch.zeros(BUTTONS)
     slot_correct = 0
+    triggers = {key: {"windows": 0, "shotsRequested": 0, "probabilityErrorSum": 0.0}
+                for key in ("visibleTrigger", "lostContactTrigger")}
     for states, actions in loader:
         states, actions = states.to(device), actions.to(device)
         logits = model(states)
@@ -328,6 +349,16 @@ def evaluate(model, loader, device, button_weights):
         samples += len(states)
         errors = (logits[:, :4].tanh() - actions[:, :4]).abs()
         visible = states[:, -1, 0] > 0
+        clear = states[:, -1, 0] == 1
+        # The context is padded at capture/life boundaries. An empty view counts as a
+        # loss of contact only if this same sequence previously contained a sighting.
+        lost = ~visible & (states[:, :-1, 0] > 0).any(dim=1)
+        for key, mask in (("visibleTrigger", clear), ("lostContactTrigger", lost)):
+            fire = actions[mask, 4]
+            trigger = triggers[key]
+            trigger["windows"] += len(fire)
+            trigger["shotsRequested"] += int(fire.sum().item())
+            trigger["probabilityErrorSum"] += (logits[mask, 4].sigmoid() - fire).square().sum().item()
         # Match the first noncentral bin of Arena's exploration policy (radians per decision).
         turning = actions[:, 0].abs() * YAW_SCALE >= SEARCH_TURN_RADIANS
         for key, mask in (("all", torch.ones_like(visible)), ("noContact", ~visible),
@@ -350,7 +381,11 @@ def evaluate(model, loader, device, button_weights):
                            "pitchMaeRad": pitch * PITCH_SCALE / count, "moveMae": (mx + mz) / (2 * count),
                            "stillYawMaeRad": still * YAW_SCALE / count} if count else {"windows": 0})
     return {
-        "objective": loss / samples, "cameraAndMovement": separated, "weaponAccuracy": slot_correct / samples,
+        "objective": loss / samples, "cameraAndMovement": separated,
+        **{key: {"windows": row["windows"], "shotsRequested": row["shotsRequested"],
+                 "brier": row["probabilityErrorSum"] / row["windows"] if row["windows"] else None}
+           for key, row in triggers.items()},
+        "weaponAccuracy": slot_correct / samples,
         "buttonF1": (2 * tp / (2 * tp + fp + fn).clamp(min=1)).tolist(),
         "buttonPositives": (tp + fn).long().tolist(),
     }

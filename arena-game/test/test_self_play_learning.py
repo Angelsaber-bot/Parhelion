@@ -13,6 +13,19 @@ trainer = importlib.import_module("train-self-play")
 
 
 class SelfPlayLearningTest(unittest.TestCase):
+    def test_direct_controls_start_with_human_weights_and_fresh_optimizers(self):
+        previous = dict(signature={"seed": 7}, model={"w": 0}, split={"a": "train"},
+                        kind=trainer.CHECKPOINT_KIND, generation=55, totalGames=660,
+                        critic={"w": 1}, coachArchive={"labels": [1]})
+        reference = dict(signature={"seed": 7}, model={"w": 3}, split={"a": "train", "b": "holdout"})
+        initial = trainer.warm_start_controls(previous, reference)
+        self.assertEqual(initial["controller"], "learned-input-v1")
+        self.assertEqual(initial["model"], reference["model"])
+        self.assertEqual((initial["generation"], initial["totalGames"]), (55, 660))
+        self.assertFalse({"critic", "optimizer", "coachArchive"} & initial.keys())
+        with self.assertRaises(ValueError):
+            trainer.warm_start_controls(previous, {**reference, "split": {"a": "holdout"}})
+
     def test_multistep_targets_end_at_death_and_match_end(self):
         def step(reset):
             return dict(obs=[0.] * trainer.bc.FEATURES, axes=[0.] * 4, buttons=[0] * 7,

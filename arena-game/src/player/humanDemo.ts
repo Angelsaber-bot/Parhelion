@@ -1,6 +1,6 @@
 import { TICK_HZ } from '../../shared/content.ts';
 import { HUMAN_FEATURES, wrapAngle } from '../../shared/humanCombat.ts';
-import { EXPLORATION_TICKS, type ExplorationSample, type LastObservedBearing } from '../../shared/exploration.ts';
+import { EXPLORATION_TICKS, type ExplorationSample, type LastObservedBearing, type SmokeDepths } from '../../shared/exploration.ts';
 import { RULES_VERSION } from '../../shared/protocol.ts';
 import { BTN, type Input, type PlayerState } from '../../shared/sim.ts';
 import { MAX_TRAINING_BODY, TRAINING_BATCH_TICKS, type TrainingBatch, type TrainingView } from '../../shared/trainingData.ts';
@@ -36,6 +36,7 @@ export class HumanDemo {
   private nextView = 1;
   private trainingViews: TrainingView[] = [];
   private exploration: ExplorationSample[] = [];
+  private smokeDepths: [number, ...SmokeDepths][] = [];
   private recorded = 0;
   private sequence = 0;
   private seenBearing = 0;
@@ -62,7 +63,8 @@ export class HumanDemo {
     const start = this.size - this.frames.length;
     const views = this.trainingViews.filter(view => view[0] >= start - 18);
     const batch: TrainingBatch = { version: 1, rulesVersion: RULES_VERSION, capture: this.capture, map: this.map,
-      sequence: this.sequence++, start, rows: this.frames, views, ...(this.exploration.length ? { exploration: this.exploration } : {}) };
+      sequence: this.sequence++, start, rows: this.frames, views, ...(this.exploration.length ? { exploration: this.exploration } : {}),
+      ...(this.smokeDepths.length ? { smokeDepths: this.smokeDepths } : {}) };
     let bytes = JSON.stringify(batch).length;
     for (let i = 0; bytes > MAX_TRAINING_BODY && i < views.length; i++) {
       const [tick, segment, frame] = views[i];
@@ -74,9 +76,11 @@ export class HumanDemo {
     this.frames = [];
     this.trainingViews = views.slice(-1);
     this.exploration = [];
+    this.smokeDepths = [];
   }
 
-  record(me: PlayerState, input: Input, observe: (previous: readonly [number, number]) => number[], scene?: (lastContact: LastObservedBearing) => number[]) {
+  record(me: PlayerState, input: Input, observe: (previous: readonly [number, number]) => number[], scene?: (lastContact: LastObservedBearing) => number[],
+    smoke?: () => SmokeDepths | undefined) {
     if (!this.automatic && this.size >= MAX_FRAMES) return;
     if (this.life !== me.lifeId || input.seq !== this.lastSeq + 1) {
       this.segment++;
@@ -90,7 +94,11 @@ export class HumanDemo {
     const actions = this.automatic ? [round(input.mx), round(input.mz), input.buttons, input.weapon ?? me.weaponSlot] : [Number(!!(input.buttons & BTN.FIRE))];
     if (this.automatic && scene) {
       if (features[0]) { this.seenBearing = me.yaw + features[1]; this.seenAt = this.size; }
-      if (this.size % EXPLORATION_TICKS === 0) this.exploration.push([this.size, ...scene([this.seenBearing, this.size - this.seenAt]).map(round)]);
+      if (this.size % EXPLORATION_TICKS === 0) {
+        this.exploration.push([this.size, ...scene([this.seenBearing, this.size - this.seenAt]).map(round)]);
+        const depths = smoke?.();
+        if (depths) this.smokeDepths.push([this.size, ...depths]);
+      }
     }
     this.frames.push([this.segment, ...features.map(round), round(yaw), round(pitch), ...actions]);
     this.recorded++;

@@ -12,6 +12,8 @@ import { blockedAt, groundAt, insideMovementBounds, lineOfSight, type ArenaMap }
 import { Match, type Controller } from '../shared/match.ts';
 import type { NavNode } from '../shared/nav.ts';
 import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
+import { EXPLORATION_TICKS } from '../shared/exploration.ts';
+import { courseRival, escapeFor, rivalCourse, scoreContactDrill, type RivalCourse } from './self-play-contact.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { opponentLeague } from './self-play-league.ts';
 import { loadFallback, type PublicFallback } from './self-play-opponents.ts';
@@ -20,7 +22,7 @@ import { seedVersion, trainingSeed } from './self-play-seeds.ts';
 
 const AXIS_STD = .35;
 const TACTICS = learnedTactics(tactics.weights, tactics.margin);
-const scenarios = ['spawn', 'encounter', 'rear', 'smoke', 'wall'] as const;
+const scenarios = ['spawn', 'encounter', 'rear', 'smoke', 'wall', 'retreat', 'corner'] as const;
 type Scenario = typeof scenarios[number];
 type Focus = 'wall' | 'rear' | 'smoke';
 interface Step {
@@ -75,7 +77,7 @@ function sample(obs: number[], logits: number[], reset: boolean, rand: () => num
 }
 
 function learnedController(actor: FrozenActor, rand: () => number, record?: Step[]): Controller {
-  const coach = record && decisionCoach();
+  const coach = record && actor.model.version < 4 ? decisionCoach() : undefined;
   const policy = neuralBotControl(actor.model, (obs, logits, reset): NeuralAction => {
     const step = sample(obs, logits, reset, rand);
     record?.push(step);
@@ -132,9 +134,11 @@ function cornerStart(map: ArenaMap, node: NavNode, rand: () => number) {
 }
 
 // Start some episodes mid-round on walkable cells. Only the environment sees both positions.
-function placeEncounter(game: Match, scenario: Scenario, rand: () => number): { scenario: Scenario; smoke?: Smoke } {
+function placeEncounter(game: Match, scenario: Scenario, rand: () => number): { scenario: Scenario; smoke?: Smoke; course?: RivalCourse } {
   if (scenario === 'spawn') return { scenario };
   const nav = navFor(game);
+  const drill = scenario === 'retreat' || scenario === 'corner' || scenario === 'smoke' ? scenario : undefined;
+  const escape = drill && escapeFor(drill, rand);
   for (let attempt = 0; attempt < 1500; attempt++) {
     const a = nav.nodes[Math.floor(rand() * nav.nodes.length)];
     if (!a?.links.length) continue;
@@ -149,15 +153,18 @@ function placeEncounter(game: Match, scenario: Scenario, rand: () => number): { 
     const occupied = [...game.slots.values()].some(({ state: p }) => p.id !== 'pilot' && p.id !== 'rival' &&
       [pose, b].some(at => Math.abs(at.y - p.y) < game.map.height && Math.hypot(at.x - p.x, at.z - p.z) < 2 * game.map.radius));
     if (occupied) continue;
+    const course = drill && escape ? rivalCourse(game.map, nav, a, b, drill, escape, rand) : undefined;
+    if (drill && !course) continue;
     Object.assign(game.player('pilot')!, pose);
     Object.assign(game.player('rival')!, { x: b.x, y: b.y, z: b.z, yaw: yaw + Math.PI + (rand() - .5) * 1.5 });
     for (const id of ['pilot', 'rival']) game.slots.get(id)!.spawnProtectedUntilTick = 0;
     if (scenario === 'smoke') {
-      const smoke = settleSmoke(game.map, { id: -1, owner: 'rival', x: (a.x + b.x) / 2, y: (a.y + b.y) / 2,
-        z: (a.z + b.z) / 2, life: SMOKE.life });
-      return { scenario, smoke };
+      const depth = .35 + .35 * rand();
+      const smoke = settleSmoke(game.map, { id: -1, owner: 'rival', x: a.x + (b.x - a.x) * depth,
+        y: a.y + (b.y - a.y) * depth, z: a.z + (b.z - a.z) * depth, life: SMOKE.life });
+      return { scenario, smoke, course };
     }
-    return { scenario };
+    return { scenario, course };
   }
   throw Error(`Could not construct a playable ${scenario} scenario on ${game.map.data.mapId}`);
 }
@@ -189,9 +196,13 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   game.phaseT = seconds * TICK_HZ;
   const start = placeEncounter(game, scenario, rand);
   const firstTick = game.tick;
+  if (start.course) {
+    const rival = game.slots.get('rival')!;
+    rival.controller = courseRival(rival.controller!, start.course, firstTick, rival.state.lifeId);
+  }
   // Timeout is the actual end of each shortened match in Match.stepPhase; there is no bootstrap tick.
   while (game.phaseT > 0) {
-    if (start.smoke && game.tick === firstTick + TICK_HZ) game.smokes.push(start.smoke);
+    if (start.smoke && game.tick === firstTick + start.course!.wait) game.smokes.push(start.smoke);
     for (const seat of seats) seat.wasAlive = game.player(seat.id)!.alive;
     const scoreDiff = game.score[team] - game.score[enemy];
     game.step();
@@ -213,10 +224,16 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
     if (!seat.steps.length) throw Error(`No live decisions for ${seat.id} in the simulated match`);
     seat.steps[seat.steps.length - 1].reward += outcome;
   }
+  // In teams a different enemy could satisfy the contact test. Use team score and damage only there.
+  const contactBonus = layout === '1v1' && start.course &&
+    (scenario === 'retreat' || scenario === 'corner' || scenario === 'smoke') &&
+    scoreContactDrill(seats[0].steps, scenario,
+      scenario === 'smoke' ? start.course.wait + SMOKE.life - SMOKE.clear : start.course.duration, EXPLORATION_TICKS);
   const trajectories = Object.fromEntries(seats.map(({ id, steps }) => [id, steps]));
   const opponentHash = opponent.mode === 'frozen' ? opponent.actor.hash : opponent.mode === 'self-play' ? actor.hash :
     opponent.mode === 'deployed' ? opponent.fallback.digest ?? 'public-scripted' : 'scripted';
   return { map, layout, seed, team, scenario: start.scenario, opponent: opponentHash, opponentMode: opponent.mode,
+    ...(start.course && { exercise: start.course.escape, contactBonus: Boolean(contactBonus) }),
     score: game.score, outcome, ticks: game.tick - firstTick, trajectories };
 }
 
@@ -285,7 +302,8 @@ function main() {
     const rival = league.select(i, layout);
     appearances[layout][rival] = (appearances[layout][rival] ?? 0) + 1;
     const episode = play(actor, pool.get(rival)!, order[i % order.length].id, layout, team, scenario, trainingSeed(random(), version), seconds);
-    league.observe(rival, episode.outcome, layout);
+    // A rival following a sampled exercise is not its unmodified league policy.
+    if (!episode.exercise) league.observe(rival, episode.outcome, layout);
     episodes.push({ ...episode, focused });
   }
   const payload = { version: 2, seedVersion: version, seed, rulesVersion: RULES_VERSION, actorHash: actor.hash, axisStd: AXIS_STD, focus, episodes };

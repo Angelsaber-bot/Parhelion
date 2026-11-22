@@ -4,7 +4,7 @@ import { RULES_VERSION } from './protocol.ts';
 
 export const NEURAL_FEATURE_COUNT = HUMAN_FEATURES.length + EXPLORATION_SCENE_SIZE;
 export const NEURAL_OUTPUT_COUNT = 14;
-export const NEURAL_POLICY_VERSION = 3;
+export const NEURAL_POLICY_VERSION = 4;
 const NORM_EPSILON = 1e-5;
 const MAX_MULTIPLIES = 4_000_000;
 
@@ -28,10 +28,10 @@ interface Layer {
 }
 
 export interface NeuralPolicyModel {
-  version: 1 | 2 | 3;
+  version: 1 | 2 | 3 | 4;
   rulesVersion: number;
   synthetic?: true;
-  controller?: 'perceptual-options-v1' | 'perceptual-options-v2';
+  controller?: 'perceptual-options-v1' | 'perceptual-options-v2' | 'learned-input-v1';
   context: number;
   width: number;
   heads: number;
@@ -69,8 +69,9 @@ function norm(v: unknown, size: number): v is Norm {
 export function parseNeuralPolicy(raw: unknown): NeuralPolicyModel | undefined {
   if (!object(raw)) return undefined;
   const { version, rulesVersion, synthetic, controller, context, width, heads, embed, position, layers, norm: finalNorm, out } = raw;
-  if (version !== 1 && version !== 2 && version !== NEURAL_POLICY_VERSION) return undefined;
-  const expectedController = version === 3 ? 'perceptual-options-v2' : version === 2 ? 'perceptual-options-v1' : undefined;
+  if (version !== 1 && version !== 2 && version !== 3 && version !== NEURAL_POLICY_VERSION) return undefined;
+  const controllers = [undefined, undefined, 'perceptual-options-v1', 'perceptual-options-v2', 'learned-input-v1'] as const;
+  const expectedController = controllers[version];
   if (controller !== expectedController) return undefined;
   if (rulesVersion !== RULES_VERSION || (synthetic !== undefined && synthetic !== true) || !integer(context, 1, 16) || !integer(width, 2, 128) ||
       !integer(heads, 1, 8) || width % heads || !Array.isArray(layers) || layers.length < 1 || layers.length > 6) return undefined;

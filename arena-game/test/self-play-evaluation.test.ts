@@ -91,3 +91,33 @@ it('runs a complete 2v2 to the score limit or the official clock', () => {
   expect(Math.abs(result.margin)).toBeLessThanOrEqual(SCORE_LIMIT['2v2']);
   expect(result.seconds).toBeGreaterThan(1);
 }, 30000);
+
+it('scores hidden trigger, one-frame locking and eventual reacquisition on the same real smoke reveal', async () => {
+  const { contactTransition, compareTransitions } = await import('../scripts/evaluation/evaluate-self-play.ts');
+  const { playerHitbox } = await import('../shared/hit.ts');
+  const { BTN, playerEye } = await import('../shared/sim.ts');
+  const probe = (gain: number, holdTrigger: boolean) => cameraLimitedScript({ think(match, id) {
+    const me = match.player(id)!;
+    const target = [...match.slots.values()].find(s => s.state.team !== me.team)?.state;
+    let yaw = me.yaw, pitch = me.pitch;
+    if (target) {
+      const distance = Math.hypot(me.x - target.x, me.z - target.z);
+      const center = (1.1 + playerHitbox(false).headY) / 2;
+      yaw += gain * wrapAngle(Math.atan2(me.x - target.x, me.z - target.z) - me.yaw);
+      pitch += gain * (Math.atan2(target.y + center - me.y - playerEye(match.map, me), distance) - me.pitch);
+    }
+    return { yaw, pitch, mx: 0, mz: 0, weapon: 0, buttons: holdTrigger ? BTN.FIRE : 0, view: match.tick, seq: match.tick };
+  } });
+  const run = (gain: number, hold: boolean) => MAPS.map((map, i) =>
+    contactTransition(getMap(map.id), 17211 + i, probe(gain, hold)));
+  const smooth = run(.16, false);
+  const gradual = compareTransitions(smooth, smooth);
+  expect(Object.values(gradual.gates).every(Boolean)).toBe(true);
+  expect(compareTransitions(run(1, true), smooth).gates).toMatchObject({
+    reappearanceInstantLock: false, reappearanceTracking: true,
+  });
+  const suppressing = compareTransitions(run(.16, true), smooth);
+  expect(suppressing.candidate.hiddenTriggerFraction).toBe(1);
+  expect(suppressing.gates).toEqual(gradual.gates);
+  expect(compareTransitions(run(0, false), smooth).gates.reappearanceTracking).toBe(false);
+});

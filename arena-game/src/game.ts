@@ -9,7 +9,7 @@ import { bilingual } from '../../shared-client/i18n.ts';
 import { DT, WEAPONS } from '../shared/content.ts';
 import { hiddenFromView } from './rendering/edictReveal.ts';
 import { humanObservation, type CombatContact } from '../shared/humanCombat.ts';
-import { explorationScene } from '../shared/exploration.ts';
+import { explorationScene, visibleSmokeDepths } from '../shared/exploration.ts';
 import { rayPlayer, rayShield } from '../shared/hit.ts';
 import { tacticalArea, raycastMap, lineOfSight, type ArenaMap, type Vec3 } from '../shared/map.ts';
 import { type NetEvent, type PlayerSnap, type Snapshot } from '../shared/match.ts';
@@ -387,7 +387,8 @@ export class Game {
     const { fov, aspect } = this.scene.camera;
     demo.record(me, input, previous => humanObservation(this.map, me, contacts, canSee, previous, fov * Math.PI / 180, aspect,
       (a, b) => canSee(a, b, true)),
-      lastContact => explorationScene(this.map, me, lastContact));
+      lastContact => explorationScene(this.map, me, lastContact),
+      () => visibleSmokeDepths(this.map, me, frame.smokes ?? [], frame.shields, Math.atan(Math.tan(fov * Math.PI / 360) * aspect)));
   }
 
   /** Latest authoritative enemy positions, so a predicted melee lunge stops where the server's does. */

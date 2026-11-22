@@ -1,5 +1,6 @@
+import { botGunRecoil } from './aimRecoil.ts';
 import { WEAPONS, loadoutWeapon } from './content.ts';
-import { explorationScene, EXPLORATION_TICKS } from './exploration.ts';
+import { addSmokeDepths, explorationScene, EXPLORATION_TICKS, visibleSmokeDepths } from './exploration.ts';
 import { humanObservation, wrapAngle, type CombatContact } from './humanCombat.ts';
 import type { Match } from './match.ts';
 import { createNeuralPolicy, type NeuralPolicyModel } from './neuralPolicy.ts';
@@ -41,6 +42,7 @@ export function applyNeuralAction(input: Input, me: PlayerState, raw: NeuralActi
 /** Use the same observations, actuator limits and decision interval in the live game and RL rollouts. */
 export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectAction = greedyAction) {
   const policy = createNeuralPolicy(model);
+  const recoil = model.version === 4 ? botGunRecoil() : undefined;
   let life = -1, next = -1, bearing = 0, seenAt = -Infinity;
   let motor: ReturnType<typeof perceptualMotor> | undefined;
   let prior: [number, number] = [0, 0];
@@ -59,7 +61,8 @@ export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectA
     apply(match: Match, me: PlayerState, input: Input): Input {
       if (life !== me.lifeId) {
         reset(); life = me.lifeId;
-        motor = model.controller ? perceptualMotor(model.version === 3) : undefined;
+        // Versions 2 and 3 were trained with the legacy actuator in their environment.
+        motor = model.version === 2 || model.version === 3 ? perceptualMotor(model.version === 3) : undefined;
       }
       const choose = match.tick >= next;
       const contacts: CombatContact[] = [];
@@ -72,12 +75,14 @@ export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectA
       if (observation[0]) { bearing = me.yaw + observation[1]; seenAt = match.tick; }
       if (choose) {
         const scene = explorationScene(match.map, me, [bearing, match.tick - seenAt]);
+        if (model.version === 4) addSmokeDepths(scene, visibleSmokeDepths(match.map, me, match.smokes, match.shields));
         const features = [...observation, ...scene];
         action = selectAction(features, policy.think(features), next === -1);
         next = match.tick + EXPLORATION_TICKS;
       }
       applyNeuralAction(input, me, action, choose);
       motor?.(match.map, me, match.tick, observation, input, action.buttons, match.smokes, match.shields);
+      recoil?.(me, input);
       prior = [wrapAngle(input.yaw - me.yaw), input.pitch - me.pitch];
       return input;
     },

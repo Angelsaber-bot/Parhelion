@@ -1,6 +1,9 @@
+import { smokeBlocks, type Smoke } from './grenade.ts';
+import { rayShield } from './hit.ts';
+import type { Shield } from './match.ts';
 import { HUMAN_FEATURES } from './humanCombat.ts';
 import { raycastMap, type ArenaMap, type Vec3 } from './map.ts';
-import { forward, playerEye, type PlayerState } from './sim.ts';
+import { aimDir, forward, playerEye, type PlayerState } from './sim.ts';
 
 export const EXPLORATION_TICKS = 12;
 export const EXPLORATION_SCENE_SIZE = 12;
@@ -27,6 +30,40 @@ export function explorationScene(map: ArenaMap, me: PlayerState, lastContact?: L
   const bearing = (lastContact?.[0] ?? me.yaw) - me.yaw;
   return [relative(me.x, 0), relative(me.y, 1), relative(me.z, 2), Math.sin(me.yaw), Math.cos(me.yaw), clamp(me.pitch / 1.5, -1, 1), ...depths,
     recency, recency * Math.sin(bearing), recency * Math.cos(bearing)];
+}
+
+export type SmokeDepths = [number, number, number];
+export const SCENE_DEPTH_OFFSET = 6;
+
+/** Three camera rays. Zero means no visible smoke, negative values encode the first
+ * visible smoke in 2 m bins out to 16 m. Neither targets nor cloud owners are inputs. */
+export function visibleSmokeDepths(map: ArenaMap, me: PlayerState, smokes: readonly Smoke[], shields: readonly Shield[],
+  horizontalHalfFov = Math.PI / 3): SmokeDepths | undefined {
+  if (!smokes.length) return;
+  const eye: Vec3 = [me.x, me.y + playerEye(map, me), me.z];
+  const depths: SmokeDepths = [0, 0, 0];
+  const sideAngle = Math.min(.52, horizontalHalfFov * .9);
+  for (let i = 0; i < depths.length; i++) {
+    const ray = aimDir(me.yaw + (i - 1) * sideAngle, me.pitch);
+    let limit = Math.min(16, raycastMap(map, eye, ray, 16));
+    for (const shield of shields) {
+      if (shield.hp > 0 && shield.life > 0) limit = Math.min(limit, rayShield(eye, ray, shield.x, shield.y, shield.z, shield.yaw));
+    }
+    let start = eye;
+    for (let distance = 0; distance < limit; distance += 2) {
+      const endDistance = Math.min(distance + 2, limit);
+      const end: Vec3 = [eye[0] + endDistance * ray[0], eye[1] + endDistance * ray[1], eye[2] + endDistance * ray[2]];
+      if (smokeBlocks(smokes, start, end)) { depths[i] = -(distance + 2) / 16; break; }
+      start = end;
+    }
+  }
+  return depths.some(value => value < 0) ? depths : undefined;
+}
+
+export function addSmokeDepths(scene: number[], depths: SmokeDepths | undefined) {
+  if (depths) for (let i = 0; i < depths.length; i++) {
+    if (depths[i] < 0) scene[SCENE_DEPTH_OFFSET + i] = depths[i];
+  }
 }
 
 function features(obs: readonly number[], scene: readonly number[]): number[] {

@@ -1,5 +1,5 @@
 import { HUMAN_FEATURES } from './humanCombat.ts';
-import { EXPLORATION_SCENE_SIZE, EXPLORATION_TICKS, newExplorationCheckpoint, trainExploration, type ExplorationCheckpoint, type ExplorationSample } from './exploration.ts';
+import { EXPLORATION_SCENE_SIZE, EXPLORATION_TICKS, newExplorationCheckpoint, trainExploration, type ExplorationCheckpoint, type ExplorationSample, type SmokeDepths } from './exploration.ts';
 import { RULES_VERSION } from './protocol.ts';
 import { coarseFrame, COARSE_FRAME_CHARS, DETAIL_FRAME_CHARS } from './trainingView.ts';
 
@@ -20,6 +20,7 @@ export interface TrainingBatch {
   rows: number[][];
   views: TrainingView[];
   exploration?: ExplorationSample[];
+  smokeDepths?: [number, ...SmokeDepths][];
 }
 
 const integer = (x: unknown, lo: number, hi: number): x is number => Number.isInteger(x) && (x as number) >= lo && (x as number) <= hi;
@@ -53,9 +54,17 @@ export function parseTrainingBatch(raw: unknown): TrainingBatch | null {
       previous = sample[0];
     }
   }
+  if (b.smokeDepths !== undefined) {
+    if (!Array.isArray(b.smokeDepths) || !b.exploration || b.smokeDepths.length > b.exploration.length) return null;
+    const ticks = new Set(b.exploration.map(row => row[0]));
+    for (const sample of b.smokeDepths) {
+      if (!Array.isArray(sample) || sample.length !== 4 || !ticks.delete(sample[0]) ||
+          !sample.slice(1).every(value => typeof value === 'number' && integer(value * 8, -8, 0))) return null;
+    }
+  }
   // Strip unknown fields before retaining any payload. New transports cannot smuggle chat or names.
   return { version: b.version, rulesVersion: b.rulesVersion, capture: b.capture, sequence: b.sequence, start: b.start, map: b.map, rows: b.rows, views: b.views,
-    ...(b.exploration ? { exploration: b.exploration } : {}) };
+    ...(b.exploration ? { exploration: b.exploration } : {}), ...(b.smokeDepths?.length ? { smokeDepths: b.smokeDepths } : {}) };
 }
 
 const outputs = 14;
