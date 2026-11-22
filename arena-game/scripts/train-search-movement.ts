@@ -22,7 +22,7 @@ function read(path: string) {
   return parsed;
 }
 const [mode, incumbentPath, output, argument, startPath] = process.argv.slice(2);
-if (!['train', 'evaluate', 'refine-routes'].includes(mode) || !output) throw Error('Use train|evaluate incumbent.json candidate.json [rounds or seed], or refine-routes incumbent.json output.json rounds starting.json');
+if (!['train', 'evaluate', 'refine-routes', 'train-teacher'].includes(mode) || !output) throw Error('Use train|evaluate incumbent.json candidate.json [rounds or seed], refine-routes with a starting model, or train-teacher with a search basis');
 const count = Number(argument ?? (mode === 'evaluate' ? 872043 : 16));
 if (!Number.isSafeInteger(count) || count < 1) throw Error('Expected a positive round count or evaluation seed');
 const incumbent = read(incumbentPath);
@@ -30,6 +30,42 @@ if (mode === 'evaluate') {
   const held = fixtures(MAPS.map(m => m.id), count, 3);
   for (const [name, actor] of [['incumbent', incumbent], ['candidate', read(output)]] as const)
     console.log(name, JSON.stringify(assess(actor, incumbent, held, 30)));
+} else if (mode === 'train-teacher') {
+  // Explore readout directions learned from the difference between search and
+  // combat activations. Rank every proposed change by actual Arena outcomes.
+  if (!startPath) throw Error('Expected the search basis fitted to this model');
+  const basis: number[][] = JSON.parse(fs.readFileSync(startPath, 'utf8'));
+  if (!basis.length || !basis.every(v => v.length === incumbent.width + 1 && v.every(Number.isFinite))) throw Error('Invalid search basis');
+  const random = rng(89533), maps = ['camlann','frostcourt','sakura','aster','homeward','blackflag'];
+  const selection = fixtures(maps, 19455938, 4);
+  const baseline = assess(incumbent, incumbent, selection, 30);
+  const value = (s: typeof baseline) => 34 * s.acquired + 60 * s.waitingAcquired + .45 * s.reach +
+    4 * s.forwardMetersPerSecond + .35 * s.cells - 8 * s.stalled + .09 * s.damage - .03 * s.received;
+  let best = incumbent, bestScore = value(baseline), current = incumbent;
+  for (let round = 0; round < count; round++) {
+    const trials = fixtures([maps[round % 6], maps[(round + 2) % 6], maps[(round + 3) % 6]], 343157 + round, 2);
+    let winner = current, score = value(assess(current, incumbent, trials, 30));
+    for (let i = 0; i < 10; i++) {
+      const proposed = structuredClone(i % 3 === 0 ? best : current);
+      for (const axis of [0, 2, 3]) {
+        const dir = basis[Math.floor(random() * basis.length)];
+        const amount = (random() * 2 - 1) * (axis === 0 ? .28 : .75);
+        proposed.out.bias[axis] += dir[incumbent.width] * amount;
+        for (let j = 0; j < incumbent.width; j++) proposed.out.weight[axis][j] += dir[j] * amount;
+      }
+      const result = value(assess(proposed, incumbent, trials, 30));
+      if (result > score) { winner = proposed; score = result; }
+    }
+    const v = assess(winner, incumbent, selection, 30);
+    if (value(v) > bestScore && v.stalled <= baseline.stalled && v.reach >= baseline.reach &&
+        v.forwardMetersPerSecond >= baseline.forwardMetersPerSecond &&
+        v.waitingAcquired > baseline.waitingAcquired && v.acquired >= baseline.acquired) {
+      best = winner; bestScore = value(v);
+      console.log(round, JSON.stringify(v));
+    }
+    current = round % 3 === 2 ? best : winner;
+  }
+  fs.writeFileSync(output, JSON.stringify(best) + '\n');
 } else if (mode === 'refine-routes') {
   if (!startPath) throw Error('Supply the human-fitted actor as the final argument');
   let parent = read(startPath);

@@ -1,4 +1,6 @@
 import importlib
+import hashlib
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -12,6 +14,27 @@ bc = rl.bc
 
 
 class ContactMemoryTest(unittest.TestCase):
+    def test_learned_search_teacher_yields_to_contacts_and_recent_sightings(self):
+        root = Path(__file__).resolve().parents[1]
+        wire = (root / "shared/directPolicy.json").read_bytes()
+        base = json.loads(wire)
+        states = torch.zeros(4, base["context"], bc.FEATURES)
+        states[1, -1, 0] = .5
+        states[2, 0, 0] = 1
+        states[3, -1, -3] = .1
+        result = rl.search_demonstrations(states, base["rulesVersion"])
+        expected = json.loads((root / "tools/challengers/spawn-search-head.json").read_bytes())["baseSha256"]
+        if expected == hashlib.sha256(wire).hexdigest():
+            self.assertIsNotNone(result)
+            mask, labels = result
+            self.assertEqual(mask.tolist(), [True, False, False, False])
+            self.assertTrue(torch.isfinite(labels).all())
+            self.assertEqual(labels.shape, (4, 3))
+            self.assertTrue((labels[~mask] == 0).all())
+        else:
+            self.assertIsNone(result)
+        self.assertIsNone(rl.search_demonstrations(states, base["rulesVersion"] + 1))
+
     def test_history_expires_and_resets(self):
         examples = []
         for i in range(8):

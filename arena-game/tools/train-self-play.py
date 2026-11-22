@@ -24,6 +24,32 @@ PREDICTION_HORIZON = 3
 CONTROLLER = "learned-input-v1"
 CONTROLLER_VERSIONS = {"perceptual-options-v1": 2, "perceptual-options-v2": 3, CONTROLLER: 4}
 UNLABELED = 2.0
+SEARCH_AXES = (0, 2, 3)
+
+
+@torch.no_grad()
+def search_demonstrations(states, rules):
+    """Query the learned exploration teacher on this rollout's own empty views."""
+    root = Path(__file__).resolve().parent
+    base_path = root.parent / "shared/directPolicy.json"
+    readout = json.loads((root / "challengers/spawn-search-head.json").read_bytes())
+    base_bytes = base_path.read_bytes()
+    base = json.loads(base_bytes)
+    if (hashlib.sha256(base_bytes).hexdigest() != readout["baseSha256"] or
+            base["context"] != states.shape[1] or base["rulesVersion"] != rules):
+        return None
+    for i, axis in enumerate(SEARCH_AXES):
+        base["out"]["weight"][axis] = readout["weight"][i]
+        base["out"]["bias"][axis] = readout["bias"][i]
+    teacher = import_module("fit-match-movement").actor_from_json(base)
+    # The last three scene features are the recency and bearing of an actual
+    # sighting. Preserve the human imitation objective throughout contact loss.
+    eligible = (states[:, :, 0] == 0).all(dim=1) & (states[:, -1, -3] == 0)
+    labels = states.new_zeros(len(states), len(SEARCH_AXES))
+    for indices in eligible.nonzero().flatten().split(256):
+        if len(indices):
+            labels[indices] = teacher(states[indices])[:, SEARCH_AXES].tanh()
+    return eligible, labels
 
 
 def load_practice(path):
@@ -420,6 +446,7 @@ def run(args):
         dynamics_optimizer.load_state_dict(saved["dynamicsOptimizer"])
     values, targets, old_logits, prior_logits, parity_error = behavior(actor, critic, reference, states, actions, logged)
     demo_weights = replay_weights(human[0]) if human else None
+    search_examples = search_demonstrations(states, signature["rulesVersion"]) if direct_controls and not signature.get("synthetic") else None
     advantage, returns = generalized_advantages(rewards, values, ends)
     previous_updates = saved.get("optimizerSteps", 0)
     updates, objectives, prediction_sum, prediction_pairs = 0, [], 0., 0
@@ -449,6 +476,11 @@ def run(args):
             entropy = parts[1].entropy().sum(-1).mean() + parts[2].entropy().mean()
             auxiliary, pairs = prediction_loss(dynamics, encoded, ix, actions, targets, successors)
             loss = -surrogate + .5 * value_loss + .08 * prior_kl - .001 * entropy + .1 * auxiliary
+            if search_examples is not None:
+                eligible, controls = search_examples
+                mask = eligible[ix]
+                if mask.any():
+                    loss += .18 * F.smooth_l1_loss(logits[mask][:, SEARCH_AXES].tanh(), controls[ix[mask]], beta=.2)
             if practice:
                 loss = loss + .12 * practice_loss(actor, len(ix), config.context, practice)
             if coach_weight:
@@ -512,6 +544,7 @@ def run(args):
         "predictionHorizon": PREDICTION_HORIZON, "predictionPairs": prediction_pairs,
         "predictionLoss": prediction_sum / prediction_pairs if prediction_pairs else None,
         "practiceSamples": [len(group) for group in practice] if practice else [],
+        "learnedSearchWindows": int(search_examples[0].sum()) if search_examples is not None else 0,
         "humanReplayWindows": replayed_windows, "humanReplayCoverage": recent.report(),
         "coachedDecisions": coached_decisions, "coachWeight": coach_weight,
         "coachArchiveWindows": len(archive["labels"]), "coachReplayWindows": coach_replays,
