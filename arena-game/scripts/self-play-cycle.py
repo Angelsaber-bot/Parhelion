@@ -77,6 +77,20 @@ class Service:
                 (directory / name).write_text(json.dumps(batch, separators=(",", ":")))
                 after = row["id"]
 
+    def game_supports(self, version):
+        for attempt in range(4):
+            try:
+                worker = self.request("/status", public=True)
+                page = worker.get("playableRuntime") or {}
+                if all(isinstance(runtime, dict) and runtime.get("rulesVersion") == RULES
+                       and runtime.get("neuralPolicyVersion", 0) >= version for runtime in (worker, page)):
+                    return True
+            except (OSError, ValueError, TypeError):
+                pass
+            if attempt < 3:
+                time.sleep(8)
+        return False
+
     def replay_corpus(self, directory, reference_revision, dataset):
         # Retention can remove old captures even when the human checkpoint stays the same.
         key = (reference_revision, dataset["batches"], dataset["revision"])
@@ -273,6 +287,9 @@ def cycle(args, service, work, progress):
             if not results["passed"] and all(results["gates"].values()):
                 failed.append("simulation")
             promoted = results["passed"] and not failed
+            if promoted and service and not service.game_supports(json.loads(model_text)["version"]):
+                failed.append("release_runtime")
+                promoted = False
             print("Evaluation", json.dumps({"passed": promoted, "failedGates": failed, "config": results["config"],
                   "byScenario": results["byScenario"], "byMap": results["byMap"],
                   "comparisons": results["comparisons"], "fullRounds": results["fullRounds"],

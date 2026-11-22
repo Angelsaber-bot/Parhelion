@@ -16,7 +16,9 @@ async function readModel<T>(url: string, parse: (raw: unknown) => T | undefined,
     const response = await fetch(url, options);
     if (response.status === 404) return undefined;
     if (!response.ok) return previous;
-    return parse(await response.json());
+    const raw: unknown = await response.json();
+    // An older open tab can keep its last compatible model across a wire-format upgrade.
+    return raw === null ? undefined : parse(raw) ?? previous;
   } catch { return previous; }
 }
 

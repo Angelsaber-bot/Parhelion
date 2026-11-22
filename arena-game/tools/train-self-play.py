@@ -20,7 +20,8 @@ bc = import_module("train-arena-policy")
 AXIS_STD = 0.35
 CHECKPOINT_KIND = "arena-self-play-v1"
 PREDICTION_HORIZON = 3
-CONTROLLER = "perceptual-options-v1"
+CONTROLLER = "perceptual-options-v2"
+CONTROLLER_VERSIONS = {"perceptual-options-v1": 2, CONTROLLER: 3}
 UNLABELED = 2.0
 
 
@@ -188,9 +189,9 @@ def file_hash(path):
 def actor_json(actor, signature, controller=None):
     model = bc.wire_model(actor, signature["rulesVersion"], signature["synthetic"])
     if controller is not None:
-        if controller != CONTROLLER:
+        if controller not in CONTROLLER_VERSIONS:
             raise ValueError("Unsupported Arena motor controller")
-        model["version"] = 2
+        model["version"] = CONTROLLER_VERSIONS[controller]
         model["controller"] = controller
     return model
 

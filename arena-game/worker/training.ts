@@ -2,7 +2,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { MAX_TRAINING_BODY, newTrainingCheckpoint, parseTrainingBatch, trainArenaBatch, type TrainingBatch, type TrainingCheckpoint } from '../shared/trainingData.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { parseExplorationModel } from '../shared/exploration.ts';
-import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
+import { NEURAL_POLICY_VERSION, parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import type { Env } from './index.ts';
 import { makeSelfPlayBatch } from './trainingSelfPlay.ts';
 import { parseEvaluationReport, type EvaluationReport } from '../shared/evaluationReport.ts';
@@ -157,7 +157,8 @@ export class ArenaTraining extends DurableObject<Env> {
     const dataset = this.ctx.storage.sql.exec<{ batches: number; matches: number; revision: number }>(
       'SELECT COUNT(*) AS batches, COUNT(DISTINCT substr(batch,1,32)) AS matches, COALESCE(MAX(id),0) AS revision FROM corpus',
     ).one();
-    return { rulesVersion, queuedBatches: this.pending(), trainedTicks: trained, holdoutTicks: heldOut, recentLoss, recentHoldoutLoss,
+    const playableRuntime = await this.ctx.storage.get('playableRuntime') ?? null;
+    return { rulesVersion, neuralPolicyVersion: NEURAL_POLICY_VERSION, playableRuntime, queuedBatches: this.pending(), trainedTicks: trained, holdoutTicks: heldOut, recentLoss, recentHoldoutLoss,
       selfPlayTicks: this.checkpoint(2).trained, shadow: !neural, neural, pendingNeuralBatches: dataset.batches, dataset,
       transformer: this.trainingRun(), reinforcement: this.reinforcementCommit()?.metadata ?? null,
       reinforcementJob: this.reinforcementJob(), neuralCollection: collecting,
@@ -333,6 +334,18 @@ export class ArenaTraining extends DurableObject<Env> {
 
   async fetch(req: Request): Promise<Response> {
     const pathname = new URL(req.url).pathname;
+    if (pathname === '/training/runtime') {
+      const body = await readText(req, 512);
+      if (typeof body !== 'string') return new Response(null, { status: 400 });
+      try {
+        const { rulesVersion, neuralPolicyVersion, commit } = JSON.parse(body);
+        if (rulesVersion !== RULES_VERSION || !Number.isInteger(neuralPolicyVersion) || neuralPolicyVersion < 1 ||
+            neuralPolicyVersion > NEURAL_POLICY_VERSION || typeof commit !== 'string' || !/^[a-f0-9]{40}$/.test(commit))
+          return new Response(null, { status: 400 });
+        await this.ctx.storage.put('playableRuntime', { rulesVersion, neuralPolicyVersion, commit });
+        return new Response(null, { status: 204 });
+      } catch { return new Response(null, { status: 400 }); }
+    }
     if (pathname === '/training/checkpoint') return this.optimizerCheckpoint(req);
     if (pathname === '/training/selfplay') return this.reinforcementCheckpoint(req);
     if (pathname === '/training/selfplay/job') return this.reportReinforcementJob(req);
@@ -414,6 +427,10 @@ export async function trainingRequest(req: Request, storage: DurableObjectNamesp
       if (typeof body === 'string' && await trainingStore(storage).reportTrainingRun(JSON.parse(body))) return new Response(null, { status: 204 });
     } catch { /* invalid JSON */ }
     return new Response(null, { status: 400 });
+  }
+  if (url.pathname === '/training/runtime') {
+    if (!administrator || req.method !== 'PUT') return new Response(null, { status: 404 });
+    return trainingStore(storage).fetch(req);
   }
   if (url.pathname === '/training/checkpoint' || url.pathname === '/training/selfplay' || url.pathname === '/training/selfplay/job') {
     if (!administrator || !['GET', 'PUT'].includes(req.method)) return new Response(null, { status: 404 });

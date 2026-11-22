@@ -62,6 +62,7 @@ const gateLabels: Record<string, [string, string]> = {
   human_quiet: ['真人静止视角漂移', 'Camera drift on quiet demonstrations'],
   human_actions: ['真人操作分布', 'Human actions'],
   simulation: ['对战模拟', 'Match simulation'],
+  release_runtime: ['等待公网游戏支持此模型版本', 'Awaiting compatible live game'],
 };
 
 function fingerprint(digest?: string) {

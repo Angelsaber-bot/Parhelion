@@ -59,7 +59,7 @@ export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectA
     apply(match: Match, me: PlayerState, input: Input): Input {
       if (life !== me.lifeId) {
         reset(); life = me.lifeId;
-        motor = model.controller === 'perceptual-options-v1' ? perceptualMotor() : undefined;
+        motor = model.controller ? perceptualMotor(model.version === 3) : undefined;
       }
       const choose = match.tick >= next;
       const contacts: CombatContact[] = [];
@@ -77,7 +77,7 @@ export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectA
         next = match.tick + EXPLORATION_TICKS;
       }
       applyNeuralAction(input, me, action, choose);
-      motor?.(match.map, me, match.tick, observation, input, action.buttons);
+      motor?.(match.map, me, match.tick, observation, input, action.buttons, match.smokes, match.shields);
       prior = [wrapAngle(input.yaw - me.yaw), input.pitch - me.pitch];
       return input;
     },

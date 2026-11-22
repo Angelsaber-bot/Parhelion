@@ -1,9 +1,12 @@
 import { TICK_HZ, WEAPONS, falloff, loadoutWeapon } from './content.ts';
 import { navFor, safeDirection } from './botLocomotion.ts';
+import type { Smoke } from './grenade.ts';
+import { smokeEdgeSearch } from './searchOcclusion.ts';
 import { wrapAngle } from './humanCombat.ts';
-import type { ArenaMap } from './map.ts';
+import { insideMovementBounds, type ArenaMap } from './map.ts';
+import type { Shield } from './match.ts';
 import type { NavNode } from './nav.ts';
-import { BTN, forward, type Input, type PlayerState } from './sim.ts';
+import { BTN, canSlideTo, forward, type Input, type PlayerState } from './sim.ts';
 
 const limit = (n: number, bound: number) => Math.max(-bound, Math.min(bound, n));
 
@@ -46,12 +49,14 @@ function patrol() {
 
 /** Closed-loop motor options for a five-Hz actor. Reads only its egocentric visible contact,
  * own state and the arena's fixed geometry. Each instance belongs to a single life. */
-export function perceptualMotor() {
+export function perceptualMotor(occlusionAware = false) {
+  const smokeSearch = occlusionAware ? smokeEdgeSearch() : undefined;
   const route = patrol();
   let visibleTicks = 0, lastSeen = -Infinity, lastBearing = 0;
   let lastElevation = 0, yawSpeed = 0, pitchSpeed = 0;
+  let clearToScan = false;
   let searching = false, sweep = 0, sweepSign = 1, travelUntil = 0;
-  return (map: ArenaMap, me: PlayerState, tick: number, observation: number[], input: Input, request: number) => {
+  return (map: ArenaMap, me: PlayerState, tick: number, observation: number[], input: Input, request: number, smokes: readonly Smoke[] = [], shields: readonly Shield[] = []) => {
     const [confidence, contactYaw, contactPitch, normalizedRange] = observation;
     const yawProposal = wrapAngle(input.yaw - me.yaw);
     const pitchProposal = input.pitch - me.pitch;
@@ -116,13 +121,26 @@ export function perceptualMotor() {
         dx = nx + .23 * dx; dz = nz + .23 * dz;
         magnitude = Math.max(.65, magnitude);
       }
-      if (tick - lastSeen <= .45 * TICK_HZ) {
+      const peek = smokeSearch?.(map, me, tick, smokes, input.mx, tick - lastSeen < TICK_HZ ? lastBearing : undefined, shields);
+      if (peek) {
+        dx = peek.dx; dz = peek.dz; magnitude = peek.moving ? .92 : .2;
+        input.yaw = wrapAngle(me.yaw + limit(peek.yaw * .15 + .12 * yawProposal, .066));
+      } else if (tick - lastSeen <= .45 * TICK_HZ) {
         input.yaw = wrapAngle(me.yaw + limit(.09 * wrapAngle(lastBearing - me.yaw) + .22 * yawProposal, .055));
       } else if (tick < travelUntil && heading !== undefined) {
         input.yaw = wrapAngle(me.yaw + limit(.08 * wrapAngle(heading - me.yaw) + .35 * yawProposal, .045));
       } else {
         // Commit to a scan long enough to see fresh sectors. Between scans, look along the route.
-        const turn = sweepSign * Math.min(.066, .037 + .45 * Math.abs(yawProposal));
+        if (occlusionAware && sweep === 0) {
+          // Keep moving at full speed when the search starts facing a close obstruction.
+          const [x, z] = forward(me.yaw);
+          clearToScan = [.3, .65, 1].every(d => {
+            const px = me.x + d * x, pz = me.z + d * z;
+            return insideMovementBounds(map, px, pz) && canSlideTo(map, me, px, pz);
+          });
+        }
+        const turn = sweepSign * Math.min(clearToScan ? .075 : .066, (clearToScan ? .064 : .037) + .45 * Math.abs(yawProposal));
+        if (clearToScan && sweep < Math.PI) magnitude *= .36;
         input.yaw = wrapAngle(me.yaw + turn);
         sweep += Math.abs(turn);
         if (sweep >= 2 * Math.PI) {

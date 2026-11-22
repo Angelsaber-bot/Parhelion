@@ -37,6 +37,11 @@ it('rejects models that cannot run on this version of the game', () => {
   expect(parseNeuralPolicy(model)).toEqual(model);
   const option = { ...model, version: 2, controller: 'perceptual-options-v1' };
   expect(parseNeuralPolicy(option)).toEqual(option);
+  const smokeSearch = { ...model, version: 3, controller: 'perceptual-options-v2' };
+  expect(parseNeuralPolicy(smokeSearch)).toEqual(smokeSearch);
+  expect(parseNeuralPolicy({ ...option, version: 3 })).toBeUndefined();
+  expect(parseNeuralPolicy({ ...smokeSearch, version: 2 })).toBeUndefined();
+  expect(parseNeuralPolicy({ ...smokeSearch, controller: undefined })).toBeUndefined();
   expect(parseNeuralPolicy({ ...option, version: 1 })).toBeUndefined();
   expect(parseNeuralPolicy({ ...option, controller: undefined })).toBeUndefined();
   expect(parseNeuralPolicy({ ...option, controller: 'unknown' })).toBeUndefined();
@@ -99,6 +104,10 @@ it('shares concurrent downloads, retains a vetted release on outages, and honors
   const disconnected = await releases.forMatch();
   expect(disconnected.neural).toBe(first.neural);
   expect(disconnected.exploration).toBe(first.exploration);
+  fetcher.mockImplementation(async url => Response.json(url.endsWith('/neural') ? { ...model, version: 999 } : null));
+  const newerServer = await releases.forMatch();
+  expect(newerServer.neural).toBe(first.neural);
+  expect(newerServer.exploration).toBeUndefined();
   fetcher.mockImplementation(async url => url.endsWith('/neural') ? new Response(null, { status: 404 }) : Response.json(null));
   expect(await releases.forMatch()).toEqual({ neural: undefined, exploration: undefined });
   expect(first.neural).toEqual(model);

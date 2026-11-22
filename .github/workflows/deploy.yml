@@ -101,31 +101,8 @@ jobs:
         run: >
           npx wrangler pages deploy ../site/dist/public --project-name parhelion-game --branch main
           --commit-hash "$GITHUB_SHA" --commit-message "$(git log -1 --format=%s | cut -c1-200)" --commit-dirty=true
-      - name: Verify the playable Arena on its production URL
+      - name: Verify production Arena and register its model format
         if: steps.secrets.outputs.ok == 'true' && steps.scope.outputs.worker == 'true'
-        run: |
-          python3 - <<'PYTHON'
-          import hashlib, os, re, time, urllib.request
-          from pathlib import Path
-          root = Path('site/dist/public/arena')
-          base = 'https://parhelion-game.pages.dev/arena/'
-          assets = re.findall(r'(?:src|href)="\./(assets/[^"]+\.(?:js|css))"', (root / 'index.html').read_text())
-          assert any(p.endswith('.js') for p in assets) and any(p.endswith('.css') for p in assets)
-          expected = {p: hashlib.sha256((root / p).read_bytes()).hexdigest() for p in assets}
-          for attempt in range(8):
-              try:
-                  with urllib.request.urlopen(base + '?build=' + os.environ['GITHUB_SHA'], timeout=15) as response:
-                      page = response.read().decode()
-                  for path, digest in expected.items():
-                      if './' + path + '"' not in page:
-                          raise ValueError('Arena lobby still references an earlier build')
-                      with urllib.request.urlopen(base + path, timeout=20) as response:
-                          if hashlib.sha256(response.read()).hexdigest() != digest:
-                              raise ValueError('Mismatched deployed bundle ' + path)
-                  print('Verified playable production Arena:', expected)
-                  break
-              except (OSError, ValueError):
-                  if attempt == 7:
-                      raise
-                  time.sleep(8)
-          PYTHON
+        env:
+          ARENA_NEURAL_CORPUS_TOKEN: ${{ secrets.ARENA_NEURAL_CORPUS_TOKEN }}
+        run: python3 arena-game/scripts/verify-pages-release.py
