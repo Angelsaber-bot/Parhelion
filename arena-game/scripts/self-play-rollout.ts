@@ -13,6 +13,7 @@ import type { NavNode } from '../shared/nav.ts';
 import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { EXPLORATION_TICKS } from '../shared/exploration.ts';
+import { scoreSearchProgress } from './search-progress.ts';
 import { scoreContactDrill } from './self-play-contact.ts';
 import { opponentLeague } from './self-play-league.ts';
 import { seedVersion, trainingSeed } from './self-play-seeds.ts';
@@ -222,6 +223,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   const outcome = Math.sign(game.score[team] - game.score[enemy]);
   for (const seat of seats) {
     if (!seat.steps.length) throw Error(`No live decisions for ${seat.id} in the simulated match`);
+    scoreSearchProgress(seat.steps, game.map.data.bounds, EXPLORATION_TICKS, TICK_HZ);
     seat.steps[seat.steps.length - 1].reward += outcome;
   }
   // Reward observed reacquisition in the actual smoke window. Both actors

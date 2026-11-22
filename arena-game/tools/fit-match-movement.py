@@ -92,11 +92,24 @@ if __name__ == "__main__":
     parser.add_argument("model", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("captures", type=Path, nargs="+", help="One directory of private input batches per game")
+    parser.add_argument("--actor-output", type=Path, help="Write an actor for normal Arena evaluation")
+    parser.add_argument("--blend", type=float, default=.5)
     args = parser.parse_args()
+    if not 0 <= args.blend <= 1:
+        parser.error("--blend must be in [0, 1]")
+    model = json.loads(args.model.read_bytes())
     recordings = []
     for directory in args.captures:
-        _, groups = bc.load_captures(directory, json.loads(args.model.read_bytes())["rulesVersion"])
+        _, groups = bc.load_captures(directory, model["rulesVersion"])
         if len(groups) != 1:
             raise ValueError("Each selected game must contain exactly one capture")
         recordings.append(next(iter(groups.values())))
-    args.output.write_text(json.dumps(fit(json.loads(args.model.read_bytes()), recordings)))
+    result = fit(model, recordings)
+    args.output.write_text(json.dumps(result) + "\n")
+    if args.actor_output:
+        for row, axis in enumerate((2, 3)):
+            head = model["out"]
+            head["weight"][axis] = [(1 - args.blend) * old + args.blend * new
+                                    for old, new in zip(head["weight"][axis], result["weights"][row])]
+            head["bias"][axis] += args.blend * (result["bias"][row] - head["bias"][axis])
+        args.actor_output.write_text(json.dumps(model, separators=(",", ":")) + "\n")

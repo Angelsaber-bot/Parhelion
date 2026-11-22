@@ -218,6 +218,29 @@ def human_data(path, split, rules, context, include_holdout, train_ranges=None):
     return train, holdout, weights, len(groups[1]), capture_ends
 
 
+def replay_route_loss(actor, dataset, ends):
+    from arena_route_learning import route_indices, route_loss
+    routes = route_indices(dataset.starts, ends)
+    if not len(routes):
+        return dataset.targets.new_zeros(())
+    indices, inverse = routes.flatten().unique(return_inverse=True)
+    contexts = torch.stack([dataset[i][0] for i in indices.tolist()])
+    controls = actor(contexts)[:, 2:4].tanh()[inverse].reshape(len(routes), -1, 2)
+    return route_loss(controls, dataset.targets[routes, 2:4], dataset.features[routes, 21:23])
+
+
+def movement_transition_loss(actor, dataset, indices, predicted, targets):
+    """Imitate the demonstrated change of input across two adjacent decisions in one life."""
+    pairs = [(row, i - 1) for row, i in enumerate(indices) if i > dataset.starts[i]]
+    if not pairs:
+        return predicted.sum() * 0
+    rows, previous = zip(*pairs)
+    before = torch.stack([dataset[i][0] for i in previous])
+    target_change = targets[list(rows), 2:4] - dataset.targets[list(previous), 2:4]
+    predicted_change = predicted[list(rows), 2:4].tanh() - actor(before)[:, 2:4].tanh()
+    return F.smooth_l1_loss(predicted_change, target_change, beta=.2)
+
+
 def replay_weights(dataset):
     # Keep half of the natural distribution. Allocate the other half across observed
     # quiet, turning and contact windows, capping repeat exposure for rare examples.
@@ -426,7 +449,13 @@ def run(args):
                 selection = recent.draw(demo_weights, min(len(ix), 64))
                 replayed_windows += len(selection)
                 demo_x, demo_y = zip(*(human_train[i] for i in selection.tolist()))
-                loss = loss + .15 * bc.losses(actor(torch.stack(demo_x)), torch.stack(demo_y), weights).mean()
+                demonstrated = torch.stack(demo_y)
+                predicted = actor(torch.stack(demo_x))
+                loss = loss + .15 * bc.losses(predicted, demonstrated, weights).mean()
+                if direct_controls:
+                    loss = loss + .12 * movement_transition_loss(
+                        actor, human_train, selection.tolist(), predicted, demonstrated)
+                    loss = loss + .12 * replay_route_loss(actor, human_train, selection[:12].tolist())
             optimizer.zero_grad(set_to_none=True)
             dynamics_optimizer.zero_grad(set_to_none=True)
             loss.backward()

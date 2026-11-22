@@ -13,6 +13,33 @@ trainer = importlib.import_module("train-self-play")
 
 
 class SelfPlayLearningTest(unittest.TestCase):
+    def test_route_learning_compares_ordered_paths_without_crossing_resets_or_holdouts(self):
+        from arena_route_learning import route_indices, route_loss
+        starts = [0] * 9 + [9] * 8
+        allowed = torch.ones(17, dtype=torch.bool)
+        allowed[0] = False
+        self.assertEqual(route_indices(starts, [7, 8, 15, 16], allowed).tolist(),
+                         [list(range(1, 9)), list(range(9, 17))])
+        target = torch.zeros(1, 8, 2)
+        target[:, :4, 0], target[:, 4:, 1] = 1, 1
+        heading = torch.zeros_like(target)
+        heading[:, :, 1] = 1
+        self.assertEqual(route_loss(target, target, heading).item(), 0)
+        self.assertGreater(route_loss(target.flip(1), target, heading).item(), 0)
+
+    def test_movement_changes_stop_at_capture_and_respawn_boundaries(self):
+        bc = trainer.bc
+        samples = [([0.] * bc.FEATURES, [0.] * 12, i in (1, 3), None) for i in range(4)]
+        samples[1][1][2] = 1.
+        dataset = bc.ArenaDataset([samples], 2)
+        actor = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.Linear(2 * bc.FEATURES, 14))
+        for parameter in actor.parameters():
+            torch.nn.init.zeros_(parameter)
+        targets = dataset.targets
+        outputs = actor(torch.stack([dataset[i][0] for i in range(4)]))
+        self.assertEqual(float(trainer.movement_transition_loss(actor, dataset, [0, 2], outputs[[0, 2]], targets[[0, 2]]).detach()), 0)
+        self.assertGreater(float(trainer.movement_transition_loss(actor, dataset, [1], outputs[[1]], targets[[1]]).detach()), 0)
+
     def test_direct_controls_start_with_human_weights_and_fresh_optimizers(self):
         previous = dict(signature={"seed": 7}, model={"w": 0}, split={"a": "train"},
                         kind=trainer.CHECKPOINT_KIND, generation=55, totalGames=660,

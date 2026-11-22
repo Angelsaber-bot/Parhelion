@@ -45,24 +45,10 @@ def inspect():
         if len({b['capture'] for b in batches})!=1 or batches[0]['sequence']!=0:raise ValueError("Incomplete start")
         selected_batches.append(batches)
         info.append(dict(map=name,at=match["at"],score=match["score"],result=match["result"],ticks=match["ticks"],batches=len(batches),source=match["source"]))
-    # Reconstruct each sampled player's route from positions already visible to that player.
-    import math
-    for meta,batches in zip(info,selected_batches):
-        points=[]
-        for batch in batches:
-            for tick,x,_,z,*_ in batch.get("exploration",[]):
-                pos=tick-batch['start']
-                if 0<=pos<len(batch['rows']): points.append((tick,batch['rows'][pos][0],x,z))
-        cells=set();moving=0;unseen=0;revisits=0;turns=0
-        for tick,seg,x,z in points:
-            cell=(math.floor(x*10),math.floor(z*10))
-            if cell not in cells: unseen+=1
-            if moving and cell!=last:
-                revisits+=int(cell in cells);turns+=1
-            cells.add(cell);last=cell;moving+=1
-        meta['routeCells']=len(cells);meta['cellChanges']=turns;meta['revisitedChanges']=revisits
-    result=fit(json.loads(Path('arena-game/shared/directPolicy.json').read_bytes()),selected_batches)
-    for game,match in zip(result["games"],info):game.update(match)
+    from hashlib import sha256
+    model=json.loads(Path('arena-game/shared/directPolicy.json').read_bytes())
+    result=import_module("fit-player-policy").fit_player(model, selected_batches, holdout=3)
+    result["captures"]=[sha256(b[0]["capture"].encode()).hexdigest() for b in selected_batches]
     return result
 try: result=inspect()
 except Exception as exc: result=dict(error=type(exc).__name__,detail=str(exc)[:110] if 'rows' not in str(exc) else 'invalid training input')
