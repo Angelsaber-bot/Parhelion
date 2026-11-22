@@ -284,8 +284,11 @@ function main() {
     if (directPolicy(rival.model)) pool.set(rival.hash, { mode: 'frozen', actor: rival });
   }
   const random = rng(seed);
-  const mapOffset = Math.floor(random() * MAPS.length);
-  const order = [...MAPS.slice(mapOffset), ...MAPS.slice(0, mapOffset)];
+  const order = MAPS.slice();
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
   const episodes = [];
   const appearances: Record<'1v1' | '2v2', Record<string, number>> = { '1v1': {}, '2v2': {} };
   const schedule = curriculum(count, focus, random);

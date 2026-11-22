@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import re
 import sys
@@ -104,7 +105,17 @@ def read_batch(path):
     return batch
 
 
+def player_scope():
+    manifest = os.environ.get("ARENA_PLAYER_DEMOS")
+    return json.loads(Path(manifest).read_bytes()) if manifest else None
+
+
+def capture_digest(capture):
+    return hashlib.sha256(capture.encode()).hexdigest()
+
+
 def load_captures(directory, rules, allow_empty=False):
+    scope = player_scope()
     grouped = defaultdict(dict)
     versions = set()
     if not directory.is_dir():
@@ -121,6 +132,8 @@ def load_captures(directory, rules, allow_empty=False):
             raise ValueError(f"{path}: invalid batch identity")
         versions.add(version)
         if rules is not None and version != rules:
+            continue
+        if scope is not None and capture_digest(capture) not in scope:
             continue
         existing = grouped[capture].get(sequence)
         if existing is not None and batch != read_batch(existing):
@@ -451,14 +464,24 @@ def automatic_device():
 def train(args):
     config = Config(args.context, args.width, args.heads, args.layers, args.ff or args.width * 4, args.dropout)
     rules, batches = ((args.rules_version or 42), synthetic_captures()) if args.synthetic else load_captures(args.dataset, args.rules_version)
-    captures = usable_captures(batches)
+    scope = None if args.synthetic else player_scope()
+    captures = usable_captures(batches, include_smoke=scope is not None)
     if len(captures) < 2:
         raise ValueError(f"Found {len(captures)} usable captures. Record at least two separately started Arena matches.")
-    saved = torch.load(args.resume, map_location="cpu", weights_only=True) if args.resume else None
+    # For a small confirmed corpus use a fixed epoch budget from the same base. Uploads
+    # by other players cannot cause repeated optimization on the same demonstrations.
+    saved = torch.load(args.resume, map_location="cpu", weights_only=True) if args.resume and scope is None else None
+    if scope is not None:
+        base = json.loads((Path(__file__).resolve().parents[1] / "shared/directPolicy.json").read_bytes())
+        config = Config(base["context"], base["width"], base["heads"], len(base["layers"]),
+                        len(base["layers"][0]["up"]["bias"]), args.dropout)
     signature = {"config": vars(config), "rulesVersion": rules, "synthetic": args.synthetic, "seed": args.seed, "holdout": args.holdout}
     if saved and saved.get("signature") != signature:
         raise ValueError("Checkpoint incompatible with the requested model configuration, rules, or capture split.")
-    assignments = split_captures(captures, args.seed, args.holdout, saved["split"] if saved else {})
+    assignments = (split_captures(captures, args.seed, args.holdout, saved["split"] if saved else {})
+                   if scope is None else {capture: scope[capture_digest(capture)] for capture in captures})
+    if set(assignments.values()) != {"train", "holdout"}:
+        raise ValueError("The selected captures need separate train and holdout games")
     train_groups = [frames for capture, frames in captures.items() if assignments[capture] == "train"]
     holdout_groups = [frames for capture, frames in captures.items() if assignments[capture] == "holdout"]
     train_set, holdout_set = (ArenaDataset(groups, config.context) for groups in (train_groups, holdout_groups))
@@ -469,6 +492,9 @@ def train(args):
     if device.type == "cpu":
         torch.set_num_threads(min(4, torch.get_num_threads()))
     model = ArenaPolicy(config).to(device)
+    if scope is not None:
+        from importlib import import_module
+        model.load_state_dict(import_module("fit-match-movement").actor_from_json(base).state_dict())
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate)
     if saved:
         model.load_state_dict(saved["model"])
@@ -505,7 +531,7 @@ def train(args):
         if best is None or validation["objective"] < best["holdout"]["objective"]:
             best = {"epoch": epoch, "trainingObjective": train_loss / len(train_set), "holdout": validation}
             best_state = {name: value.detach().cpu().clone() for name, value in model.state_dict().items()}
-        if args.checkpoint:
+        if args.checkpoint and (scope is None or best["epoch"] == epoch):
             state = {"signature": signature, "split": assignments, "epoch": epoch,
                      "model": model.state_dict(), "optimizer": optimizer.state_dict()}
             atomic_write(args.checkpoint, lambda path: torch.save(state, path))

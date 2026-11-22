@@ -343,7 +343,17 @@ def rollout_kl(actor, states, old_logits):
 def run(args):
     saved = load_saved(args.resume)
     if args.command == "warm-start":
-        initial = warm_start_controls(saved, load_saved(args.prior))
+        reference = load_saved(args.prior)
+        if args.player_actor:
+            base = json.loads(args.player_actor.read_bytes())
+            if base.get("version") != 4 or base.get("synthetic") or base["rulesVersion"] != reference["signature"]["rulesVersion"]:
+                raise ValueError("Expected compatible player controls")
+            state = import_module("fit-match-movement").actor_from_json(base).state_dict()
+            initial = {k: saved.get(k, 0) for k in ("generation", "optimizerSteps", "totalSteps", "totalGames", "totalEnvironmentSteps")}
+            initial.update(signature=reference["signature"], model=state, split=reference["split"],
+                           controller=CONTROLLER, practiceSchema=2, playerBase=file_hash(args.player_actor))
+        else:
+            initial = warm_start_controls(saved, reference)
         bc.atomic_write(args.output, lambda path: torch.save(initial, path))
         return
     signature = saved["signature"]
@@ -357,7 +367,7 @@ def run(args):
     if args.command == "export":
         bc.write_json(args.output, actor_json(actor, signature, saved.get("controller")))
         if args.report_practice:
-            print(json.dumps({"practiceSchema": saved.get("practiceSchema", 0)}))
+            print(json.dumps({"practiceSchema": saved.get("practiceSchema", 0), "playerBase": saved.get("playerBase")}))
         return
 
     direct_controls = saved.get("controller") == CONTROLLER
@@ -515,7 +525,7 @@ def run(args):
              "practiceSchema": saved.get("practiceSchema", 0),
              "controller": output_controller, "coachedGenerations": coached_generations + int(coach_weight > 0),
              "coachArchive": archive,
-             "optimizer": optimizer.state_dict(), "reference": reference.state_dict(), "split": human_split,
+             "playerBase": saved.get("playerBase"), "optimizer": optimizer.state_dict(), "reference": reference.state_dict(), "split": human_split,
              "dynamics": dynamics.state_dict(), "dynamicsOptimizer": dynamics_optimizer.state_dict(),
              **{k: metrics[k] for k in ("generation", "optimizerSteps", "totalSteps", "totalGames", "totalEnvironmentSteps", "actorHash")}}
     bc.atomic_write(args.checkpoint, lambda path: torch.save(state, path))
@@ -530,6 +540,7 @@ def main():
     export.add_argument("--report-practice", action="store_true")
     update = commands.add_parser("update")
     warm_start = commands.add_parser("warm-start")
+    warm_start.add_argument("--player-actor", type=Path)
     warm_start.add_argument("--prior", type=Path, required=True)
     for command in (export, update, warm_start):
         command.add_argument("--resume", type=Path, required=True)

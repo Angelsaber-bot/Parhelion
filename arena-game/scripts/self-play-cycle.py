@@ -244,11 +244,14 @@ def cycle(args, service, work, progress):
         parent_digest = hashlib.sha256(actor.read_bytes()).hexdigest()
         if parent and parent_digest != old["digest"]:
             raise ValueError("Restored actor differs from the last committed generation")
-        if json.loads(actor.read_bytes())["version"] != 4 or info["practiceSchema"] != 2:
+        player_base = ROOT / "shared/directPolicy.json"
+        use_player_base = bool(os.environ.get("ARENA_PLAYER_DEMOS")) and info.get("playerBase") != hashlib.sha256(player_base.read_bytes()).hexdigest()
+        if json.loads(actor.read_bytes())["version"] != 4 or info["practiceSchema"] != 2 or use_player_base:
             # Verify the original digest above before changing the rollout environment.
             # A fresh critic and optimizer learn from actions actually executed by the new controller.
             initial = work / "direct-controls.pt"
-            run([sys.executable, TRAINER, "warm-start", "--resume", checkpoint, "--prior", prior, "--output", initial])
+            options = ["--player-actor", player_base] if use_player_base else []
+            run([sys.executable, TRAINER, "warm-start", "--resume", checkpoint, "--prior", prior, "--output", initial, *options])
             checkpoint = initial
             run([sys.executable, TRAINER, "export", "--resume", checkpoint, "--output", actor])
             parent_digest = hashlib.sha256(actor.read_bytes()).hexdigest()

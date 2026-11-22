@@ -10,6 +10,8 @@ on:
       - 'arena-game/tools/arena_camera_intent.py'
       - 'arena-game/tools/arena_recent_replay.py'
       - 'arena-game/tools/train-arena-policy.py'
+      - 'arena-game/tools/player-demos.json'
+      - 'arena-game/scripts/sample-control-practice.ts'
       - 'arena-game/shared/botNeuralControl.ts'
       - 'arena-game/shared/aimRecoil.ts'
       - 'arena-game/shared/humanCombat.ts'
@@ -39,6 +41,8 @@ jobs:
   train:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    env:
+      ARENA_PLAYER_DEMOS: ${{ github.workspace }}/arena-game/tools/player-demos.json
     steps:
       - name: Select training work
         id: work
@@ -54,7 +58,7 @@ jobs:
           ready = bool(status.get('neuralExportConfigured'))
           # Bootstrap the first visual human reference once the self-play endpoint is deployed.
           selfplay = ready and 'reinforcement' in status and (previous > 0 or corpus['matches'] >= 2)
-          refresh = selfplay and not status.get('reinforcement') and corpus['matches'] >= 2
+          refresh = ready and corpus['matches'] >= 2 and (not status.get('reinforcement') or os.environ['GITHUB_EVENT_NAME'] == 'push')
           reference = ready and corpus['matches'] >= 2 and (corpus['revision'] > previous or refresh)
           print(f"Human revision {corpus['revision']}; update reference={reference}, run self-play={selfplay}")
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:

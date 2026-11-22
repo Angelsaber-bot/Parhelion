@@ -5,6 +5,7 @@ import { parseExplorationModel } from '../shared/exploration.ts';
 import { NEURAL_POLICY_VERSION, parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import type { Env } from './index.ts';
 import { bundledOpponent, directPolicy } from '../shared/learnedOpponent.ts';
+import playerDemos from '../tools/player-demos.json';
 import { makeSelfPlayBatch } from './trainingSelfPlay.ts';
 import { parseEvaluationReport, type EvaluationReport } from '../shared/evaluationReport.ts';
 
@@ -18,6 +19,9 @@ const CORPUS_READ_LIMIT = 8;
 // Withdraw the original bootstrap trained with a future turn in some search histories.
 // Other direct-control releases, including later promoted champions, stay pinned.
 const WITHDRAWN_BOOTSTRAP = '5070318ab15e277f6b342b0c5d2769b3c694f03141493f3824cb9ef5c22a45bd';
+// Upgrade only the previously served public actor. Later champions keep their own release.
+const PREVIOUS_PLAYER_RELEASE = '82ffe52b0035b0046f2f9483b1ec9acfd6ccd5d1ebcf4e8718f4a72fe8f8f54c';
+const keepRelease = (digest?: string) => !!digest && digest !== WITHDRAWN_BOOTSTRAP && digest !== PREVIOUS_PLAYER_RELEASE;
 const MAX_MODEL_BODY = 12 * 1024 ** 2;
 const MODEL_CHUNK = 240 * 1024;
 const MAX_CHECKPOINT_BODY = 8 * 1024 ** 2;
@@ -125,7 +129,11 @@ export class ArenaTraining extends DurableObject<Env> {
     ).toArray();
     if (pairs.length) {
       const model = this.checkpoint();
-      for (const { payload } of pairs) trainArenaBatch(model, JSON.parse(payload) as TrainingBatch);
+      for (const { payload } of pairs) {
+        const batch = JSON.parse(payload) as TrainingBatch;
+        const digest = await sha256(batch.capture);
+        if (playerDemos[digest as keyof typeof playerDemos] === 'train') trainArenaBatch(model, batch);
+      }
       this.ctx.storage.transactionSync(() => {
         sql.exec('INSERT OR REPLACE INTO checkpoint (id, model) VALUES (1, ?)', JSON.stringify(model));
         for (const { id } of pairs) sql.exec('UPDATE batches SET payload=NULL WHERE id=?', id);
@@ -316,7 +324,7 @@ export class ArenaTraining extends DurableObject<Env> {
       return bytes ? parseNeuralPolicy(JSON.parse(bytes)) : undefined;
     };
     const saved = read();
-    if (directPolicy(saved) && this.release()?.digest !== WITHDRAWN_BOOTSTRAP) return this.currentModel = saved;
+    if (directPolicy(saved) && keepRelease(this.release()?.digest)) return this.currentModel = saved;
 
     // Initialize an empty registry or replace an old motor-assisted release. Recheck
     // after hashing: a concurrent promotion always wins over the bundled checkpoint.
@@ -324,7 +332,7 @@ export class ArenaTraining extends DurableObject<Env> {
     const digest = await sha256(bytes);
     return this.ctx.storage.transactionSync(() => {
       const latest = this.currentModel ?? read();
-      if (directPolicy(latest) && this.release()?.digest !== WITHDRAWN_BOOTSTRAP) return this.currentModel = latest;
+      if (directPolicy(latest) && keepRelease(this.release()?.digest)) return this.currentModel = latest;
       this.storeLiveModel(bytes, digest, Date.now());
       return this.currentModel = bundledOpponent;
     });

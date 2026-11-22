@@ -3,7 +3,7 @@
 import { writeFileSync } from 'node:fs';
 import { getMap } from '../shared/arenaMap.ts';
 import { navFor } from '../shared/botLocomotion.ts';
-import { SMOKE } from '../shared/content.ts';
+import { SMOKE, WEAPONS } from '../shared/content.ts';
 import { settleSmoke } from '../shared/grenade.ts';
 import { addSmokeDepths, explorationScene, EXPLORATION_TICKS, visibleSmokeDepths } from '../shared/exploration.ts';
 import { rayPlayer } from '../shared/hit.ts';
@@ -28,7 +28,10 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
   for (let trial=0; trial<trials; trial++) {
     game.smokes.length = 0;
     const a = nav.nodes[Math.floor(draw()*nav.nodes.length)], bearing = draw()*2*Math.PI;
-    const r = 2.2+21*draw(), b = nav.nearest(a.x+Math.cos(bearing)*r,a.y,a.z+Math.sin(bearing)*r);
+    // Sample short, medium and long sightlines; actual map visibility decides which are usable.
+    const band = trial % 3;
+    const r = band === 0 ? 2.2 + 15 * draw() : band === 1 ? 17 + 18 * draw() : 35 + 50 * draw();
+    const b = nav.nearest(a.x+Math.cos(bearing)*r,a.y,a.z+Math.sin(bearing)*r);
     if (!b || Math.hypot(a.x-b.x,a.z-b.z)<2) continue;
     Object.assign(me,{x:a.x,y:a.y,z:a.z,grounded:true,crouched:draw()<.18});
     const eye:Vec3 = [me.x,me.y+playerEye(map,me),me.z], feet:Vec3 = [b.x,b.y,b.z];
@@ -43,10 +46,11 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
         life: Math.floor(40 + draw() * (SMOKE.life - 40)) }));
     }
     // Condition the starting difficulty, independently of all action proposals.
-    const lane = Math.atan2(a.x-b.x,a.z-b.z), level = Math.atan2(b.y-a.y,r);
+    const lane = Math.atan2(a.x-b.x,a.z-b.z), level = Math.atan2(b.y-a.y,Math.hypot(a.x-b.x,a.z-b.z));
     const nearCenter = draw()<.35;
-    me.yaw = lane + signed() * (nearCenter ? .13 : draw()<.6 ? .95 : Math.PI);
-    me.pitch = Math.max(-1.45,Math.min(1.45,level+signed()*(nearCenter ? .12 : draw()<.5 ? .32 : 1.4)));
+    const spread = trial % 3 === 2 && nearCenter ? .025 : .13;
+    me.yaw = lane + signed() * (nearCenter ? spread : draw()<.6 ? .95 : Math.PI);
+    me.pitch = Math.max(-1.45,Math.min(1.45,level+signed()*(nearCenter ? spread : draw()<.5 ? .32 : 1.4)));
     const see = (turn: [number, number] = [0, 0]) => humanObservation(map, me, [target],
       (from, to) => game.heroes.visible(from, to), turn, undefined, undefined,
       (from, to) => game.heroes.visible(from, to, true));
@@ -74,12 +78,13 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
     // Match.resolveFire tests projectiles against solid geometry. Smoke limits
     // what the model observes, but it is not a bullet collider.
     const lands = (h: ReturnType<typeof rayPlayer>, d: Vec3) =>
-      h !== null && h.t < raycastMap(map, eye, d, h.t + .001);
+      h !== null && h.t <= WEAPONS[me.weapon].range && h.t < raycastMap(map, eye, d, h.t + .001);
     // Log both outcomes of probe shots, including misses. The weapon decision is
     // fit to the observed utility of spending ammunition at this camera pose.
     rows.push([0, ...history, ...obs, ...scene, Number(!!lands(hit,direction)),0]);
     for (let probe=0;probe<(obs[0] ? 48 : 8);probe++) {
-      const mx=signed(), my=signed(), horizon=obs[0] ? 1 : 1+Math.floor(draw()*5);
+      const scale = obs[0] && probe % 2 === 0 ? .06 : 1;
+      const mx=scale*signed(), my=scale*signed(), horizon=obs[0] ? 1 : 1+Math.floor(draw()*5);
       me.yaw = yaw+.9*mx*horizon;
       me.pitch = Math.max(-1.45,Math.min(1.45,pitch+.55*my*horizon));
       const ray = aimDir(me.yaw,me.pitch);
