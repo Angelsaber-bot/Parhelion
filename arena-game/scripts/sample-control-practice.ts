@@ -10,19 +10,21 @@ import { rayPlayer } from '../shared/hit.ts';
 import { humanObservation } from '../shared/humanCombat.ts';
 import { Match } from '../shared/match.ts';
 import { aimDir, playerEye } from '../shared/sim.ts';
-import type { Vec3 } from '../shared/map.ts';
+import { raycastMap, type Vec3 } from '../shared/map.ts';
 
 const output = process.argv[2];
 if (!output) throw Error('Supply an output path');
 let state = Number(process.argv[3] ?? 1321) >>> 0;
 const draw = () => ((state = (Math.imul(state,1664525)+1013904223) >>> 0) + .5) / 2**32;
 const signed = () => draw()*2-1;
+const trials = Number(process.argv[4] ?? 22000);
+if (!Number.isInteger(trials) || trials < 1 || trials > 100000) throw Error('Invalid practice trial count');
 const rows: number[][] = [];
 for (const name of ['aster','blackflag','sakura','homeward']) {
   const map = getMap(name), nav = navFor({map}), game = new Match(map,'1v1');
   game.addPlayer('a',{team:'A',name:'a',bot:true,skins:[],char:2});
   const me = game.player('a')!;
-  for (let trial=0; trial<22000; trial++) {
+  for (let trial=0; trial<trials; trial++) {
     game.smokes.length = 0;
     const a = nav.nodes[Math.floor(draw()*nav.nodes.length)], bearing = draw()*2*Math.PI;
     const r = 2.2+21*draw(), b = nav.nearest(a.x+Math.cos(bearing)*r,a.y,a.z+Math.sin(bearing)*r);
@@ -31,9 +33,11 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
     const eye:Vec3 = [me.x,me.y+playerEye(map,me),me.z], feet:Vec3 = [b.x,b.y,b.z];
     const target = {team:'B' as const,crouched:draw()<.22,feet};
     if (!game.heroes.visible(eye,[b.x,b.y+1,b.z])) continue;
-    if (draw() < .22) {
-      const depth = draw(), offset = signed() * SMOKE.radius;
-      const node = nav.nearest(a.x+(b.x-a.x)*depth+offset, a.y, a.z+(b.z-a.z)*depth);
+    if (draw() < .40) {
+      const angle = draw() * Math.PI * 2, offset = (.7 + .65 * draw()) * SMOKE.radius;
+      const depth = draw() < .6 ? 1 : draw();
+      const node = nav.nearest(a.x + (b.x-a.x)*depth + Math.sin(angle)*offset, a.y,
+        a.z + (b.z-a.z)*depth + Math.cos(angle)*offset);
       if (node) game.smokes.push(settleSmoke(map, { id: trial, owner: 'b', x: node.x, y: node.y, z: node.z,
         life: Math.floor(40 + draw() * (SMOKE.life - 40)) }));
     }
@@ -47,8 +51,10 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
     addSmokeDepths(scene, visibleSmokeDepths(map, me, game.smokes, game.shields));
     const direction = aimDir(me.yaw,me.pitch);
     const hit = rayPlayer(eye,direction,b.x,b.y,b.z,target.crouched);
-    const lands = (h: ReturnType<typeof rayPlayer>, d: Vec3) => h && game.heroes.visible(eye,
-      [eye[0]+d[0]*h.t,eye[1]+d[1]*h.t,eye[2]+d[2]*h.t]);
+    // Match.resolveFire tests projectiles against solid geometry. Smoke limits
+    // what the model observes, but it is not a bullet collider.
+    const lands = (h: ReturnType<typeof rayPlayer>, d: Vec3) =>
+      h !== null && h.t < raycastMap(map, eye, d, h.t + .001);
     // Log both outcomes of probe shots, including misses. The weapon decision is
     // fit to the observed utility of spending ammunition at this camera pose.
     rows.push([0, ...obs,...scene, Number(!!lands(hit,direction)),0]);

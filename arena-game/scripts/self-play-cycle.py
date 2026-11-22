@@ -295,6 +295,9 @@ def cycle(args, service, work, progress):
             corpus = service.replay_corpus(work.parent / "human", revision, status["dataset"])
         update = [sys.executable, TRAINER, "update", "--resume", checkpoint, "--rollout", rollout, "--actor", actor,
                   "--checkpoint", output, "--output", candidate, "--metrics", metrics_file, "--prior", prior, "--seed", seed]
+        exercises = work / "practice.json"
+        run(ts + ["scripts/sample-control-practice.ts", exercises, seed, 500])
+        update += ["--practice", exercises]
         if corpus and Path(corpus).is_dir():
             update += ["--dataset", corpus]
         if not evaluate:

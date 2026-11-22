@@ -26,6 +26,38 @@ CONTROLLER_VERSIONS = {"perceptual-options-v1": 2, "perceptual-options-v2": 3, C
 UNLABELED = 2.0
 
 
+def load_practice(path):
+    rows = torch.tensor(json.loads(path.read_bytes()), dtype=torch.float32)
+    if rows.ndim != 2 or rows.shape[1] != bc.FEATURES + 3 or not torch.isfinite(rows).all():
+        raise ValueError("Invalid Arena practice observations")
+    if len(rows) == 0 or not torch.isin(rows[:, 0], torch.tensor([0., 1., 2.])).all():
+        raise ValueError("Empty or unrecognized Arena practice trials")
+    return [rows[rows[:, 0] == kind] for kind in (0, 1, 2)]
+
+
+def practice_loss(actor, histories, groups):
+    # Uniform camera probes are retained for actual hits or reacquisitions.
+    # Probe shots include both misses and hits; triggers learn their outcomes.
+    losses = []
+    for kind, group in enumerate(groups):
+        if not len(group):
+            continue
+        sample = group[torch.randint(len(group), (min(32, len(histories)),))]
+        windows = histories[:len(sample)].clone()
+        obs = sample[:, 1:-2]
+        windows[:, -1, :5] = obs[:, :5]
+        windows[:, -1, 23:27] = obs[:, 23:27]
+        if kind == 2:
+            windows[:, -1, 16:18] = obs[:, 16:18]
+            windows[:, -1, -3:] = obs[:, -3:]
+        output = actor(windows)
+        if kind == 0:
+            losses.append(F.binary_cross_entropy_with_logits(output[:, 4], sample[:, -2]))
+        else:
+            losses.append(F.smooth_l1_loss(output[:, :2].tanh(), sample[:, -2:], beta=.12))
+    return torch.stack(losses).mean()
+
+
 def checked_vector(row, key, length, limit):
     values = row[key]
     if not isinstance(values, list) or len(values) != length or any(not bc.bounded(v, limit) for v in values):
@@ -306,6 +338,7 @@ def run(args):
         args.rollout, parent_hash, signature["rulesVersion"], config.context)
     if direct_controls and (coaching != UNLABELED).any():
         raise ValueError("Direct controls train on human actions and match rewards; rollout contains scripted action labels")
+    practice = load_practice(args.practice) if direct_controls and args.practice else None
     prior = load_saved(args.prior) if args.prior else saved
     if (args.prior and prior.get("kind") is not None) or prior["signature"] != signature:
         raise ValueError("Frozen reference must match the actor's model, rules, and human data split configuration")
@@ -370,6 +403,8 @@ def run(args):
             entropy = parts[1].entropy().sum(-1).mean() + parts[2].entropy().mean()
             auxiliary, pairs = prediction_loss(dynamics, encoded, ix, actions, targets, successors)
             loss = -surrogate + .5 * value_loss + .08 * prior_kl - .001 * entropy + .1 * auxiliary
+            if practice:
+                loss = loss + .12 * practice_loss(actor, states[ix], practice)
             if coach_weight:
                 correction = correction_loss(logits, coaching[ix])
                 if previous_coaching and len(previous_coaching["labels"]):
@@ -424,6 +459,7 @@ def run(args):
         "behaviorKL": behavior_kl, "targetKL": args.target_kl, "klStopped": stopped, "cameraIntent": camera_fit,
         "predictionHorizon": PREDICTION_HORIZON, "predictionPairs": prediction_pairs,
         "predictionLoss": prediction_sum / prediction_pairs if prediction_pairs else None,
+        "practiceSamples": [len(group) for group in practice] if practice else [],
         "humanReplayWindows": replayed_windows, "humanReplayCoverage": recent.report(),
         "coachedDecisions": coached_decisions, "coachWeight": coach_weight,
         "coachArchiveWindows": len(archive["labels"]), "coachReplayWindows": coach_replays,
@@ -463,6 +499,7 @@ def main():
         update.add_argument("--" + name, type=Path, required=True)
     update.add_argument("--prior", type=Path)
     update.add_argument("--dataset", type=Path)
+    update.add_argument("--practice", type=Path)
     update.add_argument("--skip-holdout", action="store_true",
                         help="Rehearse assigned human training captures and skip release evaluation for this update")
     update.add_argument("--epochs", type=int, default=3)
