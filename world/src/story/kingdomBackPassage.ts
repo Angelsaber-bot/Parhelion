@@ -102,15 +102,15 @@ export const KINGDOM_K04: FieldChapterContent = {
   set: { region: 'britain', title: ['落日王国 · 守住旧誓之前', 'Sunset Kingdom · Before the Old Oath'], actions: [...KINGDOM_OPENING_ACTIONS, ...K04_ACTIONS] },
   props: [
     // Raised in the arch, dropped by K01 to shut the assault out, and lifted again with the gate for the residents.
-    { at: O.portcullis, off: [0, 7.3, 0], size: [10.6, 5.4, .3], color: 0x3a342c, rot: [0, Math.PI / 4, 0],
+    { at: O.portcullis, off: [0, 7.3, 0], size: [10.6, 5.4, .3], show: d => !d.has(KINGDOM_GATE.open) && !d.has(KINGDOM_GATE.rescued), color: 0x3a342c, rot: [0, Math.PI / 4, 0],
       moved: { when: d => d.has(O.portcullis) && !d.has(KINGDOM_GATE.open) && !d.has(KINGDOM_GATE.rescued), off: [0, 2.7, 0] } },
     { at: O.crossbow, off: [0, 1.2, -2], size: [1.6, .3, .5], color: 0x5d4a35, target: O.crossbow },
     { at: O.latch, off: [0, 1.1, -1.2], size: [2.6, .25, .25], color: 0x4a3a2a, moved: { when: O.latch, off: [-1.3, 1.8, -1.2], rot: [0, 0, 1.3] } },
     { at: O.practice, off: [0, 1, -4], size: [.7, 1.2, .12], color: 0xb08a5a, rot: [0, Math.PI, 0], target: O.practice },
     { at: O.practice, off: [0, 1, -4], size: [.7, 1.2, .12], color: 0xb08a5a, show: d => d.has(O.practice) },
-    { at: K.street, off: [0, 3.2, 5], size: [1.8, .45, .7], color: 0x5d4a35, moved: { when: K.street, off: [0, .25, 5], rot: [0, 0, 1.2] } },
+    { at: K.street, off: [0, 3.2, 5], size: [1.8, .45, .7], color: 0x5d4a35, moved: { when: K.street, off: [0, .23, 5], rot: [0, 0, 0] } },
     { at: K.street, off: [-2.5, .9, 4], size: [.9, 1.8, .2], color: 0x8a8f96 },
-    { at: K.winch, off: [1.2, .7, 0], size: [.8, .8, 1.2], color: 0x6f5636 },
+    { at: K.winch, off: [1.2, .4, 0], size: [.8, .8, 1.2], color: 0x6f5636 },
     { at: K.winch, off: [0, 1.1, -3], size: [4, 2.2, .25], color: 0x4c3b2a, moved: { when: K.winch, off: [0, 3.6, -3] }, glide: K.winch },
     // The abbey "wall" here is the scaffold ramp starting in the meadow; the ladder waits on the grass and is
     // stood up against it (it used to hang 3.6 m up in open air).

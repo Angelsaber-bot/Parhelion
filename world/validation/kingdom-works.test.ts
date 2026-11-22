@@ -54,7 +54,14 @@ test('the production kingdom can recall timber, shoot the hoist, repel guards, a
     (d.getElementById('start') as HTMLElement).click(); await Promise.resolve(); frame(3);
     tap(K.recall); assert.ok(w.done.has(K.recall), K.recall);
     tap(K.bread); assert.ok(w.done.has(K.bread), K.bread);
+    const rotor = w.scene.getObjectByName('KingdomStreetMillRotor')!;
+    const axle = rotor.getWorldPosition(new Vector3());
     tap(K.wheel); assert.ok(w.done.has(K.wheel), K.wheel);
+    const heading = rotor.rotation.z;
+    frame(20);
+    assert.notEqual(rotor.rotation.z, heading);
+    assert.ok(rotor.getWorldPosition(new Vector3()).distanceTo(axle) < 1e-5, 'spinning wheel stays on its bearings');
+    assert.ok(w.scene.getObjectByName('KingdomBakeryShutter')!.rotation.x < -1.3);
     approach(K.release);
     const target = w.scene.getObjectByName('KingdomWatchLampTie');
     assert.ok(target?.visible);

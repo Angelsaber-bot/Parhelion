@@ -77,6 +77,17 @@ export function createKingdomRoadLandscape(ground: (x: number, z: number) => num
   // Tall enough to hold the stored 7.8 m shutter inside the frame (it used to sit above an 8.6 m beam).
   gantry.beam(gatePoint(-5, 15, 16.6), gatePoint(5, 15, 16.6), .5, wood);
   for (const s of [-5, 5]) gantry.beam(gatePoint(s, 15, 16.35), gatePoint(s * .55, 15, 16.35), .22, iron);
+  // The stored shutter spans 7.68 m. Seat its edges inside paired guide rails
+  // and tie those rails back to the stone piers on both sides of the road.
+  for (const sign of [-1, 1]) {
+    const s = sign * 3.80;
+    for (const out of [14.95, 15.35]) {
+      const top = gatePoint(s, out, 16.6);
+      const base = Math.min(34, ground(top[0], top[2]) ?? 34) - .12;
+      gantry.beam([top[0], base, top[2]], top, .22, wood);
+      for (const height of [1, 7.8, 12.4, 16.4]) gantry.beam(gatePoint(s, out, height), gatePoint(sign * 5, 15, height), .22, iron);
+    }
+  }
   finish(gantry, 'COL_KingdomOuterGateGantry', false);
   const shutter = new SiteArt();
   for (let n = 0; n < 12; n++) {
@@ -97,6 +108,11 @@ export function createKingdomRoadLandscape(ground: (x: number, z: number) => num
   // The existing pedestrian arch stays open; the new outer shutter is stored
   // overhead during preparations. Its fall becomes part of the broad deck.
   const winch = new SiteArt(), broken = new SiteArt();
+  const foot = gatePoint(5.8, 13);
+  const bed = Math.min(...[-.85, .85].flatMap(dx => [-.8, .8].map(dz => ground(foot[0] + dx, foot[2] + dz) ?? 34))) - .1;
+  const plinthHeight = Math.max(.15, 34 - bed);
+  for (const machine of [winch, broken])
+    machine.box([foot[0], 34 - plinthHeight / 2, foot[2]], [1.65, plinthHeight, 1.55], stone, true);
   winch.box(gatePoint(5.8, 13, .7), [1.3, 1.4, 1.1], wood, true);
   winch.ring(gatePoint(5.8, 13, 1.6), .65, .12, iron);
   broken.box(gatePoint(5.8, 13, .3), [1.5, .6, 1.1], wood, true);

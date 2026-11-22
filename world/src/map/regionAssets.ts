@@ -4,6 +4,7 @@ import { loadLayout } from '../core/load';
 import { carveCoreRing } from '../exploration/bossArenas';
 import { bakeQuantized, regionLoader } from '../rendering/glb';
 import { BLACKSAIL_CIVIL_CLEARANCE, BLACKSAIL_CIVIL_PATHS } from './blackSailCivilPlan';
+import { gradeBuildingTerrain } from './buildingTerrain';
 import { applyBuildingVariety } from './buildingVariety';
 import { clearLandscapeProps, editComponents, removeComponentsInBox, type ComponentBounds } from './landscapeClearance';
 import { placeRegion, type RegionDef } from './regions';
@@ -23,8 +24,8 @@ function retireValleySouthSeam(name: string, geometry: THREE.BufferGeometry) {
 // turned into open sea (ground -5 m). Move the whole set piece onto the ridge north of Camelot,
 // clearing trees, bushes and rocks from its new footprint. Britain-local coordinates.
 const FAR_CAMELOT_FROM: readonly [number, number, number, number] = [-345, -348, -268, -276];
-const FAR_CAMELOT_TO: readonly [number, number, number, number] = [-253, -362, -177, -290];
-const FAR_CAMELOT_OFFSET: readonly [number, number, number] = [91, 16, -14];
+const FAR_CAMELOT_TO: readonly [number, number, number, number] = [-265, -354, -165, -256];
+const FAR_CAMELOT_OFFSET: readonly [number, number, number] = [91, 24, 7];
 const inside = (b: ComponentBounds, r: readonly [number, number, number, number]) => {
   const x = (b.min[0] + b.max[0]) / 2, z = (b.min[2] + b.max[2]) / 2;
   return x > r[0] && x < r[2] && z > r[1] && z < r[3];
@@ -46,6 +47,8 @@ export function clearProductionLandscape(region: string, name: string, geometry:
   return varied ?? edited;
 }
 function clearProductionLandscapeBase(region: string, name: string, geometry: THREE.BufferGeometry) {
+  if ((region === 'britain' || region === 'egypt') && (name === 'Terrain' || name === 'COL_Terrain'))
+    return gradeBuildingTerrain(region, geometry);
   if (region === 'alpha') {
     // Streamed visual terrain follows the same Lookback stream bed as the core terrain and collision.
     if (name === 'Terrain') { const copy = geometry.clone(); return lowerLookbackChannel(copy) ? copy : (copy.dispose(), null); }

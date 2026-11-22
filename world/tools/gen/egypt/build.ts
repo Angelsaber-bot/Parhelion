@@ -5,7 +5,7 @@ import type { Piece } from '../structures';
 import { Frame } from '../orleans/craft';
 import { Shell, walkStrip, slabBetween } from '../qin/craft';
 import { distanceToLine, type ExpansionPlan, type RoutePoint } from '../../../src/map/worldPlan';
-import { EGYPT_LAKE, EGYPT_RIVER, EGYPT_TEMPLE, EGYPT_MIRRORS, EGYPT_ROOMS, EGYPT_CORRIDORS, EGYPT_CANYON, EGYPT_TREASURY_DOOR, type EgyptPoint } from '../../../src/map/egyptPlan';
+import { EGYPT_LAKE, EGYPT_RIVER, EGYPT_TEMPLE, EGYPT_MIRRORS, EGYPT_ROOMS, EGYPT_CORRIDORS, EGYPT_TOMB_FRONTS, EGYPT_TREASURY_DOOR, type EgyptPoint } from '../../../src/map/egyptPlan';
 import { buildEgyptMonuments } from './monuments';
 import { E, EMAT, CYL8, batter, cornice, pylonTower, papyrusColumn, lotusColumn, obelisk, seatedColossus, criosphinx, palm, felucca, camel, shaduf, pyramid } from './craft';
 import { egyptLakeDistance, egyptRiver, egyptGreen, plateauDepth } from './landscape';
@@ -117,17 +117,12 @@ export function buildEgypt(plan: ExpansionPlan, heightAt: Height, access: RouteP
     trial.add(new THREE.ConeGeometry(1.2, 6, 4), E.gold, T(165, y + 3, 125, Math.PI / 4)); }
 
   // ───────────── 峡谷崖墓: rock-cut facades along the canyon's northern wall ─────────────
-  for (let i = 1; i < EGYPT_CANYON.length - 1; i++) {
-    const a = EGYPT_CANYON[i], c = EGYPT_CANYON[i + 1], len = Math.hypot(c[0] - a[0], c[2] - a[2]), nx = -(c[2] - a[2]) / len, nz = (c[0] - a[0]) / len;
-    for (const t of [.3, .7]) {
-      const side = (i + (t > .5 ? 1 : 0)) % 2 ? 1 : -1, x = a[0] + (c[0] - a[0]) * t + nx * side * 9.6, z = a[2] + (c[2] - a[2]) * t + nz * side * 9.6, y = a[1] + (c[1] - a[1]) * t;
-      if (egyptRiverworksClearance(x, z, 6)) continue;
-      const f = new Frame(canyon, x, y, z, Math.atan2(-nx * side, -nz * side));
-      f.box(0, 4.5, -.8, 9, 9, 2, E.sandstone); f.box(0, 2.1, .25, 3, 4.2, .2, E.black, false);
-      for (const s of [-1, 1]) { f.box(s * 1.9, 2.4, .3, .5, 4.8, .5, E.sandstoneDark); f.box(s * 3.4, 2.6, .5, 1.3, 5.2, 1, E.sandstone); f.box(s * 3.4, 5.6, .5, 1.1, 1, .9, E.yellow); }
-      f.box(0, 5, .35, 4.6, .8, .5, E.limestone); for (let k = 0; k < 5; k++) f.box(-1.6 + k * .8, 5, .62, .5, .5, .05, [E.blue, E.red, E.yellow, E.green, E.blue][k], false);
-      cornice(f, 0, -.6, 8.6, 2.2, 8.4, E.sandstone);
-    }
+  for (const {x, y, z, yaw} of EGYPT_TOMB_FRONTS) {
+    const f = new Frame(canyon, x, y, z, yaw);
+    f.box(0, 4.5, -.8, 9, 9, 2, E.sandstone); f.box(0, 2.1, .25, 3, 4.2, .2, E.black, false);
+    for (const s of [-1, 1]) { f.box(s * 1.9, 2.4, .3, .5, 4.8, .5, E.sandstoneDark); f.box(s * 3.4, 2.6, .5, 1.3, 5.2, 1, E.sandstone); f.box(s * 3.4, 5.6, .5, 1.1, 1, .9, E.yellow); }
+    f.box(0, 5, .35, 4.6, .8, .5, E.limestone); for (let k = 0; k < 5; k++) f.box(-1.6 + k * .8, 5, .62, .5, .5, .05, [E.blue, E.red, E.yellow, E.green, E.blue][k], false);
+    cornice(f, 0, -.6, 8.6, 2.2, 8.4, E.sandstone);
   }
 
   // ───────────── 太阳船墓: the incline and the barque tomb under the plateau ─────────────

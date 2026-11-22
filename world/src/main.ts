@@ -717,7 +717,7 @@ const kingdomWorksScene = kingdomHearth ? createKingdomWorksScene(kingdomHearth.
   p => residentQueries.clear(p, .38, 1.8)) : null;
 const kingdomWorkMarkers = new Set(kingdomWorksScene?.markers.map(marker => marker.id));
 if (kingdomWorksScene) {
-  world.add(kingdomWorksScene.root); layout.markers.push(...kingdomWorksScene.markers); targets.push(kingdomWorksScene.target);
+  world.add(kingdomWorksScene.root); colliders.push(kingdomWorksScene.collider); layout.markers.push(...kingdomWorksScene.markers); targets.push(kingdomWorksScene.target);
   addEventListener('pagehide', event => { if (!event.persisted) kingdomWorksScene.dispose(); });
 }
 const egyptReedMarket = createEgyptReedMarket((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
@@ -2380,6 +2380,7 @@ const storyShot=new StoryBeatShot();addEventListener('pagehide',e=>{if(!e.persis
 const storyShotBeats=new Map<string,{at:string;line:readonly [string,string]}>();
 for(const c of FIELD_CHAPTER_CONTENT)for(const a of c.set.actions)for(const flag of [a.id,...(a.adds??[])])if(/_complete$/.test(flag)&&!storyShotBeats.has(flag))storyShotBeats.set(flag,{at:a.id,line:a.line});
 const storyShotSeen=new Set([...storyShotBeats.keys()].filter(f=>done.has(f)));
+fieldChapterScene.apply(done);
 world.add(fieldChapterScene.root);layout.markers.push(...fieldChapterScene.markers);for(const marker of fieldChapterScene.markers)markers.set(marker.id,marker);targets.push(...fieldChapterScene.targets);
 let fieldChapters:ReturnType<typeof createFieldChapters>|undefined;
 // B08: two lift covers on Meyrick's command deck. They rise from his second stage (real colliders),

@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { MeshBVH } from 'three-mesh-bvh';
+import { mergeParts } from '../settlements/merge';
+import { buildKingdomMill } from './kingdomMill';
 import type { Marker } from '../core/types';
 import { SiteArt } from '../story/campaignSites';
 import { gatePoint, type GatePoint } from '../story/kingdomGate';
@@ -35,13 +38,16 @@ export function createKingdomWorksScene(
   function knob(p: GatePoint) {
     const [x, y, z] = p;
     art.box([x, y + .52, z - .9], [.48, 1.04, .45], timber);
-    art.ring([x, y + 1.03, z - .59], .27, .045, pale);
+    art.cyl([x, y + .93, z - .62], .09, .42, stone, false, 'metal', [Math.PI / 2, 0, 0]);
+    art.ring([x, y + .93, z - .47], .25, .038, pale);
+    for (const angle of [0, Math.PI / 2]) art.box([x, y + .93, z - .47], [.48, .045, .045], pale, false, 'metal', [0, 0, angle]);
   }
   const recall = stand(K.recall, [hearth[0] + 4.4, hearth[1], hearth[2] + 3]);
   const [rx, ry, rz] = recall;
   const recallStart = new THREE.Vector3(rx, ry + 2.95, rz - 2);
   const recallEnd = new THREE.Vector3(rx + 5.5, ry + 4.3, rz - 2);
   for (const x of [rx - 1.6, rx + 1.6, rx + 3.8, rx + 7.2]) beam([x, ry, rz - 2], [x, ry + (x > rx + 2 ? 4.3 : 3.1), rz - 2]);
+  for (const x of [rx - .6, rx + .6]) art.box([x, ry + .33, rz - 1.27], [.14, .68, .55], timber);
   art.box([rx, ry + .72, rz - 1.27], [1.45, .14, .65], timber);
   art.box([rx, ry + .86, rz - 1.27], [.45, .16, .27], '#c9914c');
   const brandedBeam = new THREE.Group();
@@ -82,20 +88,40 @@ export function createKingdomWorksScene(
   part(bell, new THREE.CylinderGeometry(.29, .52, .6, 12), bronze, 0, -.33, 0);
   part(bell, new THREE.SphereGeometry(.13, 8, 6), bronze, 0, -.68, 0);
   part(bell, new THREE.CylinderGeometry(.032, .032, 1.45, 6), wood, 0, -1.4, 0);
+  art.beam([bx + 1.1, by + 1.25, bz - 1.24], [bx + 1.1, by + 1.25, bz - 1.04], .09, timber);
   const sign = part(root, new THREE.BoxGeometry(.67, .48, .08), wood, bx + 1.1, by + 1.25, bz - 1.04);
   const [sx, sy, sz] = breadStand;
-  art.box([sx, sy + .79, sz - 1.1], [2, .15, .74], timber);
-  const shutter = part(root, new THREE.BoxGeometry(1.86, .88, .12), wood, sx, sy + 1.78, sz - 1.2);
-  const bread = part(root, new THREE.SphereGeometry(.22, 9, 7), bronze, sx, sy + .92, sz - 1.08); bread.scale.set(1.6, .57, .75);
-  const [wx, wy, wz] = wheelStand;
-  const wheel = new THREE.Group(); wheel.position.set(wx, wy + 1.04, wz - 1.27); root.add(wheel);
-  part(wheel, new THREE.TorusGeometry(.87, .095, 6, 14), wood, 0, 0, 0);
-  for (let i = 0; i < 8; i++) part(wheel, new THREE.BoxGeometry(.2, 1.58, .11), wood, 0, 0, 0).rotation.z = i * Math.PI / 8;
+  // The shutter pivots at its top hinge, on a frame shared with the bread counter.
+  for (const dx of [-.94, .94]) {
+    for (const dz of [-1.84, -.82]) {
+      const base = floor(sx + dx, sz + dz, sy + .35) ?? sy;
+      art.box([sx + dx, (base + sy + 2.29) / 2, sz + dz], [.13, sy + 2.29 - base, .13], timber);
+    }
+    art.beam([sx + dx, sy + 1.83, sz - 1.84], [sx + dx, sy + 2.22, sz - 1.35], .08, pale);
+  }
+  art.box([sx, sy + 2.29, sz - 1.33], [2.18, .16, 1.34], '#594d42');
+  art.box([sx, sy + .42, sz - 1.25], [1.94, .82, .79], '#9d7958', true);
+  art.box([sx, sy + .88, sz - 1.15], [2.10, .12, 1.04], timber);
+  const shutter = new THREE.Group(); shutter.name = 'KingdomBakeryShutter';
+  shutter.position.set(sx, sy + 2.21, sz - .82); root.add(shutter);
+  const shutterArt = new SiteArt();
+  for (let i = 0; i < 8; i++) shutterArt.box([-.77 + .22 * i, -.61, 0], [.217, 1.22, .09], i % 3 ? timber : '#917052');
+  for (const y of [-.15, -1.04]) shutterArt.box([0, y, .058], [1.78, .085, .05], pale);
+  shutterArt.finish('britain'); shutter.add(shutterArt.root);
+  const breadMaterial = new THREE.MeshStandardMaterial({ color: '#c28848', roughness: .96 });
+  const bread = part(root, new THREE.SphereGeometry(.22, 12, 8), breadMaterial, sx, sy + 1.01, sz - .94);
+  bread.scale.set(1.6, .54, .80);
+  const wheel = buildKingdomMill(art, wheelStand, floor);
   art.finish('britain'); root.name = 'KingdomWatchAndEveningBell';
 
+  const geometry = mergeParts(art.solids);
+  for (const solid of art.solids) solid.dispose();
+  art.solids.length = 0;
+  const collider = { name: 'COL_KingdomMarketFixtures', bvh: new MeshBVH(geometry), enabled: false };
   let clock = 0, recallClock = 3, bellClock = 3, knownRecall = false, knownBell = false;
   function apply(done: ReadonlySet<string>, dt = 0, transition = false) {
     root.visible = kingdomWorksActive(done) && done.has('kingdom_gate_rescued');
+    collider.enabled = root.visible;
     const recalled = done.has(K.recall), rang = done.has(K.bell);
     if (recalled !== knownRecall) { recallClock = recalled && transition ? 0 : 3; knownRecall = recalled; }
     if (rang !== knownBell) { bellClock = rang && transition ? 0 : 3; knownBell = rang; }
@@ -109,12 +135,13 @@ export function createKingdomWorksScene(
     pin.visible = root.visible && kingdomWorkReady(K.pin, done);
     bell.rotation.z = rang && bellClock < 3 ? Math.sin(bellClock * 10) * .65 * (1 - bellClock / 3) : 0;
     sign.rotation.y = rang ? Math.PI : 0;
-    shutter.rotation.x = done.has(K.bread) ? 1.34 : 0;
+    shutter.rotation.x = done.has(K.bread) ? -1.34 : 0;
     bread.visible = done.has(K.bread);
-    if (done.has(K.wheel)) wheel.rotation.z -= dt * 1.25;
+    if (done.has(K.wheel)) wheel.rotation.z = (wheel.rotation.z + dt * 1.25) % (2 * Math.PI);
     else wheel.rotation.z = 0;
   }
   function dispose() {
+    collider.enabled = false; geometry.dispose();
     const materials = new Set<THREE.Material>();
     root.traverse(node => {
       if (!(node instanceof THREE.Mesh)) return;
@@ -124,5 +151,5 @@ export function createKingdomWorksScene(
     materials.forEach(material => material.dispose());
     root.removeFromParent();
   }
-  return { root, markers, stands, target: pin, apply, dispose };
+  return { root, markers, stands, collider, target: pin, apply, dispose };
 }

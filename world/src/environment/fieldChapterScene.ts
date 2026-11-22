@@ -54,6 +54,17 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
   }
   const hidden = new THREE.MeshBasicMaterial({ visible: false });
   const posts: { prop: (typeof content)[number]['props'][number]; mesh: THREE.Object3D }[] = [];
+  const lifts: { leaf: THREE.Object3D; ropes: THREE.Mesh[]; headY: number; halfHeight: number }[] = [];
+  function payOutLiftRopes() {
+    for (const { leaf, ropes, headY, halfHeight } of lifts) {
+      const top = leaf.position.y + halfHeight;
+      for (const rope of ropes) {
+        rope.visible = leaf.visible;
+        rope.position.y = (top + headY) / 2;
+        rope.scale.y = Math.max(.02, headY - top);
+      }
+    }
+  }
   const props = content.flatMap(({ set, props: list }) => list.flatMap(prop => {
     const at = points.get(prop.at); if (!at) return [];
     let mesh: THREE.Object3D;
@@ -67,10 +78,30 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
     else {
       const built = crafted(prop.size, prop.color, set.region, !!prop.target); mesh = built.group; hitBox = built.hit;
       // A prop left hanging in the air (a raised rack, a lifted gate) stands on two posts instead of floating.
-      if (!riders.has(prop.at)) for (const post of supportPosts(prop, at, ground)) {
+      const guides = riders.has(prop.at) ? [] : supportPosts(prop, at, ground);
+      for (const post of guides) {
         const height = post.top - post.bottom, g = new THREE.BoxGeometry(.2, height, .2); geo.add(g);
         const leg = new THREE.Mesh(g, palette(prop.color, set.region).trim); leg.castShadow = true; leg.receiveShadow = true;
         leg.position.set(post.x, post.bottom + height / 2, post.z); leg.name = `FieldPropPost_${prop.at}`; root.add(leg); posts.push({ prop, mesh: leg });
+      }
+      // A vertically sliding gate needs a lintel tying its two guide posts together.
+      if (guides.length === 2 && prop.moved && prop.size[1] >= 1 && prop.size[2] < .5 &&
+          prop.moved.off[0] === prop.off[0] && prop.moved.off[2] === prop.off[2]) {
+        const [left, right] = guides;
+        const length = Math.hypot(right.x - left.x, right.z - left.z);
+        const g = new THREE.BoxGeometry(length + .35, .24, .4); geo.add(g);
+        const cap = new THREE.Mesh(g, palette(prop.color, set.region).trim);
+        cap.position.set((left.x + right.x) / 2, left.top + .05, (left.z + right.z) / 2);
+        cap.rotation.y = Math.atan2(left.z - right.z, right.x - left.x);
+        cap.name = `FieldPropLintel_${prop.at}`; root.add(cap); posts.push({ prop, mesh: cap });
+        const cable = new THREE.CylinderGeometry(.032, .032, 1, 6); geo.add(cable);
+        const ropes = [.22, .78].map(t => {
+          const rope = new THREE.Mesh(cable, palette(prop.color, set.region).iron);
+          rope.name = `FieldLiftRope_${prop.at}`;
+          rope.position.set(left.x + (right.x - left.x) * t, 0, left.z + (right.z - left.z) * t);
+          root.add(rope); return rope;
+        });
+        lifts.push({ leaf: mesh, ropes, headY: cap.position.y, halfHeight: prop.size[1] / 2 });
       }
     }
     mesh.name = `FieldProp_${prop.at}`;
@@ -101,7 +132,8 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
         if (prop.target) mesh.visible &&= !d.has(prop.target);
         if (hitBox) hitBox.visible = mesh.visible;
       }
-      for (const { prop, mesh } of posts) mesh.visible = prop.show ? prop.show(d) : true;
+      payOutLiftRopes();
+      for (const { prop, mesh } of posts) mesh.visible = (!prop.show || prop.show(d)) && (!prop.target || !d.has(prop.target));
       for (const { actors: list } of content) for (const actor of list) {
         const where = actor.place(d), at = where && points.get(where[0]);
         if (!at) { actors.pose(actor.id, [0, -500, 0], 0); continue; }
@@ -132,6 +164,7 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
         const r0 = prop.rot ?? [0, 0, 0], r1 = prop.moved.rot ?? r0;
         mesh.rotation.set(r0[0] + (r1[0] - r0[0]) * k, r0[1] + (r1[1] - r0[1]) * k, r0[2] + (r1[2] - r0[2]) * k);
       }
+      if (progress && root.visible) payOutLiftRopes();
     },
     dispose() { actors.dispose(); geo.forEach(g => g.dispose()); mat.forEach(m => m.dispose()); modelMaterials.forEach(m => m.dispose()); hidden.dispose(); root.removeFromParent(); },
   };

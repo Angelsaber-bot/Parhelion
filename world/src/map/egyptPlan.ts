@@ -1,3 +1,4 @@
+import { egyptRiverworksClearance } from './egyptRiverworksPlan';
 /**
  * Solar Egypt: an oasis and its river in the west, a sandstone plateau across the north
  * cut by the Sunrift canyon, the colossi and the Sun Temple on the plateau's lip, a pyramid
@@ -23,6 +24,17 @@ export const EGYPT_PLATEAU = {
 };
 /** 裂日峡谷: the canyon floor polyline from the desert up onto the plateau. */
 export const EGYPT_CANYON: readonly EgyptPoint[] = [[-128, 14.2, -38], [-112, 16, -70], [-92, 19, -104], [-66, 24, -126], [-36, 29.5, -128], [-6, 35.8, -122]];
+/** Surveyed mouths of the rock-cut tombs, with +Z facing into the canyon. */
+export const EGYPT_TOMB_FRONTS = EGYPT_CANYON.slice(1, -1).flatMap((a, index) => {
+  const b = EGYPT_CANYON[index + 2], dx = b[0] - a[0], dz = b[2] - a[2], length = Math.hypot(dx, dz);
+  return [.3, .7].flatMap((t, j) => {
+    const side = (index + 1 + j) % 2 ? 1 : -1;
+    const nx = -dz * side / length, nz = dx * side / length;
+    const x = a[0] + dx * t + nx * 9.6, z = a[2] + dz * t + nz * 9.6;
+    return egyptRiverworksClearance(x, z, 6) ? [] : [{ x, y: a[1] + (b[1] - a[1]) * t, z, yaw: Math.atan2(-nx, -nz) }];
+  });
+});
+
 
 /** The Sun Temple and its terrace on the plateau's southern lip. */
 export const EGYPT_TEMPLE = {

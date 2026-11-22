@@ -113,14 +113,18 @@ export function supportPosts(prop: { size: readonly number[]; off: readonly numb
   const lifts = !!m && Math.abs(m[0] - prop.off[0]) < .05 && Math.abs(m[2] - prop.off[2]) < .05 && m[1] > prop.off[1];
   const lowest = prop.off[1] - half + at[1], highest = (lifts ? m![1] : prop.off[1]) + half + at[1];
   const cx = at[0] + prop.off[0], cz = at[2] + prop.off[2];
-  const floor = ground(cx, cz, lowest - .05);
-  if (floor === null || lowest - floor < .6 || lowest - floor > 9) return [];
+  // A closed sliding leaf already rests on the paving. Sample from just above
+  // its sill so the same guides support the raised pose after restoring a save.
+  const slidingPanel = lifts && sy > sz && sy > .8 && fieldPropShape(prop.size) === 'panel';
+  const ceiling = slidingPanel ? lowest + .45 : lowest - .05;
+  const floor = ground(cx, cz, ceiling);
+  if (floor === null || (!slidingPanel && lowest - floor < .6) || lowest - floor > 9) return [];
   // Posts at the two ends of the longer horizontal side, just outside the prop.
   const wide = sx >= sz, reach = (wide ? sx : sz) / 2 + .1;
   const ux = wide ? Math.cos(yaw) : Math.sin(yaw), uz = wide ? -Math.sin(yaw) : Math.cos(yaw);
   const posts: { x: number; z: number; bottom: number; top: number }[] = [];
   for (const side of [-1, 1]) {
-    const x = cx + ux * reach * side, z = cz + uz * reach * side, g = ground(x, z, lowest - .05);
+    const x = cx + ux * reach * side, z = cz + uz * reach * side, g = ground(x, z, ceiling);
     if (g === null || lowest - g > 9) return [];
     posts.push({ x, z, bottom: g - .1, top: highest + .15 });
   }
