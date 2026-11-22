@@ -2,7 +2,7 @@
 // Only the test target is scripted. The pilot keeps its normal sensors and controls.
 import { getMap } from '../../shared/arenaMap.ts';
 import { navFor } from '../../shared/botLocomotion.ts';
-import { randomBotLoadout, TICK_HZ, type Loadout } from '../../shared/content.ts';
+import { TICK_HZ, type Loadout } from '../../shared/content.ts';
 import { humanObservation } from '../../shared/humanCombat.ts';
 import { learnedOpponent } from '../../shared/learnedOpponent.ts';
 import { Match, type Controller } from '../../shared/match.ts';
@@ -12,21 +12,29 @@ import { rng } from './evaluate-spawn-search.ts';
 import { trialSeed } from '../self-play-seeds.ts';
 
 type Start = Pick<NavNode, 'x' | 'y' | 'z'>;
+// Completed public rules-43 1v1 rounds. These are equipment/score fixtures
+// from aggregate match telemetry, separate from the consented training corpus.
+interface MatchReference { map: string; at: number; bot: number; kit: Loadout; humanScore: number; botScore: number }
+const references: MatchReference[] = [
+  { map: 'frostcourt', at: 1795383845340, bot: 2, kit: ['firefly', 'halo', 'blade'], humanScore: 7, botScore: 1 },
+  { map: 'homeward', at: 1795382557118, bot: 3, kit: ['corona', 'longnight', 'polearm'], humanScore: 7, botScore: 2 },
+  { map: 'blackflag', at: 1795381709043, bot: 6, kit: ['corona', 'firefly', 'hammer'], humanScore: 7, botScore: 1 },
+];
 interface Fixture {
-  map: string; a: Start; b: Start; kit: Loadout; angle: number; direction: number;
+  reference: MatchReference; a: Start; b: Start; angle: number; direction: number;
 }
 
 function encounter(f: Fixture, reverse: boolean, moving: boolean, model?: NeuralPolicyModel) {
   const side = reverse ? 'B' : 'A', other = reverse ? 'A' : 'B';
-  const game = new Match(getMap(f.map), '1v1');
-  const info = { name: 'probe', skins: [], loadout: f.kit, char: 2, bot: true };
+  const game = new Match(getMap(f.reference.map), '1v1');
+  const info = { name: 'probe', skins: [], bot: true };
   const targetDriver: Controller = { think(match, id) {
     const me = match.player(id)!;
     return { seq: match.tick, view: match.tick, yaw: me.yaw, pitch: 0, mx: moving ? f.direction : 0,
       mz: 0, buttons: 0, weapon: me.weaponSlot };
   } };
-  game.addPlayer('pilot', { ...info, team: side }, model && learnedOpponent(model));
-  game.addPlayer('target', { ...info, team: other }, targetDriver);
+  game.addPlayer('pilot', { ...info, team: side, char: f.reference.bot, loadout: f.reference.kit }, model && learnedOpponent(model));
+  game.addPlayer('target', { ...info, team: other, char: 7, loadout: ['longnight', 'corona', 'polearm'], utility: 'smoke' }, targetDriver);
   const a = reverse ? f.b : f.a, b = reverse ? f.a : f.b;
   const yaw = Math.atan2(a.x - b.x, a.z - b.z);
   const pilot = game.player('pilot')!, target = game.player('target')!;
@@ -49,7 +57,8 @@ function clearStart(f: Fixture, reverse: boolean) {
 }
 
 export function closeContact(candidate: NeuralPolicyModel, incumbent: NeuralPolicyModel, seed: number, pairs = 8) {
-  return ['frostcourt', 'homeward', 'blackflag'].flatMap(map => {
+  return references.flatMap(reference => {
+    const { map } = reference;
     const draw = rng(trialSeed(seed, 'close-contact', map));
     const nodes = navFor({ map: getMap(map) }).nodes;
     const starts: Fixture[] = [];
@@ -57,7 +66,7 @@ export function closeContact(candidate: NeuralPolicyModel, incumbent: NeuralPoli
       const a = nodes[Math.floor(draw() * nodes.length)], b = nodes[Math.floor(draw() * nodes.length)];
       const d = Math.hypot(a.x - b.x, a.z - b.z);
       if (d < 3 || d > 12) continue;
-      const f = { map, a, b, kit: randomBotLoadout(draw), angle: (draw() - .5) * .7, direction: draw() < .5 ? -1 : 1 };
+      const f = { reference, a, b, angle: (draw() - .5) * .7, direction: draw() < .5 ? -1 : 1 };
       if (clearStart(f, false) && clearStart(f, true)) starts.push(f);
     }
     if (starts.length !== pairs) throw Error('Insufficient paired close-contact starts on ' + map);
@@ -77,7 +86,7 @@ export function closeContact(candidate: NeuralPolicyModel, incumbent: NeuralPoli
         }
         return { byHalfSecond, byTwoSeconds };
       };
-      return { map, moving, trials: starts.length * 2, candidate: score(candidate), incumbent: score(incumbent) };
+      return { map, reference, moving, trials: starts.length * 2, candidate: score(candidate), incumbent: score(incumbent) };
     });
   });
 }
