@@ -335,6 +335,13 @@ def cycle(args, service, work, progress):
                 failed.append("simulation")
             if migration_pending:
                 failed.append("incumbent_migration")
+            if results["passed"] and not failed:
+                reserved_seed = random.SystemRandom().randrange(1, 2**31)
+                distances = run(ts + ["scripts/evaluation/evaluate-sightlines.ts", candidate, reserved_seed,
+                                      incumbent if live else fallback], json_result=True)
+                print("Independent sightlines", json.dumps(distances), flush=True)
+                if not distances["passed"]:
+                    failed.append("visible_range_combat")
             promoted = results["passed"] and not failed
             if promoted and service and not service.game_supports(json.loads(model_text)["version"]):
                 failed.append("release_runtime")

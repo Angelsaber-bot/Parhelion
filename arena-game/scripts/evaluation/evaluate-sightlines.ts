@@ -61,8 +61,21 @@ export function sightlines(model: NeuralPolicyModel, seed: number, maps: string[
   return rows;
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const [path, seed = '859243'] = process.argv.slice(2);
-  const model = parseNeuralPolicy(JSON.parse(readFileSync(path, 'utf8')));
-  if (!directPolicy(model)) throw Error('Expected a direct Arena policy');
-  for (const row of sightlines(model, Number(seed), ['frostcourt', 'camlann', 'orleans', 'suntemple', 'lishan', 'aster'], 5)) console.log(JSON.stringify(row));
+  const [path, seed = '859243', opponent] = process.argv.slice(2);
+  const load = (file: string) => {
+    const policy = parseNeuralPolicy(JSON.parse(readFileSync(file, 'utf8')));
+    if (!directPolicy(policy)) throw Error('Expected direct Arena controls');
+    return policy;
+  };
+  const maps = ['frostcourt','camlann','orleans','suntemple','lishan'];
+  if (!opponent) {
+    for (const row of sightlines(load(path), Number(seed), [...maps, 'aster'], 5)) console.log(JSON.stringify(row));
+  } else {
+    const current = sightlines(load(opponent), Number(seed), maps, 12);
+    const candidate = sightlines(load(path), Number(seed), maps, 12);
+    const passed = candidate.every((row, i) => row.trials >= 30 && row.trials === current[i].trials
+      && row.hit >= current[i].hit - Math.ceil(row.trials * .10)
+      && (row.low < 30 || row.fired >= current[i].fired - Math.ceil(row.trials * .12)));
+    console.log(JSON.stringify({passed, current, candidate}));
+  }
 }

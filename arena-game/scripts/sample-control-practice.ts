@@ -31,7 +31,17 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
     // Sample short, medium and long sightlines; actual map visibility decides which are usable.
     const band = trial % 3;
     const r = band === 0 ? 2.2 + 15 * draw() : band === 1 ? 17 + 18 * draw() : 35 + 50 * draw();
-    const b = nav.nearest(a.x+Math.cos(bearing)*r,a.y,a.z+Math.sin(bearing)*r);
+    let b = nav.nearest(a.x+Math.cos(bearing)*r,a.y,a.z+Math.sin(bearing)*r);
+    if (band === 2) {
+      // Long corridors are uncommon. Draw legal pairs until one has real line of sight.
+      const eye: Vec3 = [a.x, a.y + 1.5, a.z];
+      b = null;
+      for (let attempt = 0; attempt < 36; attempt++) {
+        const end = nav.nodes[Math.floor(draw() * nav.nodes.length)];
+        const d = Math.hypot(a.x - end.x, a.z - end.z);
+        if (d >= 35 && d <= 85 && game.heroes.visible(eye, [end.x, end.y + 1, end.z])) { b = end; break; }
+      }
+    }
     if (!b || Math.hypot(a.x-b.x,a.z-b.z)<2) continue;
     Object.assign(me,{x:a.x,y:a.y,z:a.z,grounded:true,crouched:draw()<.18});
     const eye:Vec3 = [me.x,me.y+playerEye(map,me),me.z], feet:Vec3 = [b.x,b.y,b.z];
@@ -48,7 +58,8 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
     // Condition the starting difficulty, independently of all action proposals.
     const lane = Math.atan2(a.x-b.x,a.z-b.z), level = Math.atan2(b.y-a.y,Math.hypot(a.x-b.x,a.z-b.z));
     const nearCenter = draw()<.35;
-    const spread = trial % 3 === 2 && nearCenter ? .025 : .13;
+    const distance = Math.hypot(a.x - b.x, a.z - b.z);
+    const spread = band === 2 && nearCenter ? .5 / distance : .13;
     me.yaw = lane + signed() * (nearCenter ? spread : draw()<.6 ? .95 : Math.PI);
     me.pitch = Math.max(-1.45,Math.min(1.45,level+signed()*(nearCenter ? spread : draw()<.5 ? .32 : 1.4)));
     const see = (turn: [number, number] = [0, 0]) => humanObservation(map, me, [target],
