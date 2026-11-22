@@ -12,7 +12,7 @@ import { humanObservation, wrapAngle } from '../../shared/humanCombat.ts';
 import { lineOfSight, type ArenaMap, type Vec3 } from '../../shared/map.ts';
 import { Match, type Controller } from '../../shared/match.ts';
 import { parseNeuralPolicy, type NeuralPolicyModel } from '../../shared/neuralPolicy.ts';
-import { BTN, canSlideTo, forward, playerEye } from '../../shared/sim.ts';
+import { BTN, canSlideTo, forward } from '../../shared/sim.ts';
 
 type Mode = '1v1' | '2v2';
 type Scenario = 'round' | 'rear-search' | 'smoke' | 'wall';
@@ -24,6 +24,24 @@ const CHALLENGES: Scenario[] = ['rear-search', 'smoke', 'wall'];
 function random(seed: number) {
   let state = seed >>> 0;
   return () => (state = (Math.imul(1664525, state) + 1013904223) >>> 0) / 2 ** 32;
+}
+
+function trialSeed(campaign: number, stage: string, map: string, index = 0) {
+  return createHash('sha256').update(JSON.stringify([campaign, stage, map, index])).digest().readUInt32LE();
+}
+
+/** Hold back a different set of Arena maps for the tournament, with the same match budget.
+ * An explicit map list reproduces a targeted comparison on exactly those maps. */
+export function evaluationMaps(seed: number, requested?: string) {
+  const available = MAPS.map(map => map.id);
+  if (requested !== undefined) {
+    const maps = [...new Set(requested.split(',').map(value => value.trim()))];
+    if (maps.some(id => !available.includes(id))) throw Error('Unknown evaluation map');
+    return { screen: maps, tournament: maps };
+  }
+  const ordered = available.sort((a, b) => trialSeed(seed, 'maps', a) - trialSeed(seed, 'maps', b));
+  const count = Math.min(3, ordered.length);
+  return { screen: ordered.slice(0, count), tournament: ordered.slice(-count) };
 }
 
 function load(path: string) {
@@ -41,20 +59,23 @@ type Counters = ReturnType<typeof counters>;
 function monitor(bot: Bot, counters: Counters, duration: number): Controller {
   let prev: { life: number; x: number; z: number; obstructed: boolean } | undefined;
   let contact = false, stalls = 0;
+  let firstLiveTick: number | undefined;
   counters.pilots++;
   counters.firstContact += duration; // Right-censor a player who never acquires contact.
   return { think(m, id) {
     const me = m.player(id)!;
     const input = bot.think(m, id);
     if (m.phase !== 'live' || !me.alive) { prev = undefined; stalls = 0; return input; }
+    firstLiveTick ??= m.tick;
     counters.live++;
     const contacts = [...m.slots.values()].filter(s => s.state.alive && s.state.team !== me.team)
       .map(({ state: p }) => ({ team: p.team, crouched: p.crouched, feet: [p.x, p.y, p.z] as Vec3 }));
+    for (const p of m.heroes.decoys()) contacts.push({ team: p.team, crouched: p.crouched, feet: [p.x, p.y, p.z] });
     const confidence = humanObservation(m.map, me, contacts, (a, b) => m.heroes.visible(a, b), [0, 0],
       undefined, undefined, (a, b) => m.heroes.visible(a, b, true))[0];
     const visible = confidence > 0;
     if (confidence > 0 && confidence < 1) counters.glimpseTicks++;
-    if (visible && !contact) { counters.firstContact += m.tick - duration; contact = true; }
+    if (visible && !contact) { counters.firstContact += m.tick - firstLiveTick - duration; contact = true; }
     if (!visible) {
       counters.unseen++;
       counters.searchRadians += Math.abs(wrapAngle(input.yaw - me.yaw));
@@ -122,17 +143,29 @@ function place(m: Match, scenario: Scenario, rand: () => number) {
 function hiddenTargetInvariant(map: ArenaMap, seed: number, model: NeuralPolicyModel) {
   const match = new Match(map, '1v1');
   for (const team of TEAMS) match.addPlayer(team + '0', { name: team, team, char: 2, skins: [], bot: true });
-  place(match, 'smoke', random(seed));
   match.phase = 'live';
   const pilot = match.player('A0')!, target = match.player('B0')!;
-  const eye: Vec3 = [pilot.x, pilot.y + playerEye(map, pilot), pilot.z];
-  const hidden = (x: number, z: number) => [1.1, 1.75].every(h => !match.heroes.visible(eye, [x, target.y+h, z], true));
+  const rand = random(seed);
+  const visibility = (x: number, z: number) => humanObservation(map, pilot,
+    [{ team: target.team, crouched: target.crouched, feet: [x, target.y, z] }],
+    (from, to) => match.heroes.visible(from, to), [0, 0], undefined, undefined,
+    (from, to) => match.heroes.visible(from, to, true))[0];
+  let alternate: readonly [number, number] | undefined;
+  for (let attempt = 0; attempt < 32 && !alternate; attempt++) {
+    match.smokes = [];
+    place(match, 'smoke', rand);
+    const clouds = match.smokes;
+    match.smokes = [];
+    const clearBeforeSmoke = visibility(target.x, target.z) === 1;
+    match.smokes = clouds;
+    if (!clearBeforeSmoke || visibility(target.x, target.z) !== 0) continue;
+    for (let i = 0; i < 8; i++) {
+      const x = target.x + .7 * Math.cos(i * Math.PI / 4), z = target.z + .7 * Math.sin(i * Math.PI / 4);
+      if (canSlideTo(map, target, x, z) && visibility(x, z) === 0) { alternate = [x, z]; break; }
+    }
+  }
+  if (!alternate) throw Error('Could not construct a fully occluded counterfactual on ' + map.data.mapId);
   const origin = [target.x, target.z] as const;
-  if (!hidden(...origin)) return false;
-  const alternate = [0, 1, 2, 3, 4, 5, 6, 7].map(n =>
-    [origin[0] + .7 * Math.cos(n * Math.PI / 4), origin[1] + .7 * Math.sin(n * Math.PI / 4)] as const)
-    .find(([x, z]) => canSlideTo(map, target, x, z) && hidden(x, z));
-  if (!alternate) return false;
   const smoke = match.smokes.slice();
   function actions(position: readonly [number, number]) {
     const bot = new Bot(seed, BOT_SKILL.normal, TACTICS, undefined, undefined, model);
@@ -157,21 +190,30 @@ export function play(map: ArenaMap, mode: Mode, scenario: Scenario, seed: number
   candidate?: NeuralPolicyModel, opponent?: NeuralPolicyModel) {
   const m = new Match(map, mode), rand = random(seed);
   const counts = { A: counters(), B: counters() };
+  const pilots = new Map<string, Controller>();
   for (const team of TEAMS) for (let i = 0; i < TEAM_CAPACITY[mode][team]; i++) {
     const id = team + i;
     const bot = new Bot(Math.floor(rand() * 2**31), BOT_SKILL.normal, TACTICS, undefined, undefined, team === side ? candidate : opponent);
     const char = randomBotHero([...m.slots.values()].map(s => s.info), team, rand);
-    m.addPlayer(id, { name: id, team, bot: true, char, skins: [], loadout: randomBotLoadout(rand), utility: randomBotUtility(rand) },
-      scenario === 'round' ? bot : monitor(bot, counts[team], duration));
+    m.addPlayer(id, { name: id, team, bot: true, char, skins: [], loadout: randomBotLoadout(rand), utility: randomBotUtility(rand) });
+    pilots.set(id, scenario === 'round' ? bot : monitor(bot, counts[team], duration));
   }
-  m.phase = 'live'; m.phaseT = duration;
+  // Enter the live round through Match so spawn selection, protection and ability cooldowns
+  // are initialized exactly as they are when players start a real match.
+  m.phase = 'countdown'; m.phaseT = 1;
+  m.step();
+  m.snapshot();
+  const start = m.tick;
+  m.phaseT = duration;
   place(m, scenario, rand);
-  while (m.phase === 'live') {
+  // Both policies first see the assigned starting state, including challenge-specific poses.
+  for (const [id, pilot] of pilots) m.slots.get(id)!.controller = pilot;
+  while (m.phaseT > 0) {
     m.step();
     if (m.tick % TICK_HZ === 0) m.snapshot(); // Drain transient simulation events during long rounds.
   }
   const other = side === 'A' ? 'B' : 'A';
-  return { seed, side, map: map.data.mapId, mode, scenario, seconds: m.tick / TICK_HZ,
+  return { seed, side, map: map.data.mapId, mode, scenario, seconds: (m.tick - start) / TICK_HZ,
     margin: m.score[side] - m.score[other], candidate: counts[side], opponent: counts[other] };
 }
 
@@ -218,26 +260,25 @@ function numberArg(v: string, min: number, max: number) {
 function main() {
   const { positionals, values } = parseArgs({ allowPositionals: true, options: {
     incumbent: { type: 'string' }, seeds: { type: 'string', default: '3' }, seed: { type: 'string', default: '13093847' },
-    maps: { type: 'string', default: 'aster,sakura,blackflag' }, seconds: { type: 'string', default: '12' },
+    maps: { type: 'string' }, seconds: { type: 'string', default: '12' },
     'screen-only': { type: 'boolean', default: false },
   } });
   if (positionals.length !== 1) throw Error('Usage: evaluate-self-play.ts <candidate.json> [--incumbent file] [--screen-only]');
   const candidate = load(positionals[0]), incumbent = values.incumbent ? load(values.incumbent) : undefined;
   const seeds = numberArg(values.seeds, 1, 100), firstSeed = numberArg(values.seed, 0, 2**31 - seeds - 1);
   const seconds = numberArg(values.seconds, 1, 60);
-  const maps = [...new Set(values.maps.split(','))];
-  if (!maps.length || maps.some(id => !MAPS.some(m => m.id === id))) throw Error('Unknown evaluation map');
+  const { screen: maps, tournament: tournamentMaps } = evaluationMaps(firstSeed, values.maps);
   const challenges: Leg[] = [];
   const rounds = new Map<string, Leg[]>();
   for (const id of maps) for (let i = 0; i < seeds; i++) {
-    const mixedSeed = (firstSeed + i) ^ createHash('sha256').update(id).digest().readInt32LE();
     for (const side of TEAMS) for (const scenario of CHALLENGES) {
+      const mixedSeed = trialSeed(firstSeed, scenario, id, i);
       challenges.push(play(getMap(id), '1v1', scenario, mixedSeed, side, seconds * TICK_HZ, candidate.model, incumbent?.model));
     }
   }
   const byScenario = Object.fromEntries(CHALLENGES.map(s => [s, scenarioStats(challenges.filter(l => l.scenario === s))]));
   const smoke = byScenario.smoke, wall = byScenario.wall, search = byScenario['rear-search'];
-  const hiddenTargetChecks = maps.map(map => hiddenTargetInvariant(getMap(map), firstSeed, candidate.model));
+  const hiddenTargetChecks = maps.map(map => hiddenTargetInvariant(getMap(map), trialSeed(firstSeed, 'occlusion', map), candidate.model));
   const gates: Record<string, boolean> = {
     hiddenTargetInvariant: hiddenTargetChecks.every(Boolean),
     sufficientCoverage: maps.length >= 3 && seeds >= 2 && seconds >= 8,
@@ -254,15 +295,17 @@ function main() {
     if (incumbent) opponents.push({ name: 'incumbent', model: incumbent.model });
     for (const opponent of opponents) {
       const legs: Leg[] = [];
-      for (const id of maps) for (let i = 0; i < seeds; i++) for (const mode of MODES) {
+      for (const id of tournamentMaps) for (let i = 0; i < seeds; i++) for (const mode of MODES) {
         // Tournament seeds are disjoint from the preceding development-screen starts.
-        const mixedSeed = (firstSeed + i) ^ createHash('sha256').update('round/' + id).digest().readInt32LE();
+        const mixedSeed = trialSeed(firstSeed, 'round', id, i);
         for (const side of TEAMS) legs.push(play(getMap(id), mode, 'round', mixedSeed, side, MATCH_TICKS, candidate.model, opponent.model));
       }
       rounds.set(opponent.name, legs);
     }
   }
   const comparisons = Object.fromEntries([...rounds].map(([name, legs]) => [name, score(legs)]));
+  const byMap = Object.fromEntries([...rounds].map(([name, legs]) => [name, Object.fromEntries(tournamentMaps.map(id =>
+    [id, score(legs.filter(leg => leg.map === getMap(id).data.mapId))]))]));
   const byMode = Object.fromEntries([...rounds].map(([name, legs]) => [name, Object.fromEntries(MODES.map(mode =>
     [mode, score(legs.filter(leg => leg.mode === mode))]))]));
   gates.fullRounds = tournament;
@@ -270,8 +313,8 @@ function main() {
     gates.improved = Object.values(comparisons).every(s => s.blocks >= 6 && s.oneSidedP <= .05 && s.winFractionWithDraws > .5);
     gates.bothModes = Object.values(byMode).every(modes => MODES.every(mode => modes[mode].winFractionWithDraws >= .5));
   }
-  console.log(JSON.stringify({ passed: Object.values(gates).every(Boolean), gates, byMode, byScenario, comparisons,
-    candidate: candidate.sha256, incumbent: incumbent?.sha256 ?? 'baseline', config: { maps, seeds, firstSeed, seconds },
+  console.log(JSON.stringify({ passed: Object.values(gates).every(Boolean), gates, byMode, byMap, byScenario, comparisons,
+    candidate: candidate.sha256, incumbent: incumbent?.sha256 ?? 'baseline', config: { maps, tournamentMaps, seeds, firstSeed, seconds },
     fullRounds: [...rounds.values()].reduce((sum, legs) => sum + legs.length, 0) }));
 }
 

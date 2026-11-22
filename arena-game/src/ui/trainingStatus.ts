@@ -1,5 +1,5 @@
 import { bilingual, getLanguage, onLanguageChange } from '../../../shared-client/i18n.ts';
-import { trainingUrl } from '../network/training.ts';
+import { releaseUrl } from '../network/training.ts';
 
 interface Evaluation {
   generation: number;
@@ -139,7 +139,7 @@ export function mountTrainingStatus() {
     if (!visible() || pending) return;
     pending = true;
     try {
-      const response = await fetch(trainingUrl(location.hostname) + '/status', {
+      const response = await fetch(releaseUrl(location.hostname, location.search) + '/status', {
         credentials: 'omit', cache: 'no-store', signal: AbortSignal.timeout(5000),
       });
       if (!response.ok) throw Error();

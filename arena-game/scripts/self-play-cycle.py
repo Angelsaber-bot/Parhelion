@@ -34,8 +34,9 @@ class Service:
         if not re.fullmatch("[a-f0-9]{64}", self.token):
             raise ValueError("Missing Arena training credential")
         self.http = urllib.request.build_opener(NoRedirect())
+        self.replay_key = None
 
-    def request(self, path, payload=None, optional=False):
+    def request(self, path, payload=None, optional=False, raw=False):
         headers = {"Authorization": "Bearer " + self.token, "Accept": "application/json",
                    "User-Agent": "Parhelion-Arena-Training/1.0", "Content-Type": "application/json"}
         data = json.dumps(payload, separators=(",", ":")).encode() if payload is not None else None
@@ -46,7 +47,7 @@ class Service:
                     body = result.read(LIMIT + 1)
                 if len(body) > LIMIT:
                     raise ValueError("Oversized Arena response")
-                return json.loads(body) if body else None
+                return body if raw else (json.loads(body) if body else None)
             except urllib.error.HTTPError as exc:
                 if optional and exc.code == 404:
                     return None
@@ -73,6 +74,16 @@ class Service:
                 name = f'{RULES}-{batch["capture"]}-{batch["sequence"]}.json'
                 (directory / name).write_text(json.dumps(batch, separators=(",", ":")))
                 after = row["id"]
+
+    def replay_corpus(self, directory, reference_revision, dataset):
+        # Retention can remove old captures even when the human checkpoint stays the same.
+        key = (reference_revision, dataset["batches"], dataset["revision"])
+        if self.replay_key != key or not directory.is_dir():
+            if directory.exists():
+                shutil.rmtree(directory)
+            self.download_corpus(reference_revision, directory)
+            self.replay_key = key
+        return directory
 
 
 def pack(data):
@@ -112,7 +123,16 @@ def cycle(args, service, work, progress):
         raise ValueError("Incompatible Arena rules")
     checkpoint = work / "source.pt"
     prior = work / "reference.pt"
-    history = json.loads(unpack(old["history"])) if old.get("history") else []
+    archive = json.loads(unpack(old["history"])) if old.get("history") else []
+    # Previous runners saved a plain list of the original and most recent frozen opponents.
+    if isinstance(archive, list):
+        history, payoffs = archive, {}
+    elif archive["version"] == 2:
+        history, payoffs = archive["snapshots"], archive["payoffs"]
+    else:
+        raise ValueError("Unsupported Arena opponent league archive")
+    league = work / "league.json"
+    league.write_text(json.dumps(payoffs))
     if service:
         bc = service.request("/checkpoint", optional=True)
         if not bc:
@@ -141,7 +161,7 @@ def cycle(args, service, work, progress):
         if parent and parent_digest != old["digest"]:
             raise ValueError("Restored actor differs from the last committed generation")
         collect = ts + ["scripts/self-play-rollout.ts", "--model", actor, "--seed", seed, "--output", rollout,
-                        "--episodes", args.episodes, "--seconds", args.seconds]
+                        "--episodes", args.episodes, "--seconds", args.seconds, "--league", league]
         last_eval = old.get("lastEvaluation") or {}
         previous_failures = set(last_eval.get("failedGates", []))
         curriculum = {"wall": {"wallStalls"}, "rear": {"rearSearch", "human_search", "candidateHasSearch"},
@@ -154,8 +174,10 @@ def cycle(args, service, work, progress):
         live = status.get("neural")
         incumbent = work / "incumbent.json"
         if live:
-            model = service.request("/neural?version=" + live["digest"])
-            incumbent.write_text(json.dumps(model, separators=(",", ":")))
+            model = service.request("/neural?version=" + live["digest"], raw=True)
+            if hashlib.sha256(model).hexdigest() != live["digest"]:
+                raise ValueError("Live Arena model changed while restoring the opponent pool")
+            incumbent.write_bytes(model)
             collect += ["--opponent", incumbent]
         for index, snapshot in enumerate(history):
             opponent = work / f"opponent-{index}.json"
@@ -165,13 +187,14 @@ def cycle(args, service, work, progress):
         phase("updating")
         evaluate = generation % args.eval_every == 0
         corpus = args.corpus
-        if evaluate and service:
-            corpus = work / "human"
-            service.download_corpus(revision, corpus)
+        if service:
+            corpus = service.replay_corpus(work.parent / "human", revision, status["dataset"])
         update = [sys.executable, TRAINER, "update", "--resume", checkpoint, "--rollout", rollout, "--actor", actor,
                   "--checkpoint", output, "--output", candidate, "--metrics", metrics_file, "--prior", prior, "--seed", seed]
         if corpus and Path(corpus).is_dir():
             update += ["--dataset", corpus]
+        if not evaluate:
+            update.append("--skip-holdout")
         run(update)
         metrics = json.loads(metrics_file.read_bytes())
         model_text = candidate.read_text()
@@ -193,18 +216,21 @@ def cycle(args, service, work, progress):
             if not results["passed"] and all(results["gates"].values()):
                 failed.append("simulation")
             promoted = results["passed"] and not failed
-            print("Evaluation", json.dumps({"passed": promoted, "failedGates": failed}), flush=True)
+            print("Evaluation", json.dumps({"passed": promoted, "failedGates": failed, "config": results["config"],
+                  "byScenario": results["byScenario"], "byMap": results["byMap"],
+                  "comparisons": results["comparisons"], "fullRounds": results["fullRounds"]}), flush=True)
         # Keep one older anchor and a recent opponent. The incumbent and parent are also sampled.
         if not history:
             history = [actor.read_text()]
         elif generation % 3 == 0:
             history = [history[0], actor.read_text()]
+        archive = {"version": 2, "snapshots": history, "payoffs": json.loads(league.read_bytes())}
         record = dict(rulesVersion=RULES, parent=parent, generation=generation, humanRevision=revision,
                       episodes=metrics["games"], optimizerSteps=metrics["updates"],
                       environmentSteps=metrics["environmentSteps"], digest=digest,
                       reason="passed" if promoted else "evaluation_failed" if evaluate else "shadow",
                       failedGates=failed, checkpoint=pack(output.read_bytes()),
-                      history=pack(json.dumps(history, separators=(",", ":")).encode()))
+                      history=pack(json.dumps(archive, separators=(",", ":")).encode()))
         if service:
             if promoted:
                 record.update(promote=model_text, expectedReleaseDigest=live["digest"] if live else None)
@@ -257,8 +283,12 @@ def main():
         cli.error("Counts must be positive")
     if args.cloud and args.corpus:
         cli.error("Cloud evaluation loads the human corpus for its reference revision")
+    if not args.cloud and args.corpus is None and (ROOT / ".scratch/training/corpus").is_dir():
+        args.corpus = ROOT / ".scratch/training/corpus"
     if args.corpus:
         args.corpus = args.corpus.resolve()
+        if not args.corpus.is_dir():
+            cli.error("Expected a directory of human training batches")
     os.umask(0o077)
     service = Service() if args.cloud else None
     if args.camera_audit_only:
@@ -275,11 +305,12 @@ def main():
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         if (args.state / "state.json").exists():
             progress = json.loads((args.state / "state.json").read_bytes())
-    iteration = 0
-    while args.continuous or iteration < args.generations:
-        with tempfile.TemporaryDirectory(prefix="arena-self-play-") as directory:
-            progress = cycle(args, service, Path(directory), progress)
-        iteration += 1
+    with tempfile.TemporaryDirectory(prefix="arena-self-play-") as session:
+        iteration = 0
+        while args.continuous or iteration < args.generations:
+            with tempfile.TemporaryDirectory(dir=session) as directory:
+                progress = cycle(args, service, Path(directory), progress)
+            iteration += 1
 
 
 if __name__ == "__main__":

@@ -1,6 +1,13 @@
-import { expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
+import { ArenaRoom } from '../server/ArenaRoom.ts';
+import { newExplorationCheckpoint } from '../shared/exploration.ts';
 import { createNeuralPolicy, NEURAL_FEATURE_COUNT, NEURAL_OUTPUT_COUNT, parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
+import { LOCAL_TRAINER, PUBLIC_TRAINER, releasedBotPolicies } from '../shared/releasedBotPolicy.ts';
+import { releaseUrl } from '../src/network/training.ts';
+import { startOffline } from '../src/network/session.ts';
+
+afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 function fixture(): NeuralPolicyModel {
   const width = 4, context = 3;
@@ -62,5 +69,85 @@ it('executes causal attention with fixed positions, left padding and rolling his
   expect(() => policy.think([1])).toThrow(/Arena observations/);
   policy.reset();
   expect(policy.think(observations[0])).toEqual(output[0]);
+});
+
+it('uses the promoted policy service on public, LAN and loopback games unless local development is selected', () => {
+  expect(releaseUrl('localhost', '')).toBe(PUBLIC_TRAINER);
+  expect(releaseUrl('192.168.1.123', '')).toBe(PUBLIC_TRAINER);
+  expect(releaseUrl('parhelion-game.pages.dev', '?trainer=local')).toBe(PUBLIC_TRAINER);
+  expect(releaseUrl('[::1]', '?trainer=local')).toBe(LOCAL_TRAINER);
+});
+
+it('shares concurrent downloads, retains a vetted release on outages, and honors withdrawal', async () => {
+  const model = fixture(), exploration = newExplorationCheckpoint();
+  exploration.counts[0] = 1;
+  const fetcher = vi.fn((url: string) => Promise.resolve(Response.json(url.endsWith('/neural') ? model : exploration)));
+  vi.stubGlobal('fetch', fetcher);
+  const releases = releasedBotPolicies(PUBLIC_TRAINER);
+  const refreshing = releases.refresh();
+  const [first, concurrent] = await Promise.all([releases.forMatch(refreshing), releases.forMatch()]);
+  expect(first).toBe(concurrent);
+  expect(first.neural).toEqual(model);
+  expect(first.exploration?.counts).toEqual(exploration.counts);
+  expect(fetcher.mock.calls.map(([url]) => url)).toEqual([PUBLIC_TRAINER + '/neural', PUBLIC_TRAINER + '/exploration?active=1']);
+  fetcher.mockRejectedValue(new Error('Offline'));
+  const disconnected = await releases.forMatch();
+  expect(disconnected.neural).toBe(first.neural);
+  expect(disconnected.exploration).toBe(first.exploration);
+  fetcher.mockImplementation(async url => url.endsWith('/neural') ? new Response(null, { status: 404 }) : Response.json(null));
+  expect(await releases.forMatch()).toEqual({ neural: undefined, exploration: undefined });
+  expect(first.neural).toEqual(model);
+  fetcher.mockImplementation(async () => Response.json({ ...model, synthetic: true }));
+  expect((await releases.forMatch()).neural).toBeUndefined();
+});
+
+it('starts a fresh offline match on time and makes a slow release available to the following match', async () => {
+  vi.useFakeTimers();
+  let settle!: (response: Response) => void;
+  const transfer = new Promise<Response>(resolve => { settle = resolve; });
+  vi.stubGlobal('fetch', (url: string) => url.endsWith('/neural') ? transfer : Promise.resolve(Response.json(null)));
+  const releases = releasedBotPolicies(PUBLIC_TRAINER);
+  const refreshing = releases.refresh(), match = releases.forMatch(refreshing);
+  await vi.advanceTimersByTimeAsync(1500);
+  const fallback = await match;
+  expect(fallback.neural).toBeUndefined();
+  settle(Response.json(fixture()));
+  await refreshing;
+  vi.stubGlobal('fetch', () => Promise.reject(new Error('Disconnected')));
+  expect((await releases.forMatch()).neural).toEqual(fixture());
+  expect(fallback.neural).toBeUndefined();
+});
+
+it('applies the same promoted action in an offline match and a Colyseus bot-fill room', async () => {
+  const model = fixture();
+  model.out.weight.forEach(row => row.fill(0));
+  model.out.bias.fill(0);
+  model.out.bias[2] = 1.2;
+  model.out.bias[3] = -.7;
+  const fetcher = vi.fn(async (url: string) => Response.json(url.endsWith('/neural') ? model : null));
+  vi.stubGlobal('fetch', fetcher);
+
+  const options = { layout: '1v1', team: 'A', name: 'Player', char: 0, skins: [] } as const;
+  const room = new ArenaRoom();
+  vi.spyOn(room, 'setMetadata').mockResolvedValue(undefined);
+  vi.spyOn(room, 'setSimulationInterval').mockImplementation(() => {});
+  room.onCreate({ layout: '1v1' });
+  expect(fetcher).not.toHaveBeenCalled();
+  const botRoom = new ArenaRoom();
+  vi.spyOn(botRoom, 'setMetadata').mockResolvedValue(undefined);
+  vi.spyOn(botRoom, 'setSimulationInterval').mockImplementation(() => {});
+  await botRoom.onCreate({ layout: '1v1', bots: true });
+  const policies = await releasedBotPolicies(PUBLIC_TRAINER).forMatch();
+  const offline = startOffline({ ...options, skins: [] }, 'normal', Math.random, policies.exploration, policies.neural);
+  try {
+    offline.setPaused(true);
+    for (const match of [botRoom.match, offline.match!]) {
+      match.phase = 'live';
+      const bot = [...match.slots.values()].find(slot => slot.info.bot)!;
+      const action = bot.controller!.think(match, bot.state.id);
+      expect(action.mx).toBeCloseTo(Math.tanh(1.2), 9);
+      expect(action.mz).toBeCloseTo(Math.tanh(-.7), 9);
+    }
+  } finally { offline.close(); }
 });
 

@@ -1,7 +1,23 @@
 import { expect, it } from 'vitest';
-import { getMap } from '../shared/arenaMap.ts';
+import { getMap, MAPS } from '../shared/arenaMap.ts';
 import { MATCH_TICKS, SCORE_LIMIT, TICK_HZ } from '../shared/content.ts';
-import { play, score } from './bench/evaluate-self-play.ts';
+import { evaluationMaps, play, score } from './bench/evaluate-self-play.ts';
+
+it('holds separate rotation maps for the tournament and can replay a campaign by seed', () => {
+  const screened = new Set<string>(), heldBack = new Set<string>();
+  for (let seed = 1; seed <= 32; seed++) {
+    const { screen, tournament } = evaluationMaps(seed);
+    expect(evaluationMaps(seed)).toEqual({ screen, tournament });
+    expect(new Set([...screen, ...tournament]).size).toBe(6);
+    screen.forEach(id => screened.add(id));
+    tournament.forEach(id => heldBack.add(id));
+  }
+  const shipped = new Set(MAPS.map(map => map.id));
+  expect(screened).toEqual(shipped);
+  expect(heldBack).toEqual(shipped);
+  expect(evaluationMaps(18, 'sakura, aster,sakura')).toEqual({ screen: ['sakura', 'aster'], tournament: ['sakura', 'aster'] });
+  expect(() => evaluationMaps(18, 'missing')).toThrow('Unknown evaluation map');
+});
 
 it('compares independent map/seeds rather than treating swapped sides or game modes as independent wins', () => {
   const sameBlock = Array.from({ length: 100 }, () => ({ seed: 1, map: 'aster', margin: 1 }));

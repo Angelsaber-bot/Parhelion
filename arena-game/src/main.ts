@@ -28,7 +28,7 @@ import {FrameGate,worldRenderVisible} from './rendering/renderScheduling.ts';
 import { ArenaScene } from './rendering/scene.ts';
 import { joinOnline, startOffline, startRange, type Session } from './network/session.ts';
 import { postStats } from './network/stats.ts';
-import { fetchExplorationModel, fetchNeuralModel, submitTraining } from './network/training.ts';
+import { matchPolicies, submitTraining } from './network/training.ts';
 import { RANGE_MAP_ID } from '../shared/trainingRange.ts';
 import { GUN_IDS, MELEE_IDS, type Loadout, type UtilityId } from '../shared/content.ts';
 import asterThumb from './assets/maps/aster.jpg';
@@ -301,6 +301,7 @@ addEventListener('pagehide', event => {
   cancelStart();
   if (!event.persisted) { pageExited = true; game?.stop(); game = null; }
 });
+const botPolicies = matchPolicies();
 $('play').onclick = async () => {
   if (starting || game || pageExited || settingsPanel.open || (document.getElementById('armory-dialog') as HTMLDialogElement|null)?.open) return;
   const name = nameInput.value.trim();
@@ -338,6 +339,7 @@ $('play').onclick = async () => {
   try { localStorage.setItem('arena-lobby', JSON.stringify(withSkinSelection({ name: opts.name, layout: opts.layout, char, heroId:CHARACTERS[char].id, server, map: mapId, room: roomCode ?? '' },skins))); } catch { /* private mode */ }
   try {
     sfx.unlock();
+    const release = attempt.mode === 'offline' && !lessonRequested ? botPolicies.refresh() : undefined;
     await (attempt.mode === 'range' ? scene.loadMap(RANGE_MAP_ID, 'day') : mapReady);
     if (!current()) return;
     attempt.phase = 'models'; renderStartupStatus();
@@ -347,8 +349,7 @@ $('play').onclick = async () => {
     await scene.prepareLoadout(loadoutStore.value.map(weaponIndex),skins);
     if (!current()) return;
     attempt.phase = 'join'; renderStartupStatus();
-    const [neural, exploration] = attempt.mode === 'offline' && !lessonRequested
-      ? await Promise.all([fetchNeuralModel(), fetchExplorationModel()]) : [];
+    const { neural, exploration } = release ? await botPolicies.forMatch(release) : {};
     if (!current()) return;
     ownedSession = attempt.mode === 'online' ? await joinOnline(server, opts) : attempt.mode === 'range' ? startRange(opts) : startOffline(opts, 'normal', Math.random, exploration, neural);
     if (attempt.mode === 'offline' && !localHost) ownedSession.onStats = postStats;

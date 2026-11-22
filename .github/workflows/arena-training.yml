@@ -1,6 +1,13 @@
 name: Arena neural training
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/arena-training.yml'
+      - 'arena-game/scripts/self-play-*'
+      - 'arena-game/tools/train-self-play.py'
+      - 'arena-game/test/bench/evaluate-self-play.ts'
   workflow_dispatch:
     inputs:
       pixel_audition:

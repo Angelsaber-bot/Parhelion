@@ -13,6 +13,7 @@ import { Match, type Controller } from '../shared/match.ts';
 import type { NavNode } from '../shared/nav.ts';
 import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
+import { opponentLeague } from './self-play-league.ts';
 
 const AXIS_STD = .35;
 const TACTICS = learnedTactics(tactics.weights, tactics.margin);
@@ -25,6 +26,7 @@ interface Step {
   logp: number; reward: number;
 }
 interface FrozenActor { hash: string; model: NeuralPolicyModel }
+type Opponent = { mode: 'self-play' | 'scripted' } | { mode: 'frozen'; actor: FrozenActor };
 
 function rng(seed: number) {
   // Adjacent generation numbers should start on different regions of the map/roster sequence.
@@ -146,20 +148,21 @@ function placeEncounter(game: Match, scenario: Scenario, rand: () => number): { 
   throw Error(`Could not construct a playable ${scenario} scenario on ${game.map.data.mapId}`);
 }
 
-function play(actor: FrozenActor, opponent: FrozenActor | undefined, map: string, layout: TeamLayout, team: Team,
+function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamLayout, team: Team,
               scenario: Scenario, seed: number, seconds: number) {
   const rand = rng(seed), seed32 = () => Math.floor(rand() * 4294967296);
   const enemy = team === 'A' ? 'B' : 'A';
   const game = new Match(getMap(map), layout);
   const steps: Step[] = [];
-  const scripted = () => new Bot(seed32(), BOT_SKILL.normal, TACTICS);
   const bots = layout === '2v2' ? ['pilot', 'rival', 'partner', 'other'] : ['pilot', 'rival'];
   for (const id of bots) {
     const friendly = id === 'pilot' || id === 'partner';
     const side = friendly ? team : enemy;
     const char = randomBotHero([...game.slots.values()].map(slot => slot.info), side, rand);
-    const driver = friendly ? learnedController(actor, rng(seed32()), id === 'pilot' ? steps : undefined) :
-      opponent ? learnedController(opponent, rng(seed32())) : scripted();
+    // Only self-play explores on both sides. Archived rivals use the same action selection as a live released bot.
+    const driver = friendly || opponent.mode === 'self-play'
+      ? learnedController(actor, rng(seed32()), id === 'pilot' ? steps : undefined)
+      : new Bot(seed32(), BOT_SKILL.normal, TACTICS, undefined, undefined, opponent.mode === 'frozen' ? opponent.actor.model : undefined);
     game.addPlayer(id, { name: id, team: side, char, skins: [], bot: true, loadout: randomBotLoadout(rand), utility: randomBotUtility(rand) }, driver);
   }
   game.phase = 'countdown';
@@ -188,7 +191,8 @@ function play(actor: FrozenActor, opponent: FrozenActor | undefined, map: string
   if (!steps.length) throw Error('No live decisions in the simulated match');
   const outcome = Math.sign(game.score[team] - game.score[enemy]);
   steps[steps.length - 1].reward += outcome;
-  return { map, layout, seed, team, scenario: start.scenario, opponent: opponent?.hash ?? 'scripted',
+  const opponentHash = opponent.mode === 'frozen' ? opponent.actor.hash : opponent.mode === 'self-play' ? actor.hash : 'scripted';
+  return { map, layout, seed, team, scenario: start.scenario, opponent: opponentHash, opponentMode: opponent.mode,
     score: game.score, outcome, ticks: game.tick - firstTick, steps };
 }
 
@@ -219,7 +223,7 @@ function curriculum(count: number, focus: Focus[], rand: () => number) {
 function main() {
   const { values } = parseArgs({ options: {
     model: { type: 'string' }, output: { type: 'string' }, opponent: { type: 'string', multiple: true, default: [] },
-    focus: { type: 'string', multiple: true, default: [] },
+    focus: { type: 'string', multiple: true, default: [] }, league: { type: 'string' },
     seed: { type: 'string', default: '777' }, episodes: { type: 'string', default: '8' }, seconds: { type: 'string', default: '30' },
   } });
   if (!values.model || !values.output) throw Error('Specify --model actor.json --output trajectories.json');
@@ -230,28 +234,30 @@ function main() {
     throw Error('Each --focus must be wall, rear or smoke');
   });
   const actor = readActor(values.model);
-  const pool: (FrozenActor | undefined)[] = [actor, undefined];
+  const pool = new Map<string, Opponent>([['self-play', { mode: 'self-play' }], ['scripted', { mode: 'scripted' }]]);
   for (const file of values.opponent) {
     const rival = readActor(file);
-    if (!pool.some(item => item?.hash === rival.hash)) pool.push(rival);
+    pool.set(rival.hash, { mode: 'frozen', actor: rival });
   }
   const random = rng(seed);
   const mapOffset = Math.floor(random() * MAPS.length);
   const order = [...MAPS.slice(mapOffset), ...MAPS.slice(0, mapOffset)];
   const episodes = [];
   const schedule = curriculum(count, focus, random);
-  const opponentOffset = Math.floor(random() * pool.length);
+  const previous = values.league ? JSON.parse(readFileSync(values.league, 'utf8')) : {};
+  const league = opponentLeague([...pool.keys()], count, previous, random);
   for (let i = 0; i < count; i++) {
     const layout = i % 4 === 1 || i % 4 === 2 ? '2v2' : '1v1';
     const team = i % 2 ? 'B' : 'A';
     const { scenario, focused } = schedule[i];
-    // Shuffle opponent assignments across layout/side each cycle.
-    const opponent = pool[(opponentOffset + i + Math.floor(i / (2 * pool.length))) % pool.length];
-    const episode = play(actor, opponent, order[i % order.length].id, layout, team, scenario, Math.floor(random() * 4294967296), seconds);
+    const rival = league.select(i);
+    const episode = play(actor, pool.get(rival)!, order[i % order.length].id, layout, team, scenario, Math.floor(random() * 4294967296), seconds);
+    league.observe(rival, episode.outcome);
     episodes.push({ ...episode, focused });
   }
   const payload = { version: 1, rulesVersion: RULES_VERSION, actorHash: actor.hash, axisStd: AXIS_STD, focus, episodes };
   writeFileSync(values.output, JSON.stringify(payload), { mode: 0o600 });
+  if (values.league) writeFileSync(values.league, JSON.stringify(league.payoffs), { mode: 0o600 });
   console.log(`Simulated ${count} matches, collected ${episodes.reduce((n, e) => n + e.steps.length, 0)} policy decisions.`);
 }
 

@@ -8,18 +8,27 @@ import { Room, type Client } from '@colyseus/core';
 import { TICK_HZ, validateLoadout } from '../shared/content.ts';
 import type { Match } from '../shared/match.ts';
 import { assertRulesVersion, normalizeRoomCode, type JoinOptions } from '../shared/protocol.ts';
+import { LOCAL_TRAINER, PUBLIC_TRAINER, releasedBotPolicies } from '../shared/releasedBotPolicy.ts';
 import { RoomCore } from '../shared/room.ts';
 
 /** Human-only weapon telemetry of local-server matches, one JSON record per line. */
 const STATS_FILE = process.env.ARENA_STATS_FILE ?? 'arena-stats.jsonl';
+const botPolicies = releasedBotPolicies(process.env.ARENA_TRAINER === 'local' ? LOCAL_TRAINER : PUBLIC_TRAINER);
 
 export class ArenaRoom extends Room {
   core!: RoomCore;
   get match(): Match { return this.core.match; }
   maxMessagesPerSecond = 120;
 
-  onCreate(options: Partial<JoinOptions>) {
-    const core = this.core = new RoomCore(options, 'local');
+  onCreate(options: Partial<JoinOptions>): void | Promise<void> {
+    if (options.bots) return botPolicies.forMatch().then(({ neural, exploration }) => {
+      this.prepare(new RoomCore(options, 'local', neural, exploration), options);
+    });
+    this.prepare(new RoomCore(options, 'local'), options);
+  }
+
+  private prepare(core: RoomCore, options: Partial<JoinOptions>) {
+    this.core = core;
     this.maxClients = core.capacity;
     // Colyseus 0.18 replaces metadata; keep every declared matchmaking filter.
     this.setMetadata({ layout: core.layout, map: core.mapId, bots: core.fillBots, ...(typeof options.room === 'string' ? { room: options.room } : {}) });
