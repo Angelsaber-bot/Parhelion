@@ -3,6 +3,7 @@ import { encodeOriginalProgressText } from '../core/progressRecovery';
 import { WorldProgress, parseProgressBackup, type ProgressPersistenceState } from '../core/progress';
 
 const STATUS: Record<ProgressPersistenceState, [string, string]> = {
+  conflict: ['另一页已保存了新的旅程。可先下载本页的备份，再重新载入最新存档。', 'Another tab saved newer progress. Back up this session if needed, then reload the latest save.'],
   ready: ['任务与发现会自动保存在当前浏览器。', 'Quests and discoveries save automatically in this browser.'],
   saved: ['任务进度已保存到当前浏览器。', 'Quest progress is saved in this browser.'],
   unavailable: ['浏览器未开放本地存储。本次进度仅保留在当前页面；离开前可下载备份。', 'Local storage is unavailable. This session only keeps progress in memory; download a backup before leaving.'],
@@ -46,8 +47,8 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
     originalHelp.hidden = original.hidden;
     originalHelp.textContent = bilingual('以 UTF-16LE（.utf16le）保留原始文本数据，供排查或修复；不是可直接导入的进度备份，不会修改当前记录。', 'Preserves the original text data as UTF-16LE (.utf16le) for diagnosis or repair. Not a directly importable progress backup; the current record is unchanged.');
     retry.hidden = progress.persistence === 'ready' || progress.persistence === 'saved';
-    warning.hidden = progress.persistence !== 'failed' && progress.persistence !== 'unavailable' && progress.persistence !== 'invalid';
-    warning.textContent = progress.saveBlocked ? bilingual('原存档受保护 · 本次进度尚未保存 · 请到设置备份或恢复', 'Original save protected · Session not saved · Back up or restore in Settings') : progress.persistence === 'invalid'
+    warning.hidden = progress.persistence !== 'conflict' && progress.persistence !== 'failed' && progress.persistence !== 'unavailable' && progress.persistence !== 'invalid';
+    warning.textContent = progress.persistence === 'conflict' ? bilingual(...STATUS.conflict) : progress.saveBlocked ? bilingual('原存档受保护 · 本次进度尚未保存 · 请到设置备份或恢复', 'Original save protected · Session not saved · Back up or restore in Settings') : progress.persistence === 'invalid'
       ? bilingual('已有存档无法读取 · 请先到设置检查或恢复备份', 'Existing save unreadable · Check Settings or restore a backup before continuing')
       : bilingual('任务尚未保存 · 设置中可重试或下载备份', 'Quest progress is not saved · Retry or back up in Settings');
   };

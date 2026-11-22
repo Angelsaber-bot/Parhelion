@@ -313,6 +313,9 @@ onLanguageChange(() => {
 });
 
 async function boot() {
+const progressStorage = (() => { try { return localStorage; } catch { return undefined; } })();
+const worldProgress = new WorldProgress(progressStorage);
+const { done, found } = worldProgress;
 
 // ───────────── renderer / scene ─────────────
 const canvas = $<HTMLCanvasElement>('view');
@@ -462,7 +465,14 @@ if (borderStitch.samples && !params.has('nostitch')) {
 const streamStatus=document.createElement('div');streamStatus.id='world-region-loading';Object.assign(streamStatus.style,{position:'fixed',top:'18px',left:'50%',transform:'translateX(-50%)',padding:'8px 12px',background:'#172e3de8',color:'#edf5e8',borderRadius:'6px',zIndex:'30'});streamStatus.hidden=true;const streamText=document.createElement('span'),streamRetry=document.createElement('button');streamRetry.textContent=bilingual('重试地区加载','Retry region loading');streamRetry.hidden=true;streamStatus.append(streamText,streamRetry);document.body.append(streamStatus);let streamFailure='';
 const regionVisuals=new RegionVisualStreaming({parent:world,warm:root=>warmShaders(root),uploadBudget:(lowQ?3:6)*1048576,carve:(id,name,geometry)=>{const carved=clearProductionLandscape(id,name,geometry),def=REGIONS.find(r=>r.id===id);if(def&&borderStitch.samples&&!params.has('nostitch')&&ridesWithGround(name))borderStitch.apply(carved??geometry,(x,z)=>regionToWorld(def,x,z),def.offset);return carved;},eager:params.has('eager'),outlines:!params.has('noline'),lowQuality:lowQ,status:(id,error)=>{streamFailure=error?id:'';streamStatus.hidden=!id;streamText.textContent=error?bilingual('地区画面暂时未能加载，道路与进度已保留。','Region art could not load; routes and progress are retained.'):bilingual('正在载入前方地区…','Loading the region ahead…');streamRetry.hidden=!error;}});streamRetry.onclick=e=>{e.stopPropagation();if(streamFailure)void regionVisuals.retry(streamFailure);};
 addEventListener('pagehide',e=>{if(!e.persisted){regionVisuals.dispose();streamStatus.remove();}});
-const initialVisualRegion=params.get('region')??(typeof echoReturn!=='undefined'?echoReturn??'alpha':'alpha');if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(REGIONS.some(r=>r.id===initialVisualRegion)?initialVisualRegion:'alpha')))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
+const savedCamp = worldProgress.camp;
+const prologueStage = valleyPrologueStage(done);
+const roaming = (prologueStage === 'complete' || prologueStage === 'legacy') && (!done.has(JOURNEY.launch) || done.has(JOURNEY.epilogue));
+const resumeCamp = roaming && savedCamp && found.has('travel_'+savedCamp) &&
+  (savedCamp === 'alpha' || savedCamp === 'home' || adventureTravelOpen(done)) &&
+  !['region','spawn','cam','lit'].some(key=>params.has(key)) && !echoReturn ? savedCamp : undefined;
+const initialVisualRegion = params.get('region') ?? echoReturn ?? resumeCamp ?? 'alpha';
+if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(REGIONS.some(r=>r.id===initialVisualRegion)?initialVisualRegion:'alpha')))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
 // From here on, newly entered regions install a few milliseconds per frame instead of freezing on arrival.
 regionVisuals.sliceMs=8;
 document.title = 'Parhelion · World';
@@ -956,9 +966,7 @@ const map = new WorldMap(grid, layout);
 const objectiveFor = (x: number, z: number) => layout.objectives.find((o) => o.region === regionAt(x, z).id)!.objective;
 
 // ───────────── progress (local, per browser) ─────────────
-const progressStorage = (() => { try { return localStorage; } catch { return undefined; } })();
-const worldProgress = new WorldProgress(progressStorage);
-const { done, found } = worldProgress;
+
 // 幻日探索层：宝箱、日晕之羽、石像、棱镜谜题、时层挑战、战斗据点（src/exploration）。
 const exploration=createExploration({done,save:()=>save(),toast:text=>toast(text),terrain:(x,z)=>grid.sampleHeight(x,z)??0,waterLevel:layout.world.waterLevel,
  startEncounter:spec=>combat.startStoryEncounter(spec,{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated&&!player.flying&&!player.gliding&&!player.swimming}),
@@ -998,9 +1006,12 @@ function fieldAmmo(){
   if(st.dryPulls!==ammoDryPulls){ammoDryPulls=st.dryPulls;if(t-ammoHintAt>5000){ammoHintAt=t;const hint=weaponDryFireHint(st,settings.label('melee'));if(hint)toast(bilingual(...hint));}}
   if(!gameplayActive()||combat.defeated||st.ammo>=WORLD_RIFLE.ammoMax||st.quietFor<2||t-ammoRefillAt<1500)return;
   const home=settlements.placements.find(p=>Math.hypot(player.pos.x-p.position[0],player.pos.z-p.position[2])<Math.hypot(...p.footprint)/2+18);
-  if(!home)return;
+  const name=home?.name ?? travelStops.find(stop=>!stop.requiredCompletionFlag &&
+    Math.abs(player.pos.y-stop.position[1])<=3 &&
+    Math.hypot(player.pos.x-stop.position[0],player.pos.z-stop.position[2])<=stop.radius)?.name;
+  if(!name)return;
   ammoRefillAt=t;const got=st.refillAmmo();
-  if(got>0)toast(bilingual(`${home.name[0]}：补充弹药 +${got}（${st.ammo}/${WORLD_RIFLE.ammoMax}）`,`${home.name[1]}: rounds resupplied +${got} (${st.ammo}/${WORLD_RIFLE.ammoMax})`));
+  if(got>0)toast(bilingual(`${name[0]}：补充弹药 +${got}（${st.ammo}/${WORLD_RIFLE.ammoMax}）`,`${name[1]}: rounds resupplied +${got} (${st.ammo}/${WORLD_RIFLE.ammoMax})`));
 }
 function applyExplorationGlide(level=explorationGlideLevel(done)){const g=explorationGlideScale(level);player.glideSpeedScale=g.speed;player.glideSinkScale=g.sink;}
 const weaponFinishStore = new WeaponFinishStore(progressStorage);
@@ -1655,7 +1666,17 @@ if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene && !params
 }
 if (typeof JOURNEY !== 'undefined' && !params.has('region') && !params.has('spawn')) {
   if (done.has(JOURNEY.launch) && !done.has(JOURNEY.returnHome)) spawn = skyJourneySpawn();
-  else if (done.has(JOURNEY.returnHome) && !done.has(JOURNEY.epilogue)) spawn = journeyHomeSpawn();
+  else if (done.has(JOURNEY.returnHome)) spawn = journeyHomeSpawn();
+}
+if (typeof resumeCamp !== 'undefined' && resumeCamp) {
+  const stop = travelStops.find(s => s.id === 'travel_'+resumeCamp);
+  if (stop) {
+    const [x,y,z] = stop.position;
+    const ground = residentQueries.ground(x,z,y+2);
+    if (ground && Math.abs(ground.point.y-y) <= 1 && residentQueries.clear(ground.point,.38,1.8)) {
+      spawn = { id:stop.id, type:'spawn', label:stop.name[0], p:[x,ground.point.y,z] };
+    }
+  }
 }
 const spawnAt = (areaId?: string) => {
   actions?.cancel(); fortCannon.cancel(); hudRevision++;
@@ -2296,7 +2317,11 @@ homeTown=createHomeTown({scene,done,contract,servant,dialogue:narrative,save,cha
  input:()=>({held:down('interact'),moving:!!(down('forward')||down('back')||down('left')||down('right')||down('jump'))||Math.hypot(player.vel.x,player.vel.z)>.2,attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active),grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,unsafeMotion:player.flying||player.swimming||player.gliding,damage:relayDamageRevision}),
  toast:line=>toast(bilingual(...line)),prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();}});
 layout.markers.push(...homeTown.markers);for(const marker of homeTown.markers)markers.set(marker.id,marker);
-echoHall=createEchoHall({scene,dialogue:narrative,prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();},
+echoHall=createEchoHall({scene,dialogue:narrative,
+ wayposts:{stops:travelStops,footing:(x,z,y)=>{
+   const ground=residentQueries.ground(x,z,y+1.25);
+   return ground && Math.abs(ground.point.y-y)<1 && residentQueries.clear(ground.point,.65,2.85) ? ground.point.y : null;
+ }},prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();},
  canInteract:id=>{const m=echoHall?.markers.find(m=>m.id===id);return !!m&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??2.6);},
  safe:()=>!getTravelSafetyBlock({...travelContext(),carrying:!!residentEventRuntime?.carrying})&&!ultimateDirector?.active,
  toast:line=>toast(bilingual(...line)),servant:()=>contract.selected,
@@ -2306,7 +2331,10 @@ layout.markers.push(...echoHall.markers);for(const marker of echoHall.markers)ma
 addEventListener('pagehide',e=>{if(!e.persisted)echoHall?.dispose();});
 if (echoReturn) {
   const pose = echoHall.returnPose(echoReturn);
-  if (pose) player.teleport(pose.p.x, pose.p.y+.2, pose.p.z, pose.yaw);
+  if (pose) {
+    player.teleport(pose.p.x, pose.p.y+.2, pose.p.z, pose.yaw);
+    spawn = {id:'echo_return',type:'spawn',label:'演武台',p:pose.p.toArray()};
+  }
 }
 // Jeanne, Ozymandias and Qin Shi Huang: each now joins through a contract arc of its own (servantPacts.ts).
 servantPacts=createServantPacts({scene,done,dialogue:narrative,prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();},
@@ -2442,6 +2470,25 @@ function travelContext(): TravelContext {
   return { sessionReady: !bootFailed && !worldExited && !graphicsRecovery?.blocked, defeated: combat.defeated, combatActive: combat.bossStarted || !!combat.storyEncounter || !!compactRelayRuntime?.active || (typeof helionFight !== 'undefined' && helionFight.active) || (typeof activeRealmClimax !== 'undefined' && !!activeRealmClimax), threatened, quietSeconds: combat.state.quietFor,
     flying: player.flying, gliding: player.gliding, swimming: player.swimming, onGround: player.onGround,
     carrying: !!residentEventRuntime?.carrying||!!homeTown?.activities.carrying, mounted: fortCannon.mounted || !!fieldSideSites?.royalFerry?.riding || egyptSolarBoat.aboard(player), actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
+}
+function updateSettlementCheckpoint() {
+  const context = travelContext(), pos = player.pos.toArray();
+  const discovered = discoverTravelStops(travelStops,pos,context,found);
+  const stop = travelStops.find(s => !s.requiredCompletionFlag && s.region !== worldProgress.camp &&
+    found.has(s.foundFlag) && Math.abs(s.position[1]-pos[1]) <= 3 &&
+    Math.hypot(s.position[0]-pos[0],s.position[2]-pos[2]) <= s.radius);
+  const stage = stop && valleyPrologueStage(done);
+  const register = stop && (stage === 'legacy' || stage === 'complete') &&
+    (!done.has(JOURNEY.launch) || done.has(JOURNEY.epilogue)) &&
+    !getTravelBlock(stop.id,travelStops,done,found,context);
+  if (!discovered.length && !register) return;
+  if (register) {
+    worldProgress.camp = stop.region;
+    spawn = {id:stop.id,type:'spawn',label:stop.name[0],p:[...stop.position]};
+  }
+  const saved=save(); hudRevision++;
+  if (register && saved) toast(bilingual(`下次续玩从${stop.name[0]}出发。`,`Journey checkpoint saved at ${stop.name[1]}.`));
+  else if (discovered.length && saved) toast(bilingual(`已登记安全据点 · ${settings.label('travel')} 打开快速旅行。`,`Safe settlement registered · ${settings.label('travel')} opens fast travel.`));
 }
 function executeSafeTravel(id: string) {
   if (bootFailed || worldExited || graphicsRecovery?.blocked) return false;
@@ -2588,8 +2635,8 @@ renderClaimsButton();const unsubscribeClaimsButton=onLanguageChange(renderClaims
 claimsOpen.addEventListener('click',event=>{event.stopPropagation();questJournal?.show({region:'all',category:'main',search:'契约'});});start.append(claimsOpen);
 addEventListener('pagehide',event=>{if(!event.persisted){claimsOpen.remove();unsubscribeClaimsButton();}});
 const adventureButton=document.createElement('button');adventureButton.type='button';adventureButton.id='world-adventure-continue';
-const renderAdventureButton=()=>{adventureButton.textContent=bilingual('继续 World 主线 · 保留已有存档','Continue the World story · Keep progress');};renderAdventureButton();const unsubscribeAdventureButton=onLanguageChange(renderAdventureButton);
-adventureButton.onclick=event=>{event.stopPropagation();if(worldExited||bootFailed||graphicsRecovery?.blocked)return;if(isKingdomGateOpen(done))done.add(KINGDOM_GATE.open);done.add(ADVENTURE.started);done.add(JOURNEY_DRAMA.started);save();questTrackedId=null;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;applyWorldState();toast(bilingual('主线人物篇已启用，原有进度保留。进入世界后跟随岚的指引。','Character chapters enabled. Progress kept. Enter World and follow Lan’s lead.'));};start.append(adventureButton);
+const renderAdventureButton=()=>{adventureButton.textContent=bilingual('追踪当前主线','Track current story');};renderAdventureButton();const unsubscribeAdventureButton=onLanguageChange(renderAdventureButton);
+adventureButton.onclick=event=>{event.stopPropagation();if(worldExited||bootFailed||graphicsRecovery?.blocked)return;if(valleyPrologueStage(done)==='legacy' && !dramaActive(done)){startCurrentAdventure();saveJourneyProgress();}questTrackedId=null;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;applyWorldState();toast(bilingual('已追踪当前主线。进入世界后跟随金色指引。','Current story tracked. Follow the gold guide when you enter the world.'));};start.append(adventureButton);
 addEventListener('pagehide',event=>{if(!event.persisted){adventureButton.remove();unsubscribeAdventureButton();}});
 const relayTrackButton=document.createElement('button');relayTrackButton.type='button';relayTrackButton.id='world-compact-relay-track';
 const renderRelayTrackButton=()=>{relayTrackButton.textContent=bilingual('突破演练 / 前沿部署 · 追踪目标','Breach exercise / Forward deployment · Track objective');};renderRelayTrackButton();const unsubscribeRelayTrack=onLanguageChange(renderRelayTrackButton);
@@ -2597,7 +2644,10 @@ relayTrackButton.onclick=event=>{event.stopPropagation();if(worldExited||bootFai
 addEventListener('pagehide',event=>{if(!event.persisted){relayTrackButton.remove();unsubscribeRelayTrack();}});
 const moreJourney=document.createElement('details'),moreJourneyTitle=document.createElement('summary');moreJourney.id='world-more-journey';moreJourney.addEventListener('click',e=>e.stopPropagation());moreJourney.append(moreJourneyTitle,$('shot-mode'),arenaTrainingOpen,travelOpen,journalOpen,relayTrackButton);Object.assign(moreJourney.style,{textAlign:'center',maxHeight:'32vh',overflow:'auto',padding:'6px 12px',borderRadius:'8px',background:'#182b37cc'});moreJourney.querySelectorAll('button').forEach(button=>{button.style.display='block';button.style.margin='8px auto';});const renderMoreJourney=()=>{moreJourneyTitle.textContent=bilingual('更多旅途选项','More journey options');};renderMoreJourney();const unsubscribeMoreJourney=onLanguageChange(renderMoreJourney);start.append(moreJourney);addEventListener('pagehide',event=>{if(!event.persisted){moreJourney.remove();unsubscribeMoreJourney();}});
 addEventListener('pagehide',event=>{if(!event.persisted){questJournal?.dispose();questOpen.remove();unsubscribeQuestButton();}});
-const worldInterface=installWorldInterface({start,label:action=>settings.label(action),subscribe:listener=>settings.subscribe(listener)});
+const worldInterface=installWorldInterface({start,entryLabel:()=>done.has(JOURNEY.epilogue) ? bilingual('继续自由探索','Continue exploring') : done.size || found.size ? bilingual('继续旅程','Continue journey') : bilingual('开始旅程','Begin journey'),label:action=>settings.label(action),subscribe:listener=>{
+  const settingsOff=settings.subscribe(listener), progressOff=worldProgress.subscribe(listener);
+  return ()=>{settingsOff();progressOff();};
+}});
 addEventListener('pagehide',event=>{if(!event.persisted)worldInterface.dispose();});
 trackedStoryHud = createTrackedStoryHud($('objective'));
 function updateTrackedStoryHud() {
@@ -3849,6 +3899,7 @@ function interactWorldJourney(id: string) {
   }
   const line = commitJourneyStep(id, done);
   if (!line) return;
+  if (id === JOURNEY.returnHome) worldProgress.camp = undefined;
   if (id === JOURNEY.lakeWinch && !contract.recruited) contract.recruit();
   if (id === JOURNEY.visitorDesk) combat.refillAmmo(18);
   if (id === JOURNEY.skyReview || id === JOURNEY.isolate || id === JOURNEY.skyCourt) { spawn = skyJourneySpawn(); combat.refillAmmo(); }
@@ -5110,7 +5161,7 @@ function frame(now: number) {
 
 
   checkDiscoveries();
-  if (gameplayActive() && discoverTravelStops(travelStops,player.pos.toArray(),travelContext(),found).length) { save(); hudRevision++; toast(bilingual(`已登记安全据点 · ${settings.label('travel')} 打开快速旅行。`,`Safe settlement registered · ${settings.label('travel')} opens fast travel.`)); }
+  if (gameplayActive()) updateSettlementCheckpoint();
   const area = layout.areas.find((a) => Math.hypot(player.pos.x - a.c[0], player.pos.z - a.c[1]) < a.r);
   if (area && shouldAnnounceArea(area.id, currentArea, areaAnnounced, now)) { showArea(area); areaAnnounced = { id: area.id, at: now }; }
   currentArea = area?.id ?? '';

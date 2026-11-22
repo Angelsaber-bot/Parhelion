@@ -3,6 +3,8 @@ import {MeshBVH} from 'three-mesh-bvh';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { REGIONS, regionToWorld } from '../map/regions';
 import { ECHO_DESTINATIONS, echoMarkerId, echoMarkerRegion } from './echoDestinations';
+import { buildEchoWaypost } from '../environment/echoWaypost';
+import type { SafeTravelStop } from './safeTravel';
 import { buildEchoStationArt } from '../environment/echoStationArt';
 import { SiteArt } from './campaignSites';
 import type { WorldRegionId } from '../core/regionIdentity';
@@ -45,6 +47,7 @@ export function takeEchoReturn(params: URLSearchParams, storage: TabStorage | nu
 
 export interface EchoHallHost {
   scene: THREE.Scene;
+  wayposts?: { stops: readonly SafeTravelStop[]; footing(x: number, z: number, y: number): number | null };
   dialogue: ReturnType<typeof createNarrativePanel>;
   prepareDialogue(): void;
   canInteract(id: string): boolean;
@@ -148,6 +151,31 @@ export function createEchoHall(host: EchoHallHost) {
     const p = new THREE.Vector3(frontX, (host.ground(frontX, frontZ) ?? y) + .85, frontZ);
     poses.set(def.id, {p, yaw});
     markers.push({id: echoMarkerId(def.id), type:'interact', label: destination.title[0]+'演武台', p:p.toArray(), radius:2.5});
+  }
+  if (host.wayposts) {
+    for (const stop of host.wayposts.stops) {
+      const pose = poses.get(stop.region);
+      if (stop.requiredCompletionFlag || !pose) continue;
+      const [cx,cy,cz] = stop.position;
+      // Keep the arrival capsule and the direct route to the station clear.
+      const bearing = Math.atan2(pose.p.x-cx,pose.p.z-cz);
+      for (const offset of [Math.PI/2,-Math.PI/2,Math.PI*.75,-Math.PI*.75,Math.PI]) {
+        const x=cx+4*Math.sin(bearing+offset), z=cz+4*Math.cos(bearing+offset);
+        const y=host.wayposts.footing(x,z,cy);
+        if (y===null) continue;
+        const art=buildEchoWaypost(stop.region);
+        const yaw=Math.atan2(pose.p.x-x,pose.p.z-z);
+        art.relocate(new THREE.Matrix4().makeRotationY(yaw).setPosition(x,y,z));
+        host.scene.add(art.root); stations.push(art);
+        const body=mergeGeometries(art.solids);
+        for(const part of art.solids.splice(0)) part.dispose();
+        if (body) {
+          geometries.push(body);
+          colliders.push({name:art.root.name,enabled:true,bvh:new MeshBVH(body)});
+        }
+        break;
+      }
+    }
   }
   let disposed = false, time = 0;
 

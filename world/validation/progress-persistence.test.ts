@@ -143,3 +143,27 @@ test('forward-compatible CURRENT flags, duplicates, optional arrays and newer fi
     if ('found' in value) assert.ok(progress.found.has(value.found![0]));
   }
 });
+
+test('an older open World cannot overwrite a newer journey or a reset', () => {
+  const memory = storage(), first = new WorldProgress(memory), stale = new WorldProgress(memory);
+  first.done.add('first_quest'); assert.ok(first.save());
+  first.camp = 'egypt'; first.found.add('travel_egypt'); assert.ok(first.save());
+  stale.done.add('other_quest'); assert.equal(stale.save(), false);
+  assert.equal(stale.persistence, 'conflict');
+  assert.equal(new WorldProgress(memory).camp, 'egypt');
+  assert.ok(new WorldProgress(memory).reset());
+  first.done.add('later_quest'); assert.equal(first.save(), false);
+  assert.deepEqual([...new WorldProgress(memory).done], []);
+});
+
+test('portable checkpoints round trip, reset cleanly, and tolerate older and unknown regions', () => {
+  const memory = storage(), progress = new WorldProgress(memory);
+  const backup = JSON.stringify({done:['summon_circle'],found:['travel_qin'],camp:'qin'});
+  assert.equal(progress.restoreSnapshot(backup), 'restored');
+  assert.equal(new WorldProgress(memory).exportSnapshot(), backup);
+  assert.equal(progress.reset(), true); assert.equal(progress.camp, undefined);
+  for (const camp of [undefined, 'not-a-region', {x:300}]) {
+    assert.equal(progress.restoreSnapshot(JSON.stringify({done:['armory_rack'],found:[],camp})), 'restored');
+    assert.equal(progress.camp, undefined); assert.equal(progress.armed, true);
+  }
+});

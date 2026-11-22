@@ -2,6 +2,7 @@ import {bilingual,onLanguageChange} from '../../../shared-client/i18n';
 
 interface InterfaceOptions {
  start:HTMLElement;
+ entryLabel():string;
  label(action:string):string;
  subscribe(listener:()=>void):()=>unknown;
 }
@@ -46,7 +47,7 @@ export function installWorldInterface(options:InterfaceOptions){
  let disposed=false;
  const render=()=>{
   if(disposed)return;
-  enter.textContent=bilingual('进入世界','Enter world');
+  enter.textContent=options.entryLabel();
   panel.setAttribute('aria-label',bilingual('游戏菜单','Game menu'));
   navigation.setAttribute('aria-label',bilingual('旅途菜单','Journey menu'));
   const labels:Record<string,[string,string]>={
@@ -54,7 +55,7 @@ export function installWorldInterface(options:InterfaceOptions){
    'world-servant-claims-open':['从者契约','Servant pacts'],
    'world-travel-open':['据点旅行','Travel'],
    'settings-open':['设置','Settings'],
-   'world-adventure-continue':['主线 · 人物篇','Story · Character chapters'],
+   'world-adventure-continue':['追踪当前主线','Track current story'],
    'world-arena-training-open':['竞技训练','Arena practice'],
    'world-campaign-journal-open':['居民纪事与续篇','Chronicles & continuation'],
    'world-compact-relay-track':['突破演练','Breach exercise'],

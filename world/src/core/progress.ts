@@ -1,3 +1,5 @@
+import { isCampaignRegion, isExpansionRegion, type WorldRegionId } from './regionIdentity';
+
 /** Progress is deliberately separate from controls, locale, graphics and cosmetic preferences. */
 export const WORLD_PROGRESS_KEY = 'parhelion.world.progress.v2';
 export const LEGACY_WORLD_PROGRESS_KEYS = ['parhelion.world_alpha.progress.v1', 'parhelion.world_coast.progress.v1'] as const;
@@ -12,8 +14,11 @@ export interface ProgressStorage {
   setItem(key: string, value: string): void;
   removeItem?(key: string): void;
 }
-export type ProgressPersistenceState = 'ready' | 'saved' | 'unavailable' | 'invalid' | 'failed';
-export interface ProgressSnapshot { done: string[]; found: string[]; }
+export type ProgressPersistenceState = 'ready' | 'saved' | 'unavailable' | 'invalid' | 'failed' | 'conflict';
+export interface ProgressSnapshot { done: string[]; found: string[]; camp?: WorldRegionId; }
+function campRegion(value: unknown): WorldRegionId | undefined {
+  return isCampaignRegion(value) || isExpansionRegion(value) ? value : undefined;
+}
 /** Imports are intentionally stricter than historical save migration. */
 export function parseProgressBackup(raw: string): ProgressSnapshot | null {
   if (raw.length > 262144) return null;
@@ -22,7 +27,7 @@ export function parseProgressBackup(raw: string): ProgressSnapshot | null {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
     const valid = (list: unknown): list is string[] => Array.isArray(list) && list.length <= 8192 && list.every(id => typeof id === 'string' && id.length > 0 && id.length <= 160 && !/[\u0000-\u001f]/.test(id));
     if (!valid(value.done) || !valid(value.found)) return null;
-    return { done: [...new Set<string>(value.done)], found: [...new Set<string>(value.found)] };
+    return { done: [...new Set<string>(value.done)], found: [...new Set<string>(value.found)], ...(campRegion(value.camp) ? {camp: value.camp} : {}) };
   } catch { return null; }
 }
 
@@ -40,18 +45,19 @@ function flags(raw: unknown): string[] {
 export class WorldProgress {
   readonly done = new Set<string>();
   readonly found = new Set<string>();
+  camp?: WorldRegionId;
   private listeners = new Set<() => void>();
   private unreadableLegacy = new Set<string>();
   private unreadableCurrent: string | null = null;
   private initialReadFailed = false;
-  private initialCurrentSnapshot: { raw: string | null } | null = null;
+  private lastStoredSnapshot: { raw: string | null } | null = null;
   private replacementAuthorized = false;
   persistence: ProgressPersistenceState = 'ready';
   constructor(private storage?: ProgressStorage) {
     if (!storage) { this.persistence = 'unavailable'; return; }
     let current: string | null;
     try { current = storage.getItem(WORLD_PROGRESS_KEY); } catch { this.initialReadFailed = true; this.persistence = 'unavailable'; return; }
-    this.initialCurrentSnapshot = { raw: current };
+    this.lastStoredSnapshot = { raw: current };
     if (current !== null) {
       // Even an empty reset snapshot is authoritative. Never merge old v1 quests back into it.
       if (!this.read(current, true)) { this.unreadableCurrent = current; this.persistence = 'invalid'; }
@@ -91,7 +97,7 @@ export class WorldProgress {
     for (const listener of this.listeners) { try { listener(); } catch { /* Presentation cannot break a successful save. */ } }
   }
   /** Portable local backup: progress only, never controls, credentials or browser state. */
-  exportSnapshot(): string { return JSON.stringify({ done: [...this.done], found: [...this.found] }); }
+  exportSnapshot(): string { return JSON.stringify({ done: [...this.done], found: [...this.found], camp: this.camp }); }
   /** Commit storage first: a failed restore never replaces the current session.
    * Runtime callers reload after success so all gates/actors use one snapshot. */
   captureStoredSnapshot(): { raw: string | null } | null {
@@ -102,7 +108,7 @@ export class WorldProgress {
    * successfully read null is meaningful; a failed initial read remains unknown.
    * Deliberate backup import/reset use their separate explicit authority. */
   repairSnapshotMatchesOriginal(snapshot: { raw: string | null }): boolean {
-    return !this.saveBlocked || this.initialCurrentSnapshot === null || snapshot.raw === this.initialCurrentSnapshot.raw;
+    return !this.saveBlocked || this.lastStoredSnapshot === null || snapshot.raw === this.lastStoredSnapshot.raw;
   }
   restoreSnapshot(raw: string, expected?: { raw: string | null }): 'restored' | 'invalid' | 'unavailable' | 'conflict' {
     const snapshot = parseProgressBackup(raw);
@@ -113,11 +119,13 @@ export class WorldProgress {
       // changed tab. localStorage has no cross-process atomic CAS transaction.
       const guard = expected ?? (this.saveBlocked && this.unreadableCurrent !== null ? { raw: this.unreadableCurrent } : undefined);
       if (guard && this.storage.getItem(WORLD_PROGRESS_KEY) !== guard.raw) { this.report('failed'); return 'conflict'; }
-      this.storage.setItem(WORLD_PROGRESS_KEY, JSON.stringify(snapshot));
+      const bytes = JSON.stringify(snapshot);
+      this.storage.setItem(WORLD_PROGRESS_KEY, bytes);
+      this.lastStoredSnapshot = {raw: bytes};
     }
     catch { this.report('failed'); return 'unavailable'; }
     this.unreadableCurrent = null; this.initialReadFailed = false; this.replacementAuthorized = false;
-    this.done.clear(); this.found.clear();
+    this.done.clear(); this.found.clear(); this.camp = snapshot.camp;
     for (const id of snapshot.done) this.done.add(id);
     for (const id of snapshot.found) this.found.add(id);
     this.report('saved'); return 'restored';
@@ -137,6 +145,7 @@ export class WorldProgress {
         if (!(key in value)) continue;
         if (!Array.isArray(value[key]) || value[key].some((id: unknown) => typeof id !== 'string' || id.length === 0)) return false;
       }
+      if (protectPartialCurrent) this.camp = campRegion(value.camp);
       return true;
     } catch { return false; /* Invalid progress cannot restore inventory, location or arbitrary object fields. */ }
   }
@@ -144,7 +153,15 @@ export class WorldProgress {
     if (this.saveBlocked) { this.report(this.unreadableCurrent !== null ? 'invalid' : 'unavailable'); return false; }
     if (!this.storage) { this.report('unavailable'); return false; }
     try {
-      this.storage.setItem(WORLD_PROGRESS_KEY, this.exportSnapshot());
+      const bytes = this.exportSnapshot();
+      if (!this.replacementAuthorized && this.lastStoredSnapshot) {
+        const current = this.storage.getItem(WORLD_PROGRESS_KEY);
+        if (current !== this.lastStoredSnapshot.raw && current !== bytes) {
+          this.report('conflict'); return false;
+        }
+      }
+      this.storage.setItem(WORLD_PROGRESS_KEY, bytes);
+      this.lastStoredSnapshot = { raw: bytes };
     } catch { this.report('failed'); return false; }
     this.unreadableCurrent = null; this.initialReadFailed = false; this.replacementAuthorized = false;
     // Remove only superseded progress, and only after the authoritative replacement was written.
@@ -157,5 +174,5 @@ export class WorldProgress {
     }
     this.report('saved'); return true;
   }
-  reset(): boolean { this.done.clear(); this.found.clear(); this.unreadableLegacy.clear(); this.replacementAuthorized = true; return this.save(); }
+  reset(): boolean { this.camp = undefined; this.done.clear(); this.found.clear(); this.unreadableLegacy.clear(); this.replacementAuthorized = true; return this.save(); }
 }

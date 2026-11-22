@@ -20,7 +20,7 @@ export function arenaTrainingBriefing(worldKey: (action: string) => string, aren
   const row = (id: string, title: BridgeText, world: BridgeText, arena: BridgeText): ArenaBridgeRow => ({ id, title, world, arena });
   return {
     title: ['竞技场战术模拟', 'Arena tactical simulation'],
-    introduction: ['大厅会预选此地对应的地图和当前从者。确认配装后，点击开始演武。', 'The lobby selects this region’s map and your current hero. Check your loadout and press Start when ready.'],
+    introduction: ['据点的铜环路灯指向本区演武台。大厅会预选此地地图和当前从者，确认配装后即可开始。', 'The bronze-ring signpost at each settlement points to its Echo station. The lobby selects the regional map and your current hero. Check your loadout and press Start.'],
     rows: [
       row('aim', ['瞄准与射击', 'Aim and fire'], [`${worldKey('aim')} 瞄准 · ${worldKey('fire')} 射击`, `${worldKey('aim')} aim · ${worldKey('fire')} fire`], [`${arenaKey('aim')} 瞄准 · ${arenaKey('fire')} 射击`, `${arenaKey('aim')} aim · ${arenaKey('fire')} fire`]),
       row('movement', ['机动方式不同', 'Different movement tools'], [`${worldKey('sprint')} 奔跑 · ${worldKey('evade')} 闪避`, `${worldKey('sprint')} sprint · ${worldKey('evade')} evade`], [`${arenaKey('dash')} 冲刺；不是持续奔跑`, `${arenaKey('dash')} dash, not sustained sprint`]),
