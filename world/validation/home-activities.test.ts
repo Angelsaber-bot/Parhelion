@@ -9,13 +9,13 @@ import {discoverTravelStops,getTravelBlock,type SafeTravelStop,type TravelContex
 
 function fixture(done=new Set<string>()){
  const dom=new JSDOM('<body></body>'),before=Object.getOwnPropertyDescriptor(globalThis,'document');Object.defineProperty(globalThis,'document',{value:dom.window.document,configurable:true});
- let frame:HomeActivityFrame={held:false,moving:false,attacking:false,grounded:true,damage:0},safe=true,reachable=true,saveCount=0,refills=0;
+ let frame:HomeActivityFrame={held:false,moving:false,attacking:false,grounded:true,damage:0},safe=true,reachable=true,saveCount=0,refills=0,now=100000;
  let callback:((value:string)=>void)|undefined;
  const dialogue={show(){},showChoices(_line:unknown,_speaker:unknown,_items:unknown,fn:(value:string)=>void){callback=fn;}};
- const scene=new THREE.Scene(),w=createHomeActivities({scene,done,dialogue:dialogue as any,save:()=>{saveCount++;},changed(){},canInteract:()=>reachable,safe:()=>safe,rest:()=>true,refill:()=>++refills,toast(){},prepareDialogue:()=>w.interrupt(),input:()=>frame});
+ const scene=new THREE.Scene(),w=createHomeActivities({scene,done,now:()=>now,dialogue:dialogue as any,save:()=>{saveCount++;},changed(){},canInteract:()=>reachable,safe:()=>safe,rest:()=>true,refill:()=>++refills,toast(){},prepareDialogue:()=>w.interrupt(),input:()=>frame});
  const player=new THREE.Vector3(973,6.1,126);
  const tick=(n=1,playable=true)=>{for(let i=0;i<n;i++)w.update(.05,player,playable);};
- return{w,done,scene,player,tick,choose:(value:string)=>callback?.(value),patch:(patch:Partial<HomeActivityFrame>)=>Object.assign(frame,patch),reach:(value:boolean)=>reachable=value,safe:(value:boolean)=>safe=value,saveCount:()=>saveCount,refills:()=>refills,
+ return{w,done,scene,player,tick,advance:(ms:number)=>now+=ms,choose:(value:string)=>callback?.(value),patch:(patch:Partial<HomeActivityFrame>)=>Object.assign(frame,patch),reach:(value:boolean)=>reachable=value,safe:(value:boolean)=>safe=value,saveCount:()=>saveCount,refills:()=>refills,
  close(){w.dispose();dom.window.close();if(before)Object.defineProperty(globalThis,'document',before);else Reflect.deleteProperty(globalThis,'document');}};
 }
 test('real held works move the boat and collision, persist scene changes, require release and cancel invalid finishes',()=>{
@@ -71,4 +71,24 @@ test('home travel requires a real grounded visit and keeps the combat gate witho
  const c:TravelContext={sessionReady:true,defeated:false,combatActive:false,threatened:false,quietSeconds:10,flying:false,gliding:false,swimming:false,onGround:true,mounted:false,actionActive:false};
  assert.equal(getTravelBlock(stop.id,[stop],done,found,c),'undiscovered');discoverTravelStops([stop],stop.position,{...c,flying:true},found);assert.equal(found.size,0);
  assert.deepEqual(discoverTravelStops([stop],stop.position,c,found),[stop.id]);assert.equal(getTravelBlock(stop.id,[stop],done,found,c),null);assert.equal(done.size,0,'a visit cannot unlock the historical seams');assert.equal(getTravelBlock(stop.id,[stop],done,found,{...c,threatened:true}),'combat');
+});
+
+test('two harvests use the same repaired pump, keep growing across a save, and produce distinct gifts and table settings',()=>{
+ const f=fixture(new Set([HOME_CIVIC.garden]));try{
+  for(const [crop,table,shop] of [['mint','HomeMintTea','home_cafe_service'],['carrot','HomeCarrotRolls','home_bakery_service']]){
+   f.w.interact('home_kitchen_plot');f.choose(crop);
+   f.patch({held:false});f.w.interact('home_water');f.tick();f.patch({held:true});f.tick(70);
+   const clone=fixture(new Set(JSON.parse(JSON.stringify([...f.done]))));try{
+    clone.advance(crop==='mint'?44999:89999);clone.w.interact('home_kitchen_plot');clone.choose('harvest');assert.ok(!clone.done.has('home_pantry_'+crop));
+    clone.advance(1);clone.w.interact('home_kitchen_plot');clone.choose('harvest');assert.ok(clone.done.has('home_pantry_'+crop));
+   }finally{clone.close();}
+   f.advance(45000);f.tick();f.w.interact('home_kitchen_plot');f.choose('harvest');
+   f.w.interact('home_kitchen_stove');f.reach(false);f.choose(crop);assert.ok(f.done.has('home_pantry_'+crop));
+   f.reach(true);f.w.interact('home_kitchen_stove');f.choose(crop);assert.ok(!f.done.has('home_pantry_'+crop));assert.ok(f.done.has('home_packed_'+crop));assert.ok(f.w.root.getObjectByName(table)?.visible);
+   f.w.interact(shop);f.choose('later');assert.ok(f.done.has('home_packed_'+crop));
+   f.w.interact(shop);f.choose('share');assert.ok(f.done.has('home_shared_'+crop));assert.ok(!f.done.has('home_packed_'+crop));
+  }
+  assert.ok(!f.w.root.getObjectByName('HomeMintTea')!.visible);
+  assert.ok(![...f.done].some(s=>s.startsWith('home_crop_ripe_at_')));
+ }finally{f.close();}
 });

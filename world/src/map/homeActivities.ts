@@ -5,6 +5,8 @@ export const HOME_CIVIC={started:'home_civic_started',complete:'home_civic_compl
 export const HOME_CIVIC_ACTIONS:HomeActivity[]=[
  {id:'home_winch',label:['港湾起船绞盘','Harbour boat winch'],p:[253,6.9,126],flag:HOME_CIVIC.boat,seconds:5,hint:['松开，再按住交互，将小艇吊到修船滑台。','Release, then hold Interact to haul the boat onto the repair slip.']},
  {id:'home_lighthouse',label:['灯塔导光手轮','Lighthouse alignment wheel'],p:[245,6.9,88],flag:HOME_CIVIC.light,seconds:3,hint:['站稳转动手轮，将灯罩对准外海航道。','Stand still and turn the wheel to align the lamp with the sea approach.']},
+ {id:'home_kitchen_plot',label:['南岸花园 · 木框菜畦','South Garden vegetable bed'],p:[-101,17,114.5],flag:'home_first_harvest',hint:['选种后到手压泵浇水。收成可带回家做菜。','Sow a crop, water it at the hand pump, then harvest for your kitchen.']},
+ {id:'home_kitchen_stove',label:['自家厨房 · 炉台','Your kitchen stove'],p:[-166,17,140.4],flag:'home_first_cooking',hint:['用南岸花园的收成做两份，一份摆桌，一份送街坊。','Cook your South Garden harvest. Set one serving on the table and share one with a neighbour.']},
  {id:'home_water',label:['花园手压水泵','Garden hand pump'],p:[-110,17,112],flag:HOME_CIVIC.garden,seconds:3,hint:['按住交互泵水，让水沿沟槽流入花圃。','Hold Interact to pump water through the garden channels.']},
  {id:'home_bread_pickup',label:['领取公馆面包篮','Collect the house bread basket'],p:[-122.8,17,71.4],hint:['把面包篮亲手送到公馆厨房；菜单、攻击或受伤会放回篮子。','Carry the basket to the house kitchen. Menus, attacks or damage return it to the bakery.']},
  {id:'home_bread_drop',label:['公馆厨房收货台','House pantry delivery'],p:[-26,17,-26],flag:HOME_CIVIC.bread,hint:['带着面包篮到这里交付。','Bring the bread basket here and hand it over.']},

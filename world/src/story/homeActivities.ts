@@ -1,3 +1,4 @@
+import {createKitchenGarden, sharedRecipe} from './kitchenGarden';
 import * as THREE from 'three';
 import {MeshBVH} from 'three-mesh-bvh';
 import {bilingual,onLanguageChange} from '../../../shared-client/i18n';
@@ -11,7 +12,7 @@ import type {createNarrativePanel} from '../ui/narrativePanel';
 
 export interface HomeActivityFrame {held:boolean;moving:boolean;attacking:boolean;grounded:boolean;damage:number;unsafeMotion?:boolean;}
 export interface HomeActivityHost {
- scene:THREE.Scene;done:Set<string>;dialogue:ReturnType<typeof createNarrativePanel>;
+ now?:()=>number;scene:THREE.Scene;done:Set<string>;dialogue:ReturnType<typeof createNarrativePanel>;
  save:()=>unknown;changed:()=>void;canInteract:(id:string)=>boolean;safe:()=>boolean;rest:()=>boolean;
  toast:(line:Localized)=>void;prepareDialogue:()=>void;refill?:()=>number;input?:()=>HomeActivityFrame;interactLabel?:()=>string;
 }
@@ -54,8 +55,10 @@ export function createHomeActivities(h:HomeActivityHost){
  let active:string|null=null,channel:RelayChannel|null=null,carrying=false,disposed=false,training=false,trainingHits=new Set<number>(),fish:'idle'|'waiting'|'bite'='idle',fishTime=0,lastDamage=0;
  const commit=(flag:string)=>{h.done.add(flag);h.save();h.changed();apply();};
  const choice=(id:string,line:Localized,items:{id:string;label:Localized}[],accept:(value:string)=>void)=>{h.prepareDialogue();h.dialogue.showChoices(line,markerFor(id)?.label??['归乡广场','Homeward Square'],[...items,{id:'later',label:['稍后再来。','Later.']}],value=>{if(disposed||value==='later'||!h.canInteract(id)||!h.safe())return;accept(value);});};
+ const kitchenGarden=createKitchenGarden(h,root,choice);
  function interrupt(){active=null;channel=null;fish='idle';fishTime=0;carrying=false;hud.hidden=true;apply();}
  function apply(){
+  kitchenGarden.apply();
   const complete=h.done.has(HOME_CIVIC.boat);if(!active||active!=='home_winch'){boat.position.fromArray(homeWorld(complete?[265,6.8,143]:[300,.9,126]));syncBoat();}
   lens.visible=beam.visible=h.done.has(HOME_CIVIC.light);flowers.visible=water.visible=h.done.has(HOME_CIVIC.garden)||active==='home_water';
   basket.visible=true;if(!carrying){basket.position.fromArray(homeWorld(h.done.has(HOME_CIVIC.bread)?[-23,17.68,-30]:[-125.2,17.15,71.4]));basket.quaternion.identity();}
@@ -68,14 +71,16 @@ export function createHomeActivities(h:HomeActivityHost){
   if(!HOME_CIVIC_ACTIONS.some(a=>a.id===id)&&id!=='home_notice')return false;
   if(!h.canInteract(id)||!h.safe())return true;
   const action=markerFor(id);
+  if(id==='home_kitchen_plot'){kitchenGarden.tend(id);return true;}
+  if(id==='home_kitchen_stove'){kitchenGarden.cook(id);return true;}
   if(action?.seconds){
    if(active===id)return true;
-   if(action.flag&&h.done.has(action.flag)){h.toast(['这处设施已经恢复，完成记录已保留。','This facility is restored; its completion is kept.']);return true;}
+   if(action.flag&&h.done.has(action.flag)&&!(id==='home_water'&&kitchenGarden.thirsty)){h.toast(['这处设施已经恢复，完成记录已保留。','This facility is restored; its completion is kept.']);return true;}
    interrupt();active=id;channel=new RelayChannel(action.seconds);channel.reset(h.input?.().damage??0);h.toast(action.hint);apply();return true;
   }
   if(id==='home_notice'){
    const count=HOME_REPORT_REQUIRED.filter(f=>h.done.has(f)).length;
-   choice(id,[`镇上的四件事：送面包、起船、校准灯塔、给花园供水。已完成 ${count}/4。做完后回来亲自报个平安。`,`Four town jobs: deliver bread, haul the boat, align the lighthouse and water the garden. Completed ${count}/4. Return here to report when ready.`],homeCivicReady(h.done)?[{id:'report',label:['向大家报告：事情都办好了。','Report that the town jobs are finished.']}]:[{id:'accept',label:['记下这些事，我来帮忙。','I will help with these jobs.']}],value=>{if(value==='report'&&homeCivicReady(h.done))commit(HOME_CIVIC.complete);else if(value==='accept')commit(HOME_CIVIC.started);});
+   choice(id,[`镇上的四件事：送面包、起船、校准灯塔、给花园供水。已完成 ${count}/4。做完后回来报个平安。南岸花园有块菜畦，叶留了种子。`,`Four town jobs: deliver bread, haul the boat, align the lighthouse and water the garden. Completed ${count}/4. Report here when ready. Ye left seeds at the South Garden vegetable bed.`],homeCivicReady(h.done)?[{id:'report',label:['向大家报告：事情都办好了。','Report that the town jobs are finished.']}]:[{id:'accept',label:['记下这些事，我来帮忙。','I will help with these jobs.']}],value=>{if(value==='report'&&homeCivicReady(h.done))commit(HOME_CIVIC.complete);else if(value==='accept')commit(HOME_CIVIC.started);});
   }else if(id==='home_bread_pickup'){
    if(h.done.has(HOME_CIVIC.bread)){h.toast(['今天送给公馆的面包已经收到了。','The house has received its bread.']);return true;}
    interrupt();carrying=true;lastDamage=h.input?.().damage??0;h.toast(action!.hint);apply();
@@ -90,15 +95,20 @@ export function createHomeActivities(h:HomeActivityHost){
    else if(fish==='waiting'){h.toast(['浮漂还没沉，耐心等一会儿。','The float has not dipped yet. Wait a little.']);}
    else {interrupt();fish='waiting';fishTime=4.5;lastDamage=h.input?.().damage??0;h.toast(action!.hint);}apply();
   }else if(id==='home_repair_service')choice(id,['工坊的装备用旧了也能继续用。需要补充弹药吗？','Your existing equipment can keep going. Refill its ammunition?'],[{id:'refill',label:['补充已有装备弹药。','Refill existing equipment.']}],()=>{if(!h.done.has('armory_rack')){h.toast(['先在幻日谷领取装备。','Collect your equipment in the valley first.']);return;}const n=h.refill?.()??0;h.toast([`补充了 ${n} 发弹药。`,`Replenished ${n} rounds.`]);});
+  else if(id==='home_bakery_service'&&kitchenGarden.give(id,'carrot',{id:'rest',label:['吃一点热面包','Have fresh bread']},()=>h.toast(h.rest()?['热面包下肚，恢复了一些生命。','Warm bread restores some health.']:['现在状态很好。','You are already well rested.'])))return true;
   else if(id==='home_clinic_service'||id==='home_bakery_service')choice(id,id==='home_clinic_service'?['先坐稳，我看看你的伤。','Sit still and let me check your wounds.']:['面包刚出炉，也替公馆留了一篮。','Fresh bread is ready; a basket is set aside for the house.'],[{id:'rest',label:id==='home_clinic_service'?['接受治疗。','Receive treatment.']:['吃一点热面包。','Have some fresh bread.']}],()=>{h.toast(h.rest()?['休息后恢复了一些生命。','You recover some health.']:['现在状态很好。','You are already well rested.']);});
   else if(id==='home_tailor_service'||id==='home_grocer_service')choice(id,['选一套家中布艺，地毯与陈设会立即换色，记录随世界保存。','Choose home textiles. Your rug changes immediately and the choice is saved with your world.'],[{id:'sea',label:['海风蓝。','Sea blue.']},{id:'rose',label:['晚霞玫瑰。','Sunset rose.']},{id:'moss',label:['花园苔绿。','Garden moss.']}],value=>{for(const c of['sea','rose','moss'])h.done.delete(`home_decor_${c}`);commit(`home_decor_${value}`);});
-  else if(id==='home_collection'){h.prepareDialogue();const names:[[string,string],string][]=[[['归乡镇的回报','Homeward town report'],HOME_CIVIC.complete],[['三靶练习记录','Three-target practice record'],HOME_CIVIC.practice],[['银鳍鱼速写','Silverfin sketch'],HOME_CIVIC.fish]];h.dialogue.show([names.map(([n,f])=>`${h.done.has(f)?'✓':'○'} ${n[0]}`).join('\n'),names.map(([n,f])=>`${h.done.has(f)?'✓':'○'} ${n[1]}`).join('\n')],['家中的纪念架','Home keepsake shelf']);}
-  else if(id==='home_cafe_service'){h.prepareDialogue();h.dialogue.show(['今日小报：灯塔'+(h.done.has(HOME_CIVIC.light)?'已重新指向外海':'正在等待校准')+'，花园'+(h.done.has(HOME_CIVIC.garden)?'开花了':'还等着浇水')+'。这里的消息，来自你亲手做过的事。','Town news: '+(h.done.has(HOME_CIVIC.light)?'the lighthouse guides the sea approach':'the lighthouse awaits alignment')+'; '+(h.done.has(HOME_CIVIC.garden)?'the garden is blooming':'the garden needs water')+'. The news follows what you actually did.'],['海风咖啡馆','Sea Breeze Cafe']);}
+  else if(id==='home_collection'){h.prepareDialogue();const names:[[string,string],string][]=[[['归乡镇的回报','Homeward town report'],HOME_CIVIC.complete],[['三靶练习记录','Three-target practice record'],HOME_CIVIC.practice],[['银鳍鱼速写','Silverfin sketch'],HOME_CIVIC.fish],[['夏的手写杯垫 · 薄荷泡三分钟','Xia’s coaster · Steep mint for three minutes'],sharedRecipe('mint')],[['安禾的食谱卡 · 面包卷烤温 190°C','Anhe’s recipe card · Bake rolls at 190°C'],sharedRecipe('carrot')]];h.dialogue.show([names.map(([n,f])=>`${h.done.has(f)?'✓':'○'} ${n[0]}`).join('\n'),names.map(([n,f])=>`${h.done.has(f)?'✓':'○'} ${n[1]}`).join('\n')],['家中的纪念架','Home keepsake shelf']);}
+  else if(id==='home_cafe_service'){
+   const readPaper=()=>{h.prepareDialogue();h.dialogue.show(['今日小报：灯塔'+(h.done.has(HOME_CIVIC.light)?'已重新指向外海':'正在等待校准')+'，花园'+(h.done.has(HOME_CIVIC.garden)?'开花了':'还等着浇水')+'。这里的消息，来自你亲手做过的事。','Town news: '+(h.done.has(HOME_CIVIC.light)?'the lighthouse guides the sea approach':'the lighthouse awaits alignment')+'; '+(h.done.has(HOME_CIVIC.garden)?'the garden is blooming':'the garden needs water')+'. The news follows what you actually did.'],['海风咖啡馆','Sea Breeze Cafe']);};
+   if(!kitchenGarden.give(id,'mint',{id:'news',label:['读今日小报','Read the newspaper']},readPaper))readPaper();
+  }
   return true;
  }
  function hit(id:string){const i=targets.findIndex(t=>t.userData.target===id);if(i<0)return false;if(!training)return true;trainingHits.add(i);if(trainingHits.size===targets.length){training=false;commit(HOME_CIVIC.practice);h.toast(['三面靶全部命中，练习记录已保存。到练习牌可以再来一轮。','All three targets hit. Practice is recorded; restart at the board whenever ready.']);}apply();return true;}
  function update(dt:number,p:THREE.Vector3,playable:boolean){
   if(disposed)return;dt=Number.isFinite(dt)?Math.min(.05,Math.max(0,dt)):0;
+  kitchenGarden.update();
   const input=h.input?.()??{held:false,moving:false,attacking:false,grounded:false,damage:0};
   // A small porch/ramp drop may briefly clear onGround during an ordinary walk.
   // Carrying survives those frames; swimming, flight, gliding and actual interruptions do not.
@@ -111,7 +121,7 @@ export function createHomeActivities(h:HomeActivityHost){
    if(active==='home_lighthouse')wheel.rotation.z=channel.progress*Math.PI*2;
    if(active==='home_water')lever.rotation.z=Math.sin(channel.progress*30)*.4;
    hud.hidden=false;hud.textContent=bilingual(`${a.label[0]} ${Math.round(channel.progress*100)}% · ${channel.requiresRelease?'先松开，再按住':`按住 ${h.interactLabel?.()??'F'}`}`,`${a.label[1]} ${Math.round(channel.progress*100)}% · ${channel.requiresRelease?'Release, then hold':`Hold ${h.interactLabel?.()??'F'}`}`);
-   if(result.completedNow){const flag=a.flag!;active=null;channel=null;commit(flag);hud.hidden=true;h.toast(['设施操作完成，记得回广场报告。','Work complete. Return to the square to report.']);}
+   if(result.completedNow){const watered=active==='home_water'&&kitchenGarden.water();const flag=a.flag!;active=null;channel=null;commit(flag);hud.hidden=true;h.toast(watered?['水进了菜畦，约 45 秒后可以采收。','Water reaches the kitchen bed. Harvest in about 45 seconds.']:['设施操作完成，记得回广场报告。','Work complete. Return to the square to report.']);}
   }else if(fish!=='idle'){
    if(!h.canInteract('home_fishing')||input.moving){interrupt();return;}
    fishTime-=playable?dt:0;if(fishTime<=0){if(fish==='waiting'){fish='bite';fishTime=3;}else{fish='idle';h.toast(['鱼儿游走了，随时可以再抛一竿。','The fish swims away. Cast again whenever ready.']);apply();}}
@@ -120,9 +130,9 @@ export function createHomeActivities(h:HomeActivityHost){
  }
  const unsubscribe=onLanguageChange(()=>{if(!hud.hidden)hud.textContent='';});
  apply();
- return{root,markers,targets,colliders:[boatCollider],apply,interact,hit,update,interrupt,
+ return{root,markers,targets,colliders:[boatCollider,kitchenGarden.collider],apply,interact,hit,update,interrupt,
   get carrying(){return carrying;},get carried(){return basket;},get active(){return active;},get progress(){return channel?.progress??0;},get fishing(){return fish;},get training(){return training;},
   reset(){interrupt();training=false;trainingHits.clear();apply();},
-  dispose(){if(disposed)return;disposed=true;root.removeFromParent();hud.remove();unsubscribe();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}
+  dispose(){if(disposed)return;disposed=true;root.removeFromParent();hud.remove();unsubscribe();kitchenGarden.dispose();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}
  };
 }

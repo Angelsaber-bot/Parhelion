@@ -17,9 +17,15 @@ test('actual main input carries bread, operates works, fishes and shoots a compl
   at('home_bread_pickup');tap();assert.equal(w.homeTown.activities.carrying,true);
   for(const [x,z]of[[-120,66],[-120,50],[-115,10],[-35,10],[-35,-18],[-26,-26]]){walk(x+720,z);assert.equal(w.homeTown.activities.carrying,true,`bread carry along ${x},${z}`);}
   assert.equal(w.homeTown.activities.carrying,true,'basket survives actual walking');tap();assert.ok(w.done.has(HOME_CIVIC.bread));assert.equal(w.homeTown.activities.carrying,false);assert.deepEqual(w.homeTown.activities.carried.position.toArray(),[697,17.68,-30]);
+  at('home_kitchen_plot');tap();choose('mint');assert.ok(w.done.has('home_planted_mint'));
   for(const [id,flag,seconds]of[['home_winch',HOME_CIVIC.boat,5],['home_lighthouse',HOME_CIVIC.light,3],['home_water',HOME_CIVIC.garden,3]]as const){
    at(id);tap();assert.equal(w.homeTown.activities.active,id,id+' starts from real F');key('KeyF',true);frames(seconds*60+8);key('KeyF',false);frames();assert.ok(w.done.has(flag),id+' completed');
   }
+  const ripeAt=Number([...w.done].find((f:string)=>f.startsWith('home_crop_ripe_at_'))?.split('_').pop());assert.ok(ripeAt>0,'physical pump irrigates the crop');
+  h.window.Date.now=()=>ripeAt+1000;
+  at('home_kitchen_plot');tap();choose('harvest');assert.ok(w.done.has('home_pantry_mint'));
+  at('home_kitchen_stove');tap();choose('mint');assert.ok(w.done.has('home_packed_mint'));assert.ok(w.homeTown.activities.root.getObjectByName('HomeMintTea').visible);
+  at('home_cafe_service');tap();choose('share');assert.ok(w.done.has('home_shared_mint'));
   at('home_notice');tap();choose('report');assert.ok(w.done.has(HOME_CIVIC.complete));
   at('home_fishing');tap();frames(280);assert.equal(w.homeTown.activities.fishing,'bite');tap();assert.ok(w.done.has(HOME_CIVIC.fish));
   at('home_practice_start');tap();assert.equal(w.homeTown.activities.training,true);
@@ -34,5 +40,5 @@ test('actual main input carries bread, operates works, fishes and shoots a compl
   saved=h.window.localStorage.getItem('parhelion.world.progress.v2')!;assert.ok([...w.done].every((flag:string)=>flag==='armory_rack'||flag.startsWith('home_')));assert.deepEqual(h.errors,[]);
  }finally{await h.close();}
  const restored=await bootWorldWithoutGpu({deterministic:true,initialStorage:{'parhelion.world.progress.v2':saved}});
- try{for(const flag of[HOME_CIVIC.bread,HOME_CIVIC.boat,HOME_CIVIC.light,HOME_CIVIC.garden,HOME_CIVIC.complete,HOME_CIVIC.fish,HOME_CIVIC.practice])assert.ok(restored.world.done.has(flag));assert.equal(restored.world.homeTown.activities.active,null);assert.equal(restored.world.homeTown.activities.carrying,false);assert.equal(restored.world.homeTown.activities.training,false);assert.equal(restored.world.homeTown.activities.fishing,'idle');assert.deepEqual(restored.errors,[]);}finally{await restored.close();}
+ try{for(const flag of[HOME_CIVIC.bread,HOME_CIVIC.boat,HOME_CIVIC.light,HOME_CIVIC.garden,HOME_CIVIC.complete,HOME_CIVIC.fish,HOME_CIVIC.practice,'home_shared_mint','home_served_mint'])assert.ok(restored.world.done.has(flag));assert.equal(restored.world.homeTown.activities.active,null);assert.equal(restored.world.homeTown.activities.carrying,false);assert.equal(restored.world.homeTown.activities.training,false);assert.equal(restored.world.homeTown.activities.fishing,'idle');assert.deepEqual(restored.errors,[]);}finally{await restored.close();}
 });

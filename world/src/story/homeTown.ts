@@ -7,6 +7,7 @@ import type {createNarrativePanel} from '../ui/narrativePanel';
 import type {Localized,PlacedNpcSocket} from '../settlements/types';
 import {createHomeActivities,type HomeActivityHost} from './homeActivities';
 import {HOME_CIVIC,HOME_REPORT_REQUIRED} from '../map/homeActivities';
+import {sharedRecipe} from './kitchenGarden';
 import {VT} from './valleyTownSetPieces';
 
 export const HOME_FLAGS={invited:'home_saber_invited',welcome:'home_saber_welcome',meal:'home_saber_first_meal',garden:'home_saber_garden_talk'} as const;
@@ -104,8 +105,10 @@ export function createHomeTown(host:Host){
  }
  apply();
  const residentLine=(id:string):Localized|null=>{
+  if(id==='home_baker'&&host.done.has(sharedRecipe('carrot')))return ['“上回你的面包卷，掰开还能见到一丝丝胡萝卜。我今早也照着试了一炉。”','“I could see the shreds of carrot when I broke your roll open. I tried a batch myself this morning.”'];
+  if(id==='home_barista'&&host.done.has(sharedRecipe('mint')))return ['夏把杯垫翻过来给你看。“三分钟，刚好。再泡下去就抢味了。”','Xia turns over the coaster. “Three minutes, just right. Any longer and the mint takes over.”'];
   if(id==='home_dock_keeper')return host.done.has(HOME_CIVIC.boat)?['船已经在滑台上了。灯塔的手轮就在塔脚西侧，校准以后，外海也认得回家的方向。','The boat is on its slip. The lighthouse wheel is west of the tower; align it so the sea approach leads home.']:['先到石岸东侧的绞盘起船：松开，再按住交互。栈桥尽头可以垂钓，等浮漂沉下再提竿。','Haul the boat with the quay winch: release, then hold Interact. Fish at the pier end; reel in when the float dips.'];
-  if(id==='home_gardener')return host.done.has(HOME_CIVIC.garden)?['水从沟槽进了花圃。你看，花已经开了。四件镇务做完，回广场亲自报个平安吧。','Water reached the beds; the flowers are open. When all four jobs are finished, report back at the square.']:['我在园里转转，你来压水泵好吗？水沿沟槽走到花圃，就不用把整条步道浇湿。','I will tend the garden. Could you work the hand pump? The channels take water to the flowers and keep the walk dry.'];
+  if(id==='home_gardener')return host.done.has(HOME_CIVIC.garden)?['花已经开了。旁边那块木框菜畦给你种。收下来的薄荷能泡茶，胡萝卜能烤面包卷。','The flowers are open. The raised bed beside them is yours. Mint makes tea, and carrots bake into rolls.']:['我在园里转转，你来压水泵好吗？水沿沟槽走到花圃，就不用把整条步道浇湿。','I will tend the garden. Could you work the hand pump? The channels take water to the flowers and keep the walk dry.'];
   if(id==='home_steward')return host.done.has(HOME_CIVIC.bread)?['面包已经放进厨房，谢谢你亲手送来。入住簿替 Saber 留着房间；厨房还有热饭。','The bread is in the pantry; thank you for bringing it. The guest book keeps Saber’s room ready, and the kitchen has warm food.']:['面包房替公馆留了一篮面包。请从店里柜台边拿来，厨房收货台在餐厅后侧。','The bakery has a basket for the house. Pick it up beside the counter and bring it to the pantry behind the dining room.'];
   return null;
  };
