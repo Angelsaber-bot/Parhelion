@@ -242,12 +242,17 @@ def movement_transition_loss(actor, dataset, indices, predicted, targets):
 
 
 def replay_weights(dataset):
-    # Keep half of the natural distribution. Allocate the other half across observed
-    # quiet, turning and contact windows, capping repeat exposure for rare examples.
+    # Only sightings in this decision's causal context count, including after gaps or respawns.
     turning = dataset.targets[:, 0].abs() * bc.YAW_SCALE >= bc.SEARCH_TURN_RADIANS
     contact = dataset.features[:, 0] > 0
-    group = torch.where(contact, 2, turning.long())
-    counts = torch.bincount(group, minlength=3)
+    index = torch.arange(len(dataset))
+    last_seen = torch.where(contact, index, -1).cummax(dim=0).values
+    first = torch.maximum(torch.tensor(dataset.starts), index - dataset.context + 1)
+    lost = ~contact & (last_seen >= first)
+    # Retain quiet responses as well as turns after losing sight. The labels always
+    # come from the player. Keep the original natural-frequency mix and exposure cap.
+    group = torch.where(contact, 4, turning.long() + 2 * lost.long())
+    counts = torch.bincount(group, minlength=5)
     balanced = len(dataset) / (counts[group] * counts.count_nonzero())
     return .5 + .5 * balanced.clamp_max(7)
 

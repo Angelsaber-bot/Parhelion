@@ -355,6 +355,7 @@ def evaluate(model, loader, device, button_weights):
     slot_correct = 0
     triggers = {key: {"windows": 0, "shotsRequested": 0, "probabilityErrorSum": 0.0}
                 for key in ("visibleTrigger", "lostContactTrigger")}
+    memory_errors = torch.zeros(2, dtype=torch.float64)
     for states, actions in loader:
         states, actions = states.to(device), actions.to(device)
         logits = model(states)
@@ -366,6 +367,14 @@ def evaluate(model, loader, device, button_weights):
         # The context is padded at capture/life boundaries. An empty view counts as a
         # loss of contact only if this same sequence previously contained a sighting.
         lost = ~visible & (states[:, :-1, 0] > 0).any(dim=1)
+        if lost.any():
+            # Paired evaluation: same pose, own previous inputs, geometry and human label.
+            # Remove the observed contact and its derived last-seen bearing at every step.
+            masked = states[lost].clone()
+            masked[:, :, :5] = 0
+            masked[:, :, -3:] = 0
+            masked_error = (model(masked)[:, 0].tanh() - actions[lost, 0]).abs()
+            memory_errors += torch.stack((errors[lost, 0].sum(), masked_error.sum())).double().cpu()
         for key, mask in (("visibleTrigger", clear), ("lostContactTrigger", lost)):
             fire = actions[mask, 4]
             trigger = triggers[key]
@@ -395,6 +404,12 @@ def evaluate(model, loader, device, button_weights):
                            "stillYawMaeRad": still * YAW_SCALE / count} if count else {"windows": 0})
     return {
         "objective": loss / samples, "cameraAndMovement": separated,
+        "contactMemory": {
+            "windows": triggers["lostContactTrigger"]["windows"],
+            **{key: value * YAW_SCALE / triggers["lostContactTrigger"]["windows"]
+               if triggers["lostContactTrigger"]["windows"] else None
+               for key, value in zip(("yawMaeRad", "maskedYawMaeRad"), memory_errors.tolist())},
+        },
         **{key: {"windows": row["windows"], "shotsRequested": row["shotsRequested"],
                  "brier": row["probabilityErrorSum"] / row["windows"] if row["windows"] else None}
            for key, row in triggers.items()},
