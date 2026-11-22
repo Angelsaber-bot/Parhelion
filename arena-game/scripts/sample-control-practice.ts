@@ -19,6 +19,7 @@ const draw = () => ((state = (Math.imul(state,1664525)+1013904223) >>> 0) + .5) 
 const signed = () => draw()*2-1;
 const trials = Number(process.argv[4] ?? 22000);
 if (!Number.isInteger(trials) || trials < 1 || trials > 100000) throw Error('Invalid practice trial count');
+const withHistory = process.argv.includes('--with-history');
 const rows: number[][] = [];
 for (const name of ['aster','blackflag','sakura','homeward']) {
   const map = getMap(name), nav = navFor({map}), game = new Match(map,'1v1');
@@ -57,10 +58,16 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
     me.yaw = previousYaw;
     me.pitch = previousPitch;
     const previous = see();
+    const history: number[] = [];
+    if (withHistory) {
+      const pastScene = explorationScene(map, me, previous[0] ? [previousYaw + previous[1], 0] : undefined);
+      addSmokeDepths(pastScene, visibleSmokeDepths(map, me, game.smokes, game.shields));
+      history.push(...previous, ...pastScene);
+    }
     me.yaw = yaw;
     me.pitch = pitch;
     const obs = see([(yaw - previousYaw) / EXPLORATION_TICKS, (pitch - previousPitch) / EXPLORATION_TICKS]);
-    const scene = explorationScene(map, me, previous[0] ? [previousYaw + previous[1], EXPLORATION_TICKS] : undefined);
+    const scene = explorationScene(map, me, withHistory && obs[0] ? [yaw + obs[1], 0] : previous[0] ? [previousYaw + previous[1], EXPLORATION_TICKS] : undefined);
     addSmokeDepths(scene, visibleSmokeDepths(map, me, game.smokes, game.shields));
     const direction = aimDir(me.yaw,me.pitch);
     const hit = rayPlayer(eye,direction,b.x,b.y,b.z,target.crouched);
@@ -70,14 +77,14 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
       h !== null && h.t < raycastMap(map, eye, d, h.t + .001);
     // Log both outcomes of probe shots, including misses. The weapon decision is
     // fit to the observed utility of spending ammunition at this camera pose.
-    rows.push([0, ...obs,...scene, Number(!!lands(hit,direction)),0]);
+    rows.push([0, ...history, ...obs, ...scene, Number(!!lands(hit,direction)),0]);
     for (let probe=0;probe<(obs[0] ? 48 : 8);probe++) {
       const mx=signed(), my=signed(), horizon=obs[0] ? 1 : 1+Math.floor(draw()*5);
       me.yaw = yaw+.9*mx*horizon;
       me.pitch = Math.max(-1.45,Math.min(1.45,pitch+.55*my*horizon));
       const ray = aimDir(me.yaw,me.pitch);
       const success = obs[0] ? lands(rayPlayer(eye,ray,...feet,target.crouched),ray) : see()[0] === 1;
-      if (success) rows.push([obs[0] ? 1 : 2, ...obs, ...scene, mx, my]);
+      if (success) rows.push([obs[0] ? 1 : 2, ...history, ...obs, ...scene, mx, my]);
     }
   }
 }

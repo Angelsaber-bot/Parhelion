@@ -28,7 +28,7 @@ UNLABELED = 2.0
 
 def load_practice(path):
     rows = torch.tensor(json.loads(path.read_bytes()), dtype=torch.float32)
-    if rows.ndim != 2 or rows.shape[1] != bc.FEATURES + 3 or not torch.isfinite(rows).all():
+    if rows.ndim != 2 or rows.shape[1] not in (bc.FEATURES + 3, 2 * bc.FEATURES + 3) or not torch.isfinite(rows).all():
         raise ValueError("Invalid Arena practice observations")
     if len(rows) == 0 or not torch.isin(rows[:, 0], torch.tensor([0., 1., 2.])).all():
         raise ValueError("Empty or unrecognized Arena practice trials")
@@ -42,21 +42,18 @@ def search_outcome_loss(axes, successes, bandwidth):
     return -torch.exp(-.5 * error / bandwidth**2).mean()
 
 
-def practice_loss(actor, histories, groups):
+def practice_loss(actor, batch_size, context, groups):
     # Uniform camera probes are retained for actual hits or reacquisitions.
     # Probe shots include both misses and hits; triggers learn their outcomes.
     losses = []
     for kind, group in enumerate(groups):
         if not len(group):
             continue
-        sample = group[torch.randint(len(group), (min(32, len(histories)),))]
-        windows = histories[:len(sample)].clone()
-        obs = sample[:, 1:-2]
-        windows[:, -1, :5] = obs[:, :5]
-        windows[:, -1, 23:27] = obs[:, 23:27]
-        if kind == 2:
-            windows[:, -1, 16:18] = obs[:, 16:18]
-            windows[:, -1, -3:] = obs[:, -3:]
+        sample = group[torch.randint(len(group), (min(32, batch_size),))]
+        # These observations belong to one probe, in time order. Older samples
+        # contain one frame. Match the policy's zero padding at the start of a life.
+        frames = sample[:, 1:-2].reshape(len(sample), -1, bc.FEATURES)[:, -context:]
+        windows = F.pad(frames, (0, 0, context - frames.shape[1], 0))
         output = actor(windows)
         if kind == 0:
             losses.append(F.binary_cross_entropy_with_logits(output[:, 4], sample[:, -2]))
@@ -415,7 +412,7 @@ def run(args):
             auxiliary, pairs = prediction_loss(dynamics, encoded, ix, actions, targets, successors)
             loss = -surrogate + .5 * value_loss + .08 * prior_kl - .001 * entropy + .1 * auxiliary
             if practice:
-                loss = loss + .12 * practice_loss(actor, states[ix], practice)
+                loss = loss + .12 * practice_loss(actor, len(ix), config.context, practice)
             if coach_weight:
                 correction = correction_loss(logits, coaching[ix])
                 if previous_coaching and len(previous_coaching["labels"]):

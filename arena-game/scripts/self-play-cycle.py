@@ -296,7 +296,7 @@ def cycle(args, service, work, progress):
         update = [sys.executable, TRAINER, "update", "--resume", checkpoint, "--rollout", rollout, "--actor", actor,
                   "--checkpoint", output, "--output", candidate, "--metrics", metrics_file, "--prior", prior, "--seed", seed]
         exercises = work / "practice.json"
-        run(ts + ["scripts/sample-control-practice.ts", exercises, seed, 500])
+        run(ts + ["scripts/sample-control-practice.ts", exercises, seed, 500, "--with-history"])
         update += ["--practice", exercises]
         if corpus and Path(corpus).is_dir():
             update += ["--dataset", corpus]
