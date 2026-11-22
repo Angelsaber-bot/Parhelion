@@ -1,4 +1,4 @@
-import { assess as assessSearch, fixtures as searchFixtures } from './evaluate-spawn-search.ts';
+import { assess as assessSearch, passesSpawnSearch, fixtures as searchFixtures } from './evaluate-spawn-search.ts';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -502,10 +502,7 @@ function main() {
   } : undefined;
   if (spawnSearch) {
     const { candidate: pilot, opponent: rival } = spawnSearch;
-    gates.spawnSearchProgress = pilot.reach >= .9 * rival.reach &&
-      pilot.stalled / Math.max(1, pilot.windows) <= rival.stalled / Math.max(1, rival.windows) + .05 &&
-      pilot.waitingTrials === rival.waitingTrials &&
-      (!pilot.waitingTrials || pilot.waitingAcquired >= rival.waitingAcquired - 1 / pilot.waitingTrials);
+    gates.spawnSearchProgress = passesSpawnSearch(pilot, rival);
   }
   // Failed screens can produce a small diagnostic result; only the held-out tournament can approve release.
   const tournament = !values['screen-only'] && Object.values(gates).every(Boolean);

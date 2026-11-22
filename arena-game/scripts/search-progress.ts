@@ -3,13 +3,14 @@
 import { HUMAN_FEATURES, wrapAngle } from '../shared/humanCombat.ts';
 import type { MapData } from '../shared/map.ts';
 
-interface Decision { obs: number[]; reset: boolean; reward: number }
+interface Decision { obs: number[]; axes: number[]; reset: boolean; reward: number }
 const scene = HUMAN_FEATURES.length;
 
 export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds'], period: number, tickRate: number) {
   const horizon = Math.max(2, Math.round(3 * tickRate / period));
   let count = 0, turn = 0, range = 0, startX = 0, startZ = 0, heading = 0;
   let minimumYaw = 0, maximumYaw = 0, previousSearchStalled = false;
+  let forwardAttempts = 0;
   let positiveCredits = 0, negativeCredits = 0, newCells = 0;
   const visited = new Set<string>();
   // A respawn starts a new segment but revisiting the same ground is still a revisit.
@@ -27,8 +28,10 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
       if (!reset && count >= 2 && range >= 2 && positiveCredits <= 10) { steps[i - 1].reward += .02; positiveCredits += 2; }
       count = 0; previousSearchStalled = false; visited.add(cell); continue;
     }
-    if (!count) { startX = x; startZ = z; turn = minimumYaw = maximumYaw = 0; range = 0; newCells = 0; route = []; }
+    if (!count) { forwardAttempts = 0; startX = x; startZ = z; turn = minimumYaw = maximumYaw = 0; range = 0; newCells = 0; route = []; }
     else {
+      // Only past actions could have produced the displacement observed now.
+      if (Math.tanh(steps[i - 1].axes[3]) > .3) forwardAttempts++;
       turn += wrapAngle(yaw - heading);
       minimumYaw = Math.min(minimumYaw, turn);
       maximumYaw = Math.max(maximumYaw, turn);
@@ -43,7 +46,10 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
         // Give the actions that finally left a stagnant search area credit for the recovery.
         const credits = Math.min(previousSearchStalled ? 2 : 1, 12 - positiveCredits);
         steps[i - 1].reward += .01 * credits; positiveCredits += credits;
-      } else if (range < 2.5 && (maximumYaw - minimumYaw > Math.PI * .65 || previousSearchStalled) && negativeCredits < 8) {
+      } else if (negativeCredits < 8 && (
+        (range < 2.5 && (maximumYaw - minimumYaw > Math.PI * .65 || previousSearchStalled)) ||
+        (range < 1.5 && forwardAttempts >= .75 * (horizon - 1))
+      )) {
         steps[i - 1].reward -= .015; negativeCredits++;
       }
       if (route.length >= 3) {

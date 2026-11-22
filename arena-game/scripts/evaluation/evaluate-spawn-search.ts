@@ -15,7 +15,7 @@ export function rng(seed: number) {
 interface Trial { map: string; side: 'A' | 'B'; seed: number; waiting: boolean }
 export function fixtures(maps: string[], seed: number, repeats: number): Trial[] {
   return maps.flatMap(map => Array.from({ length: repeats }, (_, i) => (['A', 'B'] as const).map(side => ({
-    map, side, seed: trialSeed(seed, 'search-' + side, map, i), waiting: (seed + i + Number(side === 'A')) % 2 === 0,
+    map, side, seed: trialSeed(seed, 'search-spawn', map, i), waiting: (trialSeed(seed, 'search-wait', map) + i) % 2 === 0,
   }))).flat());
 }
 
@@ -117,4 +117,12 @@ export function assess(model: NeuralPolicyModel, opponent: NeuralPolicyModel, tr
     }
   }
   return { score, ...stats, openingPairs: pairs, openingOverlap: pairs ? shared / pairs : null };
+}
+
+export function passesSpawnSearch(pilot: ReturnType<typeof assess>, rival: ReturnType<typeof assess>) {
+  return pilot.windows > 0 && rival.windows > 0 && pilot.waitingTrials > 0 && pilot.waitingTrials === rival.waitingTrials &&
+    pilot.forwardMetersPerSecond >= Math.max(0, rival.forwardMetersPerSecond - .1 * Math.abs(rival.forwardMetersPerSecond)) &&
+    pilot.reach >= .9 * rival.reach &&
+    pilot.stalled / pilot.windows <= rival.stalled / rival.windows + .05 &&
+    pilot.waitingAcquired > 0 && pilot.waitingAcquired >= rival.waitingAcquired - 1 / pilot.waitingTrials;
 }
