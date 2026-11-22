@@ -41,12 +41,7 @@ export function buildAlphaSettlement(): SettlementKit {
   a.cyl('roof_lantern_cap_ring', [0, 8.05, -7], 1.42, .15, bronze, false, .35);
   a.mesh('roof_lantern_copper_dome', new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), a.mat(blue, .25), [0, 8.1, -7], [1.55, .8, 1.55]);
   a.cyl('roof_lantern_finial', [0, 9.03, -7], .07, .5, bronze, false, .45);
-  // Gable infill is transparent to neither shooting nor movement, while the doorway stays 4.2 m clear.
-  for (const z of [-13.02, -.98]) {
-    const shape = new THREE.Shape(); shape.moveTo(-14, 0); shape.lineTo(14, 0); shape.lineTo(0, 2); shape.closePath();
-    const m = a.mesh('residence_gable_infill', new THREE.ShapeGeometry(shape), a.mat(ivory), [0, 4.7, z], [1, 1, 1]);
-    m.material = a.mat(ivory); (m.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
-  }
+  // residenceCraft fits the two solid attic walls to the roof's inner pitch.
   for (const x of [-13.8, -8, -2.25, 2.25, 8, 13.8]) {
     a.box('residence_facade_rib', [x, 2.35, -.76], [.18, 4.7, .2], bronze);
     a.box('residence_base_plinth', [x, .3, -.73], [.32, .6, .3], dark);
@@ -85,7 +80,14 @@ export function buildAlphaSettlement(): SettlementKit {
       a.mesh('bedside_lamp_shade',new THREE.CylinderGeometry(.12,.23,.27,16),a.mat('#f2d593',0,.2),[s*12.5,1.29,z+1.25],[1,1,1]);
     }
     // Courtyard pergola side wings: visibly distinct from the modern research buildings nearby.
-    for (const z of [1.4, 7.7]) a.box('pergola_column', [s * 14.5, 1.7, z], [.25, 3.4, .25], dark, true);
+    for (const z of [1.4, 7.7]) {
+      a.box('pergola_column', [s * 14.5, 1.7, z], [.25, 3.4, .25], dark, true);
+      a.box('court_post_shoe',[s*14.5,.14,z],[.41,.28,.41],'#d1c9b7');
+      // The inner edge cantilevers over the benches; a triangular bracket carries it back to the post.
+      a.box('pergola_crosshead',[s*13.15,3.31,z],[2.95,.18,.23],wood);
+      a.beam('pergola_knee',[s*14.5,2.36,z],[s*12.18,3.23,z],.15,wood);
+      a.box('pergola_joint_clamp',[s*14.5,2.43,z],[.29,.11,.29],bronze);
+    }
     a.box('pergola_beam', [s * 14.5, 3.45, 4.5], [.3, .22, 7.4], bronze);
     a.box('pergola_beam', [s * 11.8, 3.45, 4.5], [.3, .22, 7.4], bronze);
     for (let z = 1; z < 8.5; z += .8) a.box('pergola_slats', [s * 13.1, 3.56, z], [3.8, .1, .2], ivory);

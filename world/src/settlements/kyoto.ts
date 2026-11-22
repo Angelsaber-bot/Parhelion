@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import type { SettlementKit } from './types';
 import { KyotoWinterArt } from './kyotoWinterArt';
 import {applyCraftSurface} from './craftSurface';
@@ -10,31 +11,56 @@ export function buildKyotoSettlement(): SettlementKit {
   applyCraftSurface(paper,'paper');for(const m of[tile,tileEdge])applyCraftSurface(m,'slate');
   for(const m of[stone,stoneDark])applyCraftSurface(m,'stone');for(const m of[tatami,indigo])applyCraftSurface(m,'cloth');
   // Continuous accessible paving has no raised doorstep that can catch the player's capsule.
-  a.box(0,-.2,0,34,.4,30,stone,true);
+  // Pave up to each threshold. The two interior floors occupy the remaining
+  // rectangles at the same elevation, with no overlapping top surfaces.
+  for (const [x,z,w,d] of [
+    [0,-12.5,34,5], [0,9.5,34,11],
+    [-16,-3,2,14], [-2.5,-3,5,14], [16.5,-3,1,14],
+    [-10,-9.5,10,1], [-10,3.5,10,1],
+  ]) a.box(x,-.2,z,w,.4,d,stone,true);
   for(let x=-15;x<=15;x+=3) for(let z=5;z<=13;z+=2.6) a.box(x,.014,z,2.86,.026,2.46,(x+z)%2?stone:stoneDark);
   // Inn, +Z-facing, 3.6 m entrance. Its rooms are fully accessible at the same floor elevation.
   a.box(8,-.08,-3,16,.16,14,wood,true);
-  a.box(8,2,-10,16,4,.3,pale,true);
+  for (const [x,w] of [[4.35,8.7],[13.4,5.2]]) a.box(x,2,-10,w,4,.3,pale,true);
+  a.box(9.75,3.25,-10,2.1,1.5,.3,pale,true);
+  for (const x of [8.7,10.8]) a.box(x,1.25,-10,.14,2.5,.34,dark,true);
+  a.box(9.75,2.55,-10,2.25,.14,.36,dark);
   a.box(0,2,-3,.3,4,14,pale,true); a.box(16,2,-3,.3,4,14,pale,true);
-  for(const x of [2.55,13.45])a.box(x,2,4,5.1,4,.28,pale,true);
+  for(const x of [2.55,13.45]){
+    for(const side of [-1,1])a.box(x+side*2.225,2,4,.65,4,.28,pale,true);
+    a.box(x,.45,4,3.8,.9,.28,pale,true);
+    a.box(x,3.61,4,3.8,.78,.28,pale,true);
+  }
   a.box(8,3.65,4,5.8,.7,.3,dark,true);
   for(const x of [0,5.1,10.9,16])a.box(x,2.05,4,.22,4.1,.38,dark,true);
   for(const z of [-10,-5,0,4])for(const x of [0,16])a.box(x,2,z,.25,4.05,.3,dark);
   for(const y of [.4,2.9,3.85]){
-    a.box(8,y,-10.18,16.4,.14,.15,dark);a.box(8,y,4.18,16.4,.14,.15,dark);
+    if (y > 2.6) a.box(8,y,-10.18,16.4,.14,.15,dark);
+    else for (const [x,w] of [[4.25,8.9],[13.5,5.4]]) a.box(x,y,-10.18,w,.14,.15,dark);
+    if (y > 3.3) a.box(8,y,4.18,16.4,.14,.15,dark);
+    else for (const x of [2.5,13.5]) a.box(x,y,4.18,5.25,.14,.15,dark);
     a.box(-.18,y,-3,.15,.14,14.4,dark);a.box(16.18,y,-3,.15,.14,14.4,dark);
   }
   a.roof(8,-3,18,16,4.15,2.1,tile,dark);
   // Ceramic ridge caps and roof courses catch soft anime-style rim light without texture noise.
+  const pitch = Math.atan2(2.1,8);
+  const roll = new THREE.CylinderGeometry(.105,.105,Math.hypot(8,2.1),6,1,false,-Math.PI/2,Math.PI);
   for(let x=-.5;x<=16.5;x+=.55){
-    a.box(x,6.43,-3,.46,.18,.5,tileEdge);
-    for(const s of [-1,1])for(let row=1;row<7;row++)a.box(x,6.43-row*.27,-3+s*row*1.03,.075,.075,.9,tileEdge,false,0,s*.255);
+    a.box(x,6.43,-3,.5,.18,.5,tileEdge);
+    for(const side of [-1,1]) a.geo(roll.clone(),tileEdge,x,5.2+.13/Math.cos(pitch),-3+side*4,-Math.PI/2+side*pitch);
   }
+  roll.dispose();
+  for (const side of [-1,1]) for (let row=1; row<8; row++)
+    a.box(8,6.25-row*2.1/8+.14/Math.cos(pitch),-3+side*row,18,.035,.075,tile,false,0,side*pitch);
   // Front shoji windows framed in individual timber mullions.
-  for(const x of [2.5,13.5]){
-    a.box(x,2.05,4.18,3.8,2.35,.08,paper);
-    for(let k=-2;k<=2;k++)a.box(x+k*.72,2.05,4.25,.065,2.45,.07,dark);
-    for(let k=-1;k<=1;k++)a.box(x,2.05+k*.7,4.26,3.9,.06,.07,dark);
+  for(const x of [2.55,13.45]){
+    a.box(x,2.06,4,3.8,2.32,.06,paper,true);
+    for (const side of [-1,1]) {
+      a.box(x+side*1.9,2.06,4,.12,2.42,.32,wood);
+      a.box(x,2.06+side*1.16,4,3.9,.1,.32,wood);
+    }
+    for(let k=-2;k<=2;k++)a.box(x+k*.72,2.06,4,.065,2.32,.13,dark);
+    for(let k=-1;k<=1;k++)a.box(x,2.06+k*.7,4,3.8,.06,.14,dark);
   }
   // Projecting entrance canopy has curved eave tips, distinct from the workshop roof.
   a.roof(8,5.35,5.5,3,3.25,.85,tile,dark);
@@ -88,13 +114,32 @@ export function buildKyotoSettlement(): SettlementKit {
   // Clay hearth with recessed glowing coals; emissive only, no costly shadow point light.
   a.box(-12.9,.65,-6.8,2.3,1.3,2.1,stoneDark,true);
   a.box(-12.9,1.35,-6.8,1.6,.12,1.45,ember);
+  for(const z of [-7.65,-5.95]) a.box(-12.9,1.48,z,2.15,.4,.28,stone,true);
+  for(const [dx,dz,size] of [[-.54,-.31,.33],[-.42,.28,.4],[.02,.14,.48],[.37,-.28,.37],[.49,.36,.3]])
+    a.cyl(-12.9+dx,1.43,-6.8+dz,size,.17,stoneDark,false,6,size*.67);
   a.box(-12.9,2,-7.8,2.3,2.2,.35,stone,true);
-  a.box(-12.9,4,-7.8,1.1,4.4,1.1,stone,true);
+  a.box(-12.9,3.85,-7.8,1.1,4.1,1.1,stone,true);
+  a.box(-12.9,5.91,-7.8,1.19,.13,1.19,stoneDark,true);
+  for (const dx of [-.43,.43]) for (const dz of [-.43,.43])
+    a.box(-12.9+dx,6.15,-7.8+dz,.2,.39,.2,stone,true);
+  a.box(-12.9,6.42,-7.8,1.38,.16,1.38,tile,true);
   for(let y=1;y<5.8;y+=.38)a.box(-12.9,y,-7.22,1.15,.035,.035,stoneDark);
   a.box(-11.25,.8,-6.7,.75,.6,1.2,wood,true);a.box(-11.25,1.16,-6.7,.65,.12,1.2,iron);
   // Anvil on stump and quenching basin, kept clear of the smith's dialogue socket.
   a.cyl(-11.8,.5,-2.5,.65,1,wood,true);a.box(-11.8,1.18,-2.5,1.55,.4,.65,iron,true);a.box(-11.8,1.45,-2.5,1.9,.12,.8,iron);
-  a.cyl(-6.5,.55,-6.4,.65,1.1,wood,true);a.cyl(-6.5,1.08,-6.4,.58,.035,water);
+  // Turn the lip, outer wall and inner well together. The recessed water is
+  // visible from above at both the forge and the garden washing station.
+  function basin(x:number,z:number,r:number,material:THREE.MeshStandardMaterial) {
+    const profile = [[0,0],[.8,0],[1,.98],[.98,1.08],[.92,1.1],[.8,1.1],[.75,1.02],[.63,.18],[0,.18]]
+      .map(([width,y])=>new THREE.Vector2(width*r,y));
+    a.geo(new THREE.LatheGeometry(profile,16),material,x,0,z,0,0,0,true);
+    a.cyl(x,.989,z,.75*r,.012,water,false,16);
+  }
+  basin(-6.5,-6.4,.65,wood);
+  for (const y of [.26,.83]) {
+    const radius = .65 * (.8+.2*y/.98) + .009;
+    a.geo(new THREE.CylinderGeometry(radius+.005,radius-.005,.075,16,1,true),iron,-6.5,y,-6.4);
+  }
   for(let i=0;i<3;i++){
     const z=-5.8+i*1.4;a.box(-5.8,1.1,z,.45,.18,1.05,wood,true);a.box(-5.8,1.32,z,.1,.07,1.7,iron);
   }
@@ -110,7 +155,7 @@ export function buildKyotoSettlement(): SettlementKit {
   for(const x of [-10,10])a.box(x,.55,15,14,1.1,.22,wood,true);
   for(let x=-16;x<=16;x+=2)a.box(x,.8,-15,.16,1.6,.2,dark);
   for(let x=-12;x<=12;x+=4){a.cyl(x,.28,-13,.55,.55,stone);a.cyl(x,.85,-13,.65,1,leaf,false,8,.45);}
-  a.cyl(-2.5,.55,7.8,.8,1.1,stone,true);a.cyl(-2.5,1.1,7.8,.62,.025,water);
+  basin(-2.5,7.8,.8,stone);
   // An irregular planted pocket interrupts the paved frontage, clear of the central lane.
   a.box(-9,.04,10,7,.08,5,stoneDark);
   for(let k=0;k<6;k++){

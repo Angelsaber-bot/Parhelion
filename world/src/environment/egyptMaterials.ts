@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { craftSurfaceShader, egyptCraftSurfaces } from './egyptQinCraftPalettes';
+
+const craft = craftSurfaceShader(egyptCraftSurfaces);
 
 /**
  * Egypt alone: bedded sandstone, dressed limestone, sun-dried mudbrick, painted plaster
@@ -12,11 +15,13 @@ export function egyptToonMaterial(src: THREE.Material, gradientMap: THREE.Textur
   const m = new THREE.MeshToonMaterial({ name: src.name, vertexColors: true, color: s.color ?? new THREE.Color(1, 1, 1), gradientMap, side: s.side, transparent: s.transparent, opacity: s.opacity, fog: s.fog ?? true });
   m.userData = { ...src.userData, egyptSurface: true, artStyle: 'painted-anime' };
   m.onBeforeCompile = sh => {
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vEgWorld;\nvarying vec3 vEgNormal;')
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', `#include <common>\n${craft.vertex}\nvarying vec3 vEgWorld;\nvarying vec3 vEgNormal;`)
       .replace('#include <project_vertex>', `#include <project_vertex>
+        ${craft.assign}
         vEgWorld=(modelMatrix*vec4(transformed,1.0)).xyz;
         vEgNormal=normalize(mat3(modelMatrix)*objectNormal);`);
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+      ${craft.fragment}
       varying vec3 vEgWorld; varying vec3 vEgNormal; float egGold=0.0;
       float egLine(float v,float w){float f=abs(fract(v)-.5)*2.0;float aa=fwidth(v)*2.0;return 1.0-smoothstep(w,w+aa+.001,1.0-f);}
       float egHash(vec2 p){return fract(sin(dot(p,vec2(41.3,289.1)))*15731.743);}
@@ -31,16 +36,23 @@ export function egyptToonMaterial(src: THREE.Material, gradientMap: THREE.Textur
         vec2 wall=abs(n.x)>abs(n.z)?p.zy:p.xy;
         float warm=step(c.b*1.25,c.g)*step(c.g*1.03,c.r);
         // sandstone: warm ochre, saturated; limestone: pale, low saturation; mudbrick: dark warm
-        float sandstone=warm*smoothstep(.22,.3,sat)*smoothstep(.5,.6,mx)*(1.0-smoothstep(.62,.7,sat));
-        float plaster=warm*(1.0-smoothstep(.15,.19,sat))*smoothstep(.9,.93,mx);
-        float limestone=warm*(1.0-smoothstep(.16,.24,sat))*smoothstep(.7,.78,mx)*(1.0-plaster);
-        float brick=warm*smoothstep(.25,.32,sat)*smoothstep(.3,.36,mx)*(1.0-smoothstep(.52,.58,mx));
-        float gold=warm*smoothstep(.45,.55,sat)*smoothstep(.6,.7,mx)*smoothstep(.56,.68,c.g/max(c.r,.001));
-        float ochre=warm*smoothstep(.5,.6,sat)*(1.0-smoothstep(.5,.6,c.g/max(c.r,.001)));
-        float lapis=step(c.r*1.4,c.b)*step(c.g*1.12,c.b)*smoothstep(.3,.4,sat);
-        float faience=step(c.r*1.2,c.g)*step(c.r*1.15,c.b)*smoothstep(.3,.4,sat);
-        float plant=step(c.r*1.05,c.g)*step(c.b*1.15,c.g)*smoothstep(.2,.3,sat);
+        float sandstone=craftMask(CRAFT_SANDSTONE,warm*smoothstep(.22,.3,sat)*smoothstep(.5,.6,mx)*(1.0-smoothstep(.62,.7,sat)));
+        float plaster=craftMask(CRAFT_PLASTER,warm*(1.0-smoothstep(.15,.19,sat))*smoothstep(.9,.93,mx));
+        float limestone=craftMask(CRAFT_LIMESTONE,warm*(1.0-smoothstep(.16,.24,sat))*smoothstep(.7,.78,mx)*(1.0-plaster));
+        float brick=craftMask(CRAFT_BRICK,warm*smoothstep(.25,.32,sat)*smoothstep(.3,.36,mx)*(1.0-smoothstep(.52,.58,mx)));
+        float gold=craftMask(CRAFT_GOLD,warm*smoothstep(.45,.55,sat)*smoothstep(.6,.7,mx)*smoothstep(.56,.68,c.g/max(c.r,.001)));
+        float ochre=craftMask(CRAFT_OCHRE,warm*smoothstep(.5,.6,sat)*(1.0-smoothstep(.5,.6,c.g/max(c.r,.001))));
+        float lapis=craftMask(CRAFT_LAPIS,step(c.r*1.4,c.b)*step(c.g*1.12,c.b)*smoothstep(.3,.4,sat));
+        float faience=craftMask(CRAFT_FAIENCE,step(c.r*1.2,c.g)*step(c.r*1.15,c.b)*smoothstep(.3,.4,sat));
+        float plant=craftMask(CRAFT_PLANT,step(c.r*1.05,c.g)*step(c.b*1.15,c.g)*smoothstep(.2,.3,sat));
         vec3 tint=vec3(1.0);
+        float wood=craftMask(CRAFT_WOOD,0.0), linen=craftMask(CRAFT_LINEN,0.0);
+        vec2 fiber=mix(p.xz,wall,vertical);
+        vec2 grain=vec2(fiber.x*8.0,fiber.y*.8);
+        tint*=mix(vec3(1.0),vec3(.95+.12*egNoise(grain)),wood);
+        float thread=sin(fiber.x*65.0)*sin(fiber.y*72.0);
+        float weave=1.0-smoothstep(.02,.09,length(fwidth(fiber)));
+        tint*=mix(vec3(1.0),vec3(1.0+.07*thread*weave),linen);
         // bedded sandstone: thick and thin beds, cross-bedding and wind-worn hollows
         float bed=p.y/.7+egNoise(wall*.25)*1.4;
         tint*=mix(vec3(1.0),vec3(1.0+.07*sin(bed*3.14159)+.05*(egHash(vec2(floor(bed),0.0))-.5))*(1.0-.12*egLine(bed,.04))*(1.0-.1*smoothstep(.62,.85,egNoise(wall*1.6))),sandstone*vertical);
@@ -93,6 +105,6 @@ export function egyptToonMaterial(src: THREE.Material, gradientMap: THREE.Textur
       }
 #include <opaque_fragment>`);
   };
-  m.customProgramCacheKey = () => 'egypt-crafted-surfaces-v2';
+  m.customProgramCacheKey = () => 'egypt-crafted-surfaces-v3';
   return m;
 }

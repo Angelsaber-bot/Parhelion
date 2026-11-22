@@ -75,18 +75,34 @@ export function createWinterCivilLandscape(ground: (x: number, z: number, ceilin
     art.box([x, y + .83, z], [3.1, .13, 1.2], wood, true);
     for (const dx of [-1.2, 1.2]) art.box([x + dx, y + .4, z], [.14, .8, .8], char, true);
     art.box([x, y + .42, z + 1.3], [3, .16, .5], wood, true);
+    for (const dx of [-1.02, 1.02]) art.box([x + dx, y + .17, z + 1.3], [.16, .34, .45], char);
     art.paper(x, y + .92, z, .7, .45);
   }
   art.box([9, y + .95, -87.3], [1.4, 1.9, 1.3], '#817467', true);
   art.box([9, y + 1.02, -86.62], [.66, .5, .05], '#d39e61', false, 'glow');
-  art.cyl([9, y + 3.15, -87.3], .17, 2.5, iron, true);
+  art.cyl([9, y + 3.92, -87.3], .17, 4.04, iron, true);
+  const flashingHeight = 5.92 + (9 - 12.2) * Math.tan(.197) + .07;
+  art.box([9, y + flashingHeight, -87.3], [.85,.08,.87], iron, false, 'metal', [0,0,.197]);
+  for (const dx of [-.14,.14]) art.box([9+dx, y+6.02, -87.3], [.045,.25,.055], iron);
+  const cowl = new THREE.ConeGeometry(.37,.2,8);
+  art.add(cowl, iron, [9,y+6.21,-87.3], [1,1,1], false, 'metal'); cowl.dispose();
   art.cyl([9, y + 2.08, -87.3], .4, .36, iron);
   art.ring([9, y + 2.28, -87.3], .36, .045, iron, 'metal', [Math.PI / 2, 0, 0]);
   for (const z of [-83, -80]) {
     art.box([25.3, y + .32, z], [4.6, .5, 1.6], '#aaa58e', true);
     art.box([27, y + .61, z], [.65, .15, 1.2], snow);
   }
-  for (const x of [7, 29]) for (const z of [-82, -78]) art.box([x, y + 1.5, z], [.3, 3, .3], char, true);
+  // Keep every post below the sloping infirmary awning, with the loaded
+  // corners seated on the courtyard slab and both stretcher ends open.
+  for (const x of [21.6, 28.75]) {
+    const underside = 3.3 - (x - 25.2) * Math.tan(.06) - .075;
+    const shoulder = underside - .19;
+    for (const z of [-84.15, -78.85]) {
+      art.box([x,y+shoulder/2,z], [.25,shoulder,.25], char, true);
+      art.beam([x,y+shoulder-.55,z], [x,y+shoulder,z+(z < -81.5 ? .62 : -.62)], .12, wood);
+    }
+    art.box([x,y+shoulder+.095,-81.5], [.24,.19,6.1], wood);
+  }
   art.box([25.2, y + 3.3, -81.5], [7.9, .15, 6.3], '#b3afa0', true, 'body', [0, 0, -.06]);
   art.box([9.5, y + .8, -80], [3.5, .18, 1.2], wood, true);
   for (const x of [8.4, 10.7]) art.box([x, y + .38, -80], [.16, .76, .9], char, true);

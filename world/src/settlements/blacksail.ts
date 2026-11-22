@@ -22,11 +22,11 @@ export function buildBlackSailSettlement(): SettlementKit {
     roofEdge: new THREE.MeshStandardMaterial({ color: '#789191', roughness: .83 }),
     brass: new THREE.MeshStandardMaterial({ color: '#aa8952', metalness: .58, roughness: .48 }),
     iron: new THREE.MeshStandardMaterial({ color: '#364147', metalness: .55, roughness: .64 }),
-    cloth: new THREE.MeshStandardMaterial({ color: '#e1cba3', roughness: 1, side: THREE.DoubleSide }),
+    cloth: new THREE.MeshStandardMaterial({ color: '#e1cba3', roughness: 1 }),
     paper: new THREE.MeshStandardMaterial({ color: '#e8d5ac', roughness: 1 }),
     ink: new THREE.MeshStandardMaterial({ color: '#476978', roughness: 1 }),
     seal: new THREE.MeshStandardMaterial({ color: '#9e4540', roughness: .8 }),
-    glass: new THREE.MeshStandardMaterial({ color: '#bfcaad', roughness: .4, metalness: .12 }),
+    glass: new THREE.MeshStandardMaterial({ color: '#bfcaad', roughness: .4, transparent: true, opacity: .32, depthWrite: false, side: THREE.DoubleSide }),
     lamp: new THREE.MeshStandardMaterial({ color: '#ffe2a0', emissive: '#ffbc60', emissiveIntensity: .6, roughness: .7 }),
   };
   for(const m of[mats.plaster,mats.worn])applyCraftSurface(m,'plaster');
@@ -121,7 +121,12 @@ export function buildBlackSailSettlement(): SettlementKit {
     box('oak', side * 7, 1.5, 5.04, 4.2, .2, .65);
     box('oak', side * 7, 3.64, 5.04, 4.2, .17, .58);
     for (const x of [side * 7 - 2, side * 7, side * 7 + 2]) box('oak', x, 2.55, 5, .15, 2.2, .28);
-    box('glass', side * 7, 2.55, 4.96, 3.84, 1.9, .035);
+    // Fixed transom above an open service hatch. A single pane avoids sorting
+    // front and back surfaces of a translucent box in the material batch.
+    const pane = new THREE.PlaneGeometry(3.84, .68);
+    add(pane, 'glass', side * 7, 3.18, 4.96);
+    pane.dispose();
+    box('oak', side * 7, 2.82, 5, 4.05, .09, .22);
     for (const edge of [-1, 1]) {
       const x = side * 7 + edge * 2.52;
       box('teal', x, 2.57, 5.26, .88, 2.25, .15, false, 0, edge * .16);
@@ -182,14 +187,15 @@ export function buildBlackSailSettlement(): SettlementKit {
   }
   // Closed triangular end gables keep the office weather-tight while exposing
   // the timber truss silhouette beneath the overhanging roof.
-  const gable = new THREE.BufferGeometry();
-  gable.setAttribute('position', new THREE.Float32BufferAttribute([
-    -.225, 0, -7, -.225, 0, 7, -.225, 2.65, 0,
-     .225, 0, -7,  .225, 0, 7,  .225, 2.65, 0,
-  ], 3));
-  gable.setIndex([0, 2, 1, 3, 4, 5, 0, 1, 4, 0, 4, 3, 1, 2, 5, 1, 5, 4, 2, 0, 3, 2, 3, 5]);
-  gable.computeVertexNormals();
-  gable.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(12), 2));
+  const slope = Math.atan2(2.9, 7.9), slopeLength = Math.hypot(2.9, 7.9);
+  const ridgeUnderside = 6.42 + 2.9 / 2 - .11 / Math.cos(slope);
+  const gableRise = ridgeUnderside - 5;
+  const wallPlate = gableRise - 7 * Math.tan(slope);
+  const profile = new THREE.Shape();
+  profile.moveTo(-7, 0); profile.lineTo(-7, wallPlate); profile.lineTo(0, gableRise);
+  profile.lineTo(7, wallPlate); profile.lineTo(7, 0); profile.closePath();
+  const gable = new THREE.ExtrudeGeometry(profile, { depth: .45, bevelEnabled: false });
+  gable.translate(0, 0, -.225).rotateY(Math.PI / 2);
   for (const x of [-11, 11]) {
     add(gable, 'plaster', x, 5, -2, 1, 1, 1, true);
     beam('oak', [x, 5, -9], [x, 7.65, -2], .18);
@@ -198,8 +204,8 @@ export function buildBlackSailSettlement(): SettlementKit {
   }
   gable.dispose();
   // Layered hipped impression, continuous long ridge and visible timber eaves.
-  const slope = Math.atan2(2.9, 7.9), slopeLength = Math.hypot(2.9, 7.9);
   for (const side of [-1, 1]) {
+    box('oak', 0, 5 + wallPlate/2, -2 + side*7, 22.4, wallPlate, .46, true);
     box('roof', 0, 6.42, -2 + side * 3.95, 24.5, .22, slopeLength, true, side * slope);
     for (let row = 0; row < 8; row++) {
       const t = (row + .4) / 8, z = -2 + side * (t * 7.9), y = 7.86 - t * 2.9;
@@ -214,6 +220,11 @@ export function buildBlackSailSettlement(): SettlementKit {
   }
   // Octagonal harbor clock/duty bell above the entry, simple clean silhouette.
   box('teal', 0, 5.85, 6.0, 2.5, 1.6, .26);
+  for (const x of [-.92, .92]) {
+    beam('oak', [x, 4.65, 5.16], [x, 5.24, 5.95], .17);
+    beam('oak', [x, 5.24, 5.95], [x, 6.52, 5.95], .17);
+  }
+  box('roofEdge', 0, 6.69, 6, 2.73, .13, .55);
   add(cylinder, 'brass', 0, 5.9, 6.2, .57, .12, .57, false, Math.PI / 2);
   add(cylinder, 'paper', 0, 5.9, 6.28, .48, .025, .48, false, Math.PI / 2);
   beam('ink', [0, 5.9, 6.3], [.0, 6.25, 6.3], .035);
@@ -225,7 +236,11 @@ export function buildBlackSailSettlement(): SettlementKit {
   box('cloth', 0, 4.1, 6.8, 22.3, .055, 3.5, false, .18);
   for (const x of [-9.8, -7, -4.2, 4.2, 7, 9.8]) box('teal', x, 3.83, 8.5, .55, .55, .05);
   lantern(-2.3, 2.9, 5.7); lantern(2.3, 2.9, 5.7);
-  lantern(-7.8, 3.5, -6.8); lantern(8.5, 3.3, -6.7);
+  for (const x of [-2.3, 2.3]) beam('iron', [x, 3.56, 5.17], [x, 3.56, 5.7], .065);
+  for (const [x, y, z] of [[-7.8, 3.5, -6.8], [8.5, 3.3, -6.7]]) {
+    lantern(x, y, z);
+    beam('iron', [x, y + .66, z], [x, 7.84 - Math.abs(z + 2) * 2.9 / 7.9, z], .045);
+  }
 
   // Ledger office: freestanding counter, maps, bookcase, drawers and scale.
   box('oak', -6.3, .65, -.8, 5.9, 1.3, 1.45, true);
@@ -288,6 +303,11 @@ export function buildBlackSailSettlement(): SettlementKit {
   box('paleStone', 4.5, 2.75, -12.3, .5, .15, 6.95);
   box('paleStone', 10.9, 2.75, -12.3, .5, .15, 6.95);
   box('cloth', 7.7, 3.3, -11.1, 6.4, .035, 3.3, false, -.08);
+  for (const z of [-12.7, -9.5]) {
+    const top = 3.3 + (z + 11.1) * Math.tan(.08);
+    for (const x of [4.5, 10.9]) box('oak', x, (2.75 + top) / 2, z, .14, top - 2.75, .14);
+    box('oak', 7.7, top - .05, z, 6.52, .11, .12);
+  }
   crate(5.8, 0, -13.6, 1.3, .9, 1.0); barrel(9.65, -13.5, .9);
   lantern(10.45, 2.1, -10.8);
   // Courtyard: asymmetric unloading goods, bollards and rope loops.
@@ -310,7 +330,7 @@ export function buildBlackSailSettlement(): SettlementKit {
     const geo = mergeParts(geos, false);
     const mesh = new THREE.Mesh(geo, mats[mat]);
     mesh.name = `Customs_${mat}_${solidity}`;
-    mesh.castShadow = true; mesh.receiveShadow = true;
+    mesh.castShadow = mat !== 'glass'; mesh.receiveShadow = true;
     mesh.userData.solid = solidity === 'solid';
     group.add(mesh);
     geos.forEach(g => g.dispose());

@@ -2,14 +2,9 @@ import * as THREE from 'three';
 import { Batch, BOX, T } from '../geo';
 import { Frame } from '../orleans/craft';
 import { Shell } from '../qin/craft';
+import { E } from '../../../src/environment/egyptQinCraftPalettes';
 
-/** Egypt palette: bedded sandstone, limestone, mudbrick, painted plaster, gold and faience. */
-export const E = {
-  sand: '#d8b77a', sandstone: '#c99a5e', sandstoneDark: '#a9784a', limestone: '#e6d8b8', limestoneDark: '#cdbb94',
-  brick: '#9a6f48', brickDark: '#7f5a3a', plaster: '#efe4c8', blue: '#2f5f8f', red: '#a8432f', green: '#4f8a5a', yellow: '#d8a94a',
-  gold: '#dba93a', faience: '#3fa2a0', lapis: '#24477a', trunk: '#7a5c3c', leaf: '#5d8a3e', leafDark: '#4a7333', linen: '#ece2c6',
-  wood: '#6b4a2f', black: '#2a2622', water: '#4c9fae', ember: '#ffb04a', light: '#fff1c4', reed: '#8a9a52',
-};
+export { E };
 export const EMAT = 'M_EgyptCraft';
 export const CYL = new THREE.CylinderGeometry(1, 1, 1, 14), CYL8 = new THREE.CylinderGeometry(1, 1, 1, 8);
 /** A leaf blade: widest a third of the way along, pointed at the tip (unit length on +Y). */

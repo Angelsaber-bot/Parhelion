@@ -35,11 +35,30 @@ function windowWall(f:Frame,axis:'x'|'z',at:number,length:number,height:number,c
   if(axis==='x')f.box(at,y,x,.4,ys[j]-ys[j-1],xs[i]-xs[i-1],C.wall);else f.box(x,y,at,xs[i]-xs[i-1],ys[j]-ys[j-1],.4,C.wall);
  }
 }
-/** The wall has a real 3.2 m opening with lintel, never a transparent collider. */
-function doorWall(f:Frame,axis:'x'|'z',at:number,span:number,height:number,center=0,bottom=0){
- const side=(span-3.2)/2;
- for(const s of[-1,1]){const c=s*(1.6+side/2);if(axis==='z')f.box(c,bottom+height/2,at,side,height,.35,C.wall);else f.box(at,bottom+height/2,c,.35,height,side,C.wall);}
- if(axis==='z')f.box(center,bottom+(height+3.3)/2,at,3.2,height-3.3,.35,C.wall);else f.box(at,bottom+(height+3.3)/2,center,.35,height-3.3,3.2,C.wall);
+function streetFacade(f:Frame,w:number,d:number,height:number,levels:number[]){
+ const z=d/2, paneWidth=Math.min(2.8,w*.2);
+ const strip=(left:number,right:number,bottom:number,top:number)=>{
+   if(right>left&&top>bottom)f.box((left+right)/2,(bottom+top)/2,z,right-left,top-bottom,.35,C.wall);
+ };
+ strip(-1.6,1.6,3.3,height);
+ for(const s of[-1,1]){
+   const cx=s*w*.3,left=cx-paneWidth/2,right=cx+paneWidth/2;
+   strip(s<0?-w/2:1.6,left,0,height);
+   strip(right,s<0?-1.6:w/2,0,height);
+   let sill=0;
+   for(const y of levels){
+     const upper=y>4, width=upper?2.5:paneWidth,h=upper?2.1:1.8;
+     strip(left,right,sill,y-h/2);
+     strip(left,cx-width/2,y-h/2,y+h/2);
+     strip(cx+width/2,right,y-h/2,y+h/2);
+     window(f,cx,y,z+.19,width,h,0,true);
+     sill=y+h/2;
+   }
+   strip(left,right,sill,height);
+   // The stone skirt ends at the jamb, leaving the uninterrupted street ramp visible.
+   const end=w/2+.2;
+   f.box(s*(end+1.6)/2,.3,z+.2,end-1.6,.4,.25,C.stone,false);
+ }
 }
 function shell(b:Batch,h:HomeBuilding,height=4.2){
  const [x,y,z]=h.p,f=new Frame(b,x,y,z,h.yaw),w=h.w,d=h.d;
@@ -48,11 +67,9 @@ function shell(b:Batch,h:HomeBuilding,height=4.2){
  const levels=height>8?[2.4,6.3]:[2.4];
  for(const side of[-1,1])windowWall(f,'x',side*w/2,d,height,[-d*.25,d*.25],levels);
  windowWall(f,'z',-d/2,w,height,[-w*.3,w*.3],levels);
- doorWall(f,'z',d/2,w,height);
- for(const xx of[-w*.30,w*.30])window(f,xx,2.4,d/2+.23,Math.min(2.8,w*.2),1.8);
+ streetFacade(f,w,d,height,levels);
  for(const level of levels){for(const s of[-1,1])for(const zz of[-d*.25,d*.25])window(f,s*(w/2+.23),level,zz,2,1.8,s*Math.PI/2,true);
  for(const xx of[-w*.3,w*.3])window(f,xx,level,-d/2-.23,2,1.8,Math.PI,true);}
- f.box(0,.3,d/2+.2,w+.4,.4,.25,C.stone,false);
  // Threshold ramp meets the actual street. One uninterrupted top avoids capsule snags.
  const door=f.point(0,.12,d/2-1),porch=f.point(0,.12,d/2+2.5);
  strip(b,[h.approach,[porch.x,porch.y,porch.z],[door.x,door.y,door.z]],3.5,C.stone);
@@ -64,6 +81,60 @@ function roof(f:Frame,w:number,d:number,height:number,index=0){
  gable(f,w,d,height,2.5+(index%3)*.5,index%3===1?'#637d83':C.roof);
  for(const s of[-1,1]){f.box(s*(w/2+.65),height-.08,0,.15,.15,d+1.4,C.metal,false);f.box(s*(w/2+.3),height/2,-d/2-.4,.12,height,.12,C.metal,false);}
  f.box(w*.25,height+1.5,-d*.2,.9,3,1,C.stone);f.box(w*.25,height+3,-d*.2,1.2,.2,1.3,C.cream,false);
+}
+/** A relief hung under the awning or from a wall bracket identifies the trade from the street. */
+function shopSign(f:Frame,h:HomeBuilding,canopy:boolean){
+ const cx=-h.w*.29,z=h.d/2+(canopy?3.3:1.15);
+ const q=f.point(cx,0,z),sign=new Frame(f.b,q.x,f.y,q.z,f.a);
+ if(!canopy){
+   f.beam([cx,3.42,h.d/2+.14],[cx,3.42,z+.08],.10,C.dark);
+   f.beam([cx,2.93,h.d/2+.14],[cx,3.42,z-.09],.07,C.metal);
+ }
+ for(const x of[-.6,.6])sign.box(x,3.15,0,.05,.45,.05,C.dark,false);
+ sign.box(0,2.65,0,1.8,.73,.12,C.wood,false);
+ sign.box(0,2.65,.075,1.67,.61,.04,C.blue,false);
+ const face=.115;
+ switch(h.kind){
+   case 'bakery': {
+     const p=sign.point(0,2.65,face);f.b.add(sphere,'#e9bb73',T(p.x,p.y,p.z,f.a,.61,.20,.095),false);
+     for(const x of[-.28,0,.28])sign.beam([x-.07,2.68,.19],[x+.03,2.77,.19],.04,C.cream);
+     break;
+   }
+   case 'grocer':
+     sign.box(0,2.55,face,.98,.16,.1,C.wood,false);
+     for(const [x,y,c]of[[-.27,2.69,'#b56945'],[0,2.73,'#deb462'],[.27,2.68,C.green]] as const){
+       const p=sign.point(x,y,face);f.b.add(sphere,c,T(p.x,p.y,p.z,f.a,.15,.16,.1),false);
+     }
+     break;
+   case 'cafe':
+     sign.box(-.1,2.67,face,.54,.28,.09,C.cream,false);
+     sign.box(.27,2.7,face,.2,.06,.09,C.cream,false); sign.box(.35,2.65,face,.06,.14,.09,C.cream,false);
+     sign.box(0,2.47,face,.91,.05,.09,C.cream,false);
+     break;
+   case 'tailor':
+     sign.box(0,2.65,face,.64,.23,.09,'#b6d6db',false);
+     for(const x of[-.34,.34])sign.box(x,2.65,face,.08,.37,.10,C.cream,false);
+     for(const x of[-.20,0,.20])sign.beam([x-.06,2.54,.18],[x+.06,2.76,.18],.03,C.blue);
+     break;
+   case 'clinic':
+     sign.box(0,2.65,face,.56,.12,.09,C.cream,false);sign.box(0,2.65,face+.02,.14,.43,.09,C.cream,false);
+     break;
+   case 'repair':
+     if(h.id==='boathouse'){
+       sign.beam([-.60,2.72,face],[.01,2.48,face],.09,C.cream);
+       sign.beam([.01,2.48,face],[.60,2.72,face],.09,C.cream);
+       sign.beam([-.48,2.72,face],[.48,2.72,face],.05,C.cream);
+     }else{
+       sign.beam([-.49,2.46,face],[.19,2.72,face],.105,C.cream);
+       sign.beam([.14,2.70,face],[.18,2.87,face],.09,C.cream);
+       sign.beam([.14,2.70,face],[.40,2.68,face],.09,C.cream);
+     }
+     break;
+   case 'warehouse':
+     sign.box(0,2.65,face,.64,.36,.1,C.cream,false);
+     sign.beam([-.27,2.51,.18],[.27,2.79,.18],.055,C.wood);
+     break;
+ }
 }
 function ordinary(b:Batch,h:HomeBuilding,index:number){
  const f=shell(b,h),w=h.w,d=h.d;roof(f,w,d,4.2,index);
@@ -81,6 +152,7 @@ function ordinary(b:Batch,h:HomeBuilding,index:number){
    else if(h.kind==='warehouse'){for(const s of[-1,1])for(let k=0;k<3;k++){f.box(s*(w/2-2),.6,-d/2+2+k*2.3,2,1.2,1.8,C.wood);f.box(s*(w/2-2),1.2,-d/2+2+k*2.3,2.1,.08,1.9,C.metal,false);}}
    const canopy=h.kind==='cafe'||h.kind==='bakery'||h.kind==='grocer';
    if(canopy){f.box(0,3.35,d/2+1.8,w*.8,.16,3.6,h.kind==='bakery'?C.cream:C.blue,false);for(const xx of[-w*.4,w*.4])f.box(xx,1.65,d/2+3.3,.12,3.3,.12,C.metal,false);}
+   shopSign(f,h,canopy);
  }
 }
 function playerHouse(b:Batch,h:HomeBuilding){
@@ -93,7 +165,6 @@ function playerHouse(b:Batch,h:HomeBuilding){
  const ramp:RoutePoint[]=[];for(const [zz,yy]of[[8, .12],[-8,4.34],[-10,4.34]]as const){const p=f.point(9,yy,zz);ramp.push([p.x,p.y,p.z]);}strip(b,ramp,3.8,C.wood);
  for(let i=0;i<20;i++)f.box(9,.12+i*4.22/20,7.6-i*.8,3.8,.12,.75,C.wood,false);
  f.beam([6.9,.95,8],[6.9,5.17,-8],.12,C.blue);for(let i=0;i<9;i++)f.box(6.9,1+i*.53,7-i*2,.1,1,.1,C.blue,false);
- for(const xx of[-w*.3,w*.3])window(f,xx,6.3,d/2+.23,2.5,2.1);
  roof(f,w,d,8.6,1);
  // Living room, real kitchen, upstairs bedroom and writing corner.
  f.box(-7,.48,4,4.5,.9,1.6,C.blue);f.box(-7,1.1,4.7,4.5,.7,.2,C.blue);table(f,-7,1.5,2.8,1.4);

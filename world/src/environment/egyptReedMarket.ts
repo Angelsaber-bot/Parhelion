@@ -48,17 +48,41 @@ export function createEgyptReedMarket(ground: Ground) {
     for (const height of [.15, .33]) art.cyl([x, y + height, z], .32, .024, linen);
   }
   function shelter(x: number, y: number, z: number, w: number, d: number, stripe: string) {
-    const roof = y + 3.05;
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-      const px = x + sx * (w / 2 - .25), pz = z + sz * (d / 2 - .3);
-      art.box([px, y + 1.53, pz], [.16, 3.06, .16], wood, true);
-      art.box([px, y + .17, pz], [.36, .34, .36], limestone);
-      art.beam([px, roof - .55, pz], [px - sx * .7, roof, pz], .13, wood);
+    const eave = y + 3.06, peak = eave + .67, halfSpan = d / 2 + .23;
+    for (const sx of [-1, 1]) {
+      const px = x + sx * (w / 2 - .25);
+      for (const sz of [-1, 1]) {
+        const pz = z + sz * (d / 2 - .3);
+        art.box([px, y + 1.53, pz], [.16, 3.06, .16], wood, true);
+        art.box([px, y + .17, pz], [.36, .34, .36], limestone);
+        art.beam([px, eave - .55, pz], [px - sx * .7, eave, pz], .13, wood);
+        art.beam([px, eave, z + sz * halfSpan], [px, peak, z], .13, wood);
+      }
+    }
+    art.beam([x - w / 2, peak, z], [x + w / 2, peak, z], .12, wood);
+    for (const sz of [-1, 1])
+      art.beam([x - w / 2, eave + .07, z + sz * (d / 2 - .3)], [x + w / 2, eave + .07, z + sz * (d / 2 - .3)], .13, wood);
+
+    // Sewn linen spans the ridge pole. Each strip has a shallow belly between
+    // the ridge and the eave, then hangs free beyond the last timber.
+    const profile = [[-halfSpan, eave - .22], [-halfSpan, eave + .085], [-halfSpan / 2, (peak + eave) / 2 + .093],
+      [0, peak + .086], [halfSpan / 2, (peak + eave) / 2 + .093], [halfSpan, eave + .085], [halfSpan, eave - .22]];
+    function clothPoint(px: number, height: number, dz: number) {
+      const belly = Math.abs(dz) === halfSpan / 2 ? .065 * Math.max(0, 1 - ((px - x) / (w / 2 - .25)) ** 2) : 0;
+      return [px, height - belly, z + dz];
     }
     for (let i = 0; i < 10; i++) {
-      const px = x + (i - 4.5) * w / 10;
-      art.box([px, roof + .17, z], [w / 10 + .01, .065, d + .48], i % 3 ? linen : stripe, false, 'body', [.045, 0, 0]);
-      art.box([px, roof + .02, z + d / 2 + .22], [w / 10 - .022, .24, .065], i % 3 ? linen : stripe);
+      const left = x - w / 2 + i * w / 10, right = left + w / 10, positions: number[] = [];
+      for (let j = 1; j < profile.length; j++) {
+        const [za, ya] = profile[j - 1], [zb, yb] = profile[j];
+        const a = clothPoint(left, ya, za), b = clothPoint(left, yb, zb);
+        const c = clothPoint(right, yb, zb), e = clothPoint(right, ya, za);
+        positions.push(...a, ...b, ...c, ...a, ...c, ...e, ...c, ...b, ...a, ...e, ...c, ...a);
+      }
+      const cloth = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      cloth.computeVertexNormals();
+      art.add(cloth, i % 3 ? linen : stripe, [0, 0, 0]);
+      cloth.dispose();
     }
     art.lantern(x - w / 2 + .31, y + 2.63, z + d / 2 - .3);
   }
@@ -74,9 +98,30 @@ export function createEgyptReedMarket(ground: Ground) {
   // Scale and grain bins face the through aisle. The back of the shed stays open to the workyard.
   for (const x of [-180.75, -179.6, -178.45]) basket(x, marketY, 141.2, '#bb9451');
   art.box([-179.65, marketY + .87, 143.3], [2.6, .17, .87], wood, true);
-  art.cyl([-179.55, marketY + 1.22, 143.3], .055, .55, bronze);
-  art.beam([-180.13, marketY + 1.48, 143.3], [-178.97, marketY + 1.48, 143.3], .07, bronze);
-  for (const x of [-180.08, -179.02]) art.cyl([x, marketY + 1.05, 143.3], .21, .05, bronze);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    art.box([-179.65 + sx * 1.04, marketY + .4, 143.3 + sz * .29], [.14, .8, .14], wood, true);
+  }
+  for (const sz of [-1, 1]) {
+    const z = 143.3 + sz * .29;
+    art.beam([-180.69, marketY + .27, z], [-178.61, marketY + .27, z], .1, wood);
+  }
+  const pivotX = -179.65, scaleZ = 143.3;
+  for (const sz of [-1, 1]) {
+    art.beam([pivotX, marketY + .95, scaleZ + sz * .28], [pivotX, marketY + 1.83, scaleZ], .085, wood);
+  }
+  art.beam([pivotX - .72, marketY + 1.82, scaleZ], [pivotX + .72, marketY + 1.82, scaleZ], .06, bronze);
+  const pan = new THREE.LatheGeometry([new THREE.Vector2(.02, 0), new THREE.Vector2(.21, .045),
+    new THREE.Vector2(.26, .11), new THREE.Vector2(.23, .10), new THREE.Vector2(.19, .061), new THREE.Vector2(0, .024)], 10);
+  for (const sx of [-1, 1]) {
+    const px = pivotX + sx * .66;
+    art.add(pan, bronze, [px, marketY + 1.11, scaleZ], [1, 1, 1], false, 'metal');
+    for (let i = 0; i < 3; i++) {
+      const angle = i * Math.PI * 2 / 3;
+      art.beam([px, marketY + 1.82, scaleZ], [px + .245 * Math.cos(angle), marketY + 1.21, scaleZ + .245 * Math.sin(angle)], .022, reed);
+    }
+  }
+  pan.dispose();
+  art.box([pivotX + .66, marketY + 1.2, scaleZ], [.18, .13, .16], limestone);
   // Hull ribs and sloped cradles give the shipwright stall a different silhouette from the grain stall.
   for (const z of [141.5, 142.45, 143.4]) for (const s of [-1, 1]) {
     art.beam([-173.7 + s * 1.6, marketY + .24, z], [-173.7, marketY + 1.27, z], .14, wood, true);

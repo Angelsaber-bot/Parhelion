@@ -1,6 +1,7 @@
 import {C,CYL,CONE,Frame,gable,hipRoof,workshopRoof,pointedArch,window,banner,strip} from './craft';
 import {buildOrleansDetails} from './details';
 import {buildOrleansWatercourse} from './watercourse';
+import {buildOrleansShopfront} from './shopfront';
 import {buildOrleansOutskirts,outskirtsOccupied} from './outskirts';
 import * as THREE from 'three';
 import {Batch,T} from '../geo';
@@ -15,21 +16,30 @@ function house(b:Batch,x:number,y:number,z:number,w:number,d:number,a:number,ind
   f.box(0,(bottom-y-.9)/2,0,w+.4,y-bottom+.9,d+.4,C.stone);
   f.box(-w/2+.35,h/2,0,.7,h,d,plaster);f.box(w/2-.35,h/2,0,.7,h,d,plaster);f.box(0,h/2,-d/2+.35,w,h,.7,plaster);
   const gap=2.8,side=(w-gap)/2;
+  const doorHeight=3.4;
+  const bayInner=gap/2+.18,bayOuter=w*.46,bayCenter=(bayInner+bayOuter)/2,bayWidth=bayOuter-bayInner;
+  function frontBand(at:number,offset:number,height:number,depth:number,color:string){
+    if(at-height/2>=doorHeight){
+      f.box(0,at,d/2+offset,w,height,depth,color,false);
+      return;
+    }
+    for(const sign of [-1,1])f.box(sign*(gap+side)/2,at,d/2+offset,side,height,depth,color,false);
+  }
   for(const sign of [-1,1])f.box(sign*(gap/2+side/2),h/2,d/2-.35,side,h,.7,plaster);
-  f.box(0,(h+3.4)/2,d/2-.35,gap,h-3.4,.7,plaster);
+  f.box(0,(h+doorHeight)/2,d/2-.35,gap,h-doorHeight,.7,plaster);
   f.box(0,-.18,0,w,.35,d,C.stone);
   // French river-trade silhouettes: each family changes massing, roof and facade,
   // rather than borrowing the Kingdom's house or tower generators.
   if(family===0||family===3){
     for(const sx of [-w/2+.12,w/2-.12])for(const sz of [-d/2-.04,d/2+.04])f.box(sx,h/2,sz,.28,h,.25,C.wood,false);
-    for(const yy of [.5,4.3,8.1,h-.12])if(yy<h)f.box(0,yy,d/2+.08,w,.22,.2,C.wood,false);
+    for(const yy of [.5,4.3,8.1,h-.12])if(yy<h)frontBand(yy,.08,.22,.2,C.wood);
     for(const sx of [-1,1])f.beam([sx*(w/2-.4),h*.55,d/2+.12],[sx*1.9,h-.3,d/2+.12],.18,C.wood);
   }else if(family===2){
-    for(let yy=.5;yy<h;yy+=.55)f.box(0,yy,d/2+.1,w,.12,.12,C.oak,false);
+    for(let yy=.5;yy<h;yy+=.55)frontBand(yy,.1,.12,.12,C.oak);
     for(const xx of [-w*.42,w*.42])f.box(xx,h/2,d/2+.15,.35,h,.3,C.wood,false);
   }else{
     for(const xx of [-w*.45,w*.45])f.box(xx,h/2,d/2+.12,.45,h,.35,C.pale,false);
-    for(const yy of [.4,h-.3])f.box(0,yy,d/2+.12,w,.3,.3,C.joint,false);
+    for(const yy of [.4,h-.3])frontBand(yy,.12,.3,.3,C.joint);
   }
   for(const sx of [-1,1])window(f,sx*w*.29,h*.72,d/2+.16,1.4,family===4?1.4:1.9);
   pointedArch(f,0,0,d/2+.12,3.05,3.6,.24,family===1||family===5?C.pale:C.oak);
@@ -69,7 +79,8 @@ function house(b:Batch,x:number,y:number,z:number,w:number,d:number,a:number,ind
   }else if(family===4){
     // Wide workshop window, heavy shutters and an asymmetric forge roof.
     const side=new Frame(b,x,y,z,a+Math.PI/2);window(side,0,3.1,w/2+.1,3.6,2.3);
-    f.box(w*.27,1,d/2+1.3,w*.34,1.8,1.1,C.oak,false);f.box(w*.27,2,d/2+1.3,w*.4,.2,1.4,C.wood,false);
+    f.box(bayCenter,1,d/2+1.3,bayWidth-.32,1.8,1.1,C.oak,false);
+    f.box(bayCenter,2,d/2+1.3,bayWidth,.2,1.4,C.wood,false);
   }else{
     // Polygonal oriel hangs over the lane, preserving clear headroom beneath it.
     for(const side of [-1,0,1]){const theta=side*.6,xx=-w*.2+Math.sin(theta)*1.5,zz=d/2+.3+Math.cos(theta)*1.4;
@@ -107,7 +118,12 @@ function house(b:Batch,x:number,y:number,z:number,w:number,d:number,a:number,ind
   // One open-top ribbon reaches a level porch before the foundation face.
   // End caps on tilted boxes catch a walking capsule on steep townhouse approaches.
   strip(b,[[out.x,approach.floor+.08,out.z],[porch.x,y+.03,porch.z],[door.x,y+.03,door.z]],3.2,C.stone);
-  if(family===0||family===4){f.box(w*.23,3.1,d/2+1.6,w*.46,.14,2.8,index%4?C.white:C.blue,false);for(const sx of [-1,1])f.box(w*.23+sx*w*.23,1.5,d/2+2.75,.14,3,.14,C.oak,false);}
+  if(family===0||family===4){
+    f.box(bayCenter,3.1,d/2+1.6,bayWidth+.18,.14,2.8,index%4?C.white:C.blue,false);
+    for(const xx of [bayInner,bayOuter])f.box(xx,1.52,d/2+2.75,.14,3.04,.14,C.oak,false);
+  }
+  const front=f.point(0,0,d/2);
+  buildOrleansShopfront(new Frame(b,front.x,y,front.z,a),ORLEANS_BUILDING_FAMILIES[family],w,bayCenter);
 }
 function archBridge(f:Frame,length:number,width:number,deck:number,wood=false){
   f.box(0,deck-.4,0,width,.6,length,wood?C.oak:C.stone);

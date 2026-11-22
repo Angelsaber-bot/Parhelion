@@ -7,6 +7,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { regionLoader, bakeQuantized } from '../src/rendering/glb';
 import { KINGDOM_GATE as G, createKingdomGateRuntime, gateGuide, gatePoint } from '../src/story/kingdomGate';
 import { createKingdomGateScene, gateEscortPosition } from '../src/environment/kingdomGateScene';
+import { fieldPropParts } from '../src/environment/fieldPropArt';
 import { getEraStoryGuide, getEraBossRequirements } from '../src/story/eraStories';
 import { WorldProgress, WORLD_PROGRESS_KEY } from '../src/core/progress';
 
@@ -59,6 +60,44 @@ const gltf=await regionLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset
 const parts:THREE.BufferGeometry[]=[];
 gltf.scene.getObjectByName('COLLISION')!.traverse(o=>{const m=o as THREE.Mesh;if(!m.isMesh||m.userData.dynamic)return;const g=new THREE.BufferGeometry().setAttribute('position',m.geometry.attributes.position.clone());if(m.geometry.index)g.setIndex(m.geometry.index.clone());g.applyMatrix4(m.matrixWorld);parts.push(g.index?g.toNonIndexed():g);});
 const site=createKingdomGateScene();parts.push(...site.collisionGeometries);const bvh=new MeshBVH(mergeGeometries(parts));
+test('gate: both leaves show individual uprights and attached front straps inside the closed collider',()=>{
+ const gate=site.root.getObjectByName('KingdomReturnGate')!;
+ assert.equal(gate.children.length,2);
+ for(const leaf of gate.children){
+  const ray=new THREE.Raycaster();
+  const outward=new THREE.Vector3(0,0,1).transformDirection(leaf.matrixWorld);
+  function faceAt(x:number,y:number){
+   ray.set(leaf.localToWorld(new THREE.Vector3(x,y,1)),outward.clone().negate());
+   return ray.intersectObject(leaf,true)[0];
+  }
+  let adjoiningBoards=0,previousBoard=false;
+  for(let i=0;i<=500;i++){
+   const onBoard=faceAt(-2.5+i/100,0)?.object.name==='FieldPropBody';
+   if(onBoard&&!previousBoard)adjoiningBoards++;
+   previousBoard=onBoard;
+  }
+  assert.ok(adjoiningBoards>=15,'continuous cross-section includes visible seams between neighboring planks');
+  for(const y of [-1.92,1.92]){
+   const face=faceAt(.1,y);
+   assert.equal(face?.object.name,'FieldPropIron');
+   const closed=site.collider.bvh.raycastFirst(ray.ray,THREE.DoubleSide);
+   assert.ok(face&&closed);
+   assert.ok(face.distance>=closed.distance-.0001&&face.distance-closed.distance<.03,'strap meets the collision face');
+  }
+ }
+});
+test('field hardware: panels, banded beams and crate rails fit their authored bounding boxes',()=>{
+ for(const size of [[1.8,2,.25],[.3,.24,2.4],[.26,1.6,.38],[1.1,.9,.8]]){
+  const bounds=new THREE.Box3();
+  for(const part of fieldPropParts(size)){
+   const centre=new THREE.Vector3(...part.at),half=new THREE.Vector3(...part.size).multiplyScalar(.5);
+   bounds.expandByPoint(centre.clone().sub(half));
+   bounds.expandByPoint(centre.add(half));
+  }
+  const half=new THREE.Vector3().fromArray(size).multiplyScalar(.5);
+  assert.ok(bounds.max.distanceTo(half)<1e-6&&bounds.min.distanceTo(half.negate())<1e-6,`authored bounds for ${size}`);
+ }
+});
 test('gate: real Camelot floor and body clearance support entire resident passage',()=>{
  for(let i=0;i<=160;i++){
   const p=gateEscortPosition(i/160),floor=bvh.raycastFirst(new THREE.Ray(p.clone().add(new THREE.Vector3(0,2,0)),new THREE.Vector3(0,-1,0)),THREE.DoubleSide);

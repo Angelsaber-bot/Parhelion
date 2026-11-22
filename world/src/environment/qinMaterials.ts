@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { craftSurfaceShader, qinCraftSurfaces } from './egyptQinCraftPalettes';
+
+const craft = craftSurfaceShader(qinCraftSurfaces);
 
 /**
  * Qin alone: rammed loess in pounded courses, round-and-pan black tile, lacquered
@@ -12,11 +15,13 @@ export function qinToonMaterial(src: THREE.Material, gradientMap: THREE.Texture)
   const m = new THREE.MeshToonMaterial({ name: src.name, vertexColors: true, color: s.color ?? new THREE.Color(1, 1, 1), gradientMap, side: s.side, transparent: s.transparent, opacity: s.opacity, fog: s.fog ?? true });
   m.userData = { ...src.userData, qinSurface: true, artStyle: 'painted-anime' };
   m.onBeforeCompile = sh => {
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vQinWorld;\nvarying vec3 vQinNormal;')
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', `#include <common>\n${craft.vertex}\nvarying vec3 vQinWorld;\nvarying vec3 vQinNormal;`)
       .replace('#include <project_vertex>', `#include <project_vertex>
+        ${craft.assign}
         vQinWorld=(modelMatrix*vec4(transformed,1.0)).xyz;
         vQinNormal=normalize(mat3(modelMatrix)*objectNormal);`);
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+      ${craft.fragment}
       varying vec3 vQinWorld; varying vec3 vQinNormal;
       float qinLine(float v,float w){float f=abs(fract(v)-.5)*2.0;float aa=fwidth(v)*2.0;return 1.0-smoothstep(w,w+aa+.001,1.0-f);}
       float qinHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
@@ -31,15 +36,15 @@ export function qinToonMaterial(src: THREE.Material, gradientMap: THREE.Texture)
         vec2 wall=abs(n.x)>abs(n.z)?p.zy:p.xy;
         float grime=qinFbm(p.xz*.35+p.y*.2);
         // fired clay figures and kilns: mottled, slightly chalky
-        float clay=step(c.b*1.15,c.g)*step(c.g*1.08,c.r)*smoothstep(.18,.3,sat)*(1.0-smoothstep(.42,.55,sat))*smoothstep(.3,.4,mx)*(1.0-smoothstep(.72,.8,mx));
+        float clay=craftMask(CRAFT_CLAY,step(c.b*1.15,c.g)*step(c.g*1.08,c.r)*smoothstep(.18,.3,sat)*(1.0-smoothstep(.42,.55,sat))*smoothstep(.3,.4,mx)*(1.0-smoothstep(.72,.8,mx)));
         // rammed loess: warm, moderately saturated and bright
-        float earth=step(c.b*1.2,c.g)*step(c.g*1.05,c.r)*smoothstep(.16,.24,sat)*smoothstep(.55,.62,mx);
-        float tile=(1.0-smoothstep(.2,.3,mx))*(1.0-smoothstep(.12,.25,sat));
-        float wood=step(c.g*1.15,c.r)*(1.0-smoothstep(.42,.5,mx))*smoothstep(.2,.3,mx)*smoothstep(.3,.36,sat);
-        float lacquer=step(c.g*1.9,c.r)*smoothstep(.35,.45,mx);
-        float bronze=step(c.r*1.05,c.g)*step(c.b*1.02,c.g)*smoothstep(.15,.25,sat)*(1.0-smoothstep(.6,.7,mx));
-        float stone=(1.0-smoothstep(.1,.17,sat))*smoothstep(.32,.4,mx)*(1.0-smoothstep(.78,.86,mx));
-        float plaster=(1.0-smoothstep(.12,.2,sat))*smoothstep(.8,.86,mx);
+        float earth=craftMask(CRAFT_EARTH,step(c.b*1.2,c.g)*step(c.g*1.05,c.r)*smoothstep(.16,.24,sat)*smoothstep(.55,.62,mx));
+        float tile=craftMask(CRAFT_TILE,(1.0-smoothstep(.2,.3,mx))*(1.0-smoothstep(.12,.25,sat)));
+        float wood=craftMask(CRAFT_WOOD,step(c.g*1.15,c.r)*(1.0-smoothstep(.42,.5,mx))*smoothstep(.2,.3,mx)*smoothstep(.3,.36,sat));
+        float lacquer=craftMask(CRAFT_LACQUER,step(c.g*1.9,c.r)*smoothstep(.35,.45,mx));
+        float bronze=craftMask(CRAFT_BRONZE,step(c.r*1.05,c.g)*step(c.b*1.02,c.g)*smoothstep(.15,.25,sat)*(1.0-smoothstep(.6,.7,mx)));
+        float stone=craftMask(CRAFT_STONE,(1.0-smoothstep(.1,.17,sat))*smoothstep(.32,.4,mx)*(1.0-smoothstep(.78,.86,mx)));
+        float plaster=craftMask(CRAFT_PLASTER,(1.0-smoothstep(.12,.2,sat))*smoothstep(.8,.86,mx));
         vec3 tint=vec3(1.0);
         // 版筑: pounded courses (~0.42 m) with darker lifts, tamper pocks and a rain-stained foot
         float course=floor(p.y/.42);
@@ -85,7 +90,7 @@ export function qinToonMaterial(src: THREE.Material, gradientMap: THREE.Texture)
       }
 #include <opaque_fragment>`);
   };
-  m.customProgramCacheKey = () => 'qin-crafted-surfaces-v1';
+  m.customProgramCacheKey = () => 'qin-crafted-surfaces-v2';
   return m;
 }
 

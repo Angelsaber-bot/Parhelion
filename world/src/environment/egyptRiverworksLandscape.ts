@@ -41,7 +41,7 @@ export function createEgyptRiverworksLandscape(ground: Ground) {
   function ramp(x: number, z: number, y: number, toX: number, toZ: number, width: number) {
     landscapeWalkway(art, [[x, y, z], at(toX, toZ)], { width, floor: stone, edge: pale, steps: true });
   }
-  function warehouse(x: number, z: number, w: number, d: number) {
+  function warehouse(x: number, z: number, w: number, d: number, cargo: 'grain' | 'rigging') {
     const y = pad(x, z, w + 3, d + 3);
     // Two opposing doors keep this a traversable courtyard building.
     for (const side of [-1, 1]) {
@@ -53,18 +53,47 @@ export function createEgyptRiverworksLandscape(ground: Ground) {
       for (const dx of [-w / 2 + 1, w / 2 - 1]) art.box([x + dx, y + 5.35, z + side * (d / 2 - 1)], [1.6, .7, 1.6], pale);
     }
     art.box([x, y + 5.15, z], [w + 1, .45, d + 1], pale, true);
-    for (let i = 0; i < 5; i++) {
-      const sx = x - w / 2 + 1.7, sz = z - d / 2 + 1.6 + i * 1.7;
-      art.cyl([sx, y + .63, sz], .48, 1.26, i % 2 ? '#b98758' : '#a68b63', true);
-      art.cyl([sx, y + 1.27, sz], .29, .08, dark);
-      art.box([x + w / 2 - 1.7, y + .55, sz], [1.45, 1.1, 1.3], timber, true);
-      for (const dz of [-.45, .45]) art.box([x + w / 2 - 1.7, y + .56, sz + dz], [1.49, 1.15, .06], bronze);
+    // The grain store has measured jars and a raised drying rack. The loft
+    // at the rope store instead carries a lifting arm directly over its door.
+    if (cargo === 'grain') {
+      const rackX = x - 2.5;
+      for (const dx of [-1.25, 1.25]) for (const dz of [-2.1, 2.1]) {
+        art.box([rackX + dx, y + 5.83, z + dz], [.25, .94, .25], timber, true);
+      }
+      for (const dx of [-1.25, 1.25]) art.box([rackX + dx, y + 6.32, z], [.22, .18, 4.75], timber);
+      for (let dz = -2; dz <= 2; dz += .5) art.box([rackX, y + 6.47, z + dz], [2.88, .13, .37], reed, true);
+      for (let i = 0; i < 5; i++) {
+        const sx = x - w / 2 + 1.7, sz = z - d / 2 + 1.6 + i * 1.7;
+        art.cyl([sx, y + .63, sz], .48, 1.26, i % 2 ? '#b98758' : '#a68b63', true);
+        art.cyl([sx, y + 1.27, sz], .29, .08, dark);
+        art.box([x + w / 2 - 1.7, y + .55, sz], [1.45, 1.1, 1.3], timber, true);
+        for (const dz of [-.45, .45]) art.box([x + w / 2 - 1.7, y + .56, sz + dz], [1.49, 1.15, .06], bronze);
+      }
+    } else {
+      const front = z + d / 2, px = x + w / 2 - 1.2;
+      art.box([px, y + 6.35, front - .95], [.38, 2.0, .38], timber, true);
+      art.beam([px, y + 7.26, front - 2.6], [px, y + 7.26, front + 2.6], .25, timber, true);
+      art.beam([px, y + 5.48, front + .02], [px, y + 7.22, front + 1.8], .17, timber, true);
+      art.beam([px, y + 5.48, front - 2.7], [px, y + 7.22, front - 1.4], .17, timber, true);
+      art.beam([px, y + 5.51, front - .5], [px, y + 5.51, front + .5], .23, timber, true);
+      art.beam([px, y + 7.25, front + 2.3], [px, y + 2.35, front + 2.3], .044, dark);
+      art.ring([px, y + 2.17, front + 2.3], .18, .04, bronze);
+      for (const side of [-1, 1]) {
+        const rackX = x + side * (w / 2 - 1.05);
+        for (const dz of [-2.7, 2.7]) art.box([rackX, y + 1.05, z + dz], [.28, 2.1, .36], timber, true);
+        art.beam([rackX, y + 1.85, z - 2.95], [rackX, y + 1.85, z + 2.95], .2, timber, true);
+        for (const dz of [-1.9, 0, 1.9]) {
+          art.beam([rackX + side * .08, y + 1.89, z + dz], [rackX - side * .43, y + 1.89, z + dz], .13, timber);
+          for (const winding of [0, .095]) art.ring([rackX - side * (.24 + winding), y + 1.38, z + dz],
+            .5, .061, reed, 'body', [0, Math.PI / 2, 0]);
+        }
+      }
     }
     art.lantern(x + 2.5, y + 2, z + d / 2 + .7);
     return y;
   }
-  warehouse(-119, 213, 13, 15);
-  warehouse(-87, 214, 11, 12);
+  warehouse(-119, 213, 13, 15, 'grain');
+  warehouse(-87, 214, 11, 12, 'rigging');
   // The port road circles the back of both storehouses and returns to the quay.
   path([[-151, 145], [-149, 165], [-157, 194], [-141, 230], [-107, 237], [-72, 228], [-64, 196], [-84, 186]], 4.2);
   path([[-137, 198], [-117, 193], [-92, 190], [-65, 181], [-38, 177], [-17, 166]], 4.6);
@@ -120,15 +149,28 @@ export function createEgyptRiverworksLandscape(ground: Ground) {
   }
   // Shaduf pump on the river edge and a linen-roofed repair shelter.
   const py = floor(42, 210);
-  for (const dx of [-.8, .8]) art.cyl([42 + dx, py + 1.4, 210], .13, 2.8, timber, true);
+  for (const dz of [-.8, .8]) art.cyl([42, py + 1.4, 210 + dz], .13, 2.8, timber, true);
   art.beam([39, py + 1.8, 210], [46, py + 4, 210], .15, timber);
   art.box([39.4, py + 1.65, 210], [.9, .7, .7], stone);
   art.beam([46, py + 4, 210], [46, py + .3, 210], .035, dark);
   art.cyl([46, py + .23, 210], .38, .46, timber);
+  // A cross-pin joins the twin uprights to the shaduf arm at its fulcrum.
+  art.beam([42, py + 2.75, 209.15], [42, py + 2.75, 210.85], .18, bronze);
   const sy = pad(18, 249, 10, 8);
-  for (const dx of [-4.5, 4.5]) for (const dz of [-3.5, 3.5]) art.cyl([18 + dx, sy + 1.8, 249 + dz], .12, 3.6, timber, true);
+  const shadeHeight = (dx: number) => sy + 3.5 + dx * Math.tan(.045) - .08;
+  for (const dz of [-3.5, 3.5]) {
+    for (const dx of [-4.5, 4.5]) {
+      const height = shadeHeight(dx) - sy;
+      art.cyl([18 + dx, sy + height / 2, 249 + dz], .12, height, timber, true);
+    }
+    art.beam([13.4, shadeHeight(-4.6), 249 + dz], [22.6, shadeHeight(4.6), 249 + dz], .14, timber);
+  }
   art.box([18, sy + 3.5, 249], [10.5, .1, 8.5], linen, false, 'body', [0, 0, .045]);
   art.box([16, sy + .9, 251], [3.4, .16, 1.3], timber, true);
+  for (const dx of [-1.36, 1.36]) {
+    art.box([16 + dx, sy + .41, 251], [.21, .82, .99], timber, true);
+    art.box([16 + dx, sy + .085, 251], [.34, .17, 1.27], stone);
+  }
   art.paper(16, sy + 1, 251, 1.1, .7);
   for (const dx of [-3, 0, 3]) art.box([18 + dx, sy + .3, 247], [2, .6, .75], dark, true);
   ramp(18, 245, sy, 18, 237, 3.3);

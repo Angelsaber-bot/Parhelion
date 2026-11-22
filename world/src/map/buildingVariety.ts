@@ -1,12 +1,8 @@
 import * as THREE from 'three';
 import data from './building-variety.json';
-import { SiteArt } from '../story/campaignSites';
-import { REGIONS, regionToWorld } from './regions';
-import type { RegionId } from '../settlements/types';
 
 /** Copies of the same building (tools/building-variety.ts) get their own look at load: walls and roof
- * are graded separately within the realm's palette, and each copy carries a different rooftop feature.
- * Geometry and collision are untouched; rows are region-local hull boxes [x0,y0,z0,x1,y1,z1]. */
+ * are graded separately within the realm's palette. Rows are region-local hull boxes [x0,y0,z0,x1,y1,z1]. */
 type Row = { variant: number; box: number[] };
 const byRegion = new Map<string, Row[]>();
 for (const r of data.rows as number[][]) { const region = data.regions[r[0]]; (byRegion.get(region) ?? byRegion.set(region, []).get(region)!).push({ variant: r[1], box: r.slice(2) }); }
@@ -50,27 +46,4 @@ export function applyBuildingVariety(region: string, name: string, geometry: THR
   }
   if (!changed) { out.dispose(); return null; }
   c.needsUpdate = true; return out;
-}
-
-/** A different rooftop feature per copy, in the realm's idiom (visual only, no collision). */
-export function createBuildingOrnaments() {
-  const root = new THREE.Group(); root.name = 'BuildingVarietyOrnaments';
-  for (const [region, rows] of byRegion) {
-    const def = REGIONS.find(r => r.id === region); if (!def) continue;
-    const a = new SiteArt();
-    for (const { variant, box } of rows) {
-      const lx = box[0] + (box[3] - box[0]) * (variant % 2 ? .28 : .72), lz = box[2] + (box[5] - box[2]) * (variant % 3 ? .3 : .7), top = box[4];
-      const [x, z] = regionToWorld(def, lx, lz), kind = variant % 4;
-      if (region === 'egypt') { if (kind === 1) a.cyl([x, top + .45, z], .45, .9, '#b9764a'); else if (kind === 2) a.box([x, top + .9, z], [1.8, .08, 1.4], '#d8c49a'); else if (kind === 3) a.box([x, top + .7, z], [.9, 1.4, .9], '#c8b48a'); else a.cyl([x, top + .3, z], .35, .6, '#7a6a52'); }
-      else if (region === 'qin') { if (kind === 1) a.box([x, top + .9, z], [.12, 1.8, .12], '#5c4532'); else if (kind === 2) a.box([x, top + .45, z], [1.4, .9, .9], '#8c3a2a'); else if (kind === 3) a.cyl([x, top + .35, z], .5, .7, '#7a6a52'); else a.box([x, top + .2, z], [1.8, .4, .4], '#c0452f'); }
-      else { // britain / orleans / others: chimney, dormer, finial with pennant, lantern
-        if (kind === 1) { a.box([x, top + .7, z], [.7, 1.8, .7], '#8a7e70'); a.box([x, top + 1.65, z], [.85, .14, .85], '#5d5650'); }
-        else if (kind === 2) { a.box([x, top + .45, z], [1.4, .9, 1.1], '#a8907a'); a.box([x, top + .95, z], [1.5, .12, 1.2], '#6b4e3a'); }
-        else if (kind === 3) { a.box([x, top + 1.1, z], [.08, 2.2, .08], '#4a3a2a'); a.box([x + .35, top + 1.9, z], [.7, .4, .03], region === 'orleans' ? '#2f4d8c' : '#7a2a2a'); }
-        else { a.cyl([x, top + .5, z], .28, .5, '#4a3a2a'); a.cyl([x, top + .85, z], .18, .3, '#ffd98a', false, 'glow'); }
-      }
-    }
-    a.finish(region as RegionId); // SiteArt only uses the id for naming a.root.name = `BuildingVariety_${region}`; root.add(a.root);
-  }
-  return root;
 }

@@ -22,10 +22,13 @@ export function createFlagshipDockLandscape() {
 
   // Port-side working floor is outside the original hull and its cannon line.
   box(0, -17, 13.84, 8, .32, 32, wood);
-  for (const u of [-15, -5, 5, 15]) for (const v of [-20, -14]) {
-    box(u, v, -1, .55, 30, .55, dark);
-    box(u, v, 14.6, .64, 1.3, .64, wood);
+  for (const u of [-15, -5, 5, 15]) {
+    for (const v of [-20, -14]) {
+      box(u, v, -1, .55, 30, .55, dark);
+      box(u, v, 14.6, .64, 1.3, .64, wood);
+    }
     beam([u, -20, 4.2], [u, -14, 13.6], .28, dark);
+    box(u, -17, 13.52, 7.3, .38, .46, dark, false);
   }
   // The deck rim has deliberate openings for the return stairs and ship bridge.
   for (const v of [-20.8, -13.2]) {
@@ -62,17 +65,36 @@ export function createFlagshipDockLandscape() {
     const anchorU = u < 0 ? -15 : 15;
     beam([u, v, top - .35], [anchorU, -17, 3], .25, dark);
   }
-  // Upper lifting gantry, pulleys and cable drums give the dock a distinct silhouette.
+  // Drums and sheaves share the ship's longitudinal axle. The running line
+  // leaves the drum, bends around both sheaves and descends to the lifting hook.
+  const axleEuler = new THREE.Euler().setFromQuaternion(new THREE.Quaternion().setFromEuler(
+    new THREE.Euler(Math.PI / 2, SHIP_INTERIOR.yaw, 0, 'YXZ')));
+  const axle: [number,number,number] = [axleEuler.x,axleEuler.y,axleEuler.z];
   for (const u of [-13, 13]) {
     box(u, -19.5, 18.9, .7, 10, .7, dark);
     beam([u, -19.5, 23.9], [u, -6.5, 23.9], .55, dark, true);
     beam([u, -19.5, 18], [u, -7, 23.9], .25, iron);
-    art.ring(P(u, -7.2, 23.4), .55, .09, iron, 'metal', [Math.PI / 2, SHIP_INTERIOR.yaw, 0]);
-    beam([u, -7.2, 23.3], [u, -7.2, 9.4], .075, rope);
-    box(u, -7.2, 9.3, .6, .9, .6, iron, false);
     box(u, -18, 14.5, 2.5, 1, 1.8, dark);
-    art.cyl(P(u, -18, 15.2), .55, 1.3, wood, true, 'body', [Math.PI / 2, SHIP_INTERIOR.yaw, 0]);
-    art.ring(P(u - .8, -18, 15.2), .65, .09, iron, 'metal', [Math.PI / 2, SHIP_INTERIOR.yaw, 0]);
+    art.cyl(P(u, -18, 15.55), .55, 1.3, wood, true, 'body', axle);
+    for (const sign of [-1,1]) {
+      box(u + sign*.76, -18, 15.28, .64, .58, .16, dark, false);
+      art.cyl(P(u + sign*.63, -18, 15.55), .63, .09, iron, false, 'metal', axle);
+    }
+    art.cyl(P(u, -18, 15.55), .12, 1.96, iron, false, 'metal', axle);
+    art.ring(P(u - .96, -18, 15.55), .65, .065, iron, 'metal', rot);
+    for (const [dv,dy] of [[.64,0],[0,.64]]) beam([u-.96,-18-dv,15.55-dy],[u-.96,-18+dv,15.55+dy],.085,iron);
+    for (const v of [-18,-7.2]) {
+      art.cyl(P(u,v,22.95), .53, .2, wood, false, 'body', axle);
+      art.cyl(P(u,v,22.95), .12, .7, iron, false, 'metal', axle);
+      for (const sign of [-1,1]) box(u+sign*.26,v,23.33,.18,.92,.1,iron,false);
+    }
+    const line: [number,number][] = [[-18.55,15.55],[-18.55,22.95],[-18.389,23.339],[-18,23.5],
+      [-7.2,23.5],[-6.811,23.339],[-6.65,22.95],[-6.65,9.52]];
+    for (let i=1;i<line.length;i++) beam([u,...line[i-1]],[u,...line[i]],.075,rope);
+    box(u,-6.65,9.36,.38,.36,.38,iron,false);
+    beam([u,-6.65,9.2],[u,-6.65,8.72],.12,iron);
+    beam([u,-6.65,8.72],[u,-6.4,8.62],.12,iron);
+    beam([u,-6.4,8.62],[u,-6.23,8.87],.12,iron);
     art.lantern(...P(u, -19.5, 17.4));
   }
   beam([-13, -19.5, 23.9], [13, -19.5, 23.9], .55, dark, true);

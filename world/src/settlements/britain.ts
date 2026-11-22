@@ -16,10 +16,16 @@ export function buildBritainSettlement(): SettlementKit {
     if (Math.abs(x) > 3.5) a.box('court_pavers', [x + (z % 4 ? .3 : 0), .025, z], [1.7, .05, 1.7], (x + z) % 3 ? '#b8aa90' : '#c7b99e');
   }
   // Wide forge hall, with a real opening, full working interior and rear chimney.
-  a.room('royal_forge', -10, -1, 12, 14, 4.3, limestone, 4.2);
+  a.box('forge_floor', [-10, -.13, -1], [12, .26, 14], '#b8b2a3', true);
+  a.box('forge_back', [-10, 2.15, -8], [12, 4.3, .34], limestone, true);
+  for (const x of [-16, -4]) a.box('forge_side', [x, 2.15, -1], [.34, 4.3, 14], limestone, true);
+  a.windowWall('forge_front_masonry', 'x', -10, 6, 12, 4.3, limestone, [
+    {center:-4.2, width:1.3, bottom:1.65, top:3.15},
+    {center:0, width:4.2, bottom:0, top:3.7},
+    {center:4.2, width:1.3, bottom:1.65, top:3.15},
+  ]);
   a.gable('royal_forge', -10, -1, 13.2, 15.4, 4.3, 2.4, '#a95f48', beam);
   for (const z of [-8, 6]) a.attic('forge_closed_gable', -10, z, 12, 13.2, 4.3, 2.4, pale);
-  a.mat(pale).side = THREE.DoubleSide; // retain the original shared pale-stone surface contract
   for (const side of [-1, 1]) a.beam('forge_gable_truss', [-10, 6.55, 6.24], [-10 + side * 4.7, 4.35, 6.24], .15, timber);
   a.beam('forge_gable_kingpost', [-10, 4.3, 6.24], [-10, 6.6, 6.24], .18, timber);
   for (const z of [-7.8, -4.4, -.7, 2.8, 5.8]) a.box('forge_side_stud', [-3.78, 2.15, z], [.19, 4.3, .19], timber);
@@ -33,10 +39,19 @@ export function buildBritainSettlement(): SettlementKit {
     if (y > 3.7) a.box('forge_timber_course', [-10, y, 6.22], [12.2, .16, .22], timber);
     else for (const side of [-1, 1]) a.box('forge_timber_course', [-10 + side * 4.1, y, 6.22], [3.9, .16, .22], timber);
   }
-  // Remove visually spanning middle beam from the entrance: course pieces instead of a blocking rail.
-  // These trim rails are render-only; the actual clear doorway stays 4.2 m wide and 3.7 m high.
-  a.window('forge_window', -14.2, 2.4, 6.28, 1.3, 1.5, beam, '#b9b1a0');
-  a.window('forge_window', -5.8, 2.4, 6.28, 1.3, 1.5, beam, '#b9b1a0');
+  // These working vents draw air from the court. Their shutters fold out onto
+  // the masonry, so the open bays read as openings from inside the forge too.
+  for (const x of [-14.2, -5.8]) {
+    for (const sign of [-1, 1]) {
+      a.box('vent_jamb', [x + sign * .66, 2.4, 6], [.13, 1.65, .44], beam);
+      a.box('vent_shutter', [x + sign * .98, 2.4, 6.25], [.54, 1.47, .08], timber);
+      for (const y of [1.9, 2.88])
+        a.box('vent_shutter_strap', [x + sign * .94, y, 6.30], [.47, .065, .035], iron);
+      a.box('vent_wrought_bar', [x + sign * .23, 2.4, 6.02], [.045, 1.52, .06], iron);
+    }
+    a.box('vent_sill', [x, 1.62, 6.08], [1.58, .15, .60], pale);
+    a.box('vent_lintel', [x, 3.18, 6], [1.58, .15, .44], beam);
+  }
   // Tall squat ashlar chimney, flared cap, fire opening and hood.
   a.box('forge_hearth_base', [-13.3, .45, -5.2], [3.6, .9, 3], '#77766f', true);
   for (const s of [-1, 1]) a.box('forge_fire_cheek', [-13.3 + s * 1.35, 1.4, -5.2], [.55, 1.9, 2.7], '#897d68', true);
@@ -69,7 +84,8 @@ export function buildBritainSettlement(): SettlementKit {
     a.box('rack_sword_grip', [-15.42, .94, z], [.1, .32, .1], beam);
   }
   a.barrel('quench_barrel', -13.5, 2.8, '#7b6046');
-  a.cyl('quench_water', [-13.5, .99, 2.8], .35, .035, '#758e97');
+  a.cyl('quench_water', [-13.5, .97, 2.8], .36, .016, '#758e97');
+  a.mesh('quench_barrel_lip', new THREE.TorusGeometry(.387, .036, 5, 12).rotateX(Math.PI / 2), a.mat(timber), [-13.5, .975, 2.8], [1, 1, 1]);
   // Forge sign: suspended horseshoe-like iron ring rather than unreadable texture lettering.
   a.beam('forge_sign_arm', [-4.3, 3.8, 6.4], [-4.3, 3.8, 7.6], .14, beam);
   a.beam('forge_sign_chain', [-4.3, 3.8, 7.5], [-4.3, 3.2, 7.5], .045, iron);
@@ -90,6 +106,13 @@ export function buildBritainSettlement(): SettlementKit {
     a.box('stable_arcade_post', [x, 1.75, z], [.26, 3.5, .26], timber, true);
     a.beam('stable_knee_brace', [x, 2.65, z], [x, 3.5, z + (z < 0 ? .8 : -.8)], .15, '#8b6a46');
   }
+  for (const x of [4.5, 15.5]) a.box('stable_wall_plate', [x, 3.52, -1], [.3, .32, 16.4], beam);
+  for (const z of [-8.7, -3.5, 1.7, 6.7]) {
+    a.box('stable_tie', [10, 3.57, z], [11.35, .26, .23], timber);
+    a.box('stable_kingpost', [10, 4.49, z], [.18, 1.72, .2], timber);
+    for (const sign of [-1, 1])
+      a.beam('stable_principal_rafter', [10 + sign * 5.54, 3.62, z], [10, 5.44, z], .20, beam);
+  }
   a.box('stable_front_beam', [10, 3.42, 7], [11.3, .28, .32], timber);
   // Stalls are in the east half; west aisle remains 4 m wide and open end-to-end.
   for (const z of [-4, .8]) {
@@ -103,8 +126,12 @@ export function buildBritainSettlement(): SettlementKit {
     a.box('stable_fodder', [14.9, 1.04, z], [.7, .06, 1.6], '#cbb572');
   }
   for (const z of [-6, -1]) a.barrel('stable_feed_barrel', 5.7, z, '#9c7b4c');
-  a.box('stable_water_trough', [12.8, .45, 10], [4, .9, 1.2], '#8a8170', true);
-  a.box('stable_water', [12.8, .86, 10], [3.65, .03, .85], '#829b9b');
+  a.box('stable_trough_bed', [12.8, .23, 10], [4, .46, 1.2], '#8a8170', true);
+  for (const sign of [-1, 1]) {
+    a.box('stable_trough_rim', [12.8, .68, 10 + sign * .52], [4, .44, .16], '#8a8170', true);
+    a.box('stable_trough_end', [12.8 + sign * 1.92, .68, 10], [.16, .44, .88], '#8a8170', true);
+  }
+  a.box('stable_water', [12.8, .77, 10], [3.69, .025, .89], '#829b9b');
   // Modest roofless abbey remnant beyond the court. The broad nave remains physically enterable.
   a.box('abbey_nave_floor', [0, -.09, -12.5], [7.6, .18, 8], '#bdb7a7', true);
   for (const s of [-1, 1]) {

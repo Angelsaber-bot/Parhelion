@@ -29,7 +29,17 @@ export function createQinCommandLandscape() {
   const art = new SiteArt();
   // The command table is an operating place at human height, surrounded by
   // full-width aisles. Seals follow the model river instead of a throne pedestal.
-  art.box([6, 10.6, -229], [7, 1.2, 4], wood, true);
+  for (const x of [3.35, 8.65]) {
+    art.box([x, 10.11, -229], [.55, .22, 3.8], stone, true);
+    for (const sz of [-1, 1]) {
+      art.beam([x, 10.20, -229 + sz * 1.52], [x, 11.05, -229 + sz * 1.15], .25, wood, true);
+    }
+    art.box([x, 11.02, -229], [.43, .22, 3.85], red, true);
+  }
+  art.box([6, 10.5, -229], [5.9, .2, .2], wood, true);
+  for (const x of [3.35, 8.65])
+    art.box([x, 10.5, -229], [.24, .18, 2.95], wood);
+  art.box([6, 11.15, -229], [7, .21, 4], wood, true);
   art.box([6, 11.25, -229], [7.2, .1, 4.2], bronze);
   for (let n = 0; n < 12; n++) {
     art.box([3.1 + n * .53, 11.34, -229], [.36, .08, 3.5], '#c3b38d');
@@ -37,14 +47,41 @@ export function createQinCommandLandscape() {
   }
   for (const x of [-6, 18]) for (const z of [-216, -236]) {
     art.box([x, 15.2, z], [.7, 10.4, .7], red, true);
+    art.box([x, 10.19, z], [1.15, .38, 1.15], stone, true);
+    art.box([x, 18.92, z], [.81, .19, .81], bronze);
     art.box([x, 20.5, z], [1.8, .35, 1.8], bronze);
+    art.box([x, 20.9, z], [2.8, .48, .73], wood);
+    art.box([x, 21.25, z], [1.05, .36, 2.5], red);
+    art.beam([x, 13.87, z], [x, 13.87, z + .7], .1, wood);
+    art.beam([x, 13.87, z + .7], [x, 13.33, z + .7], .035, bronze);
     art.lantern(x, 13, z + .7, bronze);
   }
+  // The outer tie beams key into the excavated walls. Rising webs connect the
+  // lower chords to the roof saddles; there is no column in the processional aisle.
+  for (const z of [-216, -236]) {
+    art.box([6, 21.62, z], [32.2, .46, .7], wood);
+    art.box([6, 22.81, z], [32.2, .44, .83], wood);
+    for (let x = -9; x < 21; x += 6) {
+      art.beam([x, 22.76, z], [x + 3, 21.81, z], .2, red);
+      art.beam([x + 3, 21.81, z], [x + 6, 22.76, z], .2, red);
+    }
+  }
+  for (const x of [-6, 18]) art.box([x, 22.14, -226], [.54, .65, 20.7], wood);
   // Two stair flights meet an overhead workshop beam. It gives a continuous
   // flanking route above the processional floor, with both ends on the same hall.
   const beam: LandscapePoint[] = [[-4, 10, -214], [-4, 14.6, -231], [-4, 14.6, -238], [15, 14.6, -238], [15, 14.6, -231], [15, 10, -214]];
   landscapeWalkway(art, beam, { width: 2.8, floor: wood, edge: bronze, rails: true, steps: true, continuousCorners: true,
     railOpenings: beam.map(p => ({ p, radius: 2 })) });
+  // Two trestles carry the northern transverse platform. The braces live under
+  // the deck, leaving the hall's east–west access from the landing untouched.
+  for (const x of [1, 10]) {
+    for (const z of [-239.04, -236.96]) {
+      art.box([x, 10.16, z], [.66, .32, .66], stone, true);
+      art.box([x, 12.32, z], [.32, 4.1, .32], wood, true);
+    }
+    art.box([x, 14.37, -238], [.44, .34, 2.75], red, true);
+    art.beam([x, 10.5, -238.97], [x, 14.18, -237.01], .19, wood, true);
+  }
   for (const x of [-2, 12]) {
     art.box([x, 10.6, -219], [2.5, 1.2, 1.3], clay, true);
     art.box([x, 11.26, -219], [2.7, .12, 1.4], stone);
@@ -56,8 +93,12 @@ export function createQinCommandLandscape() {
   // Rest room: sleeping shelves, absent workers' shoes, an unfinished figure
   // and an open workbench. The diagonal entrance-to-exit route stays clear.
   for (const z of [-155, -160, -167]) {
-    art.box([-92.5, 28.35, z], [3.2, .7, 2.1], wood, true);
+    for (const dx of [-1.3, 1.3]) for (const dz of [-.82, .82]) {
+      art.box([-92.5 + dx, 28.28, z + dz], [.19, .56, .19], wood, true);
+    }
+    art.box([-92.5, 28.61, z], [3.2, .18, 2.1], wood, true);
     art.box([-92.5, 28.75, z], [2.9, .1, 1.9], '#9b9c7c');
+    for (const dx of [-1.12, 1.12]) art.box([-92.5 + dx, 28.806, z], [.06, .017, 1.88], '#6d7657');
     art.box([-93.4, 28.9, z], [.7, .2, 1.5], '#bdad89');
     for (const dz of [-.2, .2]) art.box([-90.45, 28.08, z + dz], [.5, .16, .22], '#4c4237');
   }
@@ -69,6 +110,13 @@ export function createQinCommandLandscape() {
   for (const z of [-153, -171]) art.lantern(-86, 31, z, bronze);
   art.box([-7.3, 10.5, -217.2], [.5, 1, .5], bronze, true);
   art.ring([-7.3, 11.2, -217.2], .32, .06, bronze);
+  for (const z of [-222.01, -217.99]) {
+    art.box([-10.76, 12.14, z], [.25, 4.28, .16], wood, true);
+    art.box([-11.22, 12.14, z], [.22, 4.28, .16], wood, true);
+  }
+  art.box([-10.98, 14.37, -220], [.73, .33, 4.18], wood, true);
+  art.beam([-7.3, 10.97, -217.2], [-7.3, 14.35, -217.2], .075, bronze);
+  art.beam([-7.3, 14.35, -217.2], [-10.98, 14.35, -218.1], .075, bronze);
   finish(art, 'COL_QinCommandFurnishings');
   const gate = new SiteArt();
   gate.box([-11, 12, -220], [.3, 4, 4.15], bronze, true);

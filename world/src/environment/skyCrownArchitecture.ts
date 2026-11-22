@@ -48,17 +48,31 @@ export function addSkyCrownArchitecture(a: SiteArt, decks: Decks) {
     }
   }
   function canopy(d: CrownDeck, x: number, z: number, w: number, depth: number, height: number) {
+    // Roll eight sheets over the same bowed rafters. Their adjoining edges meet at the
+    // same rise even on the wide observatory roof; the socket at each end bears on a post.
+    const rise = (u: number) => .58 * (1 - u * u);
+    const panelWidth = w / 8;
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
       box(d, x + sx * (w / 2 - .25), height / 2, z + sz * (depth / 2 - .25), .26, height, .26, C.steel, true);
       a.beam(at(d, x + sx * (w / 2 - .25), height - 1.5, z + sz * (depth / 2 - .25)),
         at(d, x + sx * (w / 2 - 1.8), height, z + sz * (depth / 2 - .25)), .16, C.edge);
     }
     for (let i = 0; i < 8; i++) {
-      const px = x + (i - 3.5) * w / 8;
-      a.box(at(d, px, height + .6 * Math.cos((i - 3.5) / 4), z), [w / 8 + .08, .18, depth + .9],
-        i === 2 ? '#8e9b99' : C.plate, false, 'body', [0, 0, -.15 * Math.sin((i - 3.5) / 4)]);
+      const left = x - w / 2 + i * panelWidth, right = left + panelWidth;
+      const y0 = height + rise(i / 4 - 1), y1 = height + rise((i + 1) / 4 - 1);
+      a.box(at(d, (left + right) / 2, (y0 + y1) / 2 + .10, z), [Math.hypot(panelWidth, y1 - y0), .16, depth + .9],
+        i === 2 ? '#8e9b99' : C.plate, false, 'body', [0, 0, Math.atan2(y1 - y0, panelWidth)]);
+      if (i > 0) box(d, left, y0 + .18, z, .09, .09, depth + .9, C.blue);
+      for (const side of [-1, 1]) {
+        const rafterZ = z + side * (depth / 2 - .25);
+        a.beam(at(d, left, y0 - .08, rafterZ), at(d, right, y1 - .08, rafterZ), .22, C.steel);
+      }
     }
-    for (const sign of [-1, 1]) a.beam(at(d, x - w / 2, height, z + sign * depth / 2), at(d, x + w / 2, height, z + sign * depth / 2), .23, C.steel);
+    for (const side of [-1, 1]) {
+      const eave = x + side * w / 2;
+      box(d, eave, height - .13, z, .28, .25, depth + 1, C.blue);
+      box(d, eave + side * .15, height, z, .075, .22, depth + 1, C.edge);
+    }
   }
   function enclosure(d: CrownDeck, x: number, z: number, width: number, depth: number, height: number, door = 5, sideDoorOffset = 0) {
     // Four open doorways preserve circulation around the instrument desks.
@@ -213,14 +227,32 @@ export function addSkyCrownArchitecture(a: SiteArt, decks: Decks) {
     a.box(at(anchor, side * 12 + .7, 10.9, -15), [1.4, .7, .035], C.cloth);
   }
   box(anchor, -8, .6, 3, 1.2, .12, 2.7, C.cloth, true);
-  for (const sign of [-1, 1]) a.beam(at(anchor, -8 + sign * .64, .62, 1.2), at(anchor, -8 + sign * .64, .62, 4.8), .09, C.edge);
+  for (const sign of [-1, 1]) {
+    a.beam(at(anchor, -8 + sign * .64, .62, 1.2), at(anchor, -8 + sign * .64, .62, 4.8), .09, C.edge);
+    for (const z of [2.05, 3.95])
+      a.beam(at(anchor, -8 + sign * .48, .04, z), at(anchor, -8 - sign * .55, .55, z), .08, C.steel);
+  }
 
   // E: large optical fins create alternating sun and shadow, with readable firing lanes.
   const light = decks.light;
+  const mirrorTilt = new THREE.Euler(0, -.48, .12);
   for (let i = 0; i < 6; i++) {
     const x = -26 + i * 10;
     box(light, x, 4.7, -9.5, .65, 9.4, 2.2, C.steel, true);
-    a.box(at(light, x + 1.8, 6.5, -8), [4.1, 7.4, .27], i % 2 ? C.plate : C.blue, false, 'body', [0, -.48, .12]);
+    const onMirror = (u: number, v: number, distance: number) => {
+      const q = new THREE.Vector3(u, v, distance).applyEuler(mirrorTilt);
+      return at(light, x + 1.8 + q.x, 6.5 + q.y, -8 + q.z);
+    };
+    a.box(onMirror(0, 0, 0), [4.1, 7.4, .27], i % 2 ? C.plate : C.blue, false, 'body', [0, -.48, .12]);
+    for (const u of [-1.96, 1.96]) {
+      a.beam(onMirror(u, -3.64, -.22), onMirror(u, 3.64, -.22), .14, C.steel);
+      a.beam(onMirror(u, -3.56, -.22), onMirror(-u, 3.56, -.22), .10, C.blue);
+    }
+    for (const v of [-3.58, 0, 3.58]) {
+      a.beam(onMirror(-2.06, v, .16), onMirror(2.06, v, .16), .09, C.edge);
+      a.beam(onMirror(-2.00, v, -.22), onMirror(2.00, v, -.22), .14, C.steel);
+    }
+    a.beam(at(light, x, 6.5, -9.5), onMirror(-1.35, 0, -.22), .42, C.edge);
     a.beam(at(light, x, 2, -9.5), at(light, x + 2.9, 8.4, -8), .18, C.edge);
     if (i % 2 === 0) box(light, x, .6, 5.5, 3, 1.2, 1.2, C.blue, true);
   }
@@ -271,6 +303,11 @@ export function addSkyCrownArchitecture(a: SiteArt, decks: Decks) {
   console(archive, -8, -3, C.warm);
   bench(archive, 8, 5, 5);
   box(archive, 8, .76, 1, 3.2, .17, 1.5, '#84745e', true);
+  for (const sign of [-1, 1]) {
+    box(archive, 8 + sign * 1.27, .33, 1, .16, .66, 1.1, C.steel);
+    box(archive, 8 + sign * 1.27, .10, 1, .35, .18, 1.20, C.blue);
+  }
+  box(archive, 8, .47, 1, 2.55, .14, .16, C.edge);
   a.paper(...at(archive, 8, .86, 1), 1.1, .74);
   a.cyl(at(archive, 8.9, 1.02, 1), .12, .26, C.plate);
   a.lantern(...at(archive, 10, 2.2, 1));

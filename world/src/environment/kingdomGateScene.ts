@@ -34,13 +34,17 @@ export function createKingdomGateScene(terrain:(x:number,z:number)=>number=()=>3
  art.box(gatePoint(2,-8,.55),[1.4,1.1,.8],'#695244');
  art.lantern(...gatePoint(2,-8,1.4));
  art.finish('britain');const root=art.root;root.name='KingdomGate_ReturnRoad';
- // A planked, strapped double gate rather than a bare 11×6 m box; the collision volume is the same block.
+ // Both paneled leaves occupy the gatehouse's single lift channel.
  const gateWood=new THREE.MeshStandardMaterial({color:'#5e4a37',roughness:.9}),gateTrim=new THREE.MeshStandardMaterial({color:'#3d3024',roughness:.92}),gateIron=new THREE.MeshStandardMaterial({color:'#36332f',roughness:.5,metalness:.55});
  const gateParts=new Set<THREE.BufferGeometry>(),gate=new THREE.Group();gate.name='KingdomReturnGate';
- for(const leaf of[-1,1]){const half=buildFieldProp([5.5,6,.55],{body:gateWood,trim:gateTrim,iron:gateIron},gateParts);half.position.x=leaf*2.75;gate.add(half);}
- gate.position.fromArray(gatePoint(0,0,3));gate.rotation.y=Math.PI/4;root.add(gate);gate.updateMatrixWorld(true);
- const gateBlock=new THREE.BoxGeometry(11,6,.55);
- const collision=gateBlock.clone().applyMatrix4(gate.matrixWorld);gateBlock.dispose();
+ const leafSize=[5.5,6,.55] as const;
+ for(const side of [-1,1]){
+  const leaf=buildFieldProp(leafSize,{body:gateWood,trim:gateTrim,iron:gateIron},gateParts,'panel');
+  leaf.position.x=side*leafSize[0]/2;
+  gate.add(leaf);
+ }
+ gate.position.fromArray(gatePoint(0,0,leafSize[1]/2));gate.rotation.y=Math.PI/4;root.add(gate);gate.updateMatrixWorld(true);
+ const collision=new THREE.BoxGeometry(2*leafSize[0],leafSize[1],leafSize[2]).applyMatrix4(gate.matrixWorld);
  const collider:Collider={name:'COL_KingdomReturnGate',bvh:new MeshBVH(collision),enabled:true};
  const latch=new THREE.Mesh(new THREE.BoxGeometry(.55,.7,.3),new THREE.MeshStandardMaterial({color:'#efbf54',emissive:'#886020',emissiveIntensity:.4}));
  latch.position.fromArray(gatePoint(-4,5,1.4));latch.userData.target=G.latch;root.add(latch);

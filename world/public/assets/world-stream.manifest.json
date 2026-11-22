@@ -25,9 +25,9 @@
     "visual": 10683744
   },
   "orleans": {
-    "source": 4950228,
+    "source": 5040108,
     "core": 2028220,
-    "visual": 3066284
+    "visual": 3138824
   },
   "egypt": {
     "source": 5291500,
@@ -40,8 +40,8 @@
     "visual": 5971492
   },
   "home": {
-    "source": 2042212,
-    "core": 1886800,
-    "visual": 901092
+    "source": 2089972,
+    "core": 1902168,
+    "visual": 927040
   }
 }

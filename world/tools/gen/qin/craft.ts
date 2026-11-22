@@ -3,17 +3,9 @@ import { Batch, BOX } from '../geo';
 import { Frame } from '../orleans/craft';
 import type { QinPoint } from '../../../src/map/qinPlan';
 import { placeFigure, warriorPrims, horsePrims, type QinPrim, type WarriorKind } from '../../../src/map/qinFigures';
+import { Q } from '../../../src/environment/egyptQinCraftPalettes';
 
-/** Qin palette: rammed loess, black fired tile, vermilion lacquer, patinated bronze. */
-export const Q = {
-  earth: '#b39a73', earthDark: '#9c845f', earthPale: '#c8b28a', loess: '#c9b48c',
-  tile: '#2e3236', tileEdge: '#3d4247', ridge: '#24272b', plaster: '#ddd2b8',
-  red: '#a63a2c', redDark: '#7e2c24', bronze: '#5f7c66', bronzeBright: '#a8854a', lacquer: '#201e1d',
-  wood: '#5c4532', woodPale: '#8c6c4b', stone: '#8f9089', stoneDark: '#6c6e69', paving: '#9d9784',
-  terracotta: '#9b7b5d', terracottaDark: '#7f6249', clay: '#b07a57', water: '#4f8fa0',
-  ember: '#ff9a3c', molten: '#ffc463', mercury: '#c9d7e6', star: '#e8ecff', jade: '#6f9c86',
-  ochre: '#b8823f', azure: '#3f6f8a', cinnabar: '#c0452f', gold: '#c9a25a', silk: '#c9b991',
-};
+export { Q };
 export const MAT = 'M_QinCraft';
 export const CYL = new THREE.CylinderGeometry(1, 1, 1, 12), CYL8 = new THREE.CylinderGeometry(1, 1, 1, 8);
 const DISC = new THREE.CylinderGeometry(1, 1, 1, 10).rotateX(Math.PI / 2);

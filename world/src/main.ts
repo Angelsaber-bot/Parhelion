@@ -11,7 +11,6 @@ import { createValleyTownArchitecture } from './environment/valleyTownArchitectu
 import { createHomeTownDistricts } from './environment/homeTownDistricts';
 import { createSkyCrownLandmarks } from './environment/skyCrownLandmarks';
 import { HOME_DISTRICTS } from './story/homeTownDistrictActions';
-import { createBuildingOrnaments } from './map/buildingVariety';
 import { KINGDOM_K04 } from './story/kingdomBackPassage';
 import { WINTER_CHAPTERS } from './story/winterChapters';
 import { BLACKSAIL_CHAPTERS } from './story/blacksailChapters';
@@ -2309,7 +2308,6 @@ servantPacts=createServantPacts({scene,done,dialogue:narrative,prepareDialogue:(
 layout.markers.push(...servantPacts.markers);for(const marker of servantPacts.markers)markers.set(marker.id,marker);
 addEventListener('pagehide',e=>{if(!e.persisted)servantPacts?.dispose();});
 // Valley/Homeward formal set pieces (real collision) go in before the chapter markers are placed on them.
-const buildingOrnaments=createBuildingOrnaments();world.add(buildingOrnaments);
 const homeTownDistricts=createHomeTownDistricts((x,z)=>grid.sampleHeight(x,z)??0,(x,z)=>residentQueries.ground(x,z,80)?.point.y??null);
 world.add(homeTownDistricts.root);colliders.push(...homeTownDistricts.colliders);
 addEventListener('pagehide',e=>{if(!e.persisted)homeTownDistricts.dispose();});
@@ -4991,7 +4989,7 @@ function frame(now: number) {
   egyptCampaignScene.apply(done);egyptCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansCampaign?.update(dt,gameplayActive()&&!combat.defeated,regionAt(player.pos.x,player.pos.z).id==='orleans');
   if(done.has(JC.device))combat.state.earlySecondPhase.add('boss_hellfire_lord');else combat.state.earlySecondPhase.delete('boss_hellfire_lord');
-  valleyTownArchitecture.apply(done);valleyTownArchitecture.update(player.pos);homeTownDistricts.update(player.pos);skyCrownLandmarks.apply(done.has(JOURNEY.finish));updateMeyrickCovers(gameplayActive()?dt:0);updateFlagshipDrop(dt);
+  valleyTownArchitecture.apply(done);valleyTownArchitecture.update(player.pos);homeTownDistricts.update(player.pos,gameplayActive()?dt:0);skyCrownLandmarks.apply(done.has(JOURNEY.finish));updateMeyrickCovers(gameplayActive()?dt:0);updateFlagshipDrop(dt);
   fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos,id=>fieldChapters?.progress(id)??0);qinProcessionScene.apply(done.has(QP.bridge)&&!done.has(QP.rejoin)?'cutting':done.has(QP.rejoin)&&!done.has('realm_qin_phase_1')&&!done.has('journey_qin_public_order')?'moved':'hidden');qinProcessionScene.update(gameplayActive()?dt:0,player.pos);qinStarCeiling?.update(dt,player.pos);orleansCrossingTeams.apply(done.has(ORLEANS_FINALE_FLAGS.run)?(done.has(ORLEANS_FINALE_FLAGS.o09)?'hidden':'done'):done.has('journey_orleans_crossing_open')?'rehearsing':'hidden');orleansCrossingTeams.update(gameplayActive()?dt:0,player.pos);egyptMigration.apply(done.has(EC.relocated)&&!done.has(EC.bell)?'walking':done.has(EC.bell)&&!done.has(EC.meal)?'gathered':'hidden');egyptMigration.update(gameplayActive()?dt:0,player.pos);
   if(flagshipSplashArmed&&done.has('b06_tow')){flagshipSplashArmed=false;const at=fieldChapterScene.point('b07_hooks');if(at){flagshipSplash.trigger(new THREE.Vector3(at[0]+4,layout.world.waterLevel+.05,at[2]),9);audio.cannon();kickCamera(.8);}}
   {const inland=player.waterSurfaceAt?.(player.pos),surface=inland!=null&&Number.isFinite(inland)?inland:player.waterLevel;

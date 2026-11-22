@@ -22,8 +22,8 @@ export function fieldPropShape(size: readonly number[]): FieldPropShape {
 }
 
 /** Axis-aligned parts in prop-local space (layer 0 body, 1 darker trim, 2 iron). */
-export function fieldPropParts(size: readonly number[]): Part[] {
-  const [sx, sy, sz] = size, shape = fieldPropShape(size), parts: Part[] = [];
+export function fieldPropParts(size: readonly number[], shape: FieldPropShape = fieldPropShape(size)): Part[] {
+  const [sx, sy, sz] = size, parts: Part[] = [];
   const put = (s: Vec, at: Vec, layer: 0 | 1 | 2) => { if (s.every(v => v > 1e-4)) parts.push({ size: s, at, layer }); };
   const axis = (v: number, i: number): Vec => { const out: Vec = [0, 0, 0]; out[i] = v; return out; };
   const compose = (values: Record<number, number>): Vec => [values[0] ?? 0, values[1] ?? 0, values[2] ?? 0];
@@ -54,15 +54,18 @@ export function fieldPropParts(size: readonly number[]): Part[] {
     for (const side of [-1, 1]) put(compose({ [along]: length, [across]: frame, [thin]: depth }), compose({ [across]: side * (width / 2 - frame / 2) }), 1);
     const batten = Math.min(.16, length * .1);
     // Battens on the back (under a deck); big standing gates and barricades get iron straps on the face.
-    if (!flat) for (const k of length > 1.2 ? [-.32, .32] : [0]) put(compose({ [along]: batten, [across]: inner, [thin]: depth * .3 }), compose({ [along]: k * length, [thin]: -depth * .36 }), 1);
+    if (!flat) for (const k of length > 1.2 ? [-.32, .32] : [0]) put(compose({ [along]: batten, [across]: inner, [thin]: depth * .3 }), compose({ [along]: k * length, [thin]: -depth * .35 }), 1);
     if (!flat && length * width > 4) for (const k of [-.32, .32]) put(compose({ [along]: batten * .55, [across]: inner, [thin]: depth * .12 }), compose({ [along]: k * length, [thin]: depth * .4 }), 2);
     return parts;
   }
   if (shape === 'beam') {
     const dims = [sx, sy, sz], long = dims.indexOf(Math.max(...dims)), length = dims[long];
-    put([sx, sy, sz], [0, 0, 0], 0);
+    // The bands define the outer cross section; inset the timber between them.
+    const timber: Vec = [sx * .9, sy * .9, sz * .9];
+    timber[long] = length;
+    put(timber, [0, 0, 0], 0);
     const band = Math.min(.1, length * .06);
-    for (const k of [-.4, .4]) { const s: Vec = [sx * 1.1, sy * 1.1, sz * 1.1]; s[long] = band; const at = axis(k * length, long); put(s, at, 2); }
+    for (const k of [-.4, .4]) { const s: Vec = [sx, sy, sz]; s[long] = band; const at = axis(k * length, long); put(s, at, 2); }
     return parts;
   }
   // Crate or block: a framed body with corner posts and top and bottom rims.
@@ -70,19 +73,19 @@ export function fieldPropParts(size: readonly number[]): Part[] {
   put([sx - edge, sy - edge, sz - edge], [0, 0, 0], 0);
   for (const x of [-1, 1]) for (const z of [-1, 1]) put([edge, sy, edge], [x * (sx - edge) / 2, 0, z * (sz - edge) / 2], 1);
   for (const y of [-1, 1]) {
-    for (const z of [-1, 1]) put([sx, edge, edge], [0, y * (sy - edge) / 2, z * (sz - edge) / 2], 1);
-    for (const x of [-1, 1]) put([edge, edge, sz], [x * (sx - edge) / 2, y * (sy - edge) / 2, 0], 1);
+    for (const z of [-1, 1]) put([sx - 2 * edge, edge, edge], [0, y * (sy - edge) / 2, z * (sz - edge) / 2], 1);
+    for (const x of [-1, 1]) put([edge, edge, sz - 2 * edge], [x * (sx - edge) / 2, y * (sy - edge) / 2, 0], 1);
   }
-  if (sy > .5 && sx > .5 && sz > .5) for (const z of [-1, 1]) put([sx - edge * 2, edge * .7, edge * .5], [0, 0, z * sz / 2], 1);
+  if (sy > .5 && sx > .5 && sz > .5) for (const z of [-1, 1]) put([sx - edge * 2, edge * .7, edge * .5], [0, 0, z * (sz / 2 - edge * .25)], 1);
   return parts;
 }
 
 export interface FieldPropMaterials { body: THREE.Material; trim: THREE.Material; iron: THREE.Material }
 
 /** One group with at most three merged meshes; the caller owns geometry disposal through `geometries`. */
-export function buildFieldProp(size: readonly number[], materials: FieldPropMaterials, geometries: Set<THREE.BufferGeometry>): THREE.Group {
+export function buildFieldProp(size: readonly number[], materials: FieldPropMaterials, geometries: Set<THREE.BufferGeometry>, shape?: FieldPropShape): THREE.Group {
   const group = new THREE.Group(), layers: THREE.BufferGeometry[][] = [[], [], []];
-  for (const part of fieldPropParts(size)) {
+  for (const part of fieldPropParts(size, shape)) {
     const g = new THREE.BoxGeometry(...part.size); g.translate(...part.at); layers[part.layer].push(g);
   }
   layers.forEach((list, layer) => {

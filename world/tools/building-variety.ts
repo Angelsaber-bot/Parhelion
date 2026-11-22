@@ -1,6 +1,6 @@
 // Finds buildings that are visually identical within a region (same visible triangles, area and
 // colour mix inside their collision hull) and records every copy after the first with a variant
-// number. src/map/buildingVariety.ts uses it at load to recolour and crown each copy differently.
+// number. src/map/buildingVariety.ts uses it at load to grade the walls and roofs of each copy.
 //   node --import tsx tools/building-variety.ts
 import * as THREE from 'three';
 import { readFileSync, writeFileSync } from 'node:fs';

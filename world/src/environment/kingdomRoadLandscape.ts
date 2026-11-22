@@ -78,11 +78,22 @@ export function createKingdomRoadLandscape(ground: (x: number, z: number) => num
   gantry.beam(gatePoint(-5, 15, 16.6), gatePoint(5, 15, 16.6), .5, wood);
   for (const s of [-5, 5]) gantry.beam(gatePoint(s, 15, 16.35), gatePoint(s * .55, 15, 16.35), .22, iron);
   finish(gantry, 'COL_KingdomOuterGateGantry', false);
-  const gateMaterial = new THREE.MeshStandardMaterial({ color: wood, roughness: .9 });
-  const outerGate = new THREE.Group(); outerGate.position.fromArray(gatePoint(0, 15, .22)); outerGate.rotation.y = Math.PI / 4; root.add(outerGate);
+  const shutter = new SiteArt();
   for (let n = 0; n < 12; n++) {
-    const plank = new THREE.Mesh(new THREE.BoxGeometry(.64, 7.8, .22), gateMaterial); plank.position.set(-3.52 + n * .64, 4, 0); outerGate.add(plank);
+    shutter.box([-.64 * 5.5 + n * .64, 4, .095], [.635, 7.8, .22], [wood, '#84674c', '#795e45'][n % 3]);
   }
+  // The braced face turns underneath the cart deck. The reverse face lands
+  // 15 mm above the walk surface and carries no protruding hinge hardware.
+  for (const h of [.48, 3.9, 7.55]) {
+    shutter.box([0, h, .26], [7.65, .22, .14], iron, false, 'metal');
+    for (const x of [-3.45, -1.6, 1.6, 3.45])
+      shutter.cyl([x, h, .342], .068, .035, pale, false, 'metal', [Math.PI / 2, 0, 0]);
+  }
+  for (const x of [-3.55, 3.55]) shutter.beam([x, .6, .25], [0, 3.8, .25], .18, wood);
+  shutter.finish('britain'); arts.push(shutter);
+  const outerGate = shutter.root; outerGate.name = 'KingdomOuterGateShutter';
+  outerGate.position.fromArray(gatePoint(0, 15, .22));
+  outerGate.rotation.set(0, Math.PI / 4, 0, 'YXZ'); root.add(outerGate);
   // The existing pedestrian arch stays open; the new outer shutter is stored
   // overhead during preparations. Its fall becomes part of the broad deck.
   const winch = new SiteArt(), broken = new SiteArt();
@@ -171,6 +182,6 @@ export function createKingdomRoadLandscape(ground: (x: number, z: number) => num
   return { root, colliders, markers, sidePath: sidePath.map(world), frontPath,
     abbeyPaths: [abbeyApproach, abbeySection, abbeyReturn].map(path => path.map(world)), apply,
     update(p: THREE.Vector3) { root.visible = Math.hypot(p.x + 900, p.z + 90) < 450 && p.y < 130; },
-    dispose() { colliders.forEach(c => { c.enabled = false; c.bvh.geometry.dispose(); }); arts.forEach(a => { a.layers.forEach(m => m.geometry.dispose()); Object.values(a.materials).forEach(m => m.dispose()); }); outerGate.traverse(o => { if (o instanceof THREE.Mesh) o.geometry.dispose(); }); gateMaterial.dispose(); root.removeFromParent(); },
+    dispose() { colliders.forEach(c => { c.enabled = false; c.bvh.geometry.dispose(); }); arts.forEach(a => { a.layers.forEach(m => m.geometry.dispose()); Object.values(a.materials).forEach(m => m.dispose()); }); root.removeFromParent(); },
   };
 }

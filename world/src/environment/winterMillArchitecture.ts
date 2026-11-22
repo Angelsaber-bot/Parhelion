@@ -31,15 +31,37 @@ export function createWinterMillArchitecture(north: Point, ground: (x: number, z
   box(0, 4.6, 7, 3.6, 1.6, .5, plaster, true);
   box(5.6, 4.6, 0, .45, 1.6, 4.9, plaster, true);
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(sx * 5.6, 2.7, sz * 7, .36, 5.5, .36, dark);
-  for (const height of [.6, 3.6, 5.2]) {
-    box(0, height, 7.27, 11.7, .24, .12, timber);
-    box(5.87, height, 0, .12, .24, 14.3, timber);
+  for (const height of [.6, 3.6]) {
+    for (const side of [-1, 1]) {
+      box(side * 3.82, height, 7.27, 3.98, .24, .12, timber);
+      box(5.87, height, side * 4.82, .12, .24, 4.66, timber);
+    }
   }
+  box(0, 5.2, 7.27, 11.7, .24, .12, timber);
+  box(5.87, 5.2, 0, .12, .24, 14.3, timber);
   for (const side of [-1, 1]) {
     a.box(at(side * 3.1, 6.6, 0), [7.1, .2, 16], dark, false, 'body', [0, 0, -side * .43]);
     a.box(at(side * 3.1, 6.76, 0), [7.12, .14, 16.05], snow, false, 'body', [0, 0, -side * .43]);
     for (const end of [-1, 1]) a.beam(at(side * 6.2, 5.23, end * 7.9), at(0, 8.04, end * 7.9), .2, timber);
   }
+  // The loft carries grain. Both ends stop driving snow while a louvred
+  // opening below each ridge lets the damp air escape.
+  const gable = new THREE.Shape();
+  gable.moveTo(-5.72, -.10); gable.lineTo(5.72, -.10);
+  gable.lineTo(5.72, .02); gable.lineTo(0, 2.64); gable.lineTo(-5.72, .02); gable.closePath();
+  const vent = new THREE.Path();
+  vent.moveTo(-.72,.65); vent.lineTo(-.72,1.52); vent.lineTo(.72,1.52); vent.lineTo(.72,.65); vent.closePath();
+  gable.holes.push(vent);
+  const infill = new THREE.ExtrudeGeometry(gable, {depth:.17, bevelEnabled:false});
+  infill.translate(0,0,-.085);
+  for (const end of [-1,1]) {
+    a.add(infill, plaster, at(0,5.4,end*7), [1,1,1], true);
+    for (const side of [-1,1]) box(side*.76,6.49,end*7.02,.10,.99,.23,dark);
+    for (const h of [6.05,6.92]) box(0,h,end*7.02,1.58,.10,.24,timber);
+    for (const h of [6.27,6.53,6.79])
+      a.box(at(0,h,end*7.02), [1.44,.11,.29], timber, false, 'body', [end*.32,0,0]);
+  }
+  infill.dispose();
   box(0, 8.1, 0, .3, .26, 16.3, dark);
   box(-3.6, 7.2, -3.4, 1.1, 4.7, 1.2, stone, true);
   box(-3.6, 9.6, -3.4, 1.4, .3, 1.5, snow);

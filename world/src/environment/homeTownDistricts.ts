@@ -14,11 +14,13 @@ type V3 = [number, number, number];
  * unifying materials (old concrete, metal roofs, timber patches). Lots were checked flat and clear. */
 export function createHomeTownDistricts(ground: (x: number, z: number) => number, roofTop: (x: number, z: number) => number | null) {
   const root = new THREE.Group(); root.name = 'HomewardTownDistricts';
+  const millWheel = new SiteArt();
   const colliders: Collider[] = [];
+  const artSets: SiteArt[] = [millWheel];
   const concrete = '#a7a39a', concreteDark = '#7d7a72', metal = '#6f7c80', rust = '#8a5a3e', timber = '#8d7150', darkTimber = '#5b4632', canvas = '#d6c9a8', glass = '#9fc6cf', warm = '#ffd98a';
   const W = (x: number, z: number) => x + 720; // local → world x (home offset)
   function finish(a: SiteArt, name: string) {
-    a.finish('home' as RegionId); a.root.name = name; root.add(a.root);
+    a.finish('home' as RegionId); a.root.name = name; root.add(a.root);artSets.push(a);
     if (!a.solids.length) return;
     const geometry = mergeParts(a.solids); a.solids.forEach(g => g.dispose()); a.solids.length = 0;
     colliders.push({ name: `COL_${name}`, enabled: true, bvh: new MeshBVH(geometry) });
@@ -60,15 +62,74 @@ export function createHomeTownDistricts(ground: (x: number, z: number) => number
 
   // T05 下堤货栈: open public cargo shed on the lower levee, loading ramp and a working water wheel.
   { const a = new SiteArt(), y = ground(W(225, 139), 139);
-    for (const [x, z] of [[218, 134], [232, 134], [218, 144], [232, 144], [225, 134], [225, 144]]) a.box([W(x, z), y + 2, z], [.3, 4, .3], darkTimber, true);
-    a.box([W(225, 139), y + 4.1, 139], [16, .2, 12], rust, false, 'body', [.06, 0, 0]);
-    for (const [x, z, s] of [[220, 137, 1.1], [221.4, 137, .9], [228, 141, 1.2], [229.5, 141.5, .8]] as const) a.box([W(x, z), y + s / 2, z], [s, s, s], timber, true);
+    const pitch=.06,underRoof=(z:number)=>y+4.1-(z-139)*Math.tan(pitch)-.1/Math.cos(pitch);
+    for(const z of[134,144]){
+      const beamTop=underRoof(z);
+      a.box([W(225,z),beamTop-.13,z],[15.4,.26,.26],darkTimber);
+      for(const x of[218,225,232]){
+        const wx=W(x,z),foot=ground(wx,z),postTop=beamTop-.26;
+        a.box([wx,(foot+postTop)/2,z],[.3,postTop-foot,.3],darkTimber,true);
+        const braceSide=x===232?-1:1;
+        a.beam([wx,postTop-.68,z],[wx+braceSide*.82,postTop,z],.13,timber);
+      }
+    }
+    const roofColors=[rust,'#805943','#93634b','#8d644d'];
+    for(let i=0;i<8;i++){
+      const x=W(218+i*2,139);
+      a.box([x,y+4.1,139],[2,.2,12],roofColors[i%4],false,'metal',[pitch,0,0]);
+      if(i<7)a.box([x+1,y+4.219,139],[.075,.068,12],metal,false,'metal',[pitch,0,0]);
+    }
+    for (const [x, z, s] of [[220, 137, 1.1], [221.4, 137, .9], [228, 141, 1.2], [229.5, 141.5, .8]] as const) {
+      const wx = W(x,z);
+      a.box([wx, y + s / 2, z], [s, s, s], timber, true);
+      for (const dx of [-.33, .33]) {
+        a.box([wx+dx*s, y+s+.018, z], [.055,.04,s+.04], metal);
+        a.box([wx+dx*s, y+s/2, z+s/2+.012], [.055,s,.035], metal);
+      }
+    }
     a.box([W(225, 146.5), y + .3, 146.5], [4, .6, 2], concreteDark, true, 'body', [-.12, 0, 0]);
     const wheel: V3 = [W(235, 139), y + 2.4, 139];
-    a.ring(wheel, 2.2, .14, darkTimber, 'body', [0, Math.PI / 2, 0]);
-    for (let i = 0; i < 8; i++) { const t = i * Math.PI / 4; a.box([wheel[0], wheel[1] + Math.sin(t) * 1.6, wheel[2] + Math.cos(t) * 1.6], [.8, .14, .5], timber, false, 'body', [t, 0, 0]); }
-    a.box([wheel[0] - 1.2, wheel[1], wheel[2]], [2.4, .2, .2], metal);
-    finish(a, 'HomeLeveeCargo'); }
+    // Bearing stands carry the axle clear of the paddles on both banks of the wheel pit.
+    for (const side of [-1,1]) {
+      const x=wheel[0]+side*.97, foot=ground(x,139);
+      a.box([x,foot+.15,139],[.58,.3,1.55],concreteDark);
+      for(const dz of[-.59,.59])a.beam([x,foot+.29,139+dz],[x,wheel[1]-.05,139],.16,darkTimber);
+      a.box([x,wheel[1]-.04,139],[.42,.3,.46],metal);
+    }
+    a.cyl(wheel,.13,2.6,metal,false,'body',[0,0,Math.PI/2]);
+    // The south eave catches runoff and feeds the outside of the wheel, clear of the axle and cargo aisle.
+    a.box([W(230,145),y+3.67,145],[10.55,.09,.55],metal);
+    a.box([W(230,145.28),y+3.77,145.28],[10.55,.24,.07],rust);
+    a.box([W(229.7,144.72),y+3.77,144.72],[9.95,.24,.07],rust);
+    const chute=(z:number)=>y+3.59+(z-140.9)*.019;
+    const outletZ=140.9, intakeZ=145.25;
+    const chuteMid=(outletZ+intakeZ)/2;
+    a.box([wheel[0],chute(chuteMid),chuteMid],[.55,.09,intakeZ-outletZ],metal,false,'body',[-.019,0,0]);
+    for(const dx of[-.27,.27]){
+      a.beam([wheel[0]+dx,chute(intakeZ)+.075,intakeZ],[wheel[0]+dx,chute(outletZ)+.075,outletZ],.11,timber);
+    }
+    for(const z of[142.4,145]){
+      const foot=ground(wheel[0],z);
+      a.box([wheel[0],(foot+chute(z))/2,z],[.17,chute(z)-foot,.17],darkTimber);
+      a.box([wheel[0],chute(z)-.10,z],[.7,.13,.19],timber);
+    }
+    for (const side of [-1,1]) {
+      const x=side*.39;
+      millWheel.ring([x,0,0],2,.095,darkTimber,'body',[0,Math.PI/2,0]);
+      for(let i=0;i<8;i++){
+        const angle=i*Math.PI/4;
+        millWheel.beam([x,0,0],[x,2*Math.cos(angle),2*Math.sin(angle)],.14,timber);
+      }
+    }
+    for(let i=0;i<8;i++){
+      const angle=i*Math.PI/4;
+      millWheel.box([0,2.055*Math.cos(angle),2.055*Math.sin(angle)],[1.01,.295,.44],timber,false,'body',[angle,0,0]);
+    }
+    millWheel.cyl([0,0,0],.28,.98,metal,false,'body',[0,0,Math.PI/2]);
+    millWheel.finish('home' as RegionId);
+    millWheel.root.name='HomeLeveePaddleWheel';
+    millWheel.root.position.set(...wheel);
+    finish(a, 'HomeLeveeCargo'); a.root.add(millWheel.root); }
 
   // T07 屋顶步道: stair → laundry deck → two reliable 1.2 m jumps → stargazing post; backup signal line.
   { const a = new SiteArt(), base = ground(W(-102, 176), 176), deckY = base + 3.2;
@@ -78,14 +139,23 @@ export function createHomeTownDistricts(ground: (x: number, z: number) => number
     const deck = (x0: number, x1: number, rails = true) => { const cx = (x0 + x1) / 2, len = x1 - x0;
       a.box([W(cx, 176), deckY - .125, 176], [len, .25, 5], timber, true);
       for (const x of [x0 + .3, x1 - .3]) for (const z of [173.8, 178.2]) a.box([W(x, z), (deckY + base) / 2, z], [.25, deckY - base, .25], darkTimber, true);
-      if (rails) a.box([W(cx, 173.5), deckY + .55, 173.5], [len, .08, .08], darkTimber, true); };
+      if (rails) {
+        a.box([W(cx, 173.5), deckY + .55, 173.5], [len, .08, .08], darkTimber, true);
+        for(const x of[x0+.3,cx,x1-.3])a.box([W(x,173.5),deckY+.27,173.5],[.085,.56,.085],darkTimber);
+      } };
     deck(-100, -90); deck(-88.8, -82); deck(-80.8, -72);
     // The stargazing deck ends in a rail rather than a 3 m drop.
     for (const y of [.55, 1.05]) a.box([W(-72.15, 176), deckY + y, 176], [.08, .08, 4.6], darkTimber, true);
     a.box([W(-72.15, 176), deckY + .55, 176], [.12, 1.1, .12], darkTimber, true);
-    for (const x of [-98, -94]) a.beam([W(x, 174.2), deckY + 2, 174.2], [W(x + 4, 177.8), deckY + 2, 177.8], .015, '#e8e0cf');
-    for (const [x, c] of [[-97, '#b0c8d8'], [-95.5, '#d8b0a0'], [-93.5, '#e0d8b8']] as const) a.box([W(x, 176), deckY + 1.55, 176], [.8, .9, .04], c);
-    for (const x of [-98, -94]) a.box([W(x, 174.2), deckY + 1.1, 174.2], [.08, 2, .08], darkTimber);
+    const lineZ=174.05, lineY=(x:number)=>deckY+1.94+.04*Math.abs(x+95);
+    for(const x of[-99,-91]){
+      a.box([W(x,lineZ),deckY+1.055,lineZ],[.09,2.11,.09],darkTimber);
+      a.beam([W(x,lineZ),lineY(x),lineZ],[W(-95,lineZ),lineY(-95),lineZ],.026,'#e8e0cf');
+    }
+    for(const [x,c] of [[-97,'#b0c8d8'],[-95,'#d8b0a0'],[-93,'#e0d8b8']] as const){
+      a.box([W(x,lineZ),lineY(x)-.42,lineZ],[.9,.84,.036],c);
+      for(const dx of[-.33,.33])a.box([W(x+dx,lineZ),lineY(x+dx)-.015,lineZ],[.055,.11,.075],timber);
+    }
     a.box([W(-76, 176), deckY + 1, 176], [.12, 1.6, .12], metal); a.cyl([W(-76, 176.4), deckY + 1.85, 176.4], .14, 1.1, metal, false, 'metal', [Math.PI / 3, 0, 0]);
     a.box([W(-74, 177), deckY + .45, 177], [1.8, .12, .5], timber, true);
     a.box([W(-72.5, 174), deckY + 3, 174], [.12, 6, .12], metal); a.beam([W(-72.5, 174), deckY + 5.8, 174], [W(-104, 172), base + 6, 172], .02, '#2a2a2a');
@@ -100,10 +170,20 @@ export function createHomeTownDistricts(ground: (x: number, z: number) => number
     a.box([W(56, -233), y + 1.6, -233], [2, 1.2, .1], timber); a.box([W(56, -232.94), y + 1.65, -232.94], [1.8, 1, .02], '#e8dfc8');
     a.box([W(64, -233.5), y + 1.05, -233.5], [.9, .9, .6], rust, true); a.box([W(64, -233.18), y + 1.05, -233.18], [.5, .1, .02], '#c0452f');
     a.box([W(60, -236.8), y + 1.05, -236.8], [3, .14, .5], timber, true);
+    for(const x of[58.9,61.1])a.box([W(x,-236.8),y+.79,-236.8],[.16,.39,.45],darkTimber);
+    for(const x of[55.2,56.8])a.box([W(x,-233),y+1.2,-233],[.13,1.2,.11],darkTimber);
     finish(a, 'HomeOutstation');
     const s = new SiteArt(), sy = ground(W(-63, 193), 193);
     for (let i = 0; i < 3; i++) s.box([W(-63, 190 + i * 2.2), sy + .2 + i * .25, 190 + i * 2.2], [14, .4, 1.4], concrete, true);
-    for (const x of [-68, -58]) s.box([W(x, 196), sy + .45, 196], [3, .12, .5], timber, true);
+    for (const x of [-68, -58]) {
+      const wy=ground(W(x,196),196);
+      s.box([W(x,196),wy+.45,196],[3,.12,.5],timber,true);
+      for(const dx of[-1.08,1.08]) {
+        const base=ground(W(x+dx,196),196)-.05;
+        const height=Math.max(.06,wy+.4-base);
+        s.box([W(x+dx,196),wy+.4-height/2,196],[.22,height,.43],concreteDark);
+      }
+    }
     finish(s, 'HomeSouthSlope'); }
 
   // T10 公馆餐厅陈设: the shared dining hall at the lodge's south end had bare 5 m walls. Wainscoting,
@@ -137,10 +217,33 @@ export function createHomeTownDistricts(ground: (x: number, z: number) => number
           const lx = x + nx * half, lz = z + nz * half, wy = ground(W(lx, lz), lz);
           lamps.box([W(lx, lz), wy + 2.1, lz], [.14, 4.2, .14], metal); lamps.box([W(lx, lz), wy + 4.25, lz], [.5, .14, .5], metal); lamps.box([W(lx, lz), wy + 4.05, lz], [.3, .3, .3], warm, false, 'glow'); } } }
     for (const b of HOME_BUILDINGS) { if (b.kind === 'lodge') continue;
-      const ox = b.p[0] - Math.sin(b.yaw) * b.d * .2, oz = b.p[2] - Math.cos(b.yaw) * b.d * .2, top = roofTop(W(ox, oz), oz); if (top === null) continue;
-      lamps.cyl([W(ox, oz), top + .9, oz], .7, 1.2, b.kind === 'home' ? '#8a8578' : metal); lamps.box([W(ox, oz), top + .15, oz], [1.6, .3, 1.6], darkTimber); }
+      const ox = W(b.p[0]-Math.sin(b.yaw)*b.d*.2,b.p[2]), oz=b.p[2]-Math.cos(b.yaw)*b.d*.2;
+      const top=roofTop(ox,oz);
+      if(top===null || top<b.p[1]+4)continue;
+      // Two shoes seat the horizontal cradle on the actual pitched roof.
+      for(const dx of[-.59,.59]){
+        const contact=roofTop(ox+dx,oz);
+        if(contact===null)continue;
+        const bottom=Math.min(contact,top)-.035,upper=top+.17;
+        lamps.box([ox+dx,(bottom+upper)/2,oz],[.17,upper-bottom,1.48],darkTimber);
+      }
+      lamps.box([ox,top+.23,oz],[1.6,.12,1.6],darkTimber);
+      lamps.cyl([ox,top+.89,oz],.7,1.2,b.kind==='home'?'#8a8578':metal);
+      for(const dy of[.42,1.36])lamps.cyl([ox,top+dy,oz],.718,.055,concreteDark);
+      lamps.cyl([ox,top+1.52,oz],.74,.075,metal);
+    }
     finish(lamps, 'HomeStreetLampsAndTanks'); }
 
-  return { root, colliders, update(viewer: THREE.Vector3) { root.visible = Math.abs(viewer.x - 760) < 360 && Math.abs(viewer.z) < 340; },
-    dispose() { colliders.forEach(c => c.enabled = false); root.removeFromParent(); } };
+  return { root, colliders, update(viewer: THREE.Vector3,dt=0) {
+    root.visible = Math.abs(viewer.x - 760) < 360 && Math.abs(viewer.z) < 340;
+    if(root.visible && dt>0)millWheel.root.rotation.x=(millWheel.root.rotation.x+Math.min(dt,.25)*.32)%(2*Math.PI);
+  },
+    dispose() {
+      colliders.forEach(c=>{c.enabled=false;c.bvh.geometry.dispose();});
+      for(const a of artSets){
+        for(const mesh of a.layers.values())mesh.geometry.dispose();
+        Object.values(a.materials).forEach(material=>material.dispose());
+      }
+      root.removeFromParent();
+    } };
 }

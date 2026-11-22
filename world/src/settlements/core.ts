@@ -80,11 +80,11 @@ function rampGeometry(width: number, depth: number, drop: number) {
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
   g.setIndex([0,2,1,0,3,2,4,5,6,4,6,7,0,1,5,0,5,4,3,7,6,3,6,2,0,4,7,0,7,3,1,2,6,1,6,5]);g.computeVertexNormals();return g;
 }
-/** Batch by material to avoid hundreds of small prop draw calls. Collision is extracted first. */
+/** Collision is extracted before visual meshes are batched by material and shadow intent. */
 export function batchSettlementVisuals(group: THREE.Group) {
   group.updateMatrixWorld(true);
   const inverse = new THREE.Matrix4().copy(group.matrixWorld).invert();
-  const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
+  const batches = new Map<string, { material: THREE.Material; castShadow: boolean; parts: THREE.BufferGeometry[] }>();
   const lights: THREE.Light[] = [];
   group.traverse((o)=>{
     if (o instanceof THREE.Light) { const light=o.clone(); light.position.set(0,0,0);light.quaternion.identity();light.scale.set(1,1,1); light.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inverse,o.matrixWorld)); lights.push(light); }
@@ -97,11 +97,24 @@ export function batchSettlementVisuals(group: THREE.Group) {
     // Uniform attribute layout within each material bucket.
     if(!g.attributes.uv)g.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count*2),2));
     for(const key of Object.keys(g.attributes))if(!['position','normal','uv'].includes(key))g.deleteAttribute(key);
-    const list=batches.get(materials[0])??[];list.push(g);batches.set(materials[0],list);
+    const material = materials[0], key = material.uuid + ':' + o.castShadow;
+    let batch = batches.get(key);
+    if (!batch) {
+      batch = { material, castShadow: o.castShadow, parts: [] };
+      batches.set(key, batch);
+    }
+    batch.parts.push(g);
   });
   group.clear();
   if(lights.length)group.add(...lights);
-  for(const [material,geos] of batches){const merged=mergeParts(geos);const mesh=new THREE.Mesh(merged,material);mesh.name=`Settlement_${material.name||material.type}`;mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);for(const g of geos)g.dispose();}
+  for (const { material, castShadow, parts } of batches.values()) {
+    const mesh = new THREE.Mesh(mergeParts(parts), material);
+    mesh.name = `Settlement_${material.name || material.type}`;
+    mesh.castShadow = castShadow;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+    for (const g of parts) g.dispose();
+  }
 }
 
 export function installSettlements(kits: SettlementKit[], ctx: PlacementContext) {
@@ -114,12 +127,12 @@ export function installSettlements(kits: SettlementKit[], ctx: PlacementContext)
     const [x,y,z]=p.position,[w,d]=kit.footprint;
     const mat=new THREE.MeshStandardMaterial({color:FOUNDATION[kit.id],roughness:.95});mat.name=`${kit.id}_foundation`;
     const base=new THREE.Mesh(new THREE.BoxGeometry(w,Math.max(.18,p.groundRange+.18),d),mat);
-    base.name='Settlement_foundation';base.position.y=-Math.max(.18,p.groundRange+.18)/2-.12;base.userData.solid=true;kit.group.add(base);
+    base.name='Settlement_foundation';base.position.y=-Math.max(.18,p.groundRange+.18)/2-.12;base.userData.solid=true;base.castShadow=true;kit.group.add(base);
     const turned=!!REGIONS.find(r=>r.id===kit.id)?.rotated,s=turned?-1:1;
     const ex=kit.entry[0],ez=Math.max(kit.entry[1],d/2);
     const approach=settlementHeight(ctx.grid,x+s*ex,z+s*(ez+9));
     const ramp=new THREE.Mesh(rampGeometry(3.4,9,Math.max(0,y-approach)),mat);
-    ramp.position.set(ex,.02,ez);ramp.name='Settlement_access_ramp';ramp.userData.solid=true;kit.group.add(ramp);
+    ramp.position.set(ex,.02,ez);ramp.name='Settlement_access_ramp';ramp.userData.solid=true;ramp.castShadow=true;kit.group.add(ramp);
     kit.group.name=`Settlement_${kit.id}`;kit.group.position.set(x,y,z);kit.group.rotation.y=turned?Math.PI:0;root.add(kit.group);root.updateMatrixWorld(true);
     kit.group.traverse((o)=>{if(o instanceof THREE.Mesh && o.userData.solid)collisionGeometries.push(positionGeometry(o));});
     for(const socket of kit.npcs)npcs.push({...socket,region:kit.id,position:[x+s*socket.position[0],y+socket.position[1],z+s*socket.position[2]],...(turned&&typeof socket.yaw==='number'?{yaw:socket.yaw+Math.PI}:{})});

@@ -44,7 +44,10 @@ export function createKyotoStreetLandscape(ground: (x: number, z: number, ceilin
     const a = new SiteArt(); arts.push(a);
     a.box(P(x, 5.96, z), [2.6, 1.52, 1.5], wood, true);
     for (const dy of [-.53, .53]) a.box(P(x, 5.96 + dy, z), [2.67, .12, 1.57], dark);
-    for (const dx of [-.85, .85]) a.box(P(x + dx, 5.96, z), [.09, 1.58, 1.58], rope);
+    for (const dx of [-.85, .85]) {
+      a.box(P(x + dx, 5.96, z), [.09, 1.58, 1.58], rope);
+      for (const dz of [-.7, .7]) a.beam(P(x + dx, 6.74, z + dz), P(x, 7.33, z), .052, rope);
+    }
     for (const dx of [-1.9, 1.9]) {
       const postZ = z < -75 ? -77.65 : -72.35;
       art.box(P(x + dx, 8.1, postZ), [.2, 5.8, .2], dark, true);
@@ -52,6 +55,11 @@ export function createKyotoStreetLandscape(ground: (x: number, z: number, ceilin
       art.beam(P(x + dx, 9.95, postZ), P(x + dx, 10.85, z), .13, wood);
     }
     art.beam(P(x - 2, 10.9, z), P(x + 2, 10.9, z), .28, dark);
+    // One side of the sheave is tangent to the vertical fall. Both carriers
+    // travel with their slings; the sheaves and their bearings stay overhead.
+    art.cyl(P(x+.26,10.63,z),.26,.15,wood,false,'body',[Math.PI/2,0,0]);
+    art.cyl(P(x+.26,10.63,z),.055,.41,'#535951',false,'metal',[Math.PI/2,0,0]);
+    for (const dz of [-.15,.15]) art.box(P(x+.26,10.75,z+dz),[.12,.37,.08],dark);
     const { collider, geo } = solid(a, `COL_KyotoHangingCargo_${index}`);
     const positions = geo.getAttribute('position') as THREE.BufferAttribute;
     const base = Float32Array.from(positions.array);
@@ -156,7 +164,7 @@ export function createKyotoStreetLandscape(ground: (x: number, z: number, ceilin
         }
         lastOffset = offset;
       }
-      for (const cable of cables) { const bottom = 6.72 + offset; cable.position.y = (10.85 + bottom) / 2; cable.scale.y = Math.max(.1, 10.85 - bottom); }
+      for (const cable of cables) { const bottom = 7.33 + offset; cable.position.y = (10.63 + bottom) / 2; cable.scale.y = 10.63 - bottom; }
       pin.visible = !lowered;
       sheetMaterial.color.set(done.has(K.dry) ? '#eee5cb' : '#a6a8a0');
       const legacy = !kyotoStreetActive(done) || done.has('fire_core') || done.has('musashi_contract');
