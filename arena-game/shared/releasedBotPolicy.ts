@@ -1,4 +1,4 @@
-import { parseExplorationModel, type ExplorationModel } from './exploration.ts';
+import { directPolicy } from './learnedOpponent.ts';
 import { parseNeuralPolicy, type NeuralPolicyModel } from './neuralPolicy.ts';
 import { PUBLIC_SERVER } from './protocol.ts';
 
@@ -7,7 +7,6 @@ export const LOCAL_TRAINER = 'http://127.0.0.1:8787/training';
 
 interface BotRelease {
   neural?: NeuralPolicyModel;
-  exploration?: ExplorationModel;
 }
 
 async function readModel<T>(url: string, parse: (raw: unknown) => T | undefined, previous?: T) {
@@ -29,13 +28,10 @@ export function releasedBotPolicies(base: string) {
 
   function refresh() {
     if (!pending) {
-      const neural = readModel(base + '/neural', raw => {
+      pending = readModel(base + '/neural', raw => {
         const model = parseNeuralPolicy(raw);
-        return model?.synthetic ? undefined : model;
-      }, current.neural).then(model => { current = { ...current, neural: model }; });
-      const exploration = readModel(base + '/exploration?active=1', parseExplorationModel, current.exploration)
-        .then(model => { current = { ...current, exploration: model }; });
-      pending = Promise.all([neural, exploration]).then(() => {}).finally(() => { pending = undefined; });
+        return directPolicy(model) ? model : undefined;
+      }, current.neural).then(neural => { current = { neural }; }).finally(() => { pending = undefined; });
     }
     return pending;
   }

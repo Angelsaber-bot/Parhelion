@@ -8,7 +8,7 @@ import { neuralBotControl } from '../shared/botNeuralControl.ts';
 import { Match } from '../shared/match.ts';
 import { BTN, type Input } from '../shared/sim.ts';
 import { ArenaRoom } from '../server/ArenaRoom.ts';
-import { newExplorationCheckpoint } from '../shared/exploration.ts';
+import { bundledOpponent, learnedOpponent } from '../shared/learnedOpponent.ts';
 import { createNeuralPolicy, NEURAL_FEATURE_COUNT, NEURAL_OUTPUT_COUNT, parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { LOCAL_TRAINER, PUBLIC_TRAINER, releasedBotPolicies } from '../shared/releasedBotPolicy.ts';
@@ -184,27 +184,23 @@ it('uses the promoted policy service on public, LAN and loopback games unless lo
 });
 
 it('shares concurrent downloads, retains a vetted release on outages, and honors withdrawal', async () => {
-  const model = fixture(), exploration = newExplorationCheckpoint();
-  exploration.counts[0] = 1;
-  const fetcher = vi.fn((url: string) => Promise.resolve(Response.json(url.endsWith('/neural') ? model : exploration)));
+  const model = fixture();
+  const fetcher = vi.fn((url: string) => Promise.resolve(Response.json(url.endsWith('/neural') ? model : null)));
   vi.stubGlobal('fetch', fetcher);
   const releases = releasedBotPolicies(PUBLIC_TRAINER);
   const refreshing = releases.refresh();
   const [first, concurrent] = await Promise.all([releases.forMatch(refreshing), releases.forMatch()]);
   expect(first).toBe(concurrent);
   expect(first.neural).toEqual(model);
-  expect(first.exploration?.counts).toEqual(exploration.counts);
-  expect(fetcher.mock.calls.map(([url]) => url)).toEqual([PUBLIC_TRAINER + '/neural', PUBLIC_TRAINER + '/exploration?active=1']);
+  expect(fetcher.mock.calls.map(([url]) => url)).toEqual([PUBLIC_TRAINER + '/neural']);
   fetcher.mockRejectedValue(new Error('Offline'));
   const disconnected = await releases.forMatch();
   expect(disconnected.neural).toBe(first.neural);
-  expect(disconnected.exploration).toBe(first.exploration);
   fetcher.mockImplementation(async url => Response.json(url.endsWith('/neural') ? { ...model, version: 999 } : null));
   const newerServer = await releases.forMatch();
   expect(newerServer.neural).toBe(first.neural);
-  expect(newerServer.exploration).toBeUndefined();
   fetcher.mockImplementation(async url => url.endsWith('/neural') ? new Response(null, { status: 404 }) : Response.json(null));
-  expect(await releases.forMatch()).toEqual({ neural: undefined, exploration: undefined });
+  expect(await releases.forMatch()).toEqual({ neural: undefined });
   expect(first.neural).toEqual(model);
   fetcher.mockImplementation(async () => Response.json({ ...model, synthetic: true }));
   expect((await releases.forMatch()).neural).toBeUndefined();
@@ -247,7 +243,7 @@ it('applies the same promoted action in an offline match and a Colyseus bot-fill
   vi.spyOn(botRoom, 'setSimulationInterval').mockImplementation(() => {});
   await botRoom.onCreate({ layout: '1v1', bots: true });
   const policies = await releasedBotPolicies(PUBLIC_TRAINER).forMatch();
-  const offline = startOffline({ ...options, skins: [] }, 'normal', Math.random, policies.exploration, policies.neural);
+  const offline = startOffline({ ...options, skins: [] }, 'normal', Math.random, undefined, policies.neural);
   try {
     offline.setPaused(true);
     for (const match of [botRoom.match, offline.match!]) {
@@ -260,3 +256,18 @@ it('applies the same promoted action in an offline match and a Colyseus bot-fill
   } finally { offline.close(); }
 });
 
+
+it('uses the bundled learned actions on cold start, an old assisted release, or a synthetic model', async () => {
+  const legacy = { ...fixture(), version: 3 as const, controller: 'perceptual-options-v2' as const };
+  vi.stubGlobal('fetch', () => Promise.resolve(Response.json(legacy)));
+  expect((await releasedBotPolicies(PUBLIC_TRAINER).forMatch()).neural).toBeUndefined();
+  const match = new Match(getMap('aster'), '1v1');
+  match.addPlayer('pilot', { name: 'pilot', team: 'A', char: 2, skins: [], bot: true });
+  match.phase = 'live';
+  const reference = learnedOpponent(bundledOpponent);
+  const alternatives = [undefined, legacy, { ...fixture(), synthetic: true as const }].map(learnedOpponent);
+  for (match.tick = 1; match.tick < 39; match.tick++) {
+    const expected = reference.think(match,'pilot');
+    for (const driver of alternatives) expect(driver.think(match,'pilot')).toEqual(expected);
+  }
+});

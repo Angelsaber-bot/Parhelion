@@ -4,7 +4,6 @@ import { addSmokeDepths, explorationScene, EXPLORATION_TICKS, visibleSmokeDepths
 import { humanObservation, wrapAngle, type CombatContact } from './humanCombat.ts';
 import type { Match } from './match.ts';
 import { createNeuralPolicy, type NeuralPolicyModel } from './neuralPolicy.ts';
-import { perceptualMotor } from './perceptualMotor.ts';
 import { BTN, type Input, type PlayerState } from './sim.ts';
 
 const EDGE_BUTTONS = BTN.JUMP | BTN.DASH | BTN.RELOAD | BTN.THROW;
@@ -40,18 +39,12 @@ export function applyNeuralAction(input: Input, me: PlayerState, raw: NeuralActi
 }
 
 /** Use the same observations, actuator limits and decision interval in the live game and RL rollouts. */
-export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectAction = greedyAction, random?: () => number) {
+export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectAction = greedyAction) {
   const policy = createNeuralPolicy(model);
   const recoil = model.version === 4 ? botGunRecoil() : undefined;
   let life = -1, next = -1, bearing = 0, seenAt = -Infinity;
-  let motor: ReturnType<typeof perceptualMotor> | undefined;
   let prior: [number, number] = [0, 0];
   let action: NeuralAction = { axes: [0, 0, 0, 0], buttons: 0, weapon: 0 };
-
-  // PPO samples these axes during training. Hold a correlated movement sample across
-  // decisions so a deployed v3 bot can commit to a sidestep without jittering its aim.
-  let lateralNoise = 0, forwardNoise = 0;
-  const sampleMovement = (draw: () => number) => .35 * Math.sqrt(-2 * Math.log(Math.max(1e-9, draw()))) * Math.cos(2 * Math.PI * draw());
 
   function reset() {
     if (life === -1) return;
@@ -59,7 +52,6 @@ export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectA
     life = next = -1;
     seenAt = -Infinity;
     prior = [0, 0];
-    lateralNoise = forwardNoise = 0;
   }
 
   return {
@@ -67,8 +59,6 @@ export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectA
     apply(match: Match, me: PlayerState, input: Input): Input {
       if (life !== me.lifeId) {
         reset(); life = me.lifeId;
-        // Versions 2 and 3 were trained with the legacy actuator in their environment.
-        motor = model.version === 2 || model.version === 3 ? perceptualMotor(model.version === 3, model.version === 3 ? random : undefined) : undefined;
       }
       const choose = match.tick >= next;
       const contacts: CombatContact[] = [];
@@ -84,17 +74,9 @@ export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectA
         if (model.version === 4) addSmokeDepths(scene, visibleSmokeDepths(match.map, me, match.smokes, match.shields));
         const features = [...observation, ...scene];
         action = selectAction(features, policy.think(features), next === -1);
-        if (model.version === 3 && random && selectAction === greedyAction) {
-          lateralNoise = .75 * lateralNoise + .66 * sampleMovement(random);
-          forwardNoise = .75 * forwardNoise + .66 * sampleMovement(random);
-          const axes = action.axes.slice(0, 4);
-          axes[2] += lateralNoise; axes[3] += forwardNoise;
-          action = { ...action, axes };
-        }
         next = match.tick + EXPLORATION_TICKS;
       }
       applyNeuralAction(input, me, action, choose);
-      motor?.(match.map, me, match.tick, observation, input, action.buttons, match.smokes, match.shields);
       recoil?.(me, input);
       prior = [wrapAngle(input.yaw - me.yaw), input.pitch - me.pitch];
       return input;

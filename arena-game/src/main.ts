@@ -3,8 +3,6 @@ import {heroIcon} from './ui/heroIcon.ts';
 import {mountLobbyShell,heroShell,modeShell} from './ui/lobbyShell.ts';
 import { prepareWorldHeroes } from './player/worldHero.ts';
 import { HeroLesson } from './ui/heroLesson.ts';
-import { Bot, BOT_SKILL } from '../shared/bot.ts';
-import { BTN } from '../shared/sim.ts';
 import { HeroPreview } from './ui/heroPreview.ts';
 import homewardThumb from './assets/maps/homeward.jpg';
 import { arenaMatchBriefing, arenaControlHints, arenaPauseLabel } from './ui/matchBriefing.ts';
@@ -340,7 +338,7 @@ $('play').onclick = async () => {
   try { localStorage.setItem('arena-lobby', JSON.stringify(withSkinSelection({ name: opts.name, layout: opts.layout, char, heroId:CHARACTERS[char].id, server, map: mapId, room: roomCode ?? '' },skins))); } catch { /* private mode */ }
   try {
     sfx.unlock();
-    const release = attempt.mode === 'offline' && !lessonRequested ? botPolicies.refresh() : undefined;
+    const release = attempt.mode === 'offline' ? botPolicies.refresh() : undefined;
     await (attempt.mode === 'range' ? scene.loadMap(RANGE_MAP_ID, 'day') : mapReady);
     if (!current()) return;
     attempt.phase = 'models'; renderStartupStatus();
@@ -350,9 +348,9 @@ $('play').onclick = async () => {
     await scene.prepareLoadout(loadoutStore.value.map(weaponIndex),skins);
     if (!current()) return;
     attempt.phase = 'join'; renderStartupStatus();
-    const { neural, exploration } = release ? await botPolicies.forMatch(release) : {};
+    const { neural } = release ? await botPolicies.forMatch(release) : {};
     if (!current()) return;
-    ownedSession = attempt.mode === 'online' ? await joinOnline(server, opts) : attempt.mode === 'range' ? startRange(opts) : startOffline(opts, 'normal', Math.random, exploration, neural);
+    ownedSession = attempt.mode === 'online' ? await joinOnline(server, opts) : attempt.mode === 'range' ? startRange(opts) : startOffline(opts, 'normal', Math.random, undefined, neural);
     if (attempt.mode === 'offline' && !localHost) ownedSession.onStats = postStats;
     if (!current()) { closeOwned(); return; }
     // A private room plays the map its first player chose: show that one.
@@ -379,7 +377,11 @@ $('play').onclick = async () => {
       });
     }) : undefined);
     if(lessonRequested&&session.match){
-      const m=session.match,bot=[...m.slots.values()].find(s=>s.info.bot);if(bot){bot.info.char=bot.state.char=8;bot.state.ability.readyAt=0;const brain=new Bot(41,BOT_SKILL.easy);bot.controller={think(match,id){const i=brain.think(match,id),p=match.player(id)!,enemy=match.player(session.id)!;if(p.alive&&enemy.alive&&match.heroes.visible([p.x,p.y+1,p.z],[enemy.x,enemy.y+1,enemy.z])&&Math.hypot(p.x-enemy.x,p.z-enemy.z)<16&&p.shieldCd===0&&!(p.prevButtons&BTN.SHIELD)){i.buttons=BTN.SHIELD;i.pitch=0;}return i;}};}
+      const opponent = [...session.match.slots.values()].find(slot => slot.info.bot);
+      if (opponent) {
+        opponent.info.char = opponent.state.char = 8;
+        opponent.state.ability.readyAt = 0;
+      }
       game.lesson=new HeroLesson(session.id);lessonRequested=false;
     }
     ownedSession = null; // Game now owns exactly one session.

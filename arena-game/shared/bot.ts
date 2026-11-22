@@ -148,7 +148,7 @@ export class Bot implements Controller {
     this.rand = rng(seed);
     this.explorationRandom = rng(seed ^ 0x3ab1289);
     if (humanModel) this.humanCombat = humanCombatPolicy(humanModel, rng(seed ^ 0x52e27a3d));
-    if (neuralModel) this.neural = neuralBotControl(neuralModel, undefined, rng(seed ^ 0x319ba7));
+    if (neuralModel) this.neural = neuralBotControl(neuralModel);
     const r = this.rand();
     this.style = r < 0.36 ? 'rusher' : r < 0.7 ? 'holder' : 'flanker';
     this.aggression = this.style === 'rusher' ? 0.75 + this.rand() * 0.25 : this.style === 'holder' ? 0.2 + this.rand() * 0.3 : 0.45 + this.rand() * 0.3;
@@ -172,6 +172,9 @@ export class Bot implements Controller {
         return output;
       }
       this.neural.reset();
+      inp.yaw = me.yaw;
+      inp.pitch = me.pitch;
+      return inp;
     }
     if (this.humanCombat && (this.humanLife !== me.lifeId || match.phase !== 'live' || !me.alive)) {
       this.humanLife = me.lifeId;

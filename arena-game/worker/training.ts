@@ -4,6 +4,7 @@ import { RULES_VERSION } from '../shared/protocol.ts';
 import { parseExplorationModel } from '../shared/exploration.ts';
 import { NEURAL_POLICY_VERSION, parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import type { Env } from './index.ts';
+import { bundledOpponent, directPolicy } from '../shared/learnedOpponent.ts';
 import { makeSelfPlayBatch } from './trainingSelfPlay.ts';
 import { parseEvaluationReport, type EvaluationReport } from '../shared/evaluationReport.ts';
 
@@ -146,13 +147,14 @@ export class ArenaTraining extends DurableObject<Env> {
     const last = sql.exec<{ interval: number }>('SELECT interval FROM checkpoint WHERE id=2').toArray()[0]?.interval ?? -1;
     if (last >= interval) return;
     this.pruneCorpus(Date.now());
-    const model = this.checkpoint(2), batch = makeSelfPlayBatch(interval);
+    const model = this.checkpoint(2), batch = makeSelfPlayBatch(interval, await this.botNeuralModel());
     if (batch.rows.length) trainArenaBatch(model, batch);
     sql.exec('INSERT OR REPLACE INTO checkpoint (id, model, interval) VALUES (2, ?, ?)', JSON.stringify(model), interval);
   }
 
   async status(rulesVersion = RULES_VERSION, collecting = false) {
     const { trained, heldOut, recentLoss, recentHoldoutLoss, exploration } = this.checkpoint();
+    if (rulesVersion === RULES_VERSION) await this.botNeuralModel();
     const neural = this.release();
     const dataset = this.ctx.storage.sql.exec<{ batches: number; matches: number; revision: number }>(
       'SELECT COUNT(*) AS batches, COUNT(DISTINCT substr(batch,1,32)) AS matches, COALESCE(MAX(id),0) AS revision FROM corpus',
@@ -263,7 +265,7 @@ export class ArenaTraining extends DurableObject<Env> {
     let model: NeuralPolicyModel | undefined;
     if (promote !== undefined) {
       try { model = parseNeuralPolicy(JSON.parse(promote)); } catch { /* rejected below */ }
-      if (!model || model.synthetic || await sha256(promote) !== digest) return new Response(null, { status: 400 });
+      if (!directPolicy(model) || await sha256(promote) !== digest) return new Response(null, { status: 400 });
     }
     const requestHash = await sha256(text);
     // All reads affecting CAS occur after the final await, with no yield through the commit.
@@ -305,9 +307,24 @@ export class ArenaTraining extends DurableObject<Env> {
   }
 
   async botNeuralModel(): Promise<NeuralPolicyModel | null> {
-    if (this.currentModel !== undefined) return this.currentModel;
-    const body = this.modelText();
-    return this.currentModel = body ? parseNeuralPolicy(JSON.parse(body)) ?? null : null;
+    if (this.currentModel) return this.currentModel;
+    const read = () => {
+      const bytes = this.modelText();
+      return bytes ? parseNeuralPolicy(JSON.parse(bytes)) : undefined;
+    };
+    const saved = read();
+    if (directPolicy(saved)) return this.currentModel = saved;
+
+    // Initialize an empty registry or replace an old motor-assisted release. Recheck
+    // after hashing: a concurrent promotion always wins over the bundled checkpoint.
+    const bytes = JSON.stringify(bundledOpponent);
+    const digest = await sha256(bytes);
+    return this.ctx.storage.transactionSync(() => {
+      const latest = this.currentModel ?? read();
+      if (directPolicy(latest)) return this.currentModel = latest;
+      this.storeLiveModel(bytes, digest, Date.now());
+      return this.currentModel = bundledOpponent;
+    });
   }
 
   private async optimizerCheckpoint(req: Request): Promise<Response> {
@@ -349,6 +366,7 @@ export class ArenaTraining extends DurableObject<Env> {
     if (pathname === '/training/checkpoint') return this.optimizerCheckpoint(req);
     if (pathname === '/training/selfplay') return this.reinforcementCheckpoint(req);
     if (pathname === '/training/selfplay/job') return this.reportReinforcementJob(req);
+    await this.botNeuralModel();
     const release = this.release();
     if (req.method === 'GET') {
       if (!release) return new Response(null, { status: 404 });
@@ -361,7 +379,7 @@ export class ArenaTraining extends DurableObject<Env> {
     if (typeof body !== 'string') return new Response(null, { status: body === false ? 413 : 400 });
     let model: NeuralPolicyModel | undefined;
     try { model = parseNeuralPolicy(JSON.parse(body)); } catch { /* rejected below */ }
-    if (!model || model.synthetic) return new Response(null, { status: 400 });
+    if (!directPolicy(model)) return new Response(null, { status: 400 });
     const weights = JSON.stringify(model);
     const digest = await sha256(weights);
     if (release?.digest === digest) return Response.json(release);

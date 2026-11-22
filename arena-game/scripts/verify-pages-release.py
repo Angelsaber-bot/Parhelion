@@ -51,6 +51,16 @@ def verify(commit):
         if error.code != 403:
             raise
         print("Public HTTP probe received 403 from this runner. Production SHA verified via Cloudflare.", flush=True)
+    # Read the same public release registry and bytes used at match start.
+    status = json.loads(get(training.SERVICE + "/status?build=" + commit))
+    digest = status["neural"]["digest"]
+    weights = get(training.SERVICE + "/neural?version=" + digest)
+    policy = json.loads(weights)
+    if (hashlib.sha256(weights).hexdigest() != digest or policy.get("synthetic") or
+            policy["rulesVersion"] != runtime["rulesVersion"] or
+            (policy["version"], policy.get("controller")) not in ((1, None), (4, "learned-input-v1"))):
+        raise ValueError("Live Arena did not return compatible direct-control weights")
+    print("Verified public learned Arena opponent", digest, flush=True)
     return runtime
 
 

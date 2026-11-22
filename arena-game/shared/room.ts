@@ -4,8 +4,7 @@ import {CONTENT_MANIFEST,assertContentManifest} from './manifest.ts';
 // so online rules are identical wherever the server runs.
 
 import { getMap, mapIdOf } from './arenaMap.ts';
-import { Bot, BOT_SKILL } from './bot.ts';
-import type { ExplorationModel } from './exploration.ts';
+import { learnedOpponent } from './learnedOpponent.ts';
 import type { NeuralPolicyModel } from './neuralPolicy.ts';
 import { CHARACTERS, randomBotHero, abilityFor, heroIndex, SNAPSHOT_EVERY, TEAM_CAPACITY, botLoadout, botUtility, validateLoadout, validateUtility, type Team, type TeamLayout } from './content.ts';
 import { Match, type Snapshot } from './match.ts';
@@ -22,8 +21,7 @@ export class RoomCore {
   readonly capacity: number;
 
   /** `statsSource` turns on human-only weapon telemetry for the room's matches. */
-  constructor(options: Partial<JoinOptions>, statsSource?: StatsSource, private readonly neural?: NeuralPolicyModel,
-    private readonly exploration?: ExplorationModel) {
+  constructor(options: Partial<JoinOptions>, statsSource?: StatsSource, private readonly neural?: NeuralPolicyModel) {
     this.layout = LAYOUTS.includes(options.layout as TeamLayout) ? options.layout as TeamLayout : '1v1';
     this.mapId = mapIdOf(options.map);
     this.match = new Match(getMap(this.mapId), this.layout);
@@ -94,7 +92,7 @@ export class RoomCore {
     for (const team of ['A', 'B'] as Team[]) {
       while (m.hasRoom(team)) {
         const n = botSeed++;
-        m.addPlayer(`bot-${n}`, { name: `Bot ${n}`, team, char: randomBotHero([...m.slots.values()].map(s => ({ team: s.info.team, char: s.state.char })), team), skins: [n % 2, n % 2, n % 2], loadout: botLoadout(n), utility: botUtility(n), bot: true }, new Bot(n, BOT_SKILL.normal, undefined, undefined, this.exploration, this.neural));
+        m.addPlayer(`bot-${n}`, { name: `Bot ${n}`, team, char: randomBotHero([...m.slots.values()].map(s => ({ team: s.info.team, char: s.state.char })), team), skins: [n % 2, n % 2, n % 2], loadout: botLoadout(n), utility: botUtility(n), bot: true }, learnedOpponent(this.neural));
       }
     }
   }

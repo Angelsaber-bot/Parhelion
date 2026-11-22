@@ -266,18 +266,24 @@ def cycle(args, service, work, progress):
             print("Additional practice informed by last evaluation:", ", ".join(focus), flush=True)
         live = status.get("neural")
         incumbent = work / "incumbent.json"
-        fallback = work / "public-fallback.json"
+        fallback = ROOT / "shared/directPolicy.json"
+        migration_pending = False
         if live:
             model = service.request("/neural?version=" + live["digest"], raw=True)
             if hashlib.sha256(model).hexdigest() != live["digest"]:
                 raise ValueError("Live Arena model changed while restoring the opponent pool")
-            incumbent.write_bytes(model)
+            if json.loads(model)["version"] in (1, 4):
+                incumbent.write_bytes(model)
+            else:
+                # A runner can start during deployment while the previous Worker is still serving.
+                migration_pending = True
+                shutil.copyfile(fallback, incumbent)
             collect += ["--opponent", incumbent]
         else:
-            # Offline practice includes the stock room bot alongside the tactical baseline.
-            fallback.write_bytes(service.request("/exploration?active=1", raw=True) if service else b"null")
-            collect += ["--deployed-fallback", fallback]
+            collect += ["--opponent", fallback]
         for index, snapshot in enumerate(history):
+            if json.loads(snapshot)["version"] not in (1, 4):
+                continue
             opponent = work / f"opponent-{index}.json"
             opponent.write_text(snapshot)
             collect += ["--opponent", opponent]
@@ -313,15 +319,16 @@ def cycle(args, service, work, progress):
                 # Freeze the comparison budget before scoring: twelve independent map/seed blocks
                 # against the live policy, with both sides and game modes within every block.
                 cmd += ["--incumbent", incumbent, "--incumbent-seeds", "4"]
-            elif service:
-                # RoomCore uses the released exploration model (or the plain scripted fallback).
-                cmd += ["--deployed-fallback", fallback]
+            else:
+                cmd += ["--incumbent", fallback]
             results = run(cmd, json_result=True)
             gates = human_gates(metrics)
             failed = [key for key, passed in gates.items() if not passed]
             failed += [key for key, passed in results["gates"].items() if not passed]
             if not results["passed"] and all(results["gates"].values()):
                 failed.append("simulation")
+            if migration_pending:
+                failed.append("incumbent_migration")
             promoted = results["passed"] and not failed
             if promoted and service and not service.game_supports(json.loads(model_text)["version"]):
                 failed.append("release_runtime")

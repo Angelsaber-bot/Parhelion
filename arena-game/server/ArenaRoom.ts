@@ -21,8 +21,8 @@ export class ArenaRoom extends Room {
   maxMessagesPerSecond = 120;
 
   onCreate(options: Partial<JoinOptions>): void | Promise<void> {
-    if (options.bots) return botPolicies.forMatch().then(({ neural, exploration }) => {
-      this.prepare(new RoomCore(options, 'local', neural, exploration), options);
+    if (options.bots) return botPolicies.forMatch().then(({ neural }) => {
+      this.prepare(new RoomCore(options, 'local', neural), options);
     });
     this.prepare(new RoomCore(options, 'local'), options);
   }

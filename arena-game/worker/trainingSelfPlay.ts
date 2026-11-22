@@ -1,18 +1,20 @@
 import { getMap } from '../shared/arenaMap.ts';
-import { Bot, BOT_SKILL, navFor } from '../shared/bot.ts';
+import { learnedOpponent } from '../shared/learnedOpponent.ts';
+import { navFor } from '../shared/botLocomotion.ts';
+import type { NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import { humanObservation, wrapAngle } from '../shared/humanCombat.ts';
 import { lineOfSight } from '../shared/map.ts';
 import { Match, type Controller } from '../shared/match.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { TRAINING_BATCH_TICKS, type TrainingBatch } from '../shared/trainingData.ts';
 
-/** Scripted self-play produces practice inputs from real collision and combat simulation. */
-export function makeSelfPlayBatch(interval: number): TrainingBatch {
+/** Learned self-play produces practice inputs from real collision and combat simulation. */
+export function makeSelfPlayBatch(interval: number, model?: NeuralPolicyModel | null): TrainingBatch {
   const maps = ['aster', 'blackflag', 'sakura'];
   const map = maps[interval % maps.length];
   const game = new Match(getMap(map), '1v1');
   const rows: number[][] = [];
-  const bot = new Bot(interval | 0, BOT_SKILL.normal);
+  const bot = learnedOpponent(model);
   let previous: [number, number] = [0, 0];
   const pilot: Controller = { think(match, id) {
     const me = match.player(id)!;
@@ -26,7 +28,7 @@ export function makeSelfPlayBatch(interval: number): TrainingBatch {
     return action;
   } };
   game.addPlayer('a', { name: 'A', team: 'A', char: 0, skins: [], bot: true }, pilot);
-  game.addPlayer('b', { name: 'B', team: 'B', char: 0, skins: [], bot: true }, new Bot((interval | 0) ^ 8453, BOT_SKILL.normal));
+  game.addPlayer('b', { name: 'B', team: 'B', char: 0, skins: [], bot: true }, learnedOpponent(model));
   const nodes = navFor(game).nodes;
   const index = (n: number) => (Math.imul(n, 2654435761) >>> 0) % nodes.length;
   const a = game.player('a')!, b = game.player('b')!;

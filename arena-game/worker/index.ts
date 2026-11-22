@@ -9,8 +9,8 @@
 //   POST /stats  (offline browser rounds; online rooms write server-side)
 
 import { DurableObject } from 'cloudflare:workers';
-import { TICK_HZ, validateLoadout, validateUtility } from '../shared/content.ts';
-import { RULES_VERSION, RULES_MISMATCH, normalizeRoomCode, type JoinOptions } from '../shared/protocol.ts';
+import { TEAM_CAPACITY, TICK_HZ, validateLoadout, validateUtility } from '../shared/content.ts';
+import { LAYOUTS, RULES_VERSION, RULES_MISMATCH, normalizeRoomCode, type JoinOptions } from '../shared/protocol.ts';
 import { RoomCore } from '../shared/room.ts';
 import { assignRoom, reportRoom, ROOM_HEARTBEAT_MS, type OpenRoom } from './lobbyRooms.ts';
 import { WorldRelayCore, WORLD_COOP_VERSION, validWorldRoomCode } from './worldRelay.ts';
@@ -94,7 +94,8 @@ export default {
     }
     const key = roomKey(opts);
     const lobby = env.LOBBY.get(env.LOBBY.idFromName('lobby'));
-    const room = await lobby.assign(key, new RoomCore(opts).capacity);
+    const cap = TEAM_CAPACITY[opts.layout && LAYOUTS.includes(opts.layout) ? opts.layout : '1v1'];
+    const room = await lobby.assign(key, cap.A + cap.B);
     const fwd = new URL(req.url);
     fwd.searchParams.set('room', room);
     fwd.searchParams.set('key', key);
@@ -150,8 +151,7 @@ export class ArenaRoomDO extends DurableObject<Env> {
       const trainer = trainingStore(this.env.TRAINING);
       try {
         const model = await trainer.botNeuralModel();
-        const exploration = model ? null : await trainer.botExplorationModel();
-        this.core = new RoomCore(opts, 'online', model ?? undefined, exploration ?? undefined);
+        this.core = new RoomCore(opts, 'online', model ?? undefined);
       } catch { this.core = new RoomCore(opts, 'online'); }
     });
     const id = `p${++this.seq}-${crypto.randomUUID().slice(0, 6)}`;
