@@ -39,6 +39,9 @@ concurrency:
 
 jobs:
   train:
+    if: github.ref == 'refs/heads/main' && vars.ARENA_TRAINING_PAUSED != 'true'
+    outputs:
+      selfplay_completed: ${{ steps.selfplay.outcome == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -100,6 +103,7 @@ jobs:
           ARENA_NEURAL_RUN_DIR="$training_dir" ARENA_NEURAL_PYTHON=python \
             npm run train:neural --prefix arena-game -- --public --cloud --reference-only --epochs 20 --device cpu "${extra[@]}"
       - name: Play fresh matches and optimize the neural policy
+        id: selfplay
         if: steps.work.outputs.selfplay == 'true' && !cancelled()
         working-directory: arena-game
         env:
@@ -113,3 +117,26 @@ jobs:
           ARENA_NEURAL_CORPUS_TOKEN: ${{ secrets.ARENA_NEURAL_CORPUS_TOKEN }}
           ARENA_NEURAL_PYTHON: python
         run: CHROMIUM_EXECUTABLE="$(command -v google-chrome)" python scripts/self-play-cycle.py --cloud --camera-audit-only
+
+  continue-training:
+    needs: train
+    if: needs.train.result == 'success' && needs.train.outputs.selfplay_completed == 'true' && vars.ARENA_TRAINING_PAUSED != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - name: Queue the next batch from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # A scheduled run or new push may already be waiting for this training slot.
+          pending=$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/arena-training.yml/runs" \
+            -f branch=main -F per_page=20 --jq '[.workflow_runs[] | select(.status == "pending" or .status == "queued" or .status == "requested" or .status == "waiting")] | length')
+          if [[ "$pending" -eq 0 ]]; then
+            gh workflow run arena-training.yml --repo "$GITHUB_REPOSITORY" --ref main
+            echo "Queued the next Arena training batch."
+          else
+            echo "Another Arena training batch is already waiting."
+          fi
