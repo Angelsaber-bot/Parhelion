@@ -22,6 +22,17 @@ export function createJourneyPassageArt(){
  // above the downhill end or burying the uphill furniture.
  const grade=4.1/18,slope=Math.atan(grade);
  const shear=new THREE.Matrix4().set(1,0,0,0,grade,1,0,0,0,0,1,0,0,0,0,1);
+ // A machiya lattice bead has two chamfered faces and two triangular ends.
+ // Its flat back is seated in the plaster or paper panel.
+ const bead=new THREE.BufferGeometry();
+ bead.setAttribute('position',new THREE.Float32BufferAttribute([
+  -.5,-.5,0, .5,-.5,0, 0,-.5,1,
+  -.5, .5,0, .5, .5,0, 0, .5,1,
+ ],3));
+ bead.setIndex([0,2,5,0,5,3, 2,1,4,2,4,5, 0,1,2,3,5,4]);
+ const lattice=(x:number,y:number,z:number,width:number,height:number,depth:number,facing:number,color:string)=>
+  houses.add(bead,color,[x,y,z],[width,height,depth],false,'body',[0,facing>0?0:Math.PI,0]);
+ const floorJoint=new THREE.PlaneGeometry(1,1).rotateX(-Math.PI/2);
  const alongSlope=(x:number,y:number,z:number,w:number,h:number,d:number,color:string,solid=false)=>{
   const geometry=new THREE.BoxGeometry(w,h,d).applyMatrix4(shear);
   houses.add(geometry,color,[x,y,z],[1,1,1],solid);geometry.dispose();
@@ -33,19 +44,21 @@ export function createJourneyPassageArt(){
   for(const dx of[-4.3,0,4.3])for(const side of[-1,1]){
    houses.box([cx+dx,floor(dx)-1.68,z+side*3.2],[.2,3.5,.2],'#5d4b38',true);
   }
-  for(let dx=-4;dx<=4;dx+=.5)houses.box([cx+dx,y-.045+dx*grade,z],[.025,.02,6.5],'#62533e');
+  // The floorboard joints lie on the pitched deck's top surface.
+  const deckTop=y-.16+.09/Math.cos(slope);
+  for(let dx=-4;dx<=4;dx+=.5)houses.add(floorJoint,'#62533e',[cx+dx,deckTop+dx*grade+.002,z],[.025,1,6.5],false,'body',[0,0,slope]);
   for(const side of[-1,1]){
    alongSlope(cx,y+1.75,z+side*3.45,8.9,3.64,.16,'#c4b594',true);
    // The wall sits outside the floor edge; a timber sill closes that narrow
    // construction seam without extending the walking collider.
    alongSlope(cx,y-.025,z+side*3.38,8.9,.12,.34,'#66503b');
    for(const dx of[-4.35,0,4.35])houses.box([cx+dx,floor(dx)+1.82,z+side*3.3],[.15,3.64,.15],'#66503b',true);
-   for(let dx=-4;dx<=4;dx+=.55)houses.box([cx+dx,floor(dx)+1.42,z+side*3.35],[.035,1.1,.055],'#766047');
+   for(let dx=-4;dx<=4;dx+=.55)lattice(cx+dx,floor(dx)+1.42,z+side*3.37,.035,1.1,.0475,-side,'#766047');
    for(const dy of[.3,2.9])alongSlope(cx,y+dy,z+side*3.57,8.9,.1,.08,'#6b5138');
    for(const dx of[-2.3,2.3]){
     const wy=y+dx*grade+1.9;
     alongSlope(cx+dx,wy,z+side*3.55,1.7,1.05,.025,'#dfcaa5');
-    for(const offset of[-.7,-.35,0,.35,.7])houses.box([cx+dx+offset,wy+offset*grade,z+side*3.58],[.025,1.1,.025],'#755c3f');
+    for(const offset of[-.7,-.35,0,.35,.7])lattice(cx+dx+offset,wy+offset*grade,z+side*3.5625,.025,1.04,.03,side,'#755c3f');
     alongSlope(cx+dx,wy,z+side*3.59,1.75,.025,.025,'#755c3f');
    }
    // Door leaves and lintels keep the same broad central corridor, now with
@@ -65,7 +78,8 @@ export function createJourneyPassageArt(){
      const bottom=floor(dx+lx)-.015,legHeight=top-.12-bottom;
      houses.box([cx+dx+lx,bottom+legHeight/2,z-2.5+lz],[.09,legHeight,.09],'#5c4938',true);
     }
-    for(let i=0;i<3;i++)houses.paper(cx+dx,top+.04+i*.03,z-2.5,.8,.45);
+    for(const dy of[.04,.07])houses.box([cx+dx,top+dy,z-2.5],[.8,.025,.45],'#ead9b4');
+    houses.paper(cx+dx,top+.10,z-2.5,.8,.45);
    }
   }else{
    for(const dx of[-2,1]){
@@ -81,6 +95,7 @@ export function createJourneyPassageArt(){
   }
   houses.lantern(cx,y+2.3,z-2.9);houses.lantern(cx,y+2.3,z+2.9);
  }
+ bead.dispose();floorJoint.dispose();
  // Cover the abutting end-board seam without coplanar faces at the facade.
  for(const side of[-1,1])houses.box([-68,8.8+(-68+59)*grade+1.75,740+side*3.57],[.2,3.64,.08],'#66503b');
  houses.finish('kyoto');houses.root.name='Kyoto_TwoMachiyaPassage';
