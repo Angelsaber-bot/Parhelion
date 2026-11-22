@@ -28,6 +28,7 @@ import {FrameGate,worldRenderVisible} from './rendering/renderScheduling.ts';
 import { ArenaScene } from './rendering/scene.ts';
 import { joinOnline, startOffline, startRange, type Session } from './network/session.ts';
 import { postStats } from './network/stats.ts';
+import { trackTrainingUpload } from './network/trainingReceipts.ts';
 import { matchPolicies, submitTraining } from './network/training.ts';
 import { RANGE_MAP_ID } from '../shared/trainingRange.ts';
 import { GUN_IDS, MELEE_IDS, type Loadout, type UtilityId } from '../shared/content.ts';
@@ -367,8 +368,10 @@ $('play').onclick = async () => {
     if (rangeSession) { rangeChoice = { loadout: loadoutStore.value, utility: loadoutStore.utility, skins: skins.slice() }; renderRangePanel(); }
     const receipt = $('training-receipt');
     if (recordDemo) receipt.classList.add('hidden');
-    game = new Game(session, scene, controls, hud, (reason) => backToLobby(reason), recordDemo ? new HumanDemo(session.mapId ?? mapId, batch => {
+    game = new Game(session, scene, controls, hud, (reason) => backToLobby(reason), recordDemo ? new HumanDemo(session.mapId ?? mapId, (batch, startedAt) => {
+      const acknowledge = trackTrainingUpload(batch.capture, batch.map, startedAt, batch.sequence);
       submitTraining(batch, status => {
+        acknowledge(status);
         receipt.textContent = status === 202 ? bilingual('训练数据已收到', 'Training data received')
           : status === 400 ? bilingual('训练数据提交失败，请刷新 Arena 后重试', 'Training upload rejected. Refresh Arena and try again.')
           : bilingual('训练数据暂时未能上传', 'Training data could not be uploaded');

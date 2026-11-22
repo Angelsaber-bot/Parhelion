@@ -106,8 +106,8 @@ export class ArenaTraining extends DurableObject<Env> {
   async corpusRows(after = 0, through = Number.MAX_SAFE_INTEGER) {
     if (!this.env.ARENA_NEURAL_CORPUS_TOKEN) return [];
     this.pruneCorpus(Date.now());
-    return this.ctx.storage.sql.exec<{ id: number; payload: string }>('SELECT id,payload FROM corpus WHERE id > ? AND id <= ? ORDER BY id LIMIT ?', after, through, CORPUS_READ_LIMIT).toArray()
-      .map(({ id, payload }) => ({ id, batch: JSON.parse(payload) as TrainingBatch }));
+    return this.ctx.storage.sql.exec<{ id: number; at: number; payload: string }>('SELECT id,at,payload FROM corpus WHERE id > ? AND id <= ? ORDER BY id LIMIT ?', after, through, CORPUS_READ_LIMIT).toArray()
+      .map(({ id, at, payload }) => ({ id, receivedAt: at, batch: JSON.parse(payload) as TrainingBatch }));
   }
 
   async acknowledgeCorpus(through: number) {

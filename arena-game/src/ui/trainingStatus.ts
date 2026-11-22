@@ -1,4 +1,5 @@
 import { bilingual, getLanguage, onLanguageChange } from '../../../shared-client/i18n.ts';
+import { recentTrainingReceipts } from '../network/trainingReceipts.ts';
 import { releaseUrl } from '../network/training.ts';
 import type { EvaluationReport } from '../../shared/evaluationReport.ts';
 
@@ -95,11 +96,19 @@ export function mountTrainingStatus() {
     notice.textContent = failed
       ? (last ? bilingual('刷新失败，显示上次读取的数据。', 'Refresh failed. Showing the last response.') : bilingual('暂时无法连接训练服务。', 'Training service unavailable.'))
       : (!last ? bilingual('正在读取训练状态…', 'Loading training status…') : '');
+    const time = (ms: number) => Number.isFinite(ms) && Number.isFinite(new Date(ms).getTime())
+      ? new Date(ms).toLocaleString(zh ? 'zh-CN' : 'en-US', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+    for (const receipt of recentTrainingReceipts().slice(0, 5)) {
+      const state = receipt.submitted > receipt.completed ? bilingual('等待回执', 'Awaiting receipt') :
+        receipt.status === 202 ? bilingual('最近批次已收到', 'Latest batch received') :
+        bilingual('最近批次未确认', 'Latest batch unconfirmed');
+      const accepted = receipt.acceptedAt === null ? '' : bilingual(' · 回执 ', ' · Receipt ') + time(receipt.acceptedAt);
+      row('本机训练对局', 'Training round on this device',
+        time(receipt.startedAt) + ' · ' + receipt.map + ' · ' + state + accepted + ' · ' + receipt.capture);
+    }
     if (!last) return;
     const generation = last.reinforcement;
     const dataset = last.dataset;
-    const time = (ms: number) => Number.isFinite(ms) && Number.isFinite(new Date(ms).getTime())
-      ? new Date(ms).toLocaleString(zh ? 'zh-CN' : 'en-US', { dateStyle: 'short', timeStyle: 'short' }) : '—';
     const job = last.reinforcementJob;
     if (job) {
       const stage = stages[job.state];

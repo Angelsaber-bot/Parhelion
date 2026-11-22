@@ -38,11 +38,12 @@ export class HumanDemo {
   private exploration: ExplorationSample[] = [];
   private smokeDepths: [number, ...SmokeDepths][] = [];
   private recorded = 0;
+  private startedAt = 0;
   private sequence = 0;
   private seenBearing = 0;
   private seenAt = -Infinity;
 
-  constructor(private readonly map: string, private readonly transmit?: (batch: TrainingBatch) => void) {}
+  constructor(private readonly map: string, private readonly transmit?: (batch: TrainingBatch, startedAt: number) => void) {}
 
   get size() { return this.recorded; }
   get automatic() { return !!this.transmit; }
@@ -72,7 +73,7 @@ export class HumanDemo {
       views[i] = [tick, segment, coarseFrame(frame)];
       bytes -= frame.length - COARSE_FRAME_CHARS;
     }
-    this.transmit(batch);
+    this.transmit(batch, this.startedAt);
     this.frames = [];
     this.trainingViews = views.slice(-1);
     this.exploration = [];
@@ -82,6 +83,7 @@ export class HumanDemo {
   record(me: PlayerState, input: Input, observe: (previous: readonly [number, number]) => number[], scene?: (lastContact: LastObservedBearing) => number[],
     smoke?: () => SmokeDepths | undefined) {
     if (!this.automatic && this.size >= MAX_FRAMES) return;
+    if (!this.recorded) this.startedAt = Date.now();
     if (this.life !== me.lifeId || input.seq !== this.lastSeq + 1) {
       this.segment++;
       this.life = me.lifeId;
