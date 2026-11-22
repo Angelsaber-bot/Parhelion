@@ -177,9 +177,7 @@ try {
   visit('seam_west',marker('seam_west').p,'seam_west');
   for(const [x,z]of [[-280,-30],[-230,-34],[-184,-36],[-184,-14],[-140,-14],[-124,22],[-108.288,38.652],[-95,61],[-81.712,83.348],[-60,92],[-22,118],[2,142],[16,144],[48,118],[86,80],[110,50],[132,40],[170,32],[210,30],[260,30]])walk(x,z);
   visit('seam_east',marker('seam_east').p,'seam_east');
-  for(const [x,z]of [[260,30],[210,30],[170,32],[132,40],[110,50],[86,80],[48,118],[16,144],[16,182],[16,222],[40,250],[40,290]])walk(x,z);
-  visit('seam_south',marker('seam_south').p,'seam_south');
-  for(const [x,z]of [[40,290],[40,250],[70,200],[86,120],[86,80],[48,118],[16,144],[2,142],[-22,118],[-60,92],[-60,120],[-62,182],[-90,212],[-118,246],[-130,256],[-150,256]])walk(x,z);
+  for(const [x,z]of [[260,30],[210,30],[170,32],[132,40],[110,50],[86,80],[48,118],[16,144],[2,142],[-22,118],[-60,92],[-60,120],[-62,182],[-90,212],[-118,246],[-130,256],[-150,256]])walk(x,z);
   visit('summon_circle',[-163,10.8,256],'summon_circle');
   console.log('FINAL', JSON.stringify({ pos: w.player.pos.toArray(), done: [...w.done], seconds: now / 1000,
     hp: w.combat.state.hp, energy: w.actions.skills.energy, swimmingFrames, errors: h.errors }));

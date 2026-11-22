@@ -203,7 +203,7 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ["西岸渡口", "West Ford"],
   ["西部时层", "Western Era Seam"],
   ["北方冰海断面", "Northern Ice Seam"],
-  ["东部山口", "Eastern Pass"],
+  ["东部山口", "Eastern Pass"], ["谷南旧道", "Old South Road"],
   ["迷雾森林", "Mistwood"],
   ["圣剑湖", "Lake of the Sword"],
   ["骑士营地", "Knights' Camp"],

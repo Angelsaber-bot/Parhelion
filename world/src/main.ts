@@ -1285,7 +1285,7 @@ function applyFalseDawnState() { falseDawnSites.applyState(getFalseDawnState(don
 function applyWorldState() {
   hudRevision++;
   if (typeof syncArsenal === 'function') syncArsenal(); // guarded: validation runs isolated slices of this file
-  for(const marker of layout.markers)if(['seam_west','seam_east','seam_north','seam_south'].includes(marker.id))marker.requires=adventureActive(done)&&done.has(ADVENTURE.online)?[]:['tower_console'];
+  for(const marker of layout.markers)if(['seam_west','seam_east','seam_north'].includes(marker.id))marker.requires=adventureActive(done)&&done.has(ADVENTURE.online)?[]:['tower_console'];
   applyEraMarkerRequirements(layout.markers, done);
   combat.syncWorldProgress(done);
   for (const entry of layout.objectives) if (isEraId(entry.region)) entry.objective = getEraObjective(entry.region, done, getLanguage() === 'zh' ? 0 : 1);
@@ -4596,8 +4596,7 @@ function interact() {
     hq_terminal: '调查员身份已登记：世界地图与历史档案已开放',
     seam_west: '西部时层：约 537 年的不列颠，黄昏永远不会结束',
     seam_north: '北方冰海：1812 年的冬天没有尽头',
-    seam_east: '东部山口：海风里混着 1718 年的火药味',
-    seam_south: '南方鸟居：鸟居那头的京都正在燃烧，1582 年的那一夜',
+    seam_east: bilingual('旧断面里还能闻到火药味。现在去黑帆要从谷地北上永冬，再走东侧山口。', 'The old seam still smells of gunpowder. To reach Black Sail, head north from the valley into Everwinter, then take its eastern pass.'),
     blackbeard_meet: '「哈！又一个被冷灯招来的旱鸭子。」黑胡子答应：点亮海之核，就跟你签约',
     fort_cannon: bilingual(`大炮已装填：${settings.label('fire')} 炮击幽灵艇，1.3秒装填；${settings.label('interact')} 离开炮位。`, `Cannon loaded: ${settings.label('fire')} fires at ghost boats, 1.3s reload; ${settings.label('interact')} leaves.`),
     sea_core: '海之核重新燃起，冷灯熄灭了。风暴正在散去……',
@@ -4605,7 +4604,7 @@ function interact() {
     winter_core: '冬之核重新燃起。雪停了，莫斯科上空第一次看见太阳……',
     napoleon_contract: '契约成立。「不可能？这个词只在傻瓜的字典里。」拿破仑成为你的从者',
     blackbeard_contract: '契约成立。「这片海以后归我们俩了，御主。」黑胡子成为你的从者',
-    summon_circle: '召唤阵稳定了。四处时层断面都已打开：西去落日王国，东去黑帆尽头，北去永冬之城，南去业火京都',
+    summon_circle: bilingual('召唤阵稳定了。谷地西路通落日王国，北路通永冬。从永冬向东进入黑帆，再从黑帆向北穿过鸟居抵达京都。', 'The summoning circle is stable. Take the west road to the Sunset Kingdom or the north road to Everwinter. From Everwinter, head east to Black Sail, then north through the torii to Kyoto.'),
     musashi_meet: '「在下宫本武藏。这把火里有个值得一战的对手。」武藏答应：点亮京之核，就和你签约',
     fire_core: '京之核重新燃起，本能寺的业火熄灭了。天快亮了……',
     musashi_contract: '契约成立。「千日之锻为锻，万日之炼为炼。」宫本武藏成为你的从者',

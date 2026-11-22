@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test, afterEach } from 'node:test';
 import { readFileSync } from 'node:fs';
+import { JSDOM } from 'jsdom';
 import { LANGUAGE_KEY, MESSAGES, bilingual, getLanguage, localizeText, onLanguageChange, readLanguage, setLanguage, t } from '../../shared-client/i18n';
 import { TEXT_PAIRS } from '../../shared-client/locales';
 import { ACTIONS, bindingLabel, SettingsStore } from '../../shared-client/settings';
@@ -46,15 +47,39 @@ test('all current World region names, quests, markers and discovery notes have E
     for (const source of texts) assert.doesNotMatch(localizeText(source), chinese, `${region}: ${source}`);
   }
 });
-test('current Arena, World and captured Home templates have English text and accessibility coverage', () => {
-  setLanguage('en');
-  for (const path of ['../../arena-game/index.html', '../index.html', '../../site/web/index.html']) {
-    const html = readFileSync(new URL(path, import.meta.url), 'utf8').replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, '');
-    const values = [...html.matchAll(/>([^<>]+)</g)].map(m => m[1].trim());
-    values.push(...[...html.matchAll(/(?:aria-label|title|alt|placeholder)="([^"]*)"/g)].map(m => m[1]));
-    for (const source of values.filter(value => chinese.test(value))) assert.doesNotMatch(localizeText(source), chinese, `${path}: ${source}`);
-  }
-});
+for (const [page, path] of Object.entries({ Arena: '../../arena-game/index.html', World: '../index.html', Home: '../../site/web/index.html' })) {
+  test(`${page} template has English text and accessibility coverage`, () => {
+    setLanguage('en');
+    const dom = new JSDOM(readFileSync(new URL(path, import.meta.url), 'utf8'));
+    try {
+      const { document, NodeFilter } = dom.window;
+      for (const element of document.querySelectorAll('script, style')) element.remove();
+      for (const element of document.querySelectorAll('[aria-label], [title], [alt], [placeholder]')) {
+        for (const attribute of ['aria-label', 'title', 'alt', 'placeholder']) {
+          const source = element.getAttribute(attribute);
+          if (source && chinese.test(source)) assert.doesNotMatch(localizeText(source), chinese, `${attribute}: ${source}`);
+        }
+      }
+      if (page === 'Arena') {
+        // The lobby renders these authored labels directly, bypassing the shared dictionary.
+        for (const element of document.querySelectorAll('[data-ui-zh], [data-ui-en]')) {
+          const zh = element.getAttribute('data-ui-zh')?.trim();
+          const en = element.getAttribute('data-ui-en')?.trim();
+          assert.ok(zh && en, `Missing bilingual label for ${element.textContent}`);
+          assert.doesNotMatch(en, chinese, `English label for ${zh}`);
+          element.textContent = en;
+        }
+      }
+      const walker = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) {
+        const source = walker.currentNode.textContent?.trim();
+        if (source && chinese.test(source)) assert.doesNotMatch(localizeText(source), chinese, source);
+      }
+    } finally {
+      dom.window.close();
+    }
+  });
+}
 test('all input actions and binding labels translate without changing stored input values', () => {
   setLanguage('en');
   for (const defs of Object.values(ACTIONS)) for (const action of defs) assert.doesNotMatch(localizeText(action.label), chinese, action.label);

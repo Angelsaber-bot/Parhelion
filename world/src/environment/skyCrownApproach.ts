@@ -85,6 +85,27 @@ export function skyApproachWaypoints(from: DeckKey, to: DeckKey): JourneyPoint[]
   return link[0] === from ? path : path.reverse();
 }
 
+// Floor inlays on the hall side of each exit. The long paired strips skirt the right edge
+// of the live monitor, then point back into the middle of the light-walk doorway.
+export function skyHallRouteMarks(route: 'light' | 'service') {
+  const [mouth, next] = skyApproachWaypoints('hall', route).map(p => new THREE.Vector3(...p));
+  const forward = next.sub(mouth).setY(0).normalize();
+  const across = new THREE.Vector3(-forward.z, 0, forward.x);
+  const exposed = route === 'light';
+  const segments: { from: THREE.Vector3; to: THREE.Vector3 }[] = [];
+  for (const back of exposed ? [5, 8, 11] : [2, 5, 8]) {
+    const centre = mouth.clone().addScaledVector(forward, -back).addScaledVector(across, exposed ? 6.4 : 0);
+    const bearing = mouth.clone().sub(centre).setY(0).normalize();
+    const side = new THREE.Vector3(-bearing.z, 0, bearing.x);
+    for (const offset of exposed ? [-.4, .4] : [0]) {
+      const from = centre.clone().addScaledVector(side, offset);
+      from.y += .075;
+      segments.push({ from, to: from.clone().addScaledVector(bearing, exposed ? 1.3 : .35) });
+    }
+  }
+  return segments;
+}
+
 export function addSkyCrownApproach(art: SiteArt) {
   const markers: Marker[] = [], colliders: Collider[] = [];
   const gateMaterial = new THREE.MeshStandardMaterial({ color: steel, emissive: '#8d4934', emissiveIntensity: .5 });
@@ -138,21 +159,6 @@ export function addSkyCrownApproach(art: SiteArt) {
       ports.push({ dx: direction.x, dz: direction.z, width }); entrances.set(node, ports);
     }
     const start = points[0];
-    // The hall's two exits must be identifiable before committing to the stairs.
-    // Paired brass rails mark the exposed latch route; single teal studs lead below.
-    if (a === DECK.hall && (b === DECK.light || b === DECK.service)) {
-      for (const distance of [2, 5, 8]) {
-        const p = start.clone().addScaledVector(startDirection, -distance);
-        const cross = new THREE.Vector3(-startDirection.z, 0, startDirection.x);
-        const exposed = b === DECK.light;
-        for (const offset of exposed ? [-.4, .4] : [0]) {
-          const mark = p.clone().addScaledVector(cross, offset);
-          mark.y += .075;
-          const tip = mark.clone().addScaledVector(startDirection, exposed ? 1.3 : .35);
-          art.beam(mark.toArray(), tip.toArray(), .14, exposed ? bronze : teal, false, 'glow');
-        }
-      }
-    }
     if (support) for (const landing of points.slice(1, -1)) art.beam(
       [support.x, support.y, support.z], [landing.x, landing.y - .35, landing.z], .5, steel);
     // A continuous ribbon: round joint pads sit at landing height and would leave a ~0.6 m lip
@@ -193,6 +199,11 @@ export function addSkyCrownApproach(art: SiteArt) {
           axis === 'x' ? [step + .035, .12, .14] : [.14, .12, step + .035], bronze, true, 'metal');
         if (i % 4 === 0) art.box([x + px, y + .57, z + pz], [.13, 1.14, .13], bone, true);
       }
+    }
+  }
+  for (const route of ['light', 'service'] as const) {
+    for (const { from, to } of skyHallRouteMarks(route)) {
+      art.beam(from.toArray(), to.toArray(), .14, route === 'light' ? bronze : teal, false, 'glow');
     }
   }
   addSkyCrownArchitecture(art, DECK);

@@ -80,7 +80,20 @@ export async function loadRegionCore(def: RegionDef, onProgress: (event: Progres
     if (def.id === 'alpha' && /^(Terrain|COL_Terrain)$/.test(node.name)) lowerLookbackChannel(node.geometry);
   });
   placeRegion(gltf.scene, def);
-  if (def.id === 'alpha') layout.markers = layout.markers.filter(marker => marker.id !== 'seam_south');
+  if (def.id === 'alpha') {
+    layout.markers = layout.markers.filter(marker => marker.id !== 'seam_south');
+    const circle = layout.markers.find(marker => marker.id === 'summon_circle');
+    if (circle?.requires) circle.requires = circle.requires.filter(id => id !== 'seam_south');
+    const surveys = layout.objective.steps.find(step => step.id === 'seams');
+    if (surveys) {
+      surveys.done = surveys.done.filter(id => id !== 'seam_south');
+      surveys.text = '调查三处时层断面（西 / 北 / 东）';
+    }
+    const east = layout.markers.find(marker => marker.id === 'seam_east');
+    if (east) east.label = '东部山口';
+    const south = layout.areas.find(area => area.id === 'seam_s');
+    if (south) { south.name = '谷南旧道'; south.nameEn = 'Old South Road'; }
+  }
   // W08 and B08 replaced the old era bosses' identities; the reviewed map labels still carry the old names.
   for (const marker of layout.markers) { if (marker.id === 'boss_winter_warden') marker.label = '最后方阵（Boss）'; if (marker.id === 'boss_drowned_admiral') marker.label = '梅瑞克（Boss）'; if (marker.id === 'boss_hellfire_lord') marker.label = '鸦印（Boss）'; }
   return { def, layout, root: gltf.scene };
