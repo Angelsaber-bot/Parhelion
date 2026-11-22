@@ -79,7 +79,7 @@ describe('G01 spawn choice', () => {
     it(`${id}: contested 2v2 respawns choose an unoccupied pocket out of sight`, () => {
       const map = getMap(id), match = new Match(map, '2v2');
       for (let i = 0; i < 4; i++) {
-        match.addPlayer('p'+i, { name:'P'+i, team:i%2 ? 'B' : 'A', char:i%2, skins:[0,0,0] });
+        match.addPlayer('p'+i, { name: 'P'+i, team: i%2 ? 'B' : 'A', char: i%2, skins: [0,0,0], bot: false });
       }
       const walkable = reachable(map);
       const players = [...match.slots.values()].map(slot => slot.state);
