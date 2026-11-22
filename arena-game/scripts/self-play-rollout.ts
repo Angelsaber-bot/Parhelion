@@ -120,8 +120,15 @@ function cornerStart(map: ArenaMap, node: NavNode, rand: () => number) {
   }
 }
 
+function encounterYaw(yaw: number, scenario: Scenario, focused: boolean, draw: number) {
+  if (scenario !== 'rear' || !focused) return yaw + (scenario === 'rear' ? Math.PI : 0) + (draw - .5) * .7;
+  // Additional practice spans both sides, from outside the field of view
+  // to directly behind. The learner receives only its usual observations.
+  return yaw + Math.PI + (2 * draw - 1) * (105 * Math.PI / 180);
+}
+
 // Start some episodes mid-round on walkable cells. Only the environment sees both positions.
-function placeEncounter(game: Match, scenario: Scenario, rand: () => number): { scenario: Scenario; smoke?: Smoke; smokeTick?: number } {
+function placeEncounter(game: Match, scenario: Scenario, focused: boolean, rand: () => number): { scenario: Scenario; smoke?: Smoke; smokeTick?: number } {
   if (scenario === 'spawn') return { scenario };
   const nav = navFor(game);
   for (let attempt = 0; attempt < 1500; attempt++) {
@@ -133,7 +140,7 @@ function placeEncounter(game: Match, scenario: Scenario, rand: () => number): { 
         !lineOfSight(game.map, [a.x, a.y + 1.3, a.z], [b.x, b.y + 1.3, b.z])) continue;
     const yaw = Math.atan2(a.x - b.x, a.z - b.z);
     const pose = (scenario === 'wall' || scenario === 'corner') ? cornerStart(game.map, a, rand) :
-      { x: a.x, y: a.y, z: a.z, yaw: yaw + (scenario === 'rear' ? Math.PI : 0) + (rand() - .5) * .7 };
+      { x: a.x, y: a.y, z: a.z, yaw: encounterYaw(yaw, scenario, focused, rand()) };
     if (!pose) continue;
     const occupied = [...game.slots.values()].some(({ state: p }) => p.id !== 'pilot' && p.id !== 'rival' &&
       [pose, b].some(at => Math.abs(at.y - p.y) < game.map.height && Math.hypot(at.x - p.x, at.z - p.z) < 2 * game.map.radius));
@@ -160,7 +167,7 @@ function placeEncounter(game: Match, scenario: Scenario, rand: () => number): { 
 }
 
 function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamLayout, team: Team,
-              scenario: Scenario, seed: number, seconds: number) {
+              scenario: Scenario, focused: boolean, seed: number, seconds: number) {
   const rand = rng(seed), seed32 = () => Math.floor(rand() * 4294967296);
   const enemy = team === 'A' ? 'B' : 'A';
   const game = new Match(getMap(map), layout);
@@ -183,7 +190,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   game.step();
   game.snapshot();
   game.phaseT = seconds * TICK_HZ;
-  const start = placeEncounter(game, scenario, rand);
+  const start = placeEncounter(game, scenario, focused, rand);
   const firstTick = game.tick;
   const smokeWindow = { start: Infinity, end: Infinity };
   let rivalLifeEnd: number | undefined;
@@ -288,7 +295,7 @@ function main() {
     const { scenario, focused } = schedule[i];
     const rival = league.select(i, layout);
     appearances[layout][rival] = (appearances[layout][rival] ?? 0) + 1;
-    const episode = play(actor, pool.get(rival)!, order[i % order.length].id, layout, team, scenario, trainingSeed(random(), version), seconds);
+    const episode = play(actor, pool.get(rival)!, order[i % order.length].id, layout, team, scenario, focused, trainingSeed(random(), version), seconds);
     league.observe(rival, episode.outcome, layout);
     episodes.push({ ...episode, focused });
   }
