@@ -63,6 +63,7 @@ class Service:
     def download_corpus(self, revision, directory):
         directory.mkdir(exist_ok=True)
         after = 0
+        order = []
         while after < revision:
             rows = self.request(f"/corpus?after={after}&through={revision}")["records"]
             if not rows:
@@ -76,6 +77,12 @@ class Service:
                 name = f'{RULES}-{batch["capture"]}-{batch["sequence"]}.json'
                 (directory / name).write_text(json.dumps(batch, separators=(",", ":")))
                 after = row["id"]
+                order.append(json.dumps({"capture": batch["capture"], "map": batch["map"],
+                                         "revision": after, "receivedAt": row.get("receivedAt")}))
+        # Private temporary index, outside the *.json pattern used for input batches.
+        temporary = directory / "corpus-order.tmp"
+        temporary.write_text("\n".join(order))
+        temporary.replace(directory / "corpus-order.jsonl")
 
     def game_supports(self, version):
         for attempt in range(4):
@@ -288,6 +295,10 @@ def cycle(args, service, work, progress):
             update.append("--skip-holdout")
         run(update)
         metrics = json.loads(metrics_file.read_bytes())
+        if service:
+            print("Human replay coverage", json.dumps({
+                "generation": generation, "referenceRevision": revision, "workerRevision": status["dataset"]["revision"],
+                **metrics["humanReplayCoverage"]}), flush=True)
         model_text = candidate.read_text()
         digest = hashlib.sha256(model_text.encode()).hexdigest()
         if (metrics["generation"] != generation or metrics["parentHash"] != parent_digest

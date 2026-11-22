@@ -15,6 +15,7 @@ from torch.distributions import Bernoulli, Categorical, Normal, kl_divergence
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from arena_camera_intent import calibrate_yaw
+from arena_recent_replay import RecentReplay
 
 bc = import_module("train-arena-policy")
 AXIS_STD = 0.35
@@ -160,7 +161,7 @@ def generalized_advantages(rewards, values, ends):
     return (advantages - advantages.mean()) / advantages.std(unbiased=False).clamp_min(1e-6), returns
 
 
-def human_data(path, split, rules, context, include_holdout):
+def human_data(path, split, rules, context, include_holdout, train_ranges=None):
     _, batches = bc.load_captures(path, rules, allow_empty=True)
     eligible = {"train", "holdout"} if include_holdout else {"train"}
     captures = bc.usable_captures({key: rows for key, rows in batches.items() if split.get(key) in eligible}, include_smoke=True)
@@ -173,6 +174,9 @@ def human_data(path, split, rules, context, include_holdout):
     positive = train.targets[:, 4:11].sum(dim=0)
     weights = ((len(train) - positive) / positive.clamp_min(1)).sqrt().clamp(1, 12)
     capture_ends = list(itertools.accumulate(map(len, groups[0])))
+    if train_ranges is not None:
+        keys = (capture for capture in captures if split.get(capture) == "train")
+        train_ranges.update(zip(keys, zip([0] + capture_ends[:-1], capture_ends)))
     return train, holdout, weights, len(groups[1]), capture_ends
 
 
@@ -310,8 +314,10 @@ def run(args):
     reference = bc.ArenaPolicy(config).eval().requires_grad_(False)
     reference.load_state_dict(prior.get("reference", prior["model"]))
     human_split = {**saved["split"], **prior["split"]}
+    train_ranges = {}
     human = human_data(args.dataset, human_split, signature["rulesVersion"], config.context,
-                       not args.skip_holdout) if args.dataset else None
+                       not args.skip_holdout, train_ranges) if args.dataset else None
+    recent = RecentReplay(args.dataset, human_split, train_ranges)
     if args.dataset and not human:
         print("The retained corpus has no assigned human training captures. Continuing with the frozen reference.",
               file=sys.stderr)
@@ -374,7 +380,7 @@ def run(args):
                 loss = loss + coach_weight * correction
             if human:
                 human_train, _, weights, _, _ = human
-                selection = torch.multinomial(demo_weights, min(len(ix), 64), replacement=True)
+                selection = recent.draw(demo_weights, min(len(ix), 64))
                 replayed_windows += len(selection)
                 demo_x, demo_y = zip(*(human_train[i] for i in selection.tolist()))
                 loss = loss + .15 * bc.losses(actor(torch.stack(demo_x)), torch.stack(demo_y), weights).mean()
@@ -418,7 +424,7 @@ def run(args):
         "behaviorKL": behavior_kl, "targetKL": args.target_kl, "klStopped": stopped, "cameraIntent": camera_fit,
         "predictionHorizon": PREDICTION_HORIZON, "predictionPairs": prediction_pairs,
         "predictionLoss": prediction_sum / prediction_pairs if prediction_pairs else None,
-        "humanReplayWindows": replayed_windows,
+        "humanReplayWindows": replayed_windows, "humanReplayCoverage": recent.report(),
         "coachedDecisions": coached_decisions, "coachWeight": coach_weight,
         "coachArchiveWindows": len(archive["labels"]), "coachReplayWindows": coach_replays,
         "coachTargetsByControl": (coaching != UNLABELED).sum(dim=0).tolist(),

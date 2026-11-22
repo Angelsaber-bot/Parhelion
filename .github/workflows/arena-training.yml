@@ -8,6 +8,7 @@ on:
       - 'arena-game/scripts/self-play-*'
       - 'arena-game/tools/train-self-play.py'
       - 'arena-game/tools/arena_camera_intent.py'
+      - 'arena-game/tools/arena_recent_replay.py'
       - 'arena-game/tools/train-arena-policy.py'
       - 'arena-game/shared/botNeuralControl.ts'
       - 'arena-game/shared/aimRecoil.ts'
