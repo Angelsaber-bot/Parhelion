@@ -5,7 +5,7 @@ import { getMap } from '../shared/arenaMap.ts';
 import { navFor } from '../shared/botLocomotion.ts';
 import { SMOKE } from '../shared/content.ts';
 import { settleSmoke } from '../shared/grenade.ts';
-import { addSmokeDepths, explorationScene, visibleSmokeDepths } from '../shared/exploration.ts';
+import { addSmokeDepths, explorationScene, EXPLORATION_TICKS, visibleSmokeDepths } from '../shared/exploration.ts';
 import { rayPlayer } from '../shared/hit.ts';
 import { humanObservation } from '../shared/humanCombat.ts';
 import { Match } from '../shared/match.ts';
@@ -46,8 +46,21 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
     const nearCenter = draw()<.35;
     me.yaw = lane + signed() * (nearCenter ? .13 : draw()<.6 ? .95 : Math.PI);
     me.pitch = Math.max(-1.45,Math.min(1.45,level+signed()*(nearCenter ? .12 : draw()<.5 ? .32 : 1.4)));
-    const see = () => humanObservation(map,me,[target],(o,t)=>game.heroes.visible(o,t),[0,0], undefined, undefined, (o,t)=>game.heroes.visible(o,t,true));
-    const obs = see(), scene = explorationScene(map,me);
+    const see = (turn: [number, number] = [0, 0]) => humanObservation(map, me, [target],
+      (from, to) => game.heroes.visible(from, to), turn, undefined, undefined,
+      (from, to) => game.heroes.visible(from, to, true));
+    const yaw = me.yaw, pitch = me.pitch;
+    // Sample the preceding pose before any future action proposals. Every
+    // alternative at this pose must receive the same observation and memory.
+    const previousYaw = yaw - .9 * signed();
+    const previousPitch = Math.max(-1.45, Math.min(1.45, pitch - .55 * signed()));
+    me.yaw = previousYaw;
+    me.pitch = previousPitch;
+    const previous = see();
+    me.yaw = yaw;
+    me.pitch = pitch;
+    const obs = see([(yaw - previousYaw) / EXPLORATION_TICKS, (pitch - previousPitch) / EXPLORATION_TICKS]);
+    const scene = explorationScene(map, me, previous[0] ? [previousYaw + previous[1], EXPLORATION_TICKS] : undefined);
     addSmokeDepths(scene, visibleSmokeDepths(map, me, game.smokes, game.shields));
     const direction = aimDir(me.yaw,me.pitch);
     const hit = rayPlayer(eye,direction,b.x,b.y,b.z,target.crouched);
@@ -58,36 +71,13 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
     // Log both outcomes of probe shots, including misses. The weapon decision is
     // fit to the observed utility of spending ammunition at this camera pose.
     rows.push([0, ...obs,...scene, Number(!!lands(hit,direction)),0]);
-    const yaw = me.yaw, pitch = me.pitch;
     for (let probe=0;probe<(obs[0] ? 48 : 8);probe++) {
       const mx=signed(), my=signed(), horizon=obs[0] ? 1 : 1+Math.floor(draw()*5);
       me.yaw = yaw+.9*mx*horizon;
       me.pitch = Math.max(-1.45,Math.min(1.45,pitch+.55*my*horizon));
       const ray = aimDir(me.yaw,me.pitch);
       const success = obs[0] ? lands(rayPlayer(eye,ray,...feet,target.crouched),ray) : see()[0] === 1;
-      if (!success) continue;
-      if (obs[0]) {
-        rows.push([1,...obs,...scene,mx,my]);
-        continue;
-      }
-      // Recreate an earlier glance and an actual preceding turn for a subset of
-      // search trials. Only a confirmed sighting can populate bearing memory.
-      me.yaw = yaw - .9 * mx;
-      me.pitch = Math.max(-1.45, Math.min(1.45, pitch - .55 * my));
-      const previous = see(), previousYaw = me.yaw;
-      me.yaw = yaw;
-      me.pitch = pitch;
-      const searchObs = [...obs];
-      if (draw() < .7) {
-        searchObs[16] = .9 * mx / (12 * .4);
-        searchObs[17] = (pitch - Math.max(-1.45, Math.min(1.45, pitch - .55 * my))) / (12 * .4);
-      }
-      const lastBearing = previousYaw + previous[1];
-      const searchScene = previous[0]
-        ? explorationScene(map, me, [lastBearing, 12])
-        : scene;
-      if (previous[0]) addSmokeDepths(searchScene, visibleSmokeDepths(map, me, game.smokes, game.shields));
-      rows.push([2,...searchObs,...searchScene,mx,my]);
+      if (success) rows.push([obs[0] ? 1 : 2, ...obs, ...scene, mx, my]);
     }
   }
 }
