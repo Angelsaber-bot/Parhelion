@@ -120,7 +120,7 @@ function hash01(a: number, b: number): number {
   return (h >>> 0) / 4294967296;
 }
 
-function spreadDirs(p: PlayerState, seq: number, wi: number, moving: boolean): Vec3[] {
+export function spreadDirs(p: PlayerState, seq: number, wi: number, moving: boolean): Vec3[] {
   const w = WEAPONS[wi];
   const cone = w.spread + (moving || !p.grounded ? w.spreadMove : 0);
   const base = aimDir(p.yaw, p.pitch);

@@ -3,13 +3,13 @@
 import { writeFileSync } from 'node:fs';
 import { getMap } from '../shared/arenaMap.ts';
 import { navFor } from '../shared/botLocomotion.ts';
-import { SMOKE, WEAPONS } from '../shared/content.ts';
+import { randomBotLoadout, loadoutWeapon, SMOKE, WEAPONS } from '../shared/content.ts';
 import { settleSmoke } from '../shared/grenade.ts';
 import { addSmokeDepths, explorationScene, EXPLORATION_TICKS, visibleSmokeDepths } from '../shared/exploration.ts';
 import { rayPlayer } from '../shared/hit.ts';
 import { humanObservation } from '../shared/humanCombat.ts';
 import { Match } from '../shared/match.ts';
-import { aimDir, playerEye } from '../shared/sim.ts';
+import { playerEye, spreadDirs } from '../shared/sim.ts';
 import { raycastMap, type Vec3 } from '../shared/map.ts';
 
 const output = process.argv[2];
@@ -27,6 +27,9 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
   const me = game.player('a')!;
   for (let trial=0; trial<trials; trial++) {
     game.smokes.length = 0;
+    me.loadout = randomBotLoadout(draw);
+    me.weaponSlot = 0;
+    me.weapon = loadoutWeapon(me.loadout, me.weaponSlot);
     const a = nav.nodes[Math.floor(draw()*nav.nodes.length)], bearing = draw()*2*Math.PI;
     // Sample short, medium and long sightlines; actual map visibility decides which are usable.
     const band = trial % 3;
@@ -84,22 +87,23 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
     const obs = see([(yaw - previousYaw) / EXPLORATION_TICKS, (pitch - previousPitch) / EXPLORATION_TICKS]);
     const scene = explorationScene(map, me, withHistory && obs[0] ? [yaw + obs[1], 0] : previous[0] ? [previousYaw + previous[1], EXPLORATION_TICKS] : undefined);
     addSmokeDepths(scene, visibleSmokeDepths(map, me, game.smokes, game.shields));
-    const direction = aimDir(me.yaw,me.pitch);
-    const hit = rayPlayer(eye,direction,b.x,b.y,b.z,target.crouched);
-    // Match.resolveFire tests projectiles against solid geometry. Smoke limits
-    // what the model observes, but it is not a bullet collider.
-    const lands = (h: ReturnType<typeof rayPlayer>, d: Vec3) =>
-      h !== null && h.t <= WEAPONS[me.weapon].range && h.t < raycastMap(map, eye, d, h.t + .001);
+    // The probes are stationary. Use the same shot pattern for alternatives
+    // at one pose, so a change of aim is compared under the same spread.
+    const shotSequence = Math.floor(draw() * 0x7fffffff);
+    const lands = () => spreadDirs(me, shotSequence, me.weapon, false).some(direction => {
+      const hit = rayPlayer(eye, direction, ...feet, target.crouched);
+      return hit !== null && hit.t <= WEAPONS[me.weapon].range &&
+        hit.t < raycastMap(map, eye, direction, hit.t + .001);
+    });
     // Log both outcomes of probe shots, including misses. The weapon decision is
     // fit to the observed utility of spending ammunition at this camera pose.
-    rows.push([0, ...history, ...obs, ...scene, Number(!!lands(hit,direction)),0]);
+    rows.push([0, ...history, ...obs, ...scene, Number(lands()),0]);
     for (let probe=0;probe<(obs[0] ? 48 : 8);probe++) {
       const scale = obs[0] && probe % 2 === 0 ? .06 : 1;
       const mx=scale*signed(), my=scale*signed(), horizon=obs[0] ? 1 : 1+Math.floor(draw()*5);
       me.yaw = yaw+.9*mx*horizon;
       me.pitch = Math.max(-1.45,Math.min(1.45,pitch+.55*my*horizon));
-      const ray = aimDir(me.yaw,me.pitch);
-      const success = obs[0] ? lands(rayPlayer(eye,ray,...feet,target.crouched),ray) : see()[0] === 1;
+      const success = obs[0] ? lands() : see()[0] === 1;
       if (success) rows.push([obs[0] ? 1 : 2, ...history, ...obs, ...scene, mx, my]);
     }
   }
