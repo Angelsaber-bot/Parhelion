@@ -160,8 +160,15 @@ function placeEncounter(game: Match, scenario: Scenario, rand: () => number): { 
     for (const id of ['pilot', 'rival']) game.slots.get(id)!.spawnProtectedUntilTick = 0;
     if (scenario === 'smoke') {
       const depth = .35 + .35 * rand();
-      const smoke = settleSmoke(game.map, { id: -1, owner: 'rival', x: a.x + (b.x - a.x) * depth,
-        y: a.y + (b.y - a.y) * depth, z: a.z + (b.z - a.z) * depth, life: SMOKE.life });
+      // A stationary rival can hold either rim. Use real supported ground so walls and
+      // elevated walkways clip the cloud in the same way as an ordinary grenade.
+      const offset = escape === 'hold' ? (rand() < .5 ? -1 : 1) * SMOKE.radius * (.78 + .24 * rand()) : 0;
+      const distance = Math.hypot(b.x - a.x, b.z - a.z);
+      const x = a.x + (b.x - a.x) * depth + (b.z - a.z) / distance * offset;
+      const z = a.z + (b.z - a.z) * depth - (b.x - a.x) / distance * offset;
+      const node = nav.nearest(x, a.y + (b.y - a.y) * depth, z);
+      if (!node || Math.hypot(node.x - x, node.z - z) > 1 || Math.abs(node.y - a.y) > 1) continue;
+      const smoke = settleSmoke(game.map, { id: -1, owner: 'rival', x: node.x, y: node.y, z: node.z, life: SMOKE.life });
       return { scenario, smoke, course };
     }
     return { scenario, course };

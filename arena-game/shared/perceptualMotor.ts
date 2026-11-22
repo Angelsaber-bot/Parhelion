@@ -3,16 +3,16 @@ import { navFor, safeDirection } from './botLocomotion.ts';
 import type { Smoke } from './grenade.ts';
 import { smokeEdgeSearch } from './searchOcclusion.ts';
 import { wrapAngle } from './humanCombat.ts';
-import { insideMovementBounds, type ArenaMap } from './map.ts';
+import { insideMovementBounds, lineOfSight, type Vec3, type ArenaMap } from './map.ts';
 import type { Shield } from './match.ts';
 import type { NavNode } from './nav.ts';
-import { BTN, canSlideTo, forward, type Input, type PlayerState } from './sim.ts';
+import { BTN, canSlideTo, forward, playerEye, type Input, type PlayerState } from './sim.ts';
 
 const limit = (n: number, bound: number) => Math.max(-bound, Math.min(bound, n));
 
 /** A route is selected from public map geometry and the actor's desired travel direction.
  * Reaching a destination makes other lanes preferable on the next search. */
-function patrol() {
+function patrol(random: () => number) {
   let path: NavNode[] = [];
   let nextPlan = 0;
   const visited = new Map<string, number>();
@@ -27,7 +27,7 @@ function patrol() {
           const distance = Math.hypot(x - me.x, z - me.z);
           const alignment = ((x - me.x) * dx + (z - me.z) * dz) / Math.max(1, distance);
           const recent = Math.max(0, 1 - (tick - (visited.get(anchor.id) ?? -Infinity)) / (20 * TICK_HZ));
-          const score = 5 * alignment + (anchor.kind === 'objective' ? 5 : 0) - .18 * Math.abs(distance - 13) - recent * 13;
+          const score = 5 * alignment + 4 * random() + (anchor.kind === 'objective' ? 5 : 0) - .18 * Math.abs(distance - 13) - recent * 13;
           return { anchor, distance, score };
         }).filter(choice => choice.distance > 3).sort((a, b) => b.score - a.score);
         for (const { anchor } of choices.slice(0, 3)) {
@@ -49,9 +49,11 @@ function patrol() {
 
 /** Closed-loop motor options for a five-Hz actor. Reads only its egocentric visible contact,
  * own state and the arena's fixed geometry. Each instance belongs to a single life. */
-export function perceptualMotor(occlusionAware = false) {
+export function perceptualMotor(occlusionAware = false, random: () => number = () => .5) {
   const smokeSearch = occlusionAware ? smokeEdgeSearch() : undefined;
-  const route = patrol();
+  const route = patrol(random);
+  let observed: Vec3 | undefined, velocityX = 0, velocityZ = 0;
+  let lastClear = -Infinity;
   let visibleTicks = 0, lastSeen = -Infinity, lastBearing = 0;
   let lastElevation = 0, yawSpeed = 0, pitchSpeed = 0;
   let clearToScan = false;
@@ -75,6 +77,18 @@ export function perceptualMotor(occlusionAware = false) {
       if (visibleTicks > 1 && Math.abs(yawChange) < .14 && Math.abs(pitchChange) < .12) {
         yawSpeed += .4 * (yawChange - yawSpeed); pitchSpeed += .4 * (pitchChange - pitchSpeed);
       } else yawSpeed = pitchSpeed = 0;
+      if (occlusionAware) {
+        const [x, z] = forward(bearing);
+        const point: Vec3 = [me.x + range * x, me.y + playerEye(map, me) + range * Math.tan(elevation), me.z + range * z];
+        // Range is clipped at 45 m. Glimpses have coarse range and cannot establish velocity.
+        const consecutive = confidence === 1 && lastClear === tick - 1 && normalizedRange < 1 && observed;
+        const vx = consecutive ? point[0] - consecutive[0] : 0, vz = consecutive ? point[2] - consecutive[2] : 0;
+        if (consecutive && Math.hypot(vx, vz) < .22) {
+          velocityX += .3 * (vx - velocityX); velocityZ += .3 * (vz - velocityZ);
+        } else { velocityX = 0; velocityZ = 0; }
+        observed = point;
+        if (confidence === 1) lastClear = tick;
+      }
       lastSeen = tick; lastBearing = bearing; lastElevation = elevation;
       if (confidence === 1) {
         const melee = WEAPONS[loadoutWeapon(me.loadout, 2)];
@@ -109,23 +123,43 @@ export function perceptualMotor(occlusionAware = false) {
         const ready = selected.auto && selected.kind === 'gun' || !(me.prevButtons & BTN.FIRE);
         if (ready && !me.reload && me.fireCd <= 1) input.buttons |= BTN.FIRE;
       }
+      if (confidence < 1) {
+        const peek = smokeSearch?.(map, me, tick, smokes, input.mx, bearing, shields, true);
+        if (peek?.moving) {
+          dx = peek.dx + .3 * dx; dz = peek.dz + .3 * dz;
+          magnitude = Math.max(magnitude, .78);
+        }
+      }
       if (me.ammo[me.weapon] > 0) input.buttons &= ~BTN.RELOAD;
     } else {
       if (!searching) {
         searching = true; sweep = 0; travelUntil = 0;
         sweepSign = yawProposal < 0 ? -1 : 1;
       }
-      const heading = route(map, me, tick, dx, dz);
+      const age = tick - lastSeen;
+      let remembered: number | undefined;
+      if (observed && age <= 2 * TICK_HZ) {
+        const lead = Math.min(age, .35 * TICK_HZ);
+        const guess: Vec3 = [observed[0] + velocityX * lead, observed[1], observed[2] + velocityZ * lead];
+        const at = lineOfSight(map, observed, guess) ? guess : observed;
+        if (Math.hypot(me.x - at[0], me.z - at[2]) > .8) remembered = Math.atan2(me.x - at[0], me.z - at[2]);
+      }
+      const heading = remembered === undefined ? route(map, me, tick, dx, dz) : undefined;
       if (heading !== undefined) {
         const [nx, nz] = forward(heading);
-        dx = nx + .23 * dx; dz = nz + .23 * dz;
+        const influence = occlusionAware ? .65 : .23;
+        dx = nx + influence * dx; dz = nz + influence * dz;
         magnitude = Math.max(.65, magnitude);
       }
-      const peek = smokeSearch?.(map, me, tick, smokes, input.mx, tick - lastSeen < TICK_HZ ? lastBearing : undefined, shields);
+      const peek = smokeSearch?.(map, me, tick, smokes, input.mx, remembered, shields);
       if (peek) {
         dx = peek.dx; dz = peek.dz; magnitude = peek.moving ? .92 : .2;
-        input.yaw = wrapAngle(me.yaw + limit(peek.yaw * .15 + .12 * yawProposal, .066));
-      } else if (tick - lastSeen <= .45 * TICK_HZ) {
+        input.yaw = wrapAngle(me.yaw + limit((remembered === undefined ? peek.yaw : wrapAngle(remembered - me.yaw)) * .15 + .12 * yawProposal, .066));
+      } else if (remembered !== undefined) {
+        // Keep the remembered lane in view while the policy chooses whether to approach or strafe.
+        const error = wrapAngle(remembered - me.yaw);
+        input.yaw = wrapAngle(me.yaw + limit(.14 * error + .15 * yawProposal, .055));
+      } else if (!occlusionAware && age <= .45 * TICK_HZ) {
         input.yaw = wrapAngle(me.yaw + limit(.09 * wrapAngle(lastBearing - me.yaw) + .22 * yawProposal, .055));
       } else if (tick < travelUntil && heading !== undefined) {
         input.yaw = wrapAngle(me.yaw + limit(.08 * wrapAngle(heading - me.yaw) + .35 * yawProposal, .045));
@@ -143,7 +177,7 @@ export function perceptualMotor(occlusionAware = false) {
         if (clearToScan && sweep < Math.PI) magnitude *= .36;
         input.yaw = wrapAngle(me.yaw + turn);
         sweep += Math.abs(turn);
-        if (sweep >= 2 * Math.PI) {
+        if (sweep >= (occlusionAware ? Math.PI : 2 * Math.PI)) {
           sweep = 0; travelUntil = tick + 2 * TICK_HZ; sweepSign = yawProposal < 0 ? -1 : 1;
         }
       }

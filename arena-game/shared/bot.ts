@@ -148,7 +148,7 @@ export class Bot implements Controller {
     this.rand = rng(seed);
     this.explorationRandom = rng(seed ^ 0x3ab1289);
     if (humanModel) this.humanCombat = humanCombatPolicy(humanModel, rng(seed ^ 0x52e27a3d));
-    if (neuralModel) this.neural = neuralBotControl(neuralModel);
+    if (neuralModel) this.neural = neuralBotControl(neuralModel, undefined, rng(seed ^ 0x319ba7));
     const r = this.rand();
     this.style = r < 0.36 ? 'rusher' : r < 0.7 ? 'holder' : 'flanker';
     this.aggression = this.style === 'rusher' ? 0.75 + this.rand() * 0.25 : this.style === 'holder' ? 0.2 + this.rand() * 0.3 : 0.45 + this.rand() * 0.3;
@@ -250,7 +250,7 @@ export class Bot implements Controller {
     // Team scan marks are sampled positions, never a live target behind cover.
     const mark = !target && match.heroes.marks.find(m => m.team === me.team && m.expires > match.tick);
     const search: Vec3 | null = predicted ?? (mark ? [mark.x, mark.y, mark.z] : null);
-    const exploring = !!explorationModel && !target;
+    const exploring = !!explorationModel && !target && !search;
     if (exploring && (!this.explorationTurn || match.tick >= this.explorationNext)) {
       const observation = humanObservation(match.map, me, [], () => false, this.explorationPrior);
       const scene = explorationScene(match.map, me, [this.observedBearing, contactAge]);

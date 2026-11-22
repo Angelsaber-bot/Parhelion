@@ -190,7 +190,7 @@ export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKI
   for (const t of ['A', 'B'] as Team[]) {
     for (let i = match.teamCount(t); i < TEAM_CAPACITY[opts.layout][t]; i++) {
       const n = seed++, k = kit();
-      const bot = new Bot(n, BOT_SKILL[difficulty], difficulty === 'easy' ? undefined : offlineTactics,
+      const bot = new Bot(Math.floor(rand() * 2 ** 32), BOT_SKILL[difficulty], difficulty === 'easy' ? undefined : offlineTactics,
         difficulty === 'normal' ? offlineCombat : undefined, exploration, neural);
       match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: randomBotHero([...match.slots.values()].map(s => ({ team: s.info.team, char: s.state.char })), t, rand), skins: [n % 2, n % 2, n % 2], loadout: k.loadout, utility: k.utility, bot: true }, bot);
     }

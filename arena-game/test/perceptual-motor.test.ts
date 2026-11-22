@@ -2,9 +2,10 @@ import { expect, it } from 'vitest';
 import { getMap } from '../shared/arenaMap.ts';
 import { buildMap } from '../shared/map.ts';
 import { smokeEdgeSearch } from '../shared/searchOcclusion.ts';
+import { humanObservation } from '../shared/humanCombat.ts';
 import { Match } from '../shared/match.ts';
 import { perceptualMotor } from '../shared/perceptualMotor.ts';
-import { BTN, type Input } from '../shared/sim.ts';
+import { BTN, forward, type Input } from '../shared/sim.ts';
 
 const map = getMap('aster');
 
@@ -84,4 +85,44 @@ it('moves at full search speed when a close wall obstructs the initial scan', ()
   const before = scan(open, false), after = scan(open, true);
   expect(after.yaw).toBeGreaterThan(before.yaw);
   expect(Math.hypot(after.mx, after.mz)).toBeLessThan(Math.hypot(before.mx, before.mz));
+});
+
+it('keeps the last visible lane in world space while the bot moves after losing sight', () => {
+  const open = buildMap({ ...map.data, anchors: [], objects: [] });
+  const me = pilot(), motor = perceptualMotor(true);
+  Object.assign(me, { x: 0, y: 0, z: 0, yaw: 0, pitch: 0 });
+  const propose = (tick: number): Input => ({ seq: tick, view: tick, mx: 0, mz: 0, yaw: me.yaw - .015, pitch: 0, buttons: BTN.FIRE, weapon: 0 });
+  motor(open, me, 1, [1, 0, 0, 6 / 45], propose(1), 0);
+  for (let tick = 2; tick <= 80; tick++) {
+    me.x = Math.min(3, tick * .05);
+    const next = motor(open, me, tick, [0, 0, 0, 0], propose(tick), BTN.FIRE);
+    expect(next.buttons & BTN.FIRE).toBe(0);
+    me.yaw = next.yaw;
+  }
+  expect(me.yaw).toBeCloseTo(Math.atan2(3, 6), 1);
+});
+
+it('steps out to reacquire a stationary silhouette using the ordinary smoke visibility rules', () => {
+  const open = buildMap({ ...map.data, anchors: [], objects: [] });
+  const match = new Match(open, '1v1'), me = pilot(), motor = perceptualMotor(true);
+  Object.assign(me, { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, fireCd: 0, reload: 0 });
+  match.smokes.push({ id: 1, owner: 'rival', x: -1.45, y: 0, z: -3, life: 150,
+    box: { yaw: 0, width: 3, depth: .45, height: 3 } });
+  const rival = { team: 'B' as const, crouched: false, feet: [0, 0, -6] as [number, number, number] };
+  let firstClear = 0, firstShot = 0;
+  for (let tick = 1; tick <= 100; tick++) {
+    const obs = humanObservation(open, me, [rival], (a,b) => match.heroes.visible(a,b), [0,0],
+      undefined, undefined, (a,b) => match.heroes.visible(a,b,true));
+    if (tick === 1) expect(obs[0]).toBe(.5);
+    const input = motor(open, me, tick, obs, { seq: tick, view: tick, mx: 0, mz: 0, yaw: me.yaw, pitch: me.pitch, buttons: BTN.FIRE, weapon: 0 },
+      BTN.FIRE, match.smokes);
+    if (obs[0] === 1 && !firstClear) firstClear = tick;
+    if (input.buttons & BTN.FIRE) { expect(obs[0]).toBe(1); firstShot = tick; break; }
+    const [x,z] = forward(input.yaw);
+    me.x += (x * input.mz - z * input.mx) * .08;
+    me.z += (z * input.mz + x * input.mx) * .08;
+    me.yaw = input.yaw; me.pitch = input.pitch;
+  }
+  expect(firstClear).toBeGreaterThan(1);
+  expect(firstShot).toBeGreaterThan(firstClear);
 });

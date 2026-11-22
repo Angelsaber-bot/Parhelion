@@ -6,7 +6,7 @@ import { raycastMap, type ArenaMap, type Vec3 } from './map.ts';
 import type { Shield } from './match.ts';
 import { aimDir, forward, playerEye, type PlayerState } from './sim.ts';
 
-const SENSOR_RANGE = 9;
+const SENSOR_RANGE = 16;
 const SIDE_ANGLE = .48;
 
 /** Sample one sight line inside the camera, stopping at the first opaque surface. */
@@ -27,15 +27,15 @@ export function smokeEdgeSearch() {
   let probeAt = 0, flankUntil = 0, orientUntil = 0;
   let peekSide = 1, bearing = 0, gazeX = 0, gazeZ = 0;
   return (map: ArenaMap, me: PlayerState, tick: number, smokes: readonly Smoke[], strafe: number,
-    lastSeenYaw?: number, shields: readonly Shield[] = []) => {
+    lastSeenYaw?: number, shields: readonly Shield[] = [], glimpse = false) => {
     if (tick >= probeAt && tick >= orientUntil) {
       probeAt = tick + 8;
       if (!smokes.length) return;
       const eye: Vec3 = [me.x, me.y + playerEye(map, me), me.z];
       const opaqueAt = (offset: number) => visibleSmoke(map, eye, aimDir(me.yaw + offset, me.pitch), smokes, shields);
       const ahead = opaqueAt(0), left = opaqueAt(SIDE_ANGLE), right = opaqueAt(-SIDE_ANGLE);
-      if (ahead || left || right) {
-        bearing = me.yaw + (ahead ? 0 : left ? SIDE_ANGLE : -SIDE_ANGLE);
+      if (ahead || left || right || glimpse) {
+        bearing = glimpse && lastSeenYaw !== undefined ? lastSeenYaw : me.yaw + (ahead ? 0 : left ? SIDE_ANGLE : -SIDE_ANGLE);
         const [x, z] = forward(bearing);
         const leftRoom = raycastMap(map, eye, [z, 0, -x], 5);
         const rightRoom = raycastMap(map, eye, [-z, 0, x], 5);
