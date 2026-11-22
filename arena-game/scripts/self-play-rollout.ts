@@ -203,16 +203,26 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   game.phaseT = seconds * TICK_HZ;
   const start = placeEncounter(game, scenario, rand);
   const firstTick = game.tick;
+  const smokeWindow = { start: Infinity, end: Infinity };
+  let rivalLifeEnd: number | undefined;
   if (start.course) {
     const rival = game.slots.get('rival')!;
     rival.controller = courseRival(rival.controller!, start.course, firstTick, rival.state.lifeId);
   }
   // Timeout is the actual end of each shortened match in Match.stepPhase; there is no bootstrap tick.
   while (game.phaseT > 0) {
-    if (start.smoke && game.tick === firstTick + start.course!.wait) game.smokes.push(start.smoke);
+    if (start.smoke && game.tick === firstTick + start.course!.wait) {
+      smokeWindow.start = seats[0].steps.length;
+      game.smokes.push(start.smoke);
+    }
+    if (start.smoke && smokeWindow.start !== Infinity && smokeWindow.end === Infinity &&
+        start.smoke.life <= SMOKE.clear) smokeWindow.end = seats[0].steps.length;
     for (const seat of seats) seat.wasAlive = game.player(seat.id)!.alive;
     const scoreDiff = game.score[team] - game.score[enemy];
     game.step();
+    if (start.course && rivalLifeEnd === undefined && !game.player('rival')!.alive) {
+      rivalLifeEnd = seats[0].steps.length;
+    }
     const events = game.snapshot().events;
     const teamReward = .25 * (game.score[team] - game.score[enemy] - scoreDiff);
     for (const { id, steps, wasAlive } of seats) {
@@ -236,8 +246,9 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
     scoreContactDrill(seats[0].steps, 'rear', 12 * TICK_HZ, EXPLORATION_TICKS);
   const contactBonus = layout === '1v1' && start.course &&
     (scenario === 'retreat' || scenario === 'corner' || scenario === 'smoke') &&
-    scoreContactDrill(seats[0].steps, scenario,
-      scenario === 'smoke' ? start.course.wait + SMOKE.life - SMOKE.clear : start.course.duration, EXPLORATION_TICKS);
+    scoreContactDrill(seats[0].steps.slice(0, rivalLifeEnd), scenario,
+      scenario === 'smoke' ? start.course.wait + SMOKE.life - SMOKE.clear + 3 * TICK_HZ : start.course.duration,
+      EXPLORATION_TICKS, smokeWindow);
   const trajectories = Object.fromEntries(seats.map(({ id, steps }) => [id, steps]));
   const opponentHash = opponent.mode === 'frozen' ? opponent.actor.hash : opponent.mode === 'self-play' ? actor.hash :
     opponent.mode === 'deployed' ? opponent.fallback.digest ?? 'public-scripted' : 'scripted';

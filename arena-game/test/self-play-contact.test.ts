@@ -8,11 +8,11 @@ const steps = (contact: number[]) => contact.map((confidence, index) => ({ obs: 
 
 it('scores first confirmed recovery on its preceding action and never credits a silhouette or respawn', () => {
   const trace = steps([1, 1, 0, 0, .5, 1, 1, 0, 0, 1, 1]);
-  expect(scoreContactDrill(trace, 'smoke', 180, 12)).toBe(true);
+  expect(scoreContactDrill(trace, 'smoke', 180, 12, { start: 2, end: 5 })).toBe(true);
   expect(trace.map(step => step.reward)).toEqual([0, 0, 0, 0, 0, .05, 0, 0, 0, 0, 0]);
   const respawn = steps([1, 1, 0, 0, .5, 1, 1]); respawn[5].reset = true;
   for (const invalid of [respawn, steps([1, 1, 0, 0, .5, .5]), steps([0, 0, 1, 1])]) {
-    expect(scoreContactDrill(invalid, 'smoke', 180, 12)).toBe(false);
+    expect(scoreContactDrill(invalid, 'smoke', 180, 12, { start: 2, end: 5 })).toBe(false);
   }
   expect(scoreContactDrill(steps(Array(16).fill(1)), 'retreat', 300, 12)).toBe(true);
   expect(scoreContactDrill(steps(Array(16).fill(1)), 'retreat', 72, 12)).toBe(false);
@@ -49,4 +49,14 @@ it('credits the rear acquisition action once, only after a turn and confirmation
   for (const invalid of [trace(0), respawn, trace(1.3).slice(0, 4)]) {
     expect(scoreContactDrill(invalid, 'rear', 180, 12)).toBe(false);
   }
+});
+
+it('ignores pre-smoke recovery and credits confirmed contact just after clearing', () => {
+  const early = steps([1, 1, 0, 0, 1, 1, 1, 1]);
+  expect(scoreContactDrill(early, 'smoke', 144, 12, { start: 5, end: 10 })).toBe(false);
+  expect(scoreContactDrill(early, 'smoke', 144, 12, { start: 0, end: 2 })).toBe(false);
+  const late = steps([1, 1, 1, 0, 0, 0, 0, 0, 1, 1]);
+  expect(scoreContactDrill(late, 'smoke', 96, 12, { start: 3, end: 8 })).toBe(false);
+  expect(scoreContactDrill(late, 'smoke', 144, 12, { start: 3, end: 8 })).toBe(true);
+  expect(late.reduce((sum, action) => sum + action.reward, 0)).toBe(.05);
 });

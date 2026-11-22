@@ -73,7 +73,8 @@ interface RewardStep { obs: readonly number[]; reward: number; reset: boolean }
 
 /** One small contact bonus per probe. Two delayed clear observations confirm recovery;
  * silhouettes and resets cannot earn the bonus. Rewards go to actions preceding the observation. */
-export function scoreContactDrill(steps: RewardStep[], drill: ContactDrill | 'rear', duration: number, period: number) {
+export function scoreContactDrill(steps: RewardStep[], drill: ContactDrill | 'rear', duration: number, period: number,
+                                  smokeWindow?: { start: number; end: number }) {
   let hadContact = false, lost = false, unseen = 0, clear = 0;
   const end = Math.min(steps.length, Math.ceil(duration / period));
   if (drill === 'rear') {
@@ -96,7 +97,8 @@ export function scoreContactDrill(steps: RewardStep[], drill: ContactDrill | 're
   for (let i = 0; i < end; i++) {
     if (i > 0 && steps[i].reset) break;
     if (steps[i].obs[0] !== 1) {
-      unseen++;
+      // Only loss of contact during the smoke drill can qualify its recovery.
+      if (drill !== 'smoke' || (smokeWindow && i >= smokeWindow.start && i < smokeWindow.end)) unseen++;
       clear = 0;
       if (hadContact && unseen >= 2) lost = true;
       continue;
