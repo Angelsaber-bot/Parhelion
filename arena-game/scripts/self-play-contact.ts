@@ -1,4 +1,5 @@
 // Environment fixtures and outcome rewards for PPO. None of these routines control the learner.
+import { HUMAN_FEATURES, wrapAngle } from '../shared/humanCombat.ts';
 import { TICK_HZ } from '../shared/content.ts';
 import { lineOfSight, type ArenaMap, type Vec3 } from '../shared/map.ts';
 import type { Controller } from '../shared/match.ts';
@@ -72,9 +73,26 @@ interface RewardStep { obs: readonly number[]; reward: number; reset: boolean }
 
 /** One small contact bonus per probe. Two delayed clear observations confirm recovery;
  * silhouettes and resets cannot earn the bonus. Rewards go to actions preceding the observation. */
-export function scoreContactDrill(steps: RewardStep[], drill: ContactDrill, duration: number, period: number) {
+export function scoreContactDrill(steps: RewardStep[], drill: ContactDrill | 'rear', duration: number, period: number) {
   let hadContact = false, lost = false, unseen = 0, clear = 0;
   const end = Math.min(steps.length, Math.ceil(duration / period));
+  if (drill === 'rear') {
+    if (!end || steps[0].obs[0] !== 0) return false;
+    const heading = (obs: readonly number[]) =>
+      Math.atan2(obs[HUMAN_FEATURES.length + 3], obs[HUMAN_FEATURES.length + 4]);
+    const initial = heading(steps[0].obs);
+    for (let i = 1; i + 1 < end; i++) {
+      if (steps[i].reset || steps[i + 1].reset) break;
+      if (steps[i].obs[0] !== 1 || steps[i + 1].obs[0] !== 1) continue;
+      // Give credit to the action that acquired the target. A rival simply
+      // walking into an unchanged field of view earns no search reward.
+      if (steps[i - 1].obs[0] !== 1 && Math.abs(wrapAngle(heading(steps[i].obs) - initial)) >= Math.PI / 4) {
+        steps[i - 1].reward += .05;
+        return true;
+      }
+    }
+    return false;
+  }
   for (let i = 0; i < end; i++) {
     if (i > 0 && steps[i].reset) break;
     if (steps[i].obs[0] !== 1) {

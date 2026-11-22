@@ -225,6 +225,8 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
     seat.steps[seat.steps.length - 1].reward += outcome;
   }
   // In teams a different enemy could satisfy the contact test. Use team score and damage only there.
+  const rearSearchBonus = layout === '1v1' && scenario === 'rear' &&
+    scoreContactDrill(seats[0].steps, 'rear', 12 * TICK_HZ, EXPLORATION_TICKS);
   const contactBonus = layout === '1v1' && start.course &&
     (scenario === 'retreat' || scenario === 'corner' || scenario === 'smoke') &&
     scoreContactDrill(seats[0].steps, scenario,
@@ -233,6 +235,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   const opponentHash = opponent.mode === 'frozen' ? opponent.actor.hash : opponent.mode === 'self-play' ? actor.hash :
     opponent.mode === 'deployed' ? opponent.fallback.digest ?? 'public-scripted' : 'scripted';
   return { map, layout, seed, team, scenario: start.scenario, opponent: opponentHash, opponentMode: opponent.mode,
+    ...(scenario === 'rear' && layout === '1v1' && { contactBonus: rearSearchBonus }),
     ...(start.course && { exercise: start.course.escape, contactBonus: Boolean(contactBonus) }),
     score: game.score, outcome, ticks: game.tick - firstTick, trajectories };
 }

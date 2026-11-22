@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { HUMAN_FEATURES } from '../shared/humanCombat.ts';
 import { getMap } from '../shared/arenaMap.ts';
 import { navFor } from '../shared/botLocomotion.ts';
 import { escapeFor, rivalCourse, scoreContactDrill } from '../scripts/self-play-contact.ts';
@@ -31,4 +32,21 @@ it('samples both exits, a reversal, and a hold and keeps reversals on traversabl
     return;
   }
   throw Error('No traversable return course in the production map');
+});
+
+it('credits the rear acquisition action once, only after a turn and confirmation in the same life', () => {
+  const trace = (angle: number) => steps([0, 0, .5, 1, 1, 0, 1, 1]).map((step, i) => {
+    const yaw = Math.PI - .1 + (i >= 2 ? angle : 0);
+    step.obs[HUMAN_FEATURES.length + 3] = Math.sin(yaw);
+    step.obs[HUMAN_FEATURES.length + 4] = Math.cos(yaw);
+    return step;
+  });
+  const moving = trace(1.3);
+  expect(scoreContactDrill(moving, 'rear', 180, 12)).toBe(true);
+  expect(moving.map(s => s.reward)).toEqual([0, 0, .05, 0, 0, 0, 0, 0]);
+  const respawn = trace(1.3);
+  respawn[4].reset = true;
+  for (const invalid of [trace(0), respawn, trace(1.3).slice(0, 4)]) {
+    expect(scoreContactDrill(invalid, 'rear', 180, 12)).toBe(false);
+  }
 });
