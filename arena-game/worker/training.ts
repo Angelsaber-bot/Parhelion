@@ -5,6 +5,7 @@ import { parseExplorationModel } from '../shared/exploration.ts';
 import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import type { Env } from './index.ts';
 import { makeSelfPlayBatch } from './trainingSelfPlay.ts';
+import { parseEvaluationReport, type EvaluationReport } from '../shared/evaluationReport.ts';
 
 const QUEUE_LIMIT = 96;
 const BATCHES_PER_ALARM = 8;
@@ -22,6 +23,7 @@ const RL_JOB_STATES = ['collecting', 'updating', 'evaluating', 'error'] as const
 interface ReinforcementJob { parent: number; state: typeof RL_JOB_STATES[number]; at: number }
 interface ReinforcementEvaluation {
   generation: number; at: number; reason: typeof RL_REASONS[number]; failedGates: string[]; published: boolean;
+  report?: EvaluationReport;
 }
 interface ReinforcementCommit {
   rulesVersion: number; parent: number; generation: number; humanRevision: number;
@@ -31,8 +33,8 @@ interface ReinforcementCommit {
   lastEvaluation: ReinforcementEvaluation | null;
 }
 
-function completedEvaluation({ generation, at, reason, failedGates, published }: ReinforcementEvaluation): ReinforcementEvaluation | null {
-  return reason === 'shadow' || reason === 'evaluating' ? null : { generation, at, reason, failedGates, published };
+function completedEvaluation({ generation, at, reason, failedGates, published, report }: ReinforcementEvaluation): ReinforcementEvaluation | null {
+  return reason === 'shadow' || reason === 'evaluating' ? null : { generation, at, reason, failedGates, published, ...(report && { report }) };
 }
 
 const counter = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
@@ -246,6 +248,8 @@ export class ArenaTraining extends DurableObject<Env> {
       digest, checkpoint, history, promote, expectedReleaseDigest } = input;
     const reason = input.reason ?? (promote === undefined ? 'shadow' : 'passed');
     const failedGates = input.failedGates ?? [];
+    const report = parseEvaluationReport(input.evaluationReport);
+    if (input.evaluationReport !== undefined && (!report || reason === 'shadow' || reason === 'evaluating')) return new Response(null, { status: 400 });
     if (rulesVersion !== RULES_VERSION || !counter(parent) || !counter(generation) || generation !== parent + 1 ||
         !counter(humanRevision) || !counter(episodes) || !episodes || !counter(environmentSteps) || environmentSteps < episodes ||
         !counter(optimizerSteps) || !optimizerSteps || typeof digest !== 'string' || !/^[a-f0-9]{64}$/.test(digest) ||
@@ -272,7 +276,7 @@ export class ArenaTraining extends DurableObject<Env> {
       digest, reason, failedGates, published: !!model, at, totalEpisodes: (previous?.totalEpisodes ?? 0) + episodes,
       totalEnvironmentSteps: (previous?.totalEnvironmentSteps ?? 0) + environmentSteps,
       totalOptimizerSteps: (previous?.totalOptimizerSteps ?? 0) + optimizerSteps,
-      lastEvaluation: completedEvaluation({ generation, at, reason, failedGates, published: !!model }) ?? previous?.lastEvaluation ?? null };
+      lastEvaluation: completedEvaluation({ generation, at, reason, failedGates, published: !!model, report }) ?? previous?.lastEvaluation ?? null };
     if (![metadata.totalEpisodes, metadata.totalEnvironmentSteps, metadata.totalOptimizerSteps].every(counter)) return new Response(null, { status: 400 });
     this.ctx.storage.transactionSync(() => {
       sql.exec('DELETE FROM rl_artifacts');

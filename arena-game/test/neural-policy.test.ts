@@ -35,6 +35,11 @@ function fixture(): NeuralPolicyModel {
 it('rejects models that cannot run on this version of the game', () => {
   const model = fixture();
   expect(parseNeuralPolicy(model)).toEqual(model);
+  const option = { ...model, version: 2, controller: 'perceptual-options-v1' };
+  expect(parseNeuralPolicy(option)).toEqual(option);
+  expect(parseNeuralPolicy({ ...option, version: 1 })).toBeUndefined();
+  expect(parseNeuralPolicy({ ...option, controller: undefined })).toBeUndefined();
+  expect(parseNeuralPolicy({ ...option, controller: 'unknown' })).toBeUndefined();
   expect(parseNeuralPolicy({ ...model, rulesVersion: RULES_VERSION - 1 })).toBeUndefined();
   expect(parseNeuralPolicy({ ...model, synthetic: true })?.synthetic).toBe(true);
   expect(parseNeuralPolicy({ ...model, synthetic: 'true' })).toBeUndefined();

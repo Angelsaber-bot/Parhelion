@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { getMap, MAPS } from '../shared/arenaMap.ts';
 import { MATCH_TICKS, SCORE_LIMIT, TICK_HZ } from '../shared/content.ts';
-import { evaluationMaps, play, score } from './bench/evaluate-self-play.ts';
+import { clearsWall, evaluationMaps, play, score } from './bench/evaluate-self-play.ts';
 
 it('holds separate rotation maps for the tournament and can replay a campaign by seed', () => {
   const screened = new Set<string>(), heldBack = new Set<string>();
@@ -24,6 +24,14 @@ it('compares independent map/seeds rather than treating swapped sides or game mo
   expect(score(sameBlock)).toMatchObject({ blocks: 1, wins: 1, oneSidedP: .5 });
   expect(score([...sameBlock, ...sameBlock.map(leg => ({ ...leg, margin: -1 }))])).toMatchObject({ wins: 0, losses: 0, tied: 1, oneSidedP: 1 });
   expect(score(Array.from({ length: 6 }, (_, seed) => ({ seed, map: 'aster', margin: 1 }))).oneSidedP).toBeCloseTo(1 / 64);
+  expect(score([{ seed: 1, map: 'aster', margin: 4 }, { seed: 1, map: 'aster', margin: -2 }])).toMatchObject(
+    { legWins: 1, legLosses: 1, legDraws: 0, meanScoreMargin: 1, blocks: 1 });
+});
+
+it('requires physical clearance from the obstructed start even if the bot never attempts a blocked move', () => {
+  const reference = { wallTrials: 6, wallClearFraction: .8, meanWallClearSeconds: 2, stallFraction: .03 };
+  expect(clearsWall(reference, reference)).toBe(true);
+  expect(clearsWall({ ...reference, wallClearFraction: 0, meanWallClearSeconds: 12, stallFraction: 0 }, reference)).toBe(false);
 });
 
 it('swaps identical pilots and keeps smoke, search and wall trials reproducible', () => {
@@ -35,7 +43,14 @@ it('swaps identical pilots and keeps smoke, search and wall trials reproducible'
     expect(a.opponent).toEqual(b.candidate);
     expect(a.margin + b.margin).toBe(0);
     expect(a.candidate.live).toBeGreaterThan(0);
-    if (scenario === 'smoke') expect(a.candidate.unseen).toBeGreaterThan(0);
+    if (scenario === 'smoke') {
+      expect(a.candidate.smokeHidden).toBeGreaterThan(0);
+      expect(a.candidate.unseen).toBeGreaterThanOrEqual(a.candidate.smokeHidden);
+    }
+    if (scenario === 'wall') {
+      expect(a.candidate.wallTrials).toBe(1);
+      expect(b.candidate.wallTrials).toBe(0);
+    }
   }
 });
 

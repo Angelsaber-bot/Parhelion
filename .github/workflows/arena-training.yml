@@ -64,6 +64,8 @@ jobs:
         if: steps.work.outputs.install == 'true'
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: .github/workflows/arena-training.yml
       - name: Install training dependencies
         if: steps.work.outputs.install == 'true'
         run: |
@@ -87,7 +89,8 @@ jobs:
         working-directory: arena-game
         env:
           ARENA_NEURAL_CORPUS_TOKEN: ${{ secrets.ARENA_NEURAL_CORPUS_TOKEN }}
-        run: python scripts/self-play-cycle.py --cloud --generations 3
+          GENERATIONS: ${{ github.event_name == 'push' && '5' || '60' }}
+        run: python scripts/self-play-cycle.py --cloud --generations "$GENERATIONS" --time-budget-seconds 720
       - name: Verify direct pixel control in a rendered Arena match
         if: github.event_name == 'workflow_dispatch' && inputs.pixel_audition && steps.work.outputs.install == 'true'
         working-directory: arena-game

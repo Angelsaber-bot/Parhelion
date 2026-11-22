@@ -33,6 +33,7 @@ SLOT_COLUMN = BUTTON_COLUMN + 1
 BUTTONS = 7
 OUTPUTS = 4 + BUTTONS + 3
 YAW_SCALE, PITCH_SCALE = .9, .55
+SEARCH_TURN_RADIANS = .045
 
 
 def integer(value, low, high):
@@ -315,7 +316,7 @@ def losses(logits, target, button_weights):
 def evaluate(model, loader, device, button_weights):
     model.eval()
     loss, samples = 0.0, 0
-    camera = {key: [0.0] * 6 for key in ("all", "noContact", "visibleContact")}
+    camera = {key: [0.0] * 6 for key in ("all", "noContact", "unseenTurn", "unseenQuiet", "visibleContact")}
     tp = torch.zeros(BUTTONS)
     fp = torch.zeros(BUTTONS)
     fn = torch.zeros(BUTTONS)
@@ -327,7 +328,11 @@ def evaluate(model, loader, device, button_weights):
         samples += len(states)
         errors = (logits[:, :4].tanh() - actions[:, :4]).abs()
         visible = states[:, -1, 0] > 0
-        for key, mask in (("all", torch.ones_like(visible)), ("noContact", ~visible), ("visibleContact", visible)):
+        # Match the first noncentral bin of Arena's exploration policy (radians per decision).
+        turning = actions[:, 0].abs() * YAW_SCALE >= SEARCH_TURN_RADIANS
+        for key, mask in (("all", torch.ones_like(visible)), ("noContact", ~visible),
+                          ("unseenTurn", ~visible & turning), ("unseenQuiet", ~visible & ~turning),
+                          ("visibleContact", visible)):
             counts = camera[key]
             counts[0] += mask.sum().item()
             for i, value in enumerate(errors[mask].sum(dim=0).tolist(), start=1):

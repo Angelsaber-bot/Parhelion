@@ -27,9 +27,10 @@ interface Layer {
 }
 
 export interface NeuralPolicyModel {
-  version: 1;
+  version: 1 | 2;
   rulesVersion: number;
   synthetic?: true;
+  controller?: 'perceptual-options-v1';
   context: number;
   width: number;
   heads: number;
@@ -66,8 +67,10 @@ function norm(v: unknown, size: number): v is Norm {
 /** Checks dimensions, rules compatibility, numeric parameters and the per-decision compute budget. */
 export function parseNeuralPolicy(raw: unknown): NeuralPolicyModel | undefined {
   if (!object(raw)) return undefined;
-  const { version, rulesVersion, synthetic, context, width, heads, embed, position, layers, norm: finalNorm, out } = raw;
-  if (version !== 1 || rulesVersion !== RULES_VERSION || (synthetic !== undefined && synthetic !== true) || !integer(context, 1, 16) || !integer(width, 2, 128) ||
+  const { version, rulesVersion, synthetic, controller, context, width, heads, embed, position, layers, norm: finalNorm, out } = raw;
+  if (version !== 1 && version !== 2) return undefined;
+  if (version === 1 ? controller !== undefined : controller !== 'perceptual-options-v1') return undefined;
+  if (rulesVersion !== RULES_VERSION || (synthetic !== undefined && synthetic !== true) || !integer(context, 1, 16) || !integer(width, 2, 128) ||
       !integer(heads, 1, 8) || width % heads || !Array.isArray(layers) || layers.length < 1 || layers.length > 6) return undefined;
 
   let multiplies = context * width * (NEURAL_FEATURE_COUNT + (context + 1) * layers.length);
@@ -87,7 +90,7 @@ export function parseNeuralPolicy(raw: unknown): NeuralPolicyModel | undefined {
     validatedLayers.push({ norm1, qkv, attn, norm2, up, down });
   }
   return { version, rulesVersion, context, width, heads, embed, position, layers: validatedLayers, norm: finalNorm, out,
-    ...(synthetic ? { synthetic } : {}) };
+    ...(synthetic ? { synthetic } : {}), ...(version === 2 ? { controller: 'perceptual-options-v1' as const } : {}) };
 }
 
 type Vector = Float64Array;

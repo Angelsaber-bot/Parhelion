@@ -106,11 +106,40 @@ def human_gates(metrics):
     observed, reference = metrics["holdout"], metrics["referenceHoldout"]
     search = observed["cameraAndMovement"]["noContact"]
     ref = reference["cameraAndMovement"]["noContact"]
+    if not all({"unseenTurn", "unseenQuiet"} <= side["cameraAndMovement"].keys() for side in (observed, reference)):
+        return {"human_holdout": False}
+    turns, quiet = (observed["cameraAndMovement"][group] for group in ("unseenTurn", "unseenQuiet"))
+    ref_turns, ref_quiet = (reference["cameraAndMovement"][group] for group in ("unseenTurn", "unseenQuiet"))
     return {
-        "human_holdout": metrics["holdoutWindows"] >= 60 and search["windows"] >= 30,
-        "human_search": search.get("yawMaeRad", 100) <= min(search.get("stillYawMaeRad", 0), ref.get("yawMaeRad", 0) * 1.1 + .002),
+        "human_holdout": metrics["holdoutWindows"] >= 60 and search["windows"] >= 30
+                         and turns["windows"] >= 8 and quiet["windows"] >= 8,
+        # During genuine search turns a stationary policy must lose. Quiet windows
+        # separately catch a policy that swings the camera when the player stood still.
+        "human_search": (turns.get("yawMaeRad", 100) < turns.get("stillYawMaeRad", 0)
+                         and turns.get("yawMaeRad", 100) <= ref_turns.get("yawMaeRad", 0) * 1.1 + .002
+                         and search.get("yawMaeRad", 100) <= ref.get("yawMaeRad", 0) * 1.1 + .002),
+        "human_quiet": quiet.get("yawMaeRad", 100) <= ref_quiet.get("yawMaeRad", 0) * 1.1 + .002,
         "human_actions": observed["objective"] <= reference["objective"] * 1.12,
     }
+
+
+def evaluation_report(results):
+    scenarios = results["byScenario"]
+    probe = results.get("diagnostic")
+    official = results["byMode"]
+    opponent = results.get("comparedOpponent") or ("incumbent" if results["incumbent"] != "baseline" else "baseline")
+    modes = probe["modes"] if probe else official.get(opponent)
+    if not modes:
+        return None
+    def tally(mode):
+        row = modes[mode]
+        return [row["legWins"], row["legDraws"], row["legLosses"]]
+    return dict(rearSeconds=scenarios["rear-search"]["candidate"]["meanContactSeconds"],
+                referenceRearSeconds=scenarios["rear-search"]["opponent"]["meanContactSeconds"],
+                smokeBlindFire=scenarios["smoke"]["candidate"]["smokeHiddenFireFraction"],
+                wallEscape=scenarios["wall"]["candidate"]["wallClearFraction"],
+                roundSet="diagnostic" if probe else "tournament", opponent=opponent,
+                duel=tally("1v1"), team=tally("2v2"))
 
 
 def cycle(args, service, work, progress):
@@ -209,6 +238,11 @@ def cycle(args, service, work, progress):
             cmd = ts + ["test/bench/evaluate-self-play.ts", candidate, "--seeds", "2", "--seed", random.SystemRandom().randrange(500000000, 1900000000)]
             if live:
                 cmd += ["--incumbent", incumbent]
+            elif service:
+                # RoomCore uses the released exploration model (or the plain scripted fallback).
+                fallback = work / "public-fallback.json"
+                fallback.write_bytes(service.request("/exploration?active=1", raw=True))
+                cmd += ["--deployed-fallback", fallback]
             results = run(cmd, json_result=True)
             gates = human_gates(metrics)
             failed = [key for key, passed in gates.items() if not passed]
@@ -218,7 +252,8 @@ def cycle(args, service, work, progress):
             promoted = results["passed"] and not failed
             print("Evaluation", json.dumps({"passed": promoted, "failedGates": failed, "config": results["config"],
                   "byScenario": results["byScenario"], "byMap": results["byMap"],
-                  "comparisons": results["comparisons"], "fullRounds": results["fullRounds"]}), flush=True)
+                  "comparisons": results["comparisons"], "fullRounds": results["fullRounds"],
+                  "diagnostic": results["diagnostic"]}), flush=True)
         # Keep one older anchor and a recent opponent. The incumbent and parent are also sampled.
         if not history:
             history = [actor.read_text()]
@@ -231,12 +266,17 @@ def cycle(args, service, work, progress):
                       reason="passed" if promoted else "evaluation_failed" if evaluate else "shadow",
                       failedGates=failed, checkpoint=pack(output.read_bytes()),
                       history=pack(json.dumps(archive, separators=(",", ":")).encode()))
+        if evaluate:
+            report = evaluation_report(results)
+            if report:
+                record["evaluationReport"] = report
         if service:
             if promoted:
                 record.update(promote=model_text, expectedReleaseDigest=live["digest"] if live else None)
             service.request("/selfplay", record)
         else:
-            record["lastEvaluation"] = (dict(generation=generation, failedGates=failed, published=promoted)
+            record["lastEvaluation"] = (dict(generation=generation, reason=record["reason"],
+                                             failedGates=failed, published=False, report=report)
                                         if evaluate else old.get("lastEvaluation"))
             tmp = args.state / "state.tmp"
             tmp.write_text(json.dumps(record, separators=(",", ":")))
@@ -265,6 +305,46 @@ def audit_camera(service, directory):
     run(["node", "tools/visual-audition.mjs", visual, "--smoke", "--seconds", 4])
 
 
+def run_generations(args, service, session, progress):
+    started = time.monotonic()
+    deadline = started + args.time_budget_seconds if args.time_budget_seconds else None
+    durations = {}
+    iterations = games = updates = 0
+    first = None
+    reason = "generation limit"
+    while args.continuous or iterations < args.generations:
+        if not service and args.continuous and (args.state / "pause").exists():
+            reason = "local pause request"
+            break
+        before = time.monotonic()
+        if iterations and deadline is not None:
+            evaluating = (progress["generation"] + 1) % args.eval_every == 0
+            # The first tournament may be slower than an ordinary update. Allow it
+            # to complete once started; the next invocation resumes its committed state.
+            estimate = durations.get(evaluating, max(durations.values()) * (2 if evaluating else 1))
+            if before + 1.25 * estimate >= deadline:
+                reason = "time budget"
+                break
+        with tempfile.TemporaryDirectory(dir=session) as directory:
+            progress = cycle(args, service, Path(directory), progress)
+        elapsed = time.monotonic() - before
+        generation = progress["generation"]
+        evaluated = generation % args.eval_every == 0
+        durations[evaluated] = max(durations.get(evaluated, 0), elapsed)
+        first = first if first is not None else generation
+        iterations += 1
+        games += progress["episodes"]
+        updates += progress["optimizerSteps"]
+    committed = f"generations {first}–{progress['generation']}" if iterations else "no generations"
+    report = (f"Committed {committed} ({iterations} total), "
+              f"{games} games and {updates} optimizer updates in {time.monotonic() - started:.0f}s. "
+              f"Yielded on {reason}.")
+    print(report, flush=True)
+    if os.environ.get("GITHUB_STEP_SUMMARY"):
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as output:
+            print(report, file=output)
+
+
 def main():
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument("--cloud", action="store_true")
@@ -275,12 +355,16 @@ def main():
     cli.add_argument("--human-revision", type=int, default=0)
     cli.add_argument("--generations", type=int, default=1)
     cli.add_argument("--continuous", action="store_true", help="Keep taking new generations on a persistent runner")
+    cli.add_argument("--time-budget-seconds", type=int,
+                     help="Soft wall-clock budget for self-play. Finish and checkpoint an in-flight generation before yielding.")
     cli.add_argument("--episodes", type=int, default=12)
     cli.add_argument("--seconds", type=int, default=45)
     cli.add_argument("--eval-every", type=int, default=5)
     args = cli.parse_args()
     if min(args.generations, args.episodes, args.seconds, args.eval_every) < 1:
         cli.error("Counts must be positive")
+    if args.time_budget_seconds is not None and args.time_budget_seconds < 1:
+        cli.error("The self-play time budget must be positive")
     if args.cloud and args.corpus:
         cli.error("Cloud evaluation loads the human corpus for its reference revision")
     if not args.cloud and args.corpus is None and (ROOT / ".scratch/training/corpus").is_dir():
@@ -306,11 +390,7 @@ def main():
         if (args.state / "state.json").exists():
             progress = json.loads((args.state / "state.json").read_bytes())
     with tempfile.TemporaryDirectory(prefix="arena-self-play-") as session:
-        iteration = 0
-        while args.continuous or iteration < args.generations:
-            with tempfile.TemporaryDirectory(dir=session) as directory:
-                progress = cycle(args, service, Path(directory), progress)
-            iteration += 1
+        run_generations(args, service, session, progress)
 
 
 if __name__ == "__main__":

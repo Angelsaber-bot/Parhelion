@@ -1,11 +1,13 @@
 import { bilingual, getLanguage, onLanguageChange } from '../../../shared-client/i18n.ts';
 import { releaseUrl } from '../network/training.ts';
+import type { EvaluationReport } from '../../shared/evaluationReport.ts';
 
 interface Evaluation {
   generation: number;
   published: boolean;
   reason: string;
   failedGates?: string[];
+  report?: EvaluationReport;
 }
 
 interface Generation extends Evaluation {
@@ -56,7 +58,8 @@ const gateLabels: Record<string, [string, string]> = {
   improved: ['对战成绩提升', 'Match improvement'],
   bothModes: ['1v1 和 2v2 对照', '1v1 and 2v2 coverage'],
   human_holdout: ['真人验证样本量', 'Human validation coverage'],
-  human_search: ['真人搜敌动作', 'Human search behavior'],
+  human_search: ['真人示范中的主动转向', 'Deliberate turns in demonstrations'],
+  human_quiet: ['真人静止视角漂移', 'Camera drift on quiet demonstrations'],
   human_actions: ['真人操作分布', 'Human actions'],
   simulation: ['对战模拟', 'Match simulation'],
 };
@@ -124,6 +127,25 @@ export function mountTrainingStatus() {
     if (Array.isArray(gates) && gates.length) {
       const labels = gates.map(gate => gateLabels[gate] ? bilingual(...gateLabels[gate]) : gate);
       row('评测未通过项目', 'Failed evaluation checks', labels.join(zh ? '、' : ', '));
+    }
+    const report = evaluation?.report;
+    if (report) {
+      const opponents = { baseline: bilingual('战术基线', 'tactical baseline'), incumbent: bilingual('正式模型', 'live model'),
+        'public-scripted': bilingual('公网基础 Bot', 'live scripted bot'),
+        'public-exploration': bilingual('公网探索模型', 'live exploration model') };
+      const opponent = opponents[report.opponent];
+      const formatSeconds = (n: number) => number.format(Math.round(n * 100) / 100) + ' s';
+      row('背后搜敌（候选 / 对手）', 'Rear acquisition (candidate / opponent)',
+        formatSeconds(report.rearSeconds) + ' / ' + formatSeconds(report.referenceRearSeconds));
+      const percent = new Intl.NumberFormat(zh ? 'zh-CN' : 'en-US', { style: 'percent', maximumFractionDigits: 1 });
+      row('脱离墙角 / 烟雾中盲射', 'Wall escapes / blind fire in smoke',
+        percent.format(report.wallEscape) + ' / ' + percent.format(report.smokeBlindFire));
+      const kind = report.roundSet === 'tournament' ? bilingual('晋级赛', 'tournament') : bilingual('诊断赛', 'probe');
+      for (const [mode, score] of [['1v1', report.duel], ['2v2', report.team]] as const) {
+        const label = mode + ' ' + kind + ' · ' + opponent;
+        row(label, label, zh ? score[0] + ' 胜 ' + score[1] + ' 平 ' + score[2] + ' 负'
+          : score[0] + ' W · ' + score[1] + ' D · ' + score[2] + ' L');
+      }
     }
     row('本代对局 / 累计', 'Matches this gen / total', count(generation.episodes) + ' / ' + count(generation.totalEpisodes));
     row('本代环境步 / 累计', 'Env. steps this gen / total', count(generation.environmentSteps) + ' / ' + count(generation.totalEnvironmentSteps));

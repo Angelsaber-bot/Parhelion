@@ -21,10 +21,12 @@ import { humanCombatPolicy, humanObservation, type CombatContact, type HumanComb
 /** Melee reach including most of the windup lunge. */
 const meleeReach = (w: WeaponDef) => w.range + (w.lunge ?? 0) * (w.windup ?? 0) / TICK_HZ * .7;
 import { playerHitbox } from './hit.ts';
-import { insideMovementBounds, lineOfSight, type Vec3 } from './map.ts';
+import { lineOfSight, type Vec3 } from './map.ts';
 import type { Controller, Match } from './match.ts';
-import { NavGrid, type NavNode } from './nav.ts';
-import { BTN, canSlideTo, forward, playerEye, type Input, type PlayerState } from './sim.ts';
+import type { NavNode } from './nav.ts';
+import { navFor, safeDirection } from './botLocomotion.ts';
+export { navFor } from './botLocomotion.ts';
+import { BTN, forward, playerEye, type Input, type PlayerState } from './sim.ts';
 
 export interface BotSkill {
   reaction: number; // base ticks from first sight to first shot (grows with distance)
@@ -60,13 +62,6 @@ export const BOT_SKILL: Record<'easy' | 'normal' | 'hard', BotSkill> = {
 
 type Style = 'rusher' | 'holder' | 'flanker';
 
-const navCache = new WeakMap<object, NavGrid>();
-export function navFor(match: Match): NavGrid {
-  let nav = navCache.get(match.map);
-  if (!nav) { nav = new NavGrid(match.map); navCache.set(match.map, nav); }
-  return nav;
-}
-
 function rng(seed: number) {
   let a = seed >>> 0;
   return () => {
@@ -96,24 +91,6 @@ export function predictContact(match: Match, trail: readonly Vec3[], age: number
   const lead = Math.min(15, age) / span;
   const guess: Vec3 = [last[0] + dx * lead, last[1], last[2] + dz * lead];
   return lineOfSight(match.map, [last[0], last[1] + .9, last[2]], [guess[0], guess[1] + .9, guess[2]]) ? guess : last;
-}
-
-function safeDirection(match: Match, me: PlayerState, x: number, z: number, side: number): [number, number] {
-  const length = Math.hypot(x, z);
-  if (length < .01) return [0, 0];
-  x /= length; z /= length;
-  const reach = Math.min(.32, Math.max(.14, length));
-  const usable = (dx: number, dz: number) => [reach / 2, reach].every(k => {
-    const px = me.x + dx * k, pz = me.z + dz * k;
-    return insideMovementBounds(match.map, px, pz) && canSlideTo(match.map, me, px, pz);
-  });
-  if (usable(x, z)) return [x, z];
-  for (const angle of [Math.PI / 4, -Math.PI / 4, Math.PI / 2, -Math.PI / 2, Math.PI]) {
-    const c = Math.cos(angle * side), s = Math.sin(angle * side);
-    const dx = x * c - z * s, dz = x * s + z * c;
-    if (usable(dx, dz)) return [dx, dz];
-  }
-  return [0, 0];
 }
 
 export class Bot implements Controller {

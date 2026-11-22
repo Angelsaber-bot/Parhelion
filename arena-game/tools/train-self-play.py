@@ -19,6 +19,8 @@ bc = import_module("train-arena-policy")
 AXIS_STD = 0.35
 CHECKPOINT_KIND = "arena-self-play-v1"
 PREDICTION_HORIZON = 3
+CONTROLLER = "perceptual-options-v1"
+UNLABELED = 2.0
 
 
 def checked_vector(row, key, length, limit):
@@ -34,7 +36,7 @@ def read_trajectories(path, parent_hash, rules, context):
             or doc["axisStd"] != AXIS_STD or not doc["episodes"]):
         raise ValueError("Rollout does not match the frozen behavior policy, rules, or sampling distribution")
     observations, actions, logp, rewards, ends, resets = [], [], [], [], [], []
-    env_ticks = 0
+    env_ticks, coaching = 0, []
     for episode in doc["episodes"]:
         if not bc.integer(episode["ticks"], 1, 10**8):
             raise ValueError("Invalid number of simulated game ticks")
@@ -60,12 +62,58 @@ def read_trajectories(path, parent_hash, rules, context):
             actions.append([*axes, *buttons, step["weapon"]])
             logp.append(step["logp"])
             rewards.append(step["reward"])
+            labels = step.get("coach", [None] * 5)
+            if (not isinstance(labels, list) or len(labels) != 5
+                    or any(value is not None and not bc.bounded(value, 1) for value in labels)
+                    or labels[4] not in (None, 0, 1)):
+                raise ValueError("Invalid corrective action labels")
+            coaching.append([UNLABELED if value is None else value for value in labels])
         ends.append(len(actions))
     tensors = [torch.tensor(rows, dtype=torch.float32) for rows in (observations, actions, logp, rewards)]
     # Each episode begins with a reset. A successor belongs to the same life only
     # if it exists and the actor did not clear its memory at that decision.
     successors = ~torch.tensor(resets[1:] + [True], dtype=torch.bool)
-    return (*tensors, ends, env_ticks, successors)
+    return (*tensors, ends, env_ticks, successors, torch.tensor(coaching, dtype=torch.float32))
+
+
+def correction_loss(logits, labels):
+    # Only supervised axes contribute. Compute a per-axis mean so rare escapes are not diluted
+    # by thousands of ordinary no-contact decisions. Positive and negative triggers count equally.
+    axes = labels[:, :4]
+    known = axes != UNLABELED
+    count = known.sum(dim=0)
+    error = F.smooth_l1_loss(logits[:, :4].tanh(), axes, beta=.2, reduction="none")
+    axes_loss = ((error * known).sum(dim=0) / count.clamp_min(1)).sum() / (count > 0).sum().clamp_min(1)
+    fire = labels[:, 4]
+    classes = torch.stack((fire == 0, fire == 1))
+    count = classes.sum(dim=1)
+    # A well separated trigger needs no further push toward saturation.
+    margin = torch.stack((-logits[:, 4], logits[:, 4]))
+    fire_loss = ((F.relu(.75 - margin) * classes).sum(dim=1) / count.clamp_min(1)).sum() / (count > 0).sum().clamp_min(1)
+    return axes_loss + .5 * fire_loss
+
+
+def aggregate_corrections(previous, states, labels, random):
+    # Uniform priority reservoirs within behavior groups. Keep rare firing opportunities and
+    # escapes across generations without storing trajectories or any human demonstration.
+    keep = (labels != UNLABELED).any(dim=1)
+    states, labels = states[keep].half(), labels[keep]
+    keys = torch.rand(len(labels), generator=random)
+    if previous:
+        states = torch.cat((previous["states"], states))
+        labels = torch.cat((previous["labels"], labels))
+        keys = torch.cat((previous["keys"], keys))
+    group = torch.zeros(len(labels), dtype=torch.long)
+    group[labels[:, 0] != UNLABELED] = 1  # search turn
+    group[states[:, -1, 0] > 0] = 2     # observed contact
+    group[labels[:, 2] != UNLABELED] = 3  # blocked movement
+    group[labels[:, 4] == 1] = 4          # actionable trigger
+    picks = []
+    for kind in range(5):
+        indices = torch.where(group == kind)[0]
+        picks.append(indices[keys[indices].argsort(descending=True)[:40]])
+    selected = torch.cat(picks)
+    return {"states": states[selected], "labels": labels[selected], "keys": keys[selected]}
 
 
 def distributions(logits):
@@ -112,6 +160,17 @@ def human_data(path, split, rules, context, include_holdout):
     return train, holdout, weights, len(groups[1])
 
 
+def replay_weights(dataset):
+    # Keep half of the natural distribution. Allocate the other half across observed
+    # quiet, turning and contact windows, capping repeat exposure for rare examples.
+    turning = dataset.targets[:, 0].abs() * bc.YAW_SCALE >= bc.SEARCH_TURN_RADIANS
+    contact = dataset.features[:, 0] > 0
+    group = torch.where(contact, 2, turning.long())
+    counts = torch.bincount(group, minlength=3)
+    balanced = len(dataset) / (counts[group] * counts.count_nonzero())
+    return .5 + .5 * balanced.clamp_max(7)
+
+
 def load_saved(path):
     saved = torch.load(path, map_location="cpu", weights_only=True)
     if saved.get("kind") not in (None, CHECKPOINT_KIND) or "signature" not in saved or "model" not in saved:
@@ -123,8 +182,14 @@ def file_hash(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def actor_json(actor, signature):
-    return bc.wire_model(actor, signature["rulesVersion"], signature["synthetic"])
+def actor_json(actor, signature, controller=None):
+    model = bc.wire_model(actor, signature["rulesVersion"], signature["synthetic"])
+    if controller is not None:
+        if controller != CONTROLLER:
+            raise ValueError("Unsupported Arena motor controller")
+        model["version"] = 2
+        model["controller"] = controller
+    return model
 
 
 @torch.no_grad()
@@ -146,7 +211,7 @@ def behavior(actor, critic, reference, states, actions, logged):
 
 
 class LatentDynamics(nn.Module):
-    """Training-only recurrent transition from a decision embedding and the executed controls."""
+    """Training-only recurrent transition from a decision embedding and the sampled control proposal."""
 
     def __init__(self, width):
         super().__init__()
@@ -193,13 +258,13 @@ def run(args):
     actor = bc.ArenaPolicy(config).eval()
     actor.load_state_dict(saved["model"])
     if args.command == "export":
-        bc.write_json(args.output, actor_json(actor, signature))
+        bc.write_json(args.output, actor_json(actor, signature, saved.get("controller")))
         return
 
     parent_hash = file_hash(args.actor)
-    if json.loads(args.actor.read_bytes()) != actor_json(actor, signature):
+    if json.loads(args.actor.read_bytes()) != actor_json(actor, signature, saved.get("controller")):
         raise ValueError("Rollout actor and source checkpoint weights differ")
-    states, actions, logged, rewards, ends, env_ticks, successors = read_trajectories(
+    states, actions, logged, rewards, ends, env_ticks, successors, coaching = read_trajectories(
         args.rollout, parent_hash, signature["rulesVersion"], config.context)
     prior = load_saved(args.prior) if args.prior else saved
     if (args.prior and prior.get("kind") is not None) or prior["signature"] != signature:
@@ -233,10 +298,17 @@ def run(args):
         dynamics.load_state_dict(saved["dynamics"])
         dynamics_optimizer.load_state_dict(saved["dynamicsOptimizer"])
     values, targets, old_logits, prior_logits, parity_error = behavior(actor, critic, reference, states, actions, logged)
+    demo_weights = replay_weights(human[0]) if human else None
     advantage, returns = generalized_advantages(rewards, values, ends)
     previous_updates = saved.get("optimizerSteps", 0)
     updates, objectives, prediction_sum, prediction_pairs = 0, [], 0., 0
     replayed_windows = 0
+    coached_generations = saved.get("coachedGenerations", 0)
+    coached_decisions = int((coaching != UNLABELED).any(dim=1).sum())
+    coach_weight = args.coach_weight / math.sqrt(1 + coached_generations / 24) if coached_decisions else 0.
+    previous_coaching = saved.get("coachArchive")
+    coach_random = torch.Generator().manual_seed(seed + 9815)
+    coach_replays = 0
     stopped = False
     # Observe a fixed, seeded sample after each optimizer step. Rollout-wide KL is
     # reported separately; the normal, Bernoulli and categorical KLs are all analytic.
@@ -256,9 +328,17 @@ def run(args):
             entropy = parts[1].entropy().sum(-1).mean() + parts[2].entropy().mean()
             auxiliary, pairs = prediction_loss(dynamics, encoded, ix, actions, targets, successors)
             loss = -surrogate + .5 * value_loss + .08 * prior_kl - .001 * entropy + .1 * auxiliary
+            if coach_weight:
+                correction = correction_loss(logits, coaching[ix])
+                if previous_coaching and len(previous_coaching["labels"]):
+                    rows = torch.randint(len(previous_coaching["labels"]), (min(32, len(ix)),), generator=coach_random)
+                    remembered = actor(previous_coaching["states"][rows].float())
+                    correction = .75 * correction + .25 * correction_loss(remembered, previous_coaching["labels"][rows])
+                    coach_replays += len(rows)
+                loss = loss + coach_weight * correction
             if human:
                 human_train, _, weights, _ = human
-                selection = torch.randint(len(human_train), (min(len(ix), 64),))
+                selection = torch.multinomial(demo_weights, min(len(ix), 64), replacement=True)
                 replayed_windows += len(selection)
                 demo_x, demo_y = zip(*(human_train[i] for i in selection.tolist()))
                 loss = loss + .15 * bc.losses(actor(torch.stack(demo_x)), torch.stack(demo_y), weights).mean()
@@ -279,10 +359,11 @@ def run(args):
         if stopped:
             break
 
-    bc.write_json(args.output, actor_json(actor, signature))
+    bc.write_json(args.output, actor_json(actor, signature, CONTROLLER))
     actor_hash = file_hash(args.output)
     if actor_hash == parent_hash:
         raise ValueError("Self-play update produced unchanged policy weights")
+    archive = aggregate_corrections(previous_coaching, states, coaching, coach_random)
     metrics = {
         "generation": generation + 1, "optimizerSteps": previous_updates + updates, "updates": updates,
         "steps": len(rewards), "games": len(ends), "parentHash": parent_hash, "actorHash": actor_hash,
@@ -293,6 +374,10 @@ def run(args):
         "predictionHorizon": PREDICTION_HORIZON, "predictionPairs": prediction_pairs,
         "predictionLoss": prediction_sum / prediction_pairs if prediction_pairs else None,
         "humanReplayWindows": replayed_windows,
+        "coachedDecisions": coached_decisions, "coachWeight": coach_weight,
+        "coachArchiveWindows": len(archive["labels"]), "coachReplayWindows": coach_replays,
+        "coachTargetsByControl": (coaching != UNLABELED).sum(dim=0).tolist(),
+        "coachPositiveTriggers": int((coaching[:, 4] == 1).sum()),
         "rewardSum": rewards.sum().item(), "nonzeroRewards": int(rewards.count_nonzero()),
         "holdoutWindows": 0, "holdoutCaptures": 0,
     }
@@ -303,6 +388,8 @@ def run(args):
                        referenceHoldout=bc.evaluate(reference, loader, "cpu", weights),
                        holdoutWindows=len(test), holdoutCaptures=capture_count)
     state = {"kind": CHECKPOINT_KIND, "signature": signature, "model": actor.state_dict(), "critic": critic.state_dict(),
+             "controller": CONTROLLER, "coachedGenerations": coached_generations + int(coach_weight > 0),
+             "coachArchive": archive,
              "optimizer": optimizer.state_dict(), "reference": reference.state_dict(), "split": human_split,
              "dynamics": dynamics.state_dict(), "dynamicsOptimizer": dynamics_optimizer.state_dict(),
              **{k: metrics[k] for k in ("generation", "optimizerSteps", "totalSteps", "totalGames", "totalEnvironmentSteps", "actorHash")}}
@@ -330,10 +417,13 @@ def main():
     update.add_argument("--learning-rate", type=float, default=5e-5)
     update.add_argument("--target-kl", type=float, default=.03,
                         help="Stop PPO minibatches when the measured old-to-new joint action KL reaches this many nats")
+    update.add_argument("--coach-weight", type=float, default=.65,
+                        help="Initial corrective imitation weight; zero disables coaching for an ablation")
     update.add_argument("--seed", type=int, default=61855)
     args = parser.parse_args()
     if args.command == "update" and not (1 <= args.epochs <= 50 and 1 <= args.batch_size <= 4096
-                                          and 0 < args.learning_rate <= .01 and 0 < args.target_kl <= 10):
+                                          and 0 < args.learning_rate <= .01 and 0 < args.target_kl <= 10
+                                          and 0 <= args.coach_weight <= 2):
         parser.error("Invalid PPO training settings")
     try:
         run(args)

@@ -24,7 +24,8 @@ class SelfPlayLearningTest(unittest.TestCase):
             path = Path(directory) / "episodes.json"
             path.write_text(json.dumps(dict(version=1, axisStd=trainer.AXIS_STD, actorHash="actor",
                                             rulesVersion=43, episodes=episodes)))
-            _, actions, _, _, ends, _, successors = trainer.read_trajectories(path, "actor", 43, 4)
+            _, actions, _, _, ends, _, successors, coaching = trainer.read_trajectories(path, "actor", 43, 4)
+        self.assertTrue((coaching == trainer.UNLABELED).all())
         self.assertEqual(ends, [4, 8])
         self.assertEqual(successors.tolist(), [True, False, True, False, True, True, True, False])
 
@@ -50,6 +51,36 @@ class SelfPlayLearningTest(unittest.TestCase):
         changed = old.clone()
         changed[:, 0] += trainer.AXIS_STD
         self.assertAlmostEqual(trainer.rollout_kl(actor, changed, old), .5, places=6)
+
+    def test_corrections_preserve_unknown_heads_and_balance_trigger_classes(self):
+        logits = torch.zeros(2, 14, requires_grad=True)
+        labels = torch.tensor([[.5, 2., 2., 2., 0.], [2., 2., 2., 2., 1.]])
+        loss = trainer.correction_loss(logits, labels)
+        loss.backward()
+        self.assertLess(logits.grad[0, 0], 0)
+        self.assertEqual(logits.grad[1, 0], 0)
+        self.assertEqual(logits.grad[:, 1:4].count_nonzero(), 0)
+        self.assertEqual(logits.grad[:, 5:].count_nonzero(), 0)
+        self.assertGreater(logits.grad[0, 4], 0)
+        self.assertLess(logits.grad[1, 4], 0)
+        repeats = [0] * 99 + [1]
+        torch.testing.assert_close(trainer.correction_loss(logits[repeats], labels[repeats]), loss)
+        torch.testing.assert_close(trainer.correction_loss(logits, torch.full_like(labels, 2.)), torch.zeros(()))
+
+    def test_correction_archive_keeps_rare_labels_through_unlabeled_and_common_generations(self):
+        rng = torch.Generator().manual_seed(826)
+        states = torch.zeros(600, 8, trainer.bc.FEATURES)
+        labels = torch.full((600, 5), trainer.UNLABELED)
+        labels[:-1, 4] = 0
+        labels[-1, 4] = 1
+        first = trainer.aggregate_corrections(None, states, labels, rng)
+        self.assertEqual(len(first["labels"]), 41)
+        labels[:] = trainer.UNLABELED
+        labels[:500, 4] = 0
+        second = trainer.aggregate_corrections(first, states, labels, rng)
+        self.assertEqual((second["labels"][:, 4] == 1).sum(), 1)
+        self.assertEqual((second["labels"][:, 4] == 0).sum(), 40)
+        self.assertEqual(second["states"].dtype, torch.float16)
 
 
 if __name__ == "__main__":

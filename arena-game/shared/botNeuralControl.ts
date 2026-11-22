@@ -3,6 +3,7 @@ import { explorationScene, EXPLORATION_TICKS } from './exploration.ts';
 import { humanObservation, wrapAngle, type CombatContact } from './humanCombat.ts';
 import type { Match } from './match.ts';
 import { createNeuralPolicy, type NeuralPolicyModel } from './neuralPolicy.ts';
+import { perceptualMotor } from './perceptualMotor.ts';
 import { BTN, type Input, type PlayerState } from './sim.ts';
 
 const EDGE_BUTTONS = BTN.JUMP | BTN.DASH | BTN.RELOAD | BTN.THROW;
@@ -41,6 +42,7 @@ export function applyNeuralAction(input: Input, me: PlayerState, raw: NeuralActi
 export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectAction = greedyAction) {
   const policy = createNeuralPolicy(model);
   let life = -1, next = -1, bearing = 0, seenAt = -Infinity;
+  let motor: ReturnType<typeof perceptualMotor> | undefined;
   let prior: [number, number] = [0, 0];
   let action: NeuralAction = { axes: [0, 0, 0, 0], buttons: 0, weapon: 0 };
 
@@ -55,7 +57,10 @@ export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectA
   return {
     reset,
     apply(match: Match, me: PlayerState, input: Input): Input {
-      if (life !== me.lifeId) { reset(); life = me.lifeId; }
+      if (life !== me.lifeId) {
+        reset(); life = me.lifeId;
+        motor = model.controller === 'perceptual-options-v1' ? perceptualMotor() : undefined;
+      }
       const choose = match.tick >= next;
       const contacts: CombatContact[] = [];
       for (const { state } of match.slots.values()) {
@@ -72,6 +77,7 @@ export function neuralBotControl(model: NeuralPolicyModel, selectAction: SelectA
         next = match.tick + EXPLORATION_TICKS;
       }
       applyNeuralAction(input, me, action, choose);
+      motor?.(match.map, me, match.tick, observation, input, action.buttons);
       prior = [wrapAngle(input.yaw - me.yaw), input.pitch - me.pitch];
       return input;
     },

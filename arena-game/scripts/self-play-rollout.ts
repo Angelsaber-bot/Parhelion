@@ -14,6 +14,7 @@ import type { NavNode } from '../shared/nav.ts';
 import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { opponentLeague } from './self-play-league.ts';
+import { decisionCoach, type CoachTargets } from './self-play-coach.ts';
 
 const AXIS_STD = .35;
 const TACTICS = learnedTactics(tactics.weights, tactics.margin);
@@ -24,6 +25,7 @@ interface Step {
   obs: number[]; reset: boolean;
   axes: number[]; buttons: number[]; weapon: number;
   logp: number; reward: number;
+  coach?: CoachTargets;
 }
 interface FrozenActor { hash: string; model: NeuralPolicyModel }
 type Opponent = { mode: 'self-play' | 'scripted' } | { mode: 'frozen'; actor: FrozenActor };
@@ -70,6 +72,7 @@ function sample(obs: number[], logits: number[], reset: boolean, rand: () => num
 }
 
 function learnedController(actor: FrozenActor, rand: () => number, record?: Step[]): Controller {
+  const coach = record && decisionCoach();
   const policy = neuralBotControl(actor.model, (obs, logits, reset): NeuralAction => {
     const step = sample(obs, logits, reset, rand);
     record?.push(step);
@@ -80,7 +83,15 @@ function learnedController(actor: FrozenActor, rand: () => number, record?: Step
   return { think(match, id) {
     const me = match.player(id)!;
     const input = { seq: ++sequence, view: match.tick, mx: 0, mz: 0, yaw: me.yaw, pitch: me.pitch, buttons: 0, weapon: me.weaponSlot };
-    if (me.alive && match.phase === 'live') return policy.apply(match, me, input);
+    if (me.alive && match.phase === 'live') {
+      const count = record?.length;
+      const chosen = policy.apply(match, me, input);
+      if (coach && record && record.length !== count) {
+        const step = record[record.length - 1];
+        step.coach = coach(step.obs, step.reset, match.map, me);
+      }
+      return chosen;
+    }
     policy.reset();
     return input;
   } };
