@@ -76,9 +76,8 @@ def train(args):
         camera = F.smooth_l1_loss(axes[:64], group[:64, -2:], beta=.07)
         # A hidden target can be recovered by more than one turn. Fit density at
         # successful controls so two opposite turns need not average to zero.
-        search_error = (axes[64:] - group[64:128, -2:]).square().sum(dim=1)
         bandwidth = .45 - .23 * step / args.steps
-        search = -torch.exp(-.5 * search_error / bandwidth**2).mean()
+        search = rl.search_outcome_loss(axes[64:], group[64:128, -2:], bandwidth)
         trigger = F.binary_cross_entropy_with_logits(logits[128:, 4], group[128:, -2])
         ids = torch.randint(len(hx), (64,))
         imitation = bc.losses(actor(hx[ids]), hy[ids], weights).mean()

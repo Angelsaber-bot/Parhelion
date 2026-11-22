@@ -35,6 +35,13 @@ def load_practice(path):
     return [rows[rows[:, 0] == kind] for kind in (0, 1, 2)]
 
 
+def search_outcome_loss(axes, successes, bandwidth):
+    # Several different turns can reveal the same unseen target. Favor a
+    # neighborhood of successful sampled actions, including when their mean fails.
+    error = (axes - successes).square().sum(dim=1)
+    return -torch.exp(-.5 * error / bandwidth**2).mean()
+
+
 def practice_loss(actor, histories, groups):
     # Uniform camera probes are retained for actual hits or reacquisitions.
     # Probe shots include both misses and hits; triggers learn their outcomes.
@@ -53,6 +60,8 @@ def practice_loss(actor, histories, groups):
         output = actor(windows)
         if kind == 0:
             losses.append(F.binary_cross_entropy_with_logits(output[:, 4], sample[:, -2]))
+        elif kind == 2:
+            losses.append(search_outcome_loss(output[:, :2].tanh(), sample[:, -2:], bandwidth=.32))
         else:
             losses.append(F.smooth_l1_loss(output[:, :2].tanh(), sample[:, -2:], beta=.12))
     return torch.stack(losses).mean()
