@@ -20,7 +20,7 @@ def fit_player(model, recordings, holdout):
         with torch.no_grad():
             x = actor.encode(torch.stack([ds[i][0] for i in range(len(ds))]))
         routes = route_indices(ds.starts, range(len(ds)))
-        groups.append((x, ds.targets, routes, ds.features[:, 21:23]))
+        groups.append((x, ds.targets, routes, ds.features[:, 21:23], ds.features[:, :4]))
 
     def fit(indices):
         weight = actor.out.weight.detach().clone().requires_grad_()
@@ -29,9 +29,17 @@ def fit_player(model, recordings, holdout):
         for _ in range(64):
             losses = []
             for i in indices:
-                x, y, routes, headings = groups[i]
+                x, y, routes, headings, view = groups[i]
                 logits = F.linear(x, weight, bias)
                 imitation = bc.losses(logits, y, torch.ones(7)).mean()
+                # Equalize the influence of visible distance bands without changing the labels.
+                visible = view[:, 0] == 1
+                distance = view[:, 3] * 45
+                bands = [visible & (distance < 15), visible & (distance >= 15) & (distance < 30),
+                         visible & (distance >= 30)]
+                trigger_losses = [F.binary_cross_entropy_with_logits(logits[m, 4], y[m, 4]) for m in bands if m.any()]
+                if trigger_losses:
+                    imitation += .25 * torch.stack(trigger_losses).mean()
                 if len(routes):
                     imitation += .3 * route_loss(logits[:, 2:4].tanh()[routes], y[routes, 2:4], headings[routes])
                 losses.append(imitation)
@@ -42,9 +50,15 @@ def fit_player(model, recordings, holdout):
         return actor.out.weight.detach().lerp(weight.detach(), .65), actor.out.bias.detach().lerp(bias.detach(), .65)
 
     def metrics(index, weight, bias):
-        x, y, _, _ = groups[index]
+        x, y, _, _, view = groups[index]
         logits = F.linear(x, weight, bias)
-        return dict(windows=len(x), loss=bc.losses(logits, y, torch.ones(7)).mean().item(),
+        stats = {}
+        for label, low, high in [("near", 0, 15), ("mid", 15, 30), ("far", 30, 45), ("far45plus", 45, 46)]:
+            mask = (view[:, 0] == 1) & (view[:, 3]*45 >= low) & (view[:, 3]*45 < high)
+            if mask.any():
+                stats[label] = dict(windows=int(mask.sum()), human=int(y[mask, 4].sum()),
+                                    actor=int((logits[mask, 4] > 0).sum()))
+        return dict(windows=len(x), triggerByDistance=stats, loss=bc.losses(logits, y, torch.ones(7)).mean().item(),
                     movement=(logits[:, 2:4].tanh()-y[:, 2:4]).abs().mean().item(),
                     yaw=(logits[:, 0].tanh()-y[:, 0]).abs().mean().item(),
                     fire=(logits[:, 4].sigmoid()-y[:, 4]).square().mean().item())
@@ -57,5 +71,5 @@ def fit_player(model, recordings, holdout):
         folds.append(metrics(test, *fit([i for i in training if i != test])))
     w, b = fit(training)
     return dict(weights=w.tolist(), bias=b.tolist(), folds=folds,
-                rows=[len(g[0]) for g in groups], before=metrics(holdout, actor.out.weight, actor.out.bias),
+                rows=[len(g[0]) for g in groups], trainRange=[metrics(i, w, b)["triggerByDistance"] for i in training], before=metrics(holdout, actor.out.weight, actor.out.bias),
                 after=metrics(holdout, w, b))
