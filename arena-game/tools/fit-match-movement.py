@@ -6,6 +6,8 @@ from pathlib import Path
 import torch
 from torch.nn import functional as F
 
+from arena_route_learning import route_indices, route_loss
+
 bc = import_module("train-arena-policy")
 
 
@@ -51,7 +53,8 @@ def movement_data(batches, actor):
                                  lateral=float((motion[:, 0].abs() > .35).float().mean()),
                                  still=float((motion.abs().max(1).values < .15).float().mean()),
                                  turnDegrees=float(target[mask, 0].abs().median() * .9 * 180 / 3.14159))
-    return encoded, moves, train, test, summary
+    routes = route_indices(data.starts, train.nonzero().flatten().tolist(), train)
+    return encoded, moves, train, test, summary, routes, obs[:, 21:23]
 
 
 def fit(model, recordings):
@@ -63,14 +66,19 @@ def fit(model, recordings):
     w, b = base_w.clone().requires_grad_(), base_b.clone().requires_grad_()
     optimizer = torch.optim.Adam([w, b], lr=.0012)
     for _ in range(100):
-        losses = [F.smooth_l1_loss(F.linear(x[train], w, b).tanh(), y[train], beta=.25)
-                  for x, y, train, _, _ in groups]
+        losses = []
+        for x, y, train, _, _, routes, heading in groups:
+            predicted = F.linear(x, w, b).tanh()
+            loss = F.smooth_l1_loss(predicted[train], y[train], beta=.25)
+            if len(routes):
+                loss = loss + .4 * route_loss(predicted[routes], y[routes], heading[routes])
+            losses.append(loss)
         loss = sum(losses)/len(losses) + .5*((w-base_w)**2).mean() + .5*((b-base_b)**2).mean()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
     result = dict(weights=w.detach().tolist(), bias=b.detach().tolist(), games=[])
-    for x, y, train, test, summary in groups:
+    for x, y, train, test, summary, _, _ in groups:
         errors = {}
         for blend in (0,.05,.1,.2,.35,.5,1):
             pred = F.linear(x[test], base_w.lerp(w,blend),base_b.lerp(b,blend)).tanh()
