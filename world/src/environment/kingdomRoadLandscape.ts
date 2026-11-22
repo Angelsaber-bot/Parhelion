@@ -108,6 +108,10 @@ export function createKingdomRoadLandscape(ground: (x: number, z: number) => num
   abbey.box([-214, 33.8, -110], [10, .4, 8], stone, true);
   for (const z of [-113, -107]) abbey.box([-215, 34.4, z], [4, .8, .6], wood, true);
   abbey.box([-217, 35, -110], [1.2, 2, 1.2], stone, true);
+  // The abbey crew uses this ratchet at the donor span, beside the clear walking lane.
+  abbey.box([-184, 34.5, -108.45], [.8, 1, .55], wood, true);
+  abbey.ring([-184, 35.16, -108.5], .38, .07, iron);
+  abbey.beam([-184, 35.16, -108.5], [-183.65, 35.42, -108.5], .105, pale);
   finish(abbey, 'COL_KingdomAbbeyMeetingApproach');
   const donationCollider = finish(donation, 'COL_KingdomAbbeyDonatedSpan');
   const closedCollider = finish(closed, 'COL_KingdomAbbeyClosedBridgeEnds');
@@ -132,13 +136,17 @@ export function createKingdomRoadLandscape(ground: (x: number, z: number) => num
 
   const controls = new SiteArt();
   const markerPositions: [string, Point][] = [[K.front, gatePoint(-5, -7, 1.5)], [K.side, gatePoint(-8, -7, 1.5)],
-    [K.start, gatePoint(-5, -11, 1.5)], [K.finish, gatePoint(-8, -11, 1.5)]];
+    [K.start, gatePoint(-5, -11, 1.5)]];
   for (const [, p] of markerPositions) {
     controls.box([p[0], p[1] - .95, p[2]], [.65, 1.1, .65], wood, true);
     controls.paper(p[0], p[1] - .38, p[2], .6, .6);
   }
   finish(controls, 'COL_KingdomRoadPlanningTables', false);
   const markers: Marker[] = markerPositions.map(([id, p]) => ({ id, p, type: 'interact', label: KINGDOM_ROAD_LABELS[id][0], radius: 2.4 }));
+  // The same saved action follows the prepared works. Carry out the decision where it changes the road.
+  const frontHandle = gatePoint(4.45, 13, 1.3), sideHandle = world([-184, 35, -110]);
+  const handle: Marker = { id: K.finish, p: frontHandle, type: 'interact', radius: 2.4, label: KINGDOM_ROAD_LABELS[K.finish][0] };
+  markers.push(handle);
   markers.push({ id: 'disc_kingdom_abbey_bridge', p: world([-211, 34, -110]), type: 'discovery', radius: 4,
     label: '修院外桥与集会台', note: '桥上的梁可加固旧水道。拆走中段后，这里的集会必须迁到下城，旧桥两端会封起。' });
   let t = 1, finished = false, initialized = false;
@@ -148,6 +156,7 @@ export function createKingdomRoadLandscape(ground: (x: number, z: number) => num
     if (finished !== completed) { finished = completed; t = completed ? 0 : 1; }
     if (dt > 0) t = Math.min(1, t + dt / 2.8);
     const frontDone = completed && choice === 'front', sideDone = completed && choice === 'side';
+    handle.p = choice === 'side' ? sideHandle : frontHandle;
     const open = choice === 'side'; hatch.root.visible = !open; hatchCollider.enabled = !open;
     front.root.visible = frontDone; frontCollider.enabled = frontDone;
     outerGate.position.y = 34.22 + (frontDone ? 8.4 * (1 - t) : 8.4);

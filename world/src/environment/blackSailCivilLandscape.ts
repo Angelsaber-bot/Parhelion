@@ -143,6 +143,13 @@ export function createBlackSailCivilLandscape(ground: (x: number, z: number, cei
   // Walkable lookout deck faces the lighthouse and the flagship, reached from both ends.
   route([[-38, uy, 65], [-31, uy + 3, 65], [-31, uy + 3, 73], [-38, uy, 73]], 2.8, true);
   art.box([-31, uy + 2.85, 69], [3, .3, 8], timber, true);
+  // White over blue identifies the customs service gate from the sight rail.
+  // Keep the centre of the landing and both stairs open.
+  for (const [x, floor, z, mast] of [[-29.8, uy + 3, 69, 2.8], [-73.4, cy, 113.8, 7.2]]) {
+    art.beam([x, floor, z], [x, floor + mast, z], .12, timber);
+    for (const [drop, color] of [[.25, '#f1ebe0'], [.95, '#27699a']] as const)
+      art.box([x + .78, floor + mast - drop, z], [1.56, .39, .045], color);
+  }
   BLACKSAIL_CIVIL_PATHS.forEach((path, i) => followGround(path, i === 4 ? 5.4 : 3.6));
 
   art.relocate(new THREE.Matrix4().makeTranslation(720, 0, -720));
@@ -150,6 +157,7 @@ export function createBlackSailCivilLandscape(ground: (x: number, z: number, cei
   const collider: Collider = { name: 'COL_BlackSailInlandCivilRoute', bvh: new MeshBVH(geometry), enabled: true };
   art.finish('blacksail'); art.root.name = 'BlackSailSaltCustomsAndRopeway';
   const markers: Marker[] = [
+    { id: 'disc_harbor_signal_deck', label: '索道高台 · 海关旗号', type: 'discovery', p: [689, uy + 3.9, -651], radius: 2.5, note: '从这里能看见旧海关侧门上白下蓝的旗号。沿索道检修路下到卸货场。' },
     { id: 'disc_harbor_salt_store', label: '草原盐仓', type: 'discovery', p: [640, y, -655], radius: 5, note: '盐仓有通向港口、索道和草原的三个出入口' },
     { id: 'disc_harbor_old_customs', label: '旧海关侧门', type: 'discovery', p: [645, cy, -608], radius: 4, note: '侧门绕回旧盐仓，正面装卸线通往拿骚港' },
     { id: 'disc_harbor_ropeway', label: '废货运索道', type: 'discovery', p: [676, uy, -655], radius: 4, note: '停用的货架悬在两座支架之间，检修路从旁边下坡' },

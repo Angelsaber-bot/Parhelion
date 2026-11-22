@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { resolveTrackedStoryPoint, trackedStoryRouteBlocked } from '../src/story/trackedStoryNavigation';
+import { nextStoryPass, resolveTrackedStoryPoint, trackedStoryRouteBlocked } from '../src/story/trackedStoryNavigation';
 import { GATES } from '../src/map/regions';
 
 test('a local pin transitioning to a remote act falls back to the original story until the actual gate opens', () => {
@@ -10,7 +10,7 @@ test('a local pin transitioning to a remote act falls back to the original story
   assert.equal(resolveTrackedStoryPoint('alpha', 'winter', done, local), null);
   done.add('false_dawn_started'); done.add('false_dawn_route_harbor');
   assert.equal(resolveTrackedStoryPoint('alpha', 'blacksail', done, local), null, 'story flags cannot unlock a main-route seam');
-  done.add('summon_circle'); assert.deepEqual(resolveTrackedStoryPoint('alpha', 'blacksail', done, local), GATES.blacksail.p);
+  done.add('summon_circle'); assert.deepEqual(resolveTrackedStoryPoint('alpha', 'blacksail', done, local), GATES.winter.p);
   done.delete('summon_circle'); assert.equal(resolveTrackedStoryPoint('alpha', 'blacksail', done, local), null);
 });
 test('direct-region saves can track local work but cannot be guided across a still-closed return seam', () => {
@@ -18,7 +18,7 @@ test('direct-region saves can track local work but cannot be guided across a sti
   assert.equal(trackedStoryRouteBlocked('winter', 'winter', done), false);
   assert.deepEqual(resolveTrackedStoryPoint('winter', 'winter', done, [1, 2, 3]), [1, 2, 3]);
   assert.equal(resolveTrackedStoryPoint('winter', 'alpha', done), null);
-  done.add('summon_circle'); assert.deepEqual(resolveTrackedStoryPoint('winter', 'blacksail', done), GATES.winter.p);
+  done.add('summon_circle'); assert.deepEqual(resolveTrackedStoryPoint('winter', 'blacksail', done), GATES.blacksail.p);
   assert.equal(resolveTrackedStoryPoint('alpha', 'alpha', done), null);
   const copy = resolveTrackedStoryPoint('winter', 'alpha', done)!; copy[0] = 999;
   assert.notEqual(GATES.winter.p[0], 999);
@@ -46,5 +46,22 @@ test('a reached seam marker leads on into the next region instead of sitting und
   const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
   assert.ok(main.includes('const y = grid.sampleHeight(q[0], q[2]);') && main.includes('return y === null ? q : [q[0], y, q[2]];'), 'shown on the ground, wherever it was authored');
   assert.equal(main.split('resolveTrackedStoryPoint(here').length - 1, 1, 'every tracked story goes through the one seam-aware helper');
-  assert.ok(main.includes('if (gate) return { p: seamGuidePoint(gate.p, here, o.region), label:'));
+  assert.ok(main.includes('seamGuidePoint(gate.p, here, o.region)'), 'legacy objective beacons also lead past a reached crossing');
+});
+
+test('all directions along the authored road converge without sending the player back to a previous region', () => {
+  const road = ['britain', 'alpha', 'winter', 'blacksail', 'kyoto'];
+  for (const start of road) for (const finish of road) {
+    let here = start;
+    const visited = new Set<string>();
+    while (here !== finish) {
+      assert.ok(!visited.has(here)); visited.add(here);
+      const passage = nextStoryPass(here, finish);
+      assert.ok(passage);
+      assert.equal(Math.abs(road.indexOf(here) - road.indexOf(passage.toward)), 1);
+      here = passage.toward;
+    }
+  }
+  assert.equal(nextStoryPass('kyoto', 'britain')?.toward, 'blacksail');
+  assert.equal(nextStoryPass('alpha', 'kyoto')?.toward, 'winter');
 });

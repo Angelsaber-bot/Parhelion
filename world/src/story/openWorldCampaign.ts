@@ -45,7 +45,7 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
   if(region!=='alpha'&&dramaChapterReady(region,done)&&!done.has(JOURNEY_DRAMA.report(region)))return person(region,['回到守望者身边，亲口告诉他现场发生了什么。','Return to the keeper and tell them what actually happened.']);
   if(region==='britain'&&done.has('sun_core')&&!done.has('kingdom_gate_rescued')){const gate=gateGuide(done);if(gate)return at(region,JOURNEY_CAST.britain.chapter,gate.text,gate.targetId);}
   if(region==='alpha'&&dramaReported(done).length>=2&&!done.has(JOURNEY_DRAMA.confession))return person('alpha',['带着两地的回执回见岚，问清签名的来历。','Bring the receipts to Lan and ask about the signature.']);
-  if(region==='alpha'&&done.has('adventure_escaped')&&dramaReported(done).length===4&&!dramaDecision(done))return person('alpha',['与岚决定频道今后的值守方式，再到观测所写下结尾。','Decide the channel’s future with Lan, then record the ending at the Observatory.']);
+  if(region==='alpha'&&done.has('adventure_escaped')&&dramaReported(done).length===4&&!dramaDecision(done))return person('alpha',['与岚商量下一班由谁值守，把四域的回执送到观测所。','Settle the next watch with Lan and take the four regions’ receipts to the Observatory.']);
   if(region==='alpha'&&JOURNEY_REGIONS.every(r=>adventureChapterComplete(r,done))){const missing=JOURNEY_REGIONS.find(r=>!done.has(JOURNEY_DRAMA.report(r)));if(missing)return getAdventureGuide(missing,done);}
  }
  if(region==='alpha'){
@@ -54,7 +54,7 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
   if(!done.has('armory_rack'))return at(region,title,['到工坊领取步枪；求援讯号似乎先于现场发出。','Collect your rifle at the workshop; the distress call seems to precede the event.'],'armory_rack');
   if(!adventureTravelOpen(done))return at(region,title,['在服务庭院完成一次突破并接通外联。正街或维修侧路都能到达控制柜。','Breach the service yard and restore the uplink. Use front cover or the maintenance flank.'],'compact_relay_entry');
   if(!done.has('saber_contract'))return at('britain',title,['最低外联已恢复，四条道路开放。推荐西行，到圣剑湖与 Saber 正式契约；也可先探索其他地区。','The uplink is restored and all four roads are open. Head west to make your pact with Saber, or explore another region first.'],'saber_contract');
-  const next=(['britain','blacksail','winter','kyoto'] as const).find(r=>!adventureChapterComplete(r,done));
+  const next=JOURNEY_REGIONS.find(r=>!adventureChapterComplete(r,done));
   if(next){
    return getAdventureGuide(next,done);
   }
@@ -63,7 +63,7 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
   if(!done.has(ADVENTURE.guardian))return at(region,title,['发射器已停机。在塔前讯号源引出守门者；识别直线突刺与重击，等收势后反击。','Emitters are down. Expose the Warden at the tower signal source; distinguish thrust from heavy sweep and punish recovery.'],'adventure_guardian');
   if(!done.has(ADVENTURE.takeover))return at(region,title,['沿原有登塔路线到顶端，手动接管观测终端；恢复出口照明。','Climb the tower’s existing route and take manual control to restore the exit lights.'],'adventure_tower');
   if(!done.has(ADVENTURE.escaped))return at(region,title,['出口灯已经亮起。沿塔梯返回南侧安全集合点，确认撤离。','Exit lights are on. Descend the tower stairs to the southern assembly point and confirm evacuation.'],'adventure_exit');
-  if(!done.has(ADVENTURE.ending))return at(region,title,['回到观测所留下今天的记录。未来第一次没有被预先写好。','Return to the Observatory and record today. For the first time, tomorrow is unwritten.'],'adventure_tomorrow');
+  if(!done.has(ADVENTURE.ending))return at(region,title,['把四域的原始记录存回观测所，给下一班值守的人留一份。','File the four regions’ original accounts at the Observatory for the next watch.'],'adventure_tomorrow');
   return null;
  }
  if(region==='britain'){
@@ -141,7 +141,9 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
  return null;
 }
 
-export function getAdventureEndingText():Localized{return ['你把最后一条覆盖命令从终端里撤下。屏幕没有再抢先写出答案。\n王城的封锁命令已经停止，商船驶离港口，药车停在渡口，京都保住了没有被火改写的记录。岚把电台留在有人值守的频道上。\n这次，观测所只写下今天。明天的那一页，留给真正走到那里的人。你仍然可以回访这些地方，与喜欢的从者继续同行。','You remove the last overriding command. This time, the screen does not answer before the question.\nThe kingdom’s blockade orders have ended, the merchant ship has left port, the medicine cart waits at the crossing, and Kyoto’s unaltered record survives. Lan keeps the radio on a channel with a person listening.\nThe Observatory records only today. Tomorrow’s page belongs to those who reach it. You may revisit these places and keep traveling with the companion you chose.'];}
+export function getAdventureEndingText(): Localized {
+ return ['岚把四份回报一张张钉到值班板上。王城报来敞开的城门，永冬收到了药车，黑帆留下一张空泊位的照片，京都交来一页没被改过的原稿。\n电台又响了。岚抽出一张空白回执，把笔递给下一班。', 'Lan pins four reports to the watch board. The kingdom reports an open gate. Winter signs for the medicine cart. Black Sail sends a photograph of an empty berth. Kyoto sends a page in the original hand.\nThe radio crackles again. Lan takes out a blank receipt and passes the pen to the next watch.'];
+}
 
 /** Single default selection for HUD and waypoint; an earned chapter never falls back to obsolete Valley chores. */
-export function getCurrentAdventureGuide(region:RegionId,done:ReadonlySet<string>){const guide=getAdventureGuide(region,done)??getAdventureGuide('alpha',done);return guide&&dramaActive(done)?{...guide,title:guide.region==='alpha'&&done.has(JOURNEY_DRAMA.opening)?(dramaReported(done).length===4?['终章 · 让明天继续','Finale · Let Tomorrow Continue'] as Localized:['幻日谷 · 回执上的签名','Valley · The Signature on the Receipt'] as Localized):JOURNEY_CAST[guide.region].chapter}:guide;}
+export function getCurrentAdventureGuide(region:RegionId,done:ReadonlySet<string>){const guide=getAdventureGuide(region,done)??getAdventureGuide('alpha',done);return guide&&dramaActive(done)?{...guide,title:guide.region==='alpha'&&done.has(JOURNEY_DRAMA.opening)?(dramaReported(done).length===4?['四域归报 · 频道由谁值守','Four Realms · Who Keeps Watch?'] as Localized:['幻日谷 · 回执上的签名','Valley · The Signature on the Receipt'] as Localized):JOURNEY_CAST[guide.region].chapter}:guide;}

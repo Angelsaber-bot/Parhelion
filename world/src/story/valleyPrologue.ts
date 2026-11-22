@@ -59,7 +59,7 @@ export function valleyPrologueGuide(stage: ValleyPrologueStage): { targetId: str
     case 'room': return { targetId: P.room, title: home, text: ['拿起房里的旧收音机。沿楼梯下去，到门口找孟槐。', 'Pick up the old radio. Go down the steps and meet Meng Huai at the entrance.'] };
     case 'briefing': return { targetId: P.steward, title: home, text: ['出发前，到生活馆门口找孟槐领外勤单。', 'Collect your field slip from Meng Huai at the residence entrance.'] };
     case 'cart': return { targetId: P.cartStop, title: home, text: ['帮阿舟拦住工具车。抬起前方挡板，或到车边把它推回去。', 'Help Azhou with the tool cart. Raise the stop ahead or walk to the cart and push it back.'] };
-    case 'workshop': return { targetId: P.workshop, title: home, text: ['沿谷地道路到工坊，把旧收音机放在检修桌上。', 'Follow the valley road to the workshop and leave the old radio on the repair bench.'] };
+    case 'workshop': return { targetId: P.workshop, title: home, text: ['沿谷地道路找挂着两面白旗的工坊。把旧收音机放在旗杆下的检修桌上。', 'Follow the valley road to the workshop with two white pennants. Leave the old radio on the bench below them.'] };
     case 'armory': return { targetId: ARMORY_MARKER, title: home, text: ['沿谷地道路去枪械工坊领装备。靶场可自由试射。', 'Follow the valley road to the armory for your gear. The firing range is optional.'] };
     case 'radio': return { targetId: P.radio, title: rescue, text: ['从工坊西门出去，绕到北侧收听外勤电台。', 'Leave by the armory’s west door and round the north side to the field radio.'] };
     case 'survey': return { targetId: P.survey, title: rescue, text: ['去电台东面的检修平台。比对广播与现场。', 'Go east to the service platform and compare the broadcast with the scene.'] };
@@ -82,7 +82,7 @@ export function advanceValleyPrologue(stage: ValleyPrologueStage, id: string, do
     case 'briefing':
       if (id !== P.steward) return null;
       flag = P.briefed;
-      line = ['第一次独立外勤，给，回程时间空着。出门前帮阿舟扶一下车。回来先吃饭，故事边吃边说。', 'First solo shift. Here’s your slip. Leave the return time blank. Give Azhou a hand with the cart before you go. Dinner first when you get back.'];
+      line = ['头一回独自出勤，回程时间先空着。替阿舟扶一下车，再把收音机送去修。昨晚厨房守着它等收工的消息，一声都没响。', 'Your first solo shift. Leave the return time blank. Give Azhou a hand with the cart, then take the radio in. The kitchen waited by it last night to hear who was coming off shift. Not a sound.'];
       break;
     case 'cart':
       if (id !== P.cartStop && id !== P.cartReturn) return null;
@@ -111,7 +111,7 @@ export function advanceValleyPrologue(stage: ValleyPrologueStage, id: string, do
       break;
     case 'record':
       if (id !== P.record) return null;
-      line = ['现场撤离两人。顾桥亲手补上了自己的名字。带着这份记录去找讯号亭的岚。', 'Two evacuated in the field. Gu Qiao adds his own name. Take the record to Lan at the signal kiosk.'];
+      line = ['顾桥在陈芮的名字下面签了字。正联交给讯号亭的岚。他递给你复写联：“回镇顺路捎给厨房？上送货坡就是后门，他们还在等消息。”', 'Gu Qiao signs below Chen Rui. The original goes to Lan at the signal kiosk. He hands you the copy. “When you’re back, could you take this up the delivery ramp to the kitchen? They’ll be waiting.”'];
       break;
     default: return null;
   }

@@ -5,6 +5,8 @@ import { mergeParts } from '../settlements/merge';
 import type { Collider, Player } from '../player/player';
 import type { Marker } from '../core/types';
 import { WINTER_CUSTOMS_WORKS as W, WINTER_CUSTOMS_LABELS, winterCustomsCartReleased } from '../story/winterCustomsWorks';
+import { WC } from '../story/winterChapters';
+import { WINTER_FLAG_RAIL as rail } from '../map/winterCivilPlan';
 import { landscapeWalkway } from './landscapeWalkway';
 
 /** The optional empty cart is present before battle. It rolls down its loading
@@ -42,6 +44,17 @@ export function createWinterCustomsWorks() {
     fixed.lantern(x, y + 1.6, z + .45);
   }
   finish(fixed, 'WinterCustomsLoadingApronAndCaches');
+  // Valan’s staff fills the broken section beside the pedestrian crossing after W08.
+  // Keep it out of the walkway while lying in the snow; the restored rail is solid.
+  const fallen = new SiteArt(), repaired = new SiteArt();
+  const x1 = rail.x - rail.halfLength, x2 = rail.x + rail.halfLength;
+  for (const [art, y, z] of [[fallen, rail.deck + .11, rail.z + .23], [repaired, rail.deck + .99, rail.z]] as const) {
+    art.beam([x1 - .14, y, z], [x2 + .14, y, z], .14, '#816245', art === repaired);
+    for (const x of [x1, x2]) for (const dx of [-.1, .04]) art.box([x + dx, y, z], [.085, .185, .185], '#b5a27c');
+  }
+  fallen.relocate(frame); fallen.finish('winter'); fallen.root.name = 'WinterFallenStandard'; root.add(fallen.root); arts.push(fallen);
+  const restoredRail = finish(repaired, 'WinterStandardBridgeRail');
+  fallen.root.visible = repaired.root.visible = restoredRail.collider.enabled = false;
   const startX = -87, endX = -73, startY = 9.6 - 4 / 11 * 1.5;
   const wagon = new SiteArt();
   wagon.box([startX, startY + 1.05, 238], [4.4, .24, 2.35], wood, true);
@@ -94,6 +107,9 @@ export function createWinterCustomsWorks() {
     root, colliders, targets: [target], markers,
     apply(done: ReadonlySet<string>, dt: number, player?: Pick<Player, 'pos' | 'vel' | 'flying' | 'gliding' | 'swimming' | 'onGround'>) {
       const released = winterCustomsCartReleased(done);
+      const railComplete = done.has(WC.pole);
+      fallen.root.visible = !railComplete && (done.has(WC.key) || done.has('winter_core'));
+      repaired.root.visible = restoredRail.collider.enabled = railComplete;
       if (!initialized) { initialized = true; setPosition(released ? endX : startX); }
       target.visible = brace.art.root.visible = brace.collider.enabled = !released;
       if (!released && x !== startX) setPosition(startX);

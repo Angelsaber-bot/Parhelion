@@ -1,4 +1,4 @@
-import type { ExpansionRegionId, WorldRegionId } from '../core/regionIdentity';
+import { FIRST_REALMS, type ExpansionRegionId, type WorldRegionId } from '../core/regionIdentity';
 import {ORLEANS_UNDERPASS} from './orleansWorks';
 import {HOME_SITES, HOME_ROUTES} from './homePlan';
 
@@ -34,9 +34,9 @@ export const WORLD_PLAN = {
   cellSize: 720, columns: 3, rows: 3,
   topology: 'continuous-mainland', interiorBarriers: false,
   bounds: [-1080, 1080, -1800, 360] as const,
-  storyOrder: ['britain', 'blacksail', 'winter', 'kyoto', 'qin', 'egypt', 'orleans'] as const,
+  storyOrder: [...FIRST_REALMS, 'egypt', 'orleans', 'qin'] as const,
   /** Deliberately outside the overworld: the Orleans dragon is a regional boss. */
-  finale: { id: 'convergence', separateMap: true, requiredRegions: ['britain', 'blacksail', 'winter', 'kyoto', 'orleans', 'egypt', 'qin'] as const, status: 'planned' },
+  finale: { id: 'convergence', separateMap: true, requiredRegions: ['britain', 'blacksail', 'winter', 'kyoto', 'orleans', 'egypt', 'qin'] as const, status: 'playable' },
 };
 
 export const EXPANSION_PLANS: ExpansionPlan[] = [

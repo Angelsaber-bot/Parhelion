@@ -1,4 +1,5 @@
 import type { FieldAction, FieldChapterContent } from './fieldChapters';
+import { ORLEANS_WORKS } from '../map/orleansWorks';
 import { ORLEANS_CAMPAIGN as OC } from './orleansCampaign';
 
 /** O06 the three teams acting on their own conditions (planks → boat → cover, shown on site),
@@ -6,7 +7,7 @@ import { ORLEANS_CAMPAIGN as OC } from './orleansCampaign';
 export const OF = {
   post: 'o06_post', mural: 'o06_mural', o06: 'o06_complete',
   run: 'o08_run', lower: 'o08_lower_drawbridge', disarm: 'o08_disarm', terms: 'o08_terms', o08: 'o08_complete',
-  watch: 'o09_watch', road: 'o09_road', gate: 'o09_gate', margot: 'o09_margot', martin: 'o09_martin', alix: 'o09_alix', bread: 'o09_bread', bell: 'o09_bell', o09: 'o09_complete',
+  quayBell: 'o09_quay_handbell', bridgeBell: 'o09_bridge_handbell', watch: 'o09_watch', road: 'o09_road', gate: 'o09_gate', margot: 'o09_margot', martin: 'o09_martin', alix: 'o09_alix', bread: 'o09_bread', bell: 'o09_bell', o09: 'o09_complete',
 } as const;
 const F = OF;
 const won = (d: ReadonlySet<string>) => d.has('journey_orleans_crossing_open');
@@ -32,7 +33,7 @@ export const ORLEANS_FINALE_ACTIONS: readonly FieldAction[] = [
     line: ['白旗、停射的喊令、放低的武器和打开的退路。桥堡归了城市。', 'White flag, the call to cease fire, lowered weapons, an open way out. The bridge fort belongs to the city.'] }),
   a('O09', { id: F.watch, near: 'realm_orleans_start', off: [8, 8], after: [F.o08],
     label: ['清晨 · 和贞德看侧吊桥和南岸营地', 'Morning · Look at the side bridge and the south camp with Jeanne'],
-    line: ['有人提议追击。贞德摇头：“够了。”对岸的士兵抬着伤员。', 'Someone suggests pursuit. Jeanne shakes her head: “That is enough.” Across the river, soldiers carry their wounded.'] }),
+    line: ['对岸有人抬着伤员。贞德把追击令压在桌上：“够了。”她把一只手铃交给你。渡口的玛戈等着接客，桥头的马丁等着放车。办完撤军交接，你可以选一处挂铃。', 'Across the river soldiers carry their wounded. Jeanne puts a hand over the pursuit order. “Enough.” She gives you a handbell. Margot needs it to call the ferry; Martin needs it to let carts through. When the withdrawal is settled, you can hang it at either crossing.'] }),
   a('O09', { id: F.road, near: 'realm_orleans_east', off: [10, 6], alt: 'o09_terms', after: [F.watch, F.lower],
     label: ['城外路障 · 放下，让撤军继续往南', 'Outer barricade · Lower it so the withdrawal continues south'],
     line: ['路障放下，撤军沿约定的路往南，不穿过北岸街区。', 'The barricade drops and the column goes south on the agreed road, never through the north-bank streets.'] }),
@@ -47,6 +48,14 @@ export const ORLEANS_FINALE_ACTIONS: readonly FieldAction[] = [
     label: ['阿莉克斯 · 挂好旗，去缝一件普通衣服', 'Alix · Hangs the standard, then sews an ordinary shirt'], line: ['她把旗挂好，转身给邻居缝衣服。', 'She hangs the standard and turns to sewing a shirt for her neighbour.'] }),
   a('O09', { id: F.bread, near: 'orleans_campaign_started', off: [-5, 5], optional: true, after: [F.watch],
     label: ['面包铺 · 和排队的贞德坐一会儿', 'Bakery · Sit a while with Jeanne in the queue'], line: ['她也得等前面的人。你们坐了一会儿。', 'She has to wait behind the others too. You sit together a while.'] }),
+  a('O09', { id: F.quayBell, near: ORLEANS_WORKS.crane, off: [-2, 1], optional: true, alt: 'o09_handbell',
+    any: [F.road, F.gate], after: [F.watch], kind: 'work', seconds: 2,
+    label: ['交给玛戈 · 把唯一的手铃系到渡口', 'Give Margot the handbell · Hang it at the quay'],
+    line: ['玛戈把手铃挂得很低。一个提着空篮子的孩子摇了两下，她解开缆绳，把第一班渡船划过去。', 'Margot hangs the bell low. A child with an empty basket rings twice. She slips the mooring and rows the first ferry across.'] }),
+  a('O09', { id: F.bridgeBell, near: OC.trial, off: [-3, -3], optional: true, alt: 'o09_handbell',
+    any: [F.road, F.gate], after: [F.watch], kind: 'work', seconds: 2,
+    label: ['交给马丁 · 把唯一的手铃系到桥头', 'Give Martin the handbell · Hang it at the bridge'],
+    line: ['马丁让送面包的人试铃。响一下，桥那头便掀起横杆。第一辆车过桥时，贞德还在排队。', 'Martin asks the baker to try the bell. At one ring a girl across the bridge lifts the bar. The first cart crosses while Jeanne is still in line.'] }),
   a('O09', { id: F.bell, near: 'orleans_campaign_started', off: [0, 8], any: [F.road, F.gate], adds: [F.o09],
     label: ['北岸城里 · 听开市的钟', 'Back in the north town · The market bell'],
     line: ['钟一响，贞德下意识起身。阿莉克斯：“开市，不是警报。”她坐了回去。', 'At the bell Jeanne half rises. Alix: “Market, not alarm.” She sits back down.'] }),
@@ -54,6 +63,13 @@ export const ORLEANS_FINALE_ACTIONS: readonly FieldAction[] = [
 export const ORLEANS_FINALE: FieldChapterContent = {
   set: { region: 'orleans', title: ['奥尔良 · 当旗帜离开她的手', 'Orleans · When She Lets Go of the Flag'], actions: ORLEANS_FINALE_ACTIONS },
   props: [
+    // Only one handbell was salvaged. The timber stand at the other crossing stays empty.
+    ...[F.quayBell, F.bridgeBell].flatMap(id => [
+      { at: id, off: [1.4, .75, .6] as const, size: [.14, 1.5, .14] as const, color: 0x775e40, show: (d: ReadonlySet<string>) => d.has(F.watch) },
+      { at: id, off: [1.62, 1.47, .6] as const, size: [.58, .10, .12] as const, color: 0x775e40, show: (d: ReadonlySet<string>) => d.has(F.watch) },
+      { at: id, off: [1.82, 1.27, .6] as const, size: [.25, .29, .25] as const, color: 0xcaa66a, show: (d: ReadonlySet<string>) => d.has(id) },
+      { at: id, off: [1.82, 1.11, .6] as const, size: [.36, .07, .36] as const, color: 0xd4b475, show: (d: ReadonlySet<string>) => d.has(id) },
+    ]),
     // O06 on site: planks grow segment by segment, the boat comes in after, cover shifts last.
     ...[1, 2, 3, 4].map(n => ({ at: F.post, off: [-6 + n * 1.6, .2, -6] as const, size: [1.5, .15, 3] as const, color: 0x8d7150,
       show: (d: ReadonlySet<string>) => d.has(OC.planks) || d.has(`${OC.planks}_${n}`) })),

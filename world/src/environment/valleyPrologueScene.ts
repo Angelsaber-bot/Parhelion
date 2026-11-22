@@ -41,6 +41,12 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
   art.box([mx, my + .46, mz - .77], [1.22, .91, .49], wood);
   art.box([mx, my + .94, mz - .77], [1.44, .14, .69], slate);
   art.box([mx, my + 1.1, mz - .73], [.55, .26, .32], amber);
+  // A paired pennant is readable over the bench clutter from either direction on the valley road.
+  art.beam([mx - .88, my, mz - .88], [mx - .88, my + 4.9, mz - .88], .09, steel);
+  for (const h of [4.65, 4.03]) {
+    art.beam([mx - .88, my + h, mz - .88], [mx - .48, my + h, mz - 2.01], .045, dark);
+    art.box([mx - .68, my + h - .18, mz - 1.445], [1.17, .34, .045], '#f4eddb', false, 'body', [0, 1.23, 0]);
+  }
 
   for (const dx of [-.46, .46]) {
     art.box(court(7.3 + dx, .043, 6.6), [.065, .065, 7.15], steel, false, 'metal');

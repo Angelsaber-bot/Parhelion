@@ -120,12 +120,12 @@ export const WINTER_CHAPTER_ACTIONS: readonly FieldAction[] = [
     label: ['教室 · 拿破仑当面下撤退令', 'Classroom · Napoleon gives the retreat order'],
     line: ['拿破仑：“城门已经打开。现在轮到我们出去。”瓦朗要每一组人有个负责人，卢克拿出自己记的床位表。', 'Napoleon: “The gate is open. Now it is our turn to leave.” Valan asks for a leader for every group; Luc brings out his bed list.'] }),
   // W08 最后方阵: Valan hands over the key before the square reaches the crossing.
-  a('W08', { id: W.key, near: 'winter_customs_square', off: [5, 5], after: [W.w05], gate: d => before(d) && winterWithdrawalReady(d),
-    label: ['旧税关侧门 · 瓦朗交出钥匙', 'Customs side gate · Valan gives up the key'],
-    line: ['瓦朗把侧门钥匙交给玛拉：“这一次由你们决定门什么时候关。”鼓声已经到了广场。', 'Valan gives Mara the side-gate key: “This time you decide when the gate closes.” The drums have reached the square.'] }),
-  a('W08', { id: W.pole, near: 'winter_customs_square', off: [-4, 6], optional: true, gate: after,
-    label: ['雪里的旗杆 · 横放成桥边扶手', 'Pole in the snow · Lay it as a bridge rail'],
-    line: ['你把旗杆横在桥边。拿破仑坐到担架旁，帮人系紧绳结。', 'You lay the pole along the bridge. Napoleon sits by a stretcher and helps tie off a knot.'] }),
+  a('W08', { id: W.key, near: 'winter_customs_square', off: [17, 1], after: [W.w05], gate: d => before(d) && winterWithdrawalReady(d),
+    label: ['税关残岗旁 · 接过瓦朗的侧门钥匙', 'Beside the ruined checkpoint · Take Valan’s side-gate key'],
+    line: ['瓦朗把侧门钥匙交给玛拉。鼓声已到广场，他却把军旗解下来，叫渡工将旗杆送到缺扶手的北桥。“什么时候关门，你定。”', 'Valan gives Mara the side-gate key. Drums reach the square. He unties his colours and sends the staff to the north bridge with the ferryman. “You decide when to close the gate.”'] }),
+  a('W08', { id: W.pole, near: '@-4,3.34,-492', off: [0, 0], optional: true, gate: after,
+    label: ['北侧人行桥 · 把军旗杆绑进断掉的扶手', 'North footbridge · Lash the flagstaff across the gap in the rail'],
+    line: ['你把旗杆架进两个断桩。拿破仑蹲下来打结，等担架过去才松手。瓦朗在身后托着旗布，这回没把它升起来。', 'You fit the staff between the broken posts. Napoleon crouches to tie it and keeps one hand on it until the stretcher passes. Behind him Valan holds the folded colours.'] }),
 ];
 /** A save that already gave up the high ground before these chapters existed keeps its old route. */
 export const winterChaptersRequired = (d: ReadonlySet<string>) => before(d) && (d.has(W.lights) || !d.has(WINTER_WITHDRAWAL.retreat));
@@ -135,8 +135,8 @@ export const WINTER_CHAPTERS: FieldChapterContent = {
     { at: W.mark, off: [0, .5, -3], size: [5, .6, .6], color: 0x4d3b2b, rot: [0, 0, .08], moved: { when: W.mark, off: [1.5, .3, -3], rot: [0, .7, 1.4] } },
     { at: W.wheel, off: [1, .6, 0], size: [.25, 1.2, 1.2], color: 0x5a4632, rot: [0, 0, .4], moved: { when: W.wheel, off: [1, .6, 0] } },
     { at: W.scope, off: [1, 1.1, 0], size: [.3, .3, 1.2], color: 0x3d3a35 },
-    { at: W.flag, off: [1.5, 2.4, 0], size: [.08, 4.8, .08], color: 0x5b4632, show: d => d.has(W.flag) },
-    { at: W.flag, off: [2.2, 4.2, 0], size: [1.4, .9, .04], color: 0x3354a0, show: d => d.has(W.flag) },
+    { at: W.flag, off: [1.5, 2.4, 0], size: [.08, 4.8, .08], color: 0x5b4632, show: d => d.has(W.flag) && !d.has(W.key) && !d.has('winter_core') },
+    { at: W.flag, off: [2.2, 4.2, 0], size: [1.4, .9, .04], color: 0x3354a0, show: d => d.has(W.flag) && !d.has(W.key) && !d.has('winter_core') },
     { at: W.beam, off: [0, 4.5, 0], size: [.4, .4, 3.5], color: 0x4a3828, target: W.beam },
     { at: W.beam, off: [0, .25, 1], size: [.4, .4, 3.5], color: 0x3a2c20, rot: [0, .5, 0], show: d => d.has(W.beam) },
     { at: W.door, off: [0, 1.2, -1.2], size: [1.6, 2.4, .2], color: 0x8fa3b0, moved: { when: W.door, off: [-.9, 1.2, -.4], rot: [0, 1.4, 0] }, glide: W.door },
@@ -148,11 +148,10 @@ export const WINTER_CHAPTERS: FieldChapterContent = {
     { at: W.seal, off: [2, 1.25, -.3], size: [.5, .05, .5], color: 0xe9e2c8, show: d => d.has(W.seal) && !d.has(W.broke) },
     { at: W.crate, off: [0, .3, 1], size: [.8, .55, .55], color: 0x8a6a42, show: d => d.has(W.crate) },
     { at: W.stretcher, off: [0, .55, 0], size: [.7, .15, 2], color: 0xc9bfa5, moved: { when: W.stretcher, off: [0, .55, 6] }, glide: W.stretcher },
-    { at: W.pole, off: [1.5, .2, 0], size: [.09, .09, 4.4], color: 0x5b4632, moved: { when: W.pole, off: [1.5, .9, 0], rot: [0, 0, 0] } },
   ],
   actors: [
     { id: 'w_valan', role: ['瓦朗 · 副官', 'Valan · Adjutant'], coat: 0x2f3f6a,
-      place: d => d.has('winter_core') ? [W.pole, -2, 2] : d.has(W.w05) ? [W.key, 2, 1] : d.has(W.w04) ? [W.order, 2, 1] : d.has(W.w03) ? [W.yard, 2, 0] : d.has(W.w02) ? [W.count, 2, 1] : d.has(W.scope) ? [W.flag, 1, 1] : null },
+      place: d => d.has('winter_core') ? [W.pole, -2, .4] : d.has(W.w05) ? [W.key, 2, 1] : d.has(W.w04) ? [W.order, 2, 1] : d.has(W.w03) ? [W.yard, 2, 0] : d.has(W.w02) ? [W.count, 2, 1] : d.has(W.scope) ? [W.flag, 1, 1] : null },
     { id: 'w_ferryman', role: ['渡工', 'Ferryman'], coat: 0x6c5a44,
       place: d => d.has(W.w04) ? [W.stretcher, 2, -1] : d.has(W.wheel) ? [W.camp, 2, 2] : d.has(W.camp) ? [W.camp, -2, 2] : d.has(W.crossfire) ? [W.wheel, 0, 1] : null },
     { id: 'w_soldier', role: ['掉队的士兵', 'Straggling soldier'], coat: 0x40506e,

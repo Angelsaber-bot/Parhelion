@@ -162,7 +162,7 @@ import { createFalseDawnSites } from './story/falseDawnSites';
 import { getFalseDawnState, getFalseDawnGuide, getFalseDawnMarkerLabel, getFalseDawnCompanionReaction, getFalseDawnObjective } from './story/falseDawnCampaign';
 import { createFalseDawnRuntime } from './story/falseDawnRuntime';
 import { getFalseDawnEncounterSpec, FALSE_DAWN_START_HINTS } from './story/falseDawnEncounterCatalog';
-import { gateGuidePoint, resolveTrackedStoryPoint, trackedStoryRouteBlocked } from './story/trackedStoryNavigation';
+import { gateGuidePoint, nextStoryPass, resolveTrackedStoryPoint, trackedStoryRouteBlocked } from './story/trackedStoryNavigation';
 import { CAMPAIGN_EPISODES, CAMPAIGN_REGIONS, campaignMarkerAwaitsKeeper, getCampaignEpisodeState, getCampaignEpisodeGuide, getCampaignEpisodeObjective, interactCampaignEpisode, chooseCampaignEpisode, type CampaignEpisodeInteraction } from './story/campaignEpisodes';
 import { createCampaignJournal } from './ui/campaignJournal';
 import { createTrackedStoryHud } from './ui/trackedStoryHud';
@@ -243,7 +243,7 @@ import { ShoulderAim, shoulderArmLength } from './player/aim';
 import { SettingsStore, createSettingsPanel } from '../../shared-client/settings';
 import '../../shared-client/settings.css';
 import './ui/worldInterface.css';
-import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt, regionToWorld } from './map/regions';
+import { REGIONS, GRID, mergeLayouts, boundaryWalls, regionAt, regionToWorld } from './map/regions';
 import { BOSSES, PERFECT_EVADE } from './combat/combat';
 import { nearbyElite } from './combat/eliteNavigation';
 import { WorldGrid } from './map/grid';
@@ -1101,24 +1101,6 @@ function valleyGuide() {
   return point ? { ...guide, p: point } : null;
 }
 function journeyGuide() {
-  {
-   const id=regionAt(player.pos.x,player.pos.z).id;
-   for(const content of FIELD_CHAPTER_CONTENT.filter(c=>c.set.region===id)){
-   const a=fieldChapterGuide(content.set,done),p=a&&markers.get(a.id)?.p;
-   if(a&&p)return{region:content.set.region,targetId:a.id,p,title:[`${a.chapter} · ${content.set.title[0]}`,`${a.chapter} · ${content.set.title[1]}`] as [string,string],text:a.label};}
-  }
-  if(regionAt(player.pos.x,player.pos.z).id==='qin'){
-   const a=qinChapterGuide(done),p=a&&markers.get(a.id)?.p;
-   if(a&&p)return{region:'qin' as const,targetId:a.id,p,title:[a.chapter+' · 未葬之人',a.chapter+' · The Unburied'] as [string,string],text:a.label};
-  }
-  if(regionAt(player.pos.x,player.pos.z).id==='egypt'){
-   const a=egyptChapterGuide(done),p=a&&markers.get(a.id)?.p;
-   if(a&&p)return {region:'egypt' as const,targetId:a.id,p,title:[a.chapter+' · 尼罗河的第二次黎明',a.chapter+' · The Nile’s Second Dawn'] as [string,string],text:a.label};
-  }
-  if(regionAt(player.pos.x,player.pos.z).id==='orleans'){
-    const a=orleansCampaignGuide(done),p=a&&markers.get(a.id)?.p;
-    if(a&&p)return {region:'orleans' as const,targetId:a.id,p,title:[a.chapter+' · 当旗帜离开她的手',a.chapter+' · When She Lets Go of the Flag'] as [string,string],text:a.label};
-  }
   const here = insideSkyCrown(player.pos) ? 'sky' : regionAt(player.pos.x, player.pos.z).id;
   if (typeof activeRealmClimax !== 'undefined' && activeRealmClimax) {
     const fight = activeRealmClimax;
@@ -1127,6 +1109,25 @@ function journeyGuide() {
     const p = markers.get(targetId)?.p;
     if (p) return { region: fight.id, targetId, p, title: fight.definition.title,
       text: (station ? fight.stationText(station) : ['躲开标线，攻击战场上的目标。', 'Evade the marked attack and shoot the exposed target.']) as [string, string] };
+  }
+  for (const content of FIELD_CHAPTER_CONTENT) {
+    if (content.set.region !== here) continue;
+    const action = fieldChapterGuide(content.set, done);
+    const p = action && markers.get(action.id)?.p;
+    if (action && p) return { region: here, targetId: action.id, p,
+      title: [`${action.chapter} · ${content.set.title[0]}`, `${action.chapter} · ${content.set.title[1]}`] as [string, string], text: action.label };
+  }
+  if(here==='qin'){
+   const a=qinChapterGuide(done),p=a&&markers.get(a.id)?.p;
+   if(a&&p)return{region:'qin' as const,targetId:a.id,p,title:[a.chapter+' · 未葬之人',a.chapter+' · The Unburied'] as [string,string],text:a.label};
+  }
+  if(here==='egypt'){
+   const a=egyptChapterGuide(done),p=a&&markers.get(a.id)?.p;
+   if(a&&p)return {region:'egypt' as const,targetId:a.id,p,title:[a.chapter+' · 尼罗河的第二次黎明',a.chapter+' · The Nile’s Second Dawn'] as [string,string],text:a.label};
+  }
+  if(here==='orleans'){
+    const a=orleansCampaignGuide(done),p=a&&markers.get(a.id)?.p;
+    if(a&&p)return {region:'orleans' as const,targetId:a.id,p,title:[a.chapter+' · 当旗帜离开她的手',a.chapter+' · When She Lets Go of the Flag'] as [string,string],text:a.label};
   }
   if (here === 'egypt' && needsEgyptWaterPlan() && !selectedEgyptWaterPlan(done)) {
     const targetId = EGYPT_WATER_PLAN.marker, p = markers.get(targetId)?.p;
@@ -1391,14 +1392,19 @@ const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落�
 /** A seam marker as the guide shows it: on the ground (one was authored 4 m under the ridge), and led on into
  * the next region once the player has reached it. `destination` is where the story is heading. */
 function seamGuidePoint(p: [number, number, number], here: string, destination: string): [number, number, number] {
-  const toward = REGIONS.find(region => region.id === (here === 'alpha' ? destination : 'alpha'))?.offset;
+  const next = nextStoryPass(here, destination);
+  const toward = next && REGIONS.find(region => region.id === next.toward)?.offset;
   const q = toward ? gateGuidePoint(p, toward, [player.pos.x, player.pos.y, player.pos.z]) : p;
   const y = grid.sampleHeight(q[0], q[2]);
   return y === null ? q : [q[0], y, q[2]];
 }
 function trackedStoryPoint(here: string, destination: string, local?: readonly [number, number, number] | null) {
   const p = resolveTrackedStoryPoint(here, destination, done, local);
-  return p && here !== destination ? seamGuidePoint(p, here, destination) : p;
+  return p && nextStoryPass(here, destination) ? seamGuidePoint(p, here, destination) : p;
+}
+function passageLabel(passage: NonNullable<ReturnType<typeof nextStoryPass>>) {
+  const name = REGION_NAME[passage.toward];
+  return bilingual(`经${passage.gate.via}前往${name}`, `Via ${localizeText(passage.gate.via)} to ${localizeText(name)}`);
 }
 function guideTarget(): { p: [number, number, number]; label: string } | null {
   const here = regionAt(player.pos.x, player.pos.z).id;
@@ -1407,7 +1413,10 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
     const enemy = quest.targetKind === 'enemy' ? combat.state.enemies.find(enemy=>enemy.id===quest.targetId && enemy.active && enemy.hp>0) : undefined;
     const local: [number,number,number] = quest.targetKind==='npc' ? settlementNpcs.getPosition(quest.targetId) ?? quest.position : enemy ? [enemy.p.x,enemy.p.y,enemy.p.z] : quest.position;
     const p=isExpansionRegion(quest.region)?local:trackedStoryPoint(here,quest.region,local);
-    if(p)return {p,label:bilingual(...quest.targetLabel)};
+    if (p) {
+      const passage = nextStoryPass(here, quest.region);
+      return { p, label: passage ? passageLabel(passage) : bilingual(...quest.targetLabel) };
+    }
   }
   if(isExpansionRegion(here)) {
     const journey = typeof journeyGuide === 'function' ? journeyGuide() : null;
@@ -1436,8 +1445,17 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
   const opening = typeof prologueGuide === 'function' ? prologueGuide() : null;
   if (opening) return { p: opening.p, label: bilingual(...opening.text) };
   const journey = typeof journeyGuide === 'function' ? journeyGuide() : null;
-  if (journey) return { p: journey.p, label: bilingual(...journey.text) };
-  const adventure=isCampaignRegion(here)?getCurrentAdventureGuide(here,done):null;if(adventure){const local=adventure.targetKind==='npc'?settlementNpcs.getPosition(adventure.targetId):markers.get(adventure.targetId)?.p;const p=local&&trackedStoryPoint(here,adventure.region,local);if(p)return{p,label:bilingual(...adventure.text)};}
+  if (journey) {
+    const passage = nextStoryPass(here, journey.region);
+    return { p: passage ? seamGuidePoint(passage.gate.p, here, journey.region) : journey.p, label: passage ? passageLabel(passage) : bilingual(...journey.text) };
+  }
+  const adventure = isCampaignRegion(here) ? getCurrentAdventureGuide(here, done) : null;
+  if (adventure) {
+    const local = adventure.targetKind === 'npc' ? settlementNpcs.getPosition(adventure.targetId) : markers.get(adventure.targetId)?.p;
+    const p = trackedStoryPoint(here, adventure.region, local);
+    const passage = nextStoryPass(here, adventure.region);
+    if (p) return { p, label: passage ? passageLabel(passage) : bilingual(...adventure.text) };
+  }
   if(adventureActive(done))return null;
   const intro = valleyGuide();
   if (intro) return { p: intro.p, label: bilingual(...intro.text) };
@@ -1456,9 +1474,11 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
       if (!left.length) continue;
       if (o.region !== here) {
         // leave through this region's own gate, or from 幻日谷 head for the target region's gate
-        const gate = here === 'alpha' ? GATES[o.region] : GATES[here];
-        const to = here === 'alpha' ? o.region : 'alpha';
-        if (gate) return { p: seamGuidePoint(gate.p, here, o.region), label: bilingual(`前往${REGION_NAME[to] ?? to}（${gate.via}）`, `Travel to ${localizeText(REGION_NAME[to] ?? to)} (${localizeText(gate.via)})`) };
+        const passage = nextStoryPass(here, o.region);
+        if (passage) {
+          const { gate } = passage;
+          return { p: seamGuidePoint(gate.p, here, o.region), label: passageLabel(passage) };
+        }
       }
       // markers that can be used now come first (e.g. the dummies before the shard they unlock)
       const ready = (m: Marker) => (m.requires ?? []).every((r) => done.has(r)) ? 0 : 1;
@@ -1525,7 +1545,7 @@ function renderMainObjective() {
   }
   const adventure=(typeof prologueGuide === 'function' ? prologueGuide() : null) ?? getCurrentAdventureGuide(region,done);
   if(adventure){const title=document.createElement('h3'),text=document.createElement('div');title.textContent=bilingual(...adventure.title);text.className='cur';text.textContent=bilingual(...adventure.text);$('objective').replaceChildren(title,text);return;}
-  if(adventureActive(done)&&done.has(ADVENTURE.ending)){const title=document.createElement('h3'),text=document.createElement('div');title.textContent=bilingual('让明天继续 · 已完成','Let Tomorrow Continue · Complete');text.textContent=bilingual('归路仍然开放。可以回访居民、探索支路或自愿挑战旧敌。','Every return road remains open. Revisit the residents, explore side routes or choose a rematch.');$('objective').replaceChildren(title,text);return;}
+  if(adventureActive(done)&&done.has(ADVENTURE.ending)){const title=document.createElement('h3'),text=document.createElement('div');title.textContent=bilingual('四域归报 · 已存档','Four Realms · Reports filed');text.textContent=bilingual('四份回报已经送达观测所。打开日志可追踪手头的下一项调查。','The Observatory has received all four reports. Open the journal to track your next investigation.');$('objective').replaceChildren(title,text);return;}
   const intro = valleyGuide();
   if (intro) {
     $('objective').replaceChildren();

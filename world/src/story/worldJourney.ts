@@ -1,3 +1,4 @@
+import { orleansGroundVoice } from './skyGroundVoices';
 import { QIN_CAMPAIGN as QC } from './qinCampaign';
 import { EGYPT_CAMPAIGN as EC } from './egyptCampaign';
 import { ORLEANS_CAMPAIGN as OC } from './orleansCampaign';
@@ -200,7 +201,12 @@ export function commitJourneyStep(id: string, done: Set<string>): Localized | nu
   if (id === J.mealWindow) done.add(J.meal);
   if (actual === J.qinHalt && done.has(QIN_ARMY.flag)) done.add(J.qinTurn);
   if (actual === J.epilogue) done.add(A.ending);
-  return journeyStepById.get(actual)!.result;
+  const result = journeyStepById.get(actual)!.result;
+  if (actual === J.skyReview || actual === J.epilogue) {
+    const voice = orleansGroundVoice(done, actual === J.skyReview ? 'monitor' : 'home');
+    if (voice) return [voice[0] + '\n' + result[0], voice[1] + '\n' + result[1]];
+  }
+  return result;
 }
 
 const objective = (region: JourneyRegion, targetId: string, text: Localized): JourneyGuide => ({ region, targetId, title: titles[region], text });

@@ -4,6 +4,8 @@ import type { Collider } from '../player/player';
 import { SiteArt } from '../story/campaignSites';
 import { mergeParts } from '../settlements/merge';
 import { LOOKBACK_CHANNEL } from '../map/valleyFoundationPlan';
+import { VT } from '../story/valleyTownSetPieces';
+import { landscapeWalkway } from './landscapeWalkway';
 
 type V3 = [number, number, number];
 /** Valley and Homeward Town formal set pieces with real collision, placed at load on the reviewed maps:
@@ -73,10 +75,31 @@ export function createValleyTownArchitecture(ground: (x: number, z: number) => n
   wall(-176, 183.5, -176, 185); wall(-176, 186.6, -176, 191.6); wall(-176, 193.2, -176, 196.5); // east wall, room and kitchen doors
   wall(-183, 189.6, -180.6, 189.6); wall(-179, 189.6, -176, 189.6);               // shared wall with an inner door
   annex.box([-179.5, floor + 3.15, 190], [7.6, .2, 13.6], roof);
-  annex.box([-183.1, floor + 1.15, 194.4], [.08, 2.3, 1.5], darkTimber);          // back door leaf, ajar
+  // The open leaf rests against the outside wall. A cart can roll in through the opening from the west.
+  annex.box([-183.17, floor + 1.15, 192.92], [.09, 2.3, 1.36], darkTimber);
+  const deliveryRamp: V3[] = [
+    at(-186, 182, .04), at(-186, 186.5, .22), at(-186, 191, .19),
+    [-186, floor + .02, 194.4], [-182.82, floor + .02, 194.4],
+  ];
+  landscapeWalkway(annex, deliveryRamp, { width: 1.52, floor: timber, edge: darkTimber, continuousCorners: true });
+  for (let i = 1; i < 4; i++) {
+    const [x, y, z] = deliveryRamp[i];
+    annex.box([x - .89, y + .41, z], [.13, .82, .13], darkTimber);
+    annex.box([x - .89, y + .79, z], [.15, .11, .15], '#f3d995');
+  }
+  // Sawdust-coloured rims and the ladle silhouette pick out the serving entrance from both approaches.
+  annex.box([-183.24, floor + 2.75, 194.43], [.14, .59, 1.33], darkTimber);
+  annex.ring([-183.33, floor + 2.7, 194.25], .14, .036, '#f3d995', 'body', [0, Math.PI / 2, 0]);
+  annex.beam([-183.33, floor + 2.78, 194.35], [-183.33, floor + 2.95, 194.78], .06, '#f3d995');
   // Kitchen: counter, stove, water barrel and shelf along the north wall.
   annex.box([-179.5, floor + .45, 195.8], [5, .9, .8], timber, true); annex.box([-181.6, floor + .55, 195.8], [1, 1.1, .8], iron, true);
   annex.cyl([-177, floor + .5, 195.6], .4, 1, darkTimber, true); annex.box([-179.5, floor + 1.9, 196.25], [4, .1, .4], timber);
+  // Both portions and the signed copy remain on the counter when the player returns.
+  for (const x of [-180.6, -179.95]) {
+    annex.cyl([x, floor + 1.01, 195.7], .205, .19, '#e8d7b1', false, 'resolved');
+    annex.cyl([x, floor + 1.112, 195.7], .178, .015, '#b87f47', false, 'resolved');
+  }
+  annex.paper(-179.35, floor + .925, 195.74, .43, .32, 'resolved');
   // The protagonist's room: bed, desk and chair, a chest and one keepsake shelf.
   annex.box([-181.6, floor + .3, 185.2], [2.2, .6, 1.3], darkTimber, true); annex.box([-181.6, floor + .66, 185.2], [2.1, .14, 1.2], '#f1ece2');
   annex.box([-177.2, floor + .38, 188.4], [1.4, .76, .7], timber, true); annex.box([-177.2, floor + .23, 187.6], [.5, .46, .5], darkTimber, true);
@@ -89,6 +112,7 @@ export function createValleyTownArchitecture(ground: (x: number, z: number) => n
   annex.box([-173.8, floor + .75, 183.4], [4.2, .08, .08], timber, true);
   annex.box([-173.5, floor + .25, 194.8], [2.2, .5, .5], timber, true); annex.beam([-175.6, floor + 2, 185.2], [-172, floor + 2, 192], .02, '#d9d2c0');
   finish(annex, 'ValleyCanteenAnnex');
+  const supperShelf = annex.layers.get('resolved')!;
 
   // T01 Homeward Square: return lamp, posted timetable, public bench, departure platform.
   const square = new SiteArt(), sx = 660, sz = 79, sy = ground(sx, sz);
@@ -99,7 +123,10 @@ export function createValleyTownArchitecture(ground: (x: number, z: number) => n
 
   return {
     root, colliders,
-    apply(d: ReadonlySet<string>) { const built = d.has('journey_sky_return'); footCollider.enabled = built; arts[1].root.visible = built; },
+    apply(d: ReadonlySet<string>) {
+      const built = d.has('journey_sky_return'); footCollider.enabled = built; foot.root.visible = built;
+      supperShelf.visible = d.has(VT.supper);
+    },
     update(viewer: THREE.Vector3) { root.visible = Math.hypot(viewer.x + 220, viewer.z - 100) < 420 || Math.hypot(viewer.x - 660, viewer.z - 79) < 260; },
     dispose() { colliders.forEach(c => c.enabled = false); root.removeFromParent(); },
   };

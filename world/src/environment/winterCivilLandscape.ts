@@ -4,7 +4,7 @@ import type { Collider } from '../player/player';
 import type { Marker } from '../core/types';
 import { SiteArt } from '../story/campaignSites';
 import { mergeParts } from '../settlements/merge';
-import { WINTER_SCHOOL as S, WINTER_CUSTOMS as C } from '../map/winterCivilPlan';
+import { WINTER_SCHOOL as S, WINTER_CUSTOMS as C, WINTER_FLAG_RAIL as rail } from '../map/winterCivilPlan';
 import { landscapeWalkway, type LandscapePoint as Point } from './landscapeWalkway';
 
 /** The school is a quiet, open interior; the tax square has a broad entry,
@@ -147,7 +147,14 @@ export function createWinterCivilLandscape(ground: (x: number, z: number, ceilin
   art.paper(-51.4, cy + .96, 243.2, .8, .5);
   // Pedestrians can use the repaired inner strip of the damaged north bridge;
   // its wrecked outer timbers still show why the freight crossing is separate.
-  route([[-12, 2.44, 228], [4, 2.44, 228]], 3.1, true);
+  landscapeWalkway(art, [[-12, rail.deck, 228], [4, rail.deck, 228]], {
+    width: 3.1, floor: wood, edge: iron, rails: true,
+    railOpenings: [{ p: [rail.x, rail.deck, rail.z], radius: rail.halfLength - .4 }],
+  });
+  for (const x of [rail.x - rail.halfLength, rail.x + rail.halfLength]) {
+    art.box([x, rail.deck + .47, rail.z], [.17, .94, .17], char, true);
+    art.box([x, rail.deck + .89, rail.z], [.25, .14, .25], iron);
+  }
   // A short service bridge crosses a sheltered carpenter's working lane.
   // Both its deck and its lower floor have full standing clearance.
   route([[-91, cy, 245], [-83, upper, 245], [-65, upper, 245], [-55, cy, 245]], 3.5, true);

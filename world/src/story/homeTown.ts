@@ -7,6 +7,7 @@ import type {createNarrativePanel} from '../ui/narrativePanel';
 import type {Localized,PlacedNpcSocket} from '../settlements/types';
 import {createHomeActivities,type HomeActivityHost} from './homeActivities';
 import {HOME_CIVIC,HOME_REPORT_REQUIRED} from '../map/homeActivities';
+import {VT} from './valleyTownSetPieces';
 
 export const HOME_FLAGS={invited:'home_saber_invited',welcome:'home_saber_welcome',meal:'home_saber_first_meal',garden:'home_saber_garden_talk'} as const;
 export const homeSaberReady=(done:ReadonlySet<string>)=>done.has('saber_contract')&&done.has(HOME_FLAGS.invited);
@@ -17,7 +18,10 @@ export function inviteSaberHome(done:Set<string>):boolean {
 export function homeChapterMemories(done:ReadonlySet<string>):Localized{
  const chapters=[['sun_core','圣剑湖与落日王国','Sword Lake and the Sunset Kingdom'],['adventure_harbor_departed','真正离港的船','The ship that truly departed'],['adventure_winter_arrived','抵达的药车','The medicine cart that arrived'],['adventure_kyoto_evidence','京都留下的原始记录','Kyoto’s original record']] as const;
  const present=chapters.filter(([flag])=>done.has(flag));
- return present.length?[`书桌上留下了：${present.map(c=>c[1]).join('、')}。这些经历没有被改写成同一段结局。`, `On your desk: ${present.map(c=>c[2]).join('; ')}. Each journey keeps its own account.`]:['书桌上还是一页空白。等你亲自走过那些地方，再把见闻带回来。','An empty page waits on the desk. Bring back the places you have actually visited.'];
+ const entries:Localized[]=[];
+ if(done.has(VT.supper))entries.push(['第一页抄着陈芮和顾桥的名字。页角有一圈汤碗留下的印子。','You copied Chen Rui’s and Gu Qiao’s names onto the first page. A soup bowl left a ring in the corner.']);
+ if(present.length)entries.push([`书桌上留下了：${present.map(c=>c[1]).join('、')}。这些经历没有被改写成同一段结局。`,`On your desk: ${present.map(c=>c[2]).join('; ')}. Each journey keeps its own account.`]);
+ return entries.length?[entries.map(e=>e[0]).join(''),entries.map(e=>e[1]).join(' ')]:['书桌上还是一页空白。等你亲自走过那些地方，再把见闻带回来。','An empty page waits on the desk. Bring back the places you have actually visited.'];
 }
 const HOME_RESIDENTS:readonly {id:string;role:Localized;p:[number,number,number];line:Localized}[]=[
  {id:'home_steward',role:['公馆照管人 · 林姨','Housekeeper Lin'],p:[-44,16.12,-20],line:['公馆留了八间客房。与你缔约的 Saber 可以在门边入住簿登记；出门同行的人，房间仍替她留着。','Eight guest rooms are ready. Invite your contracted Saber at the guest book. Her room stays hers while she travels with you.']},

@@ -1,7 +1,7 @@
 import {qinChapterGuide} from '../src/story/qinCampaign';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {EGYPT_CAMPAIGN as E,commitEgyptChapter,egyptChapterReady} from '../src/story/egyptCampaign';
-import {QIN_CAMPAIGN as Q,commitQinChapter,qinTallyBorrowed,createQinCrewTransit} from '../src/story/qinCampaign';
+import {QIN_CAMPAIGN as Q,commitQinChapter,qinChapterReady,qinTallyBorrowed,createQinCrewTransit} from '../src/story/qinCampaign';
 import {egyptWaterFlag} from '../src/story/egyptWaterPlan';
 test('Egypt trial admits three independent solutions but forbids a brake release before bypass proof',()=>{
  for(const solution of [E.side,E.armor,E.steady]){
@@ -31,4 +31,37 @@ test('Qin failed transit checkpoint never claims an arrival and reload retains o
 
 test('Qin guidance advances to departure after either shield choice instead of alternating choices',()=>{
  for(const choice of [Q.guard,Q.take])assert.equal(qinChapterGuide(new Set(['journey_qin_workers',Q.started,choice]))?.id,Q.locked);
+});
+
+test('the Egyptian winch requires the bypass proof and releases the same brake as the old cable',()=>{
+ const before=new Set([E.trial,E.forebay]);
+ assert.equal(commitEgyptChapter(E.windlass,before),false);
+ for(const method of [E.brake,E.windlass]){
+  const d=new Set<string>([...before,E.bypass]);
+  assert.ok(commitEgyptChapter(method,d));
+  assert.ok(d.has(E.brake));
+  assert.equal(egyptChapterReady(E.windlass,d),false);
+  assert.equal(egyptChapterReady(E.brake,d),false);
+  assert.ok(commitEgyptChapter(E.bell,new Set(d)));
+ }
+});
+
+test('Qin crew reads the bend signal only with its tally, on an open road, and never skips a saved leg',()=>{
+ const d=new Set<string>([Q.halt]);
+ assert.equal(commitQinChapter(Q.relay,d),false);
+ assert.ok(commitQinChapter(Q.loan,d));
+ assert.ok(commitQinChapter(Q.relay,d));
+ let writes=0;
+ const transit=createQinCrewTransit(d,()=>{writes++;return true;},()=>{});
+ for(let i=0;i<90;i++)transit.update(.1,true);
+ assert.equal(transit.progress(),0);
+ assert.ok(commitQinChapter(Q.road,d));
+ const legacy=new Set<string>([Q.loan,Q.road]);
+ const ordinary=createQinCrewTransit(legacy,()=>true,()=>{});
+ for(let i=0;i<320;i++){transit.update(.1,true);ordinary.update(.1,true);}
+ assert.equal(writes,5);
+ assert.ok(d.has(Q.arrived));
+ assert.equal(legacy.has(Q.arrived),false);
+ assert.ok(qinTallyBorrowed(d));
+ assert.equal(qinChapterReady(Q.relay,new Set([Q.loan,Q.arrived])),false);
 });

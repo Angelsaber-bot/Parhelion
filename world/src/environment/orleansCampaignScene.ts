@@ -3,6 +3,8 @@ import { MeshBVH } from 'three-mesh-bvh';
 import type { Marker } from '../core/types';
 import type { Collider } from '../player/player';
 import { ORLEANS_CAMPAIGN as C, ORLEANS_CAMPAIGN_ACTIONS } from '../story/orleansCampaign';
+import { OF } from '../story/orleansFinale';
+import { ORLEANS_WORK_ACTIONS, ORLEANS_WORKS } from '../map/orleansWorks';
 import { createSettlementNpcs } from '../settlements/npcs';
 
 type P=[number,number,number];
@@ -52,6 +54,8 @@ export function createOrleansCampaignScene(ground:(x:number,z:number,ceiling:num
  for(const [i,z]of[-.2,.2,.6,1,1.4].entries())box(model,[-.7+i*.3,1,z],[.3,.2,.3],i===2?0x416e85:0xb5a17d);
  const beam=box(model,[0,1.3,.8],[2.4,.12,.18]);
  const teamAt=[at(C.agree),at(C.model),at(C.screen)];
+ const quay = ORLEANS_WORK_ACTIONS.find(action => action.id === ORLEANS_WORKS.crane)!.position;
+ const morningStations: P[] = [[quay[0] - 720 - 3, quay[1], quay[2] - 1440], [at(C.trial)[0] - 4, at(C.trial)[1], at(C.trial)[2] - 4]];
  const actors=createSettlementNpcs(teamAt.map((p,i)=>({id:`orleans_chapter_team_${i}`,role:([['玛戈 · 舟手','Margot · Boat crew'],['马丁 · 工兵','Martin · Engineers'],['弩手班长','Archer leader']] as [string,string][])[i],region:'britain' as const,worldRegion:'orleans' as const,position:[p[0]+1.6,p[1],p[2]-1.4] as P,appearance:{coat:[0x517487,0x89714d,0x656e47][i]},lines:[]})));
  root.add(actors.group);
  const planks=new THREE.Group();planks.position.set(...at(C.model));root.add(planks);
@@ -74,7 +78,13 @@ export function createOrleansCampaignScene(ground:(x:number,z:number,ceiling:num
    cover.visible=coverCollision.enabled=d.has(C.assembled)&&d.has(C.bridge);
    ferry.visible=ferryCollision.enabled=d.has(C.assembled)&&d.has(C.ferry);
    const end=at(C.model);
-   for(let i=0;i<3;i++){const start=teamAt[i],t=i===0?progress(C.moored):i===1?progress(C.planks):progress(C.shifted);
+   for(let i=0;i<3;i++){
+    const station = d.has(OF.watch) ? morningStations[i] : undefined;
+    if (station) {
+     const y = ground(station[0], station[2], station[1] + 3);
+     if (y !== null) { actors.pose(`orleans_chapter_team_${i}`, [station[0], y, station[2]], .75); continue; }
+    }
+    const start=teamAt[i],t=i===0?progress(C.moored):i===1?progress(C.planks):progress(C.shifted);
     const x=THREE.MathUtils.lerp(start[0]+1.6,end[0]+2+i,t),z=THREE.MathUtils.lerp(start[2]-1.4,end[2]+i,t),y=ground(x,z,Math.max(start[1],end[1])+3);
     if(y!==null)actors.pose(`orleans_chapter_team_${i}`,[x,y,z],Math.PI/2);
    }

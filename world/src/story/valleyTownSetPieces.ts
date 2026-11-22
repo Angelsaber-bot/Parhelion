@@ -1,5 +1,6 @@
 import type { FieldAction, FieldChapterContent } from './fieldChapters';
 import { JOURNEY as J, valleyRouteOpen } from './worldJourney';
+import { VALLEY_PROLOGUE } from './valleyPrologue';
 
 /** Valley and Homeward Town set pieces placed at load time on the reviewed maps (no region rebuild):
  * V01 Lookback Bridge gate and service hatch, V06 West Ridge breach and lookout, T02 canteen kitchen,
@@ -7,6 +8,7 @@ import { JOURNEY as J, valleyRouteOpen } from './worldJourney';
 export const VT = {
   hatch: 'h00_bridge_hatch', ridge: 'h01_ridge_lookout', kitchen: 'h04_kitchen_door', plaza: 'h02_square_timetable',
   queue: 'h07_gate_queue', footbridge: 'h13_footbridge', chair: 'h13_chair',
+  supper: 'h04_kitchen_shift_copy',
 } as const;
 const V = VT;
 const a = (chapter: string, x: Omit<FieldAction, 'region' | 'chapter'>): FieldAction => ({ region: 'alpha', chapter, optional: true, ...x });
@@ -21,6 +23,9 @@ export const VALLEY_SET_ACTIONS: readonly FieldAction[] = [
   a('H04', { id: V.kitchen, near: '@-179.5,10.9,194.4', off: [0, 0],
     label: ['厨房 · 看物资从后门分到各个岗位', 'Kitchen · Watch supplies go out the back door to the posts'],
     line: ['你没开口，后门的人已经把物资一箱箱分到相邻的岗位。从窗口能看到这些工作在你不在时也在进行。', 'Without a word from you, the people at the back door sort the crates out to the neighbouring posts. From the window you can see the work going on whether or not you are here.'] }),
+  a('H04', { id: V.supper, near: '@-181.7,10.9,194.1', after: [VALLEY_PROLOGUE.record],
+    label: ['厨房后门 · 递上救援单的复写联', 'Kitchen back door · Hand over the rescue slip'],
+    line: ['“陈芮，顾桥。”后厨照着签名念了一遍，从灶上盛出两碗热汤：“我就说该再等一会儿。”复写联夹在取餐架上。', '“Chen Rui. Gu Qiao.” The cook reads the signatures aloud and ladles out two bowls. “I knew we should keep the pot on.” The copy goes on the serving shelf.'] }),
   a('H02', { id: V.plaza, near: 'home_cafe_service', off: [-6, -6],
     label: ['归灯广场 · 实体时刻表', 'Homeward Square · The posted timetable'],
     line: ['时刻表是居民一起钉上去的：左边写实测，右边写预报。便捷旅行一直能用。', 'The residents nailed the timetable up together: measurements on the left, forecasts on the right. Quick travel still works.'] }),

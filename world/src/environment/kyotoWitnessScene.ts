@@ -5,6 +5,7 @@ import type { Collider } from '../player/player';
 import type { AdventureAction } from '../story/adventureSites';
 import { SiteArt } from '../story/campaignSites';
 import { KYOTO_WITNESS as Y, KYOTO_WITNESS_LABELS, kyotoHoistLowered, kyotoOrdersDelivered, kyotoRollStopped, kyotoWitnessActionReady, kyotoWitnessActive } from '../story/kyotoWitness';
+import { JC } from '../story/kyotoDecreeCourt';
 import { createSettlementNpcs } from '../settlements/npcs';
 import { kyotoStreetReady, kyotoStreetPoint } from '../story/kyotoStreetWorks';
 
@@ -47,6 +48,7 @@ export function createKyotoWitnessScene(actions: ReadonlyMap<string, AdventureAc
   for (const x of [-1.17, 1.17]) part(platform, new THREE.BoxGeometry(.15, .87, .16), wood, [x, .4, -.58]);
   const witness = createSettlementNpcs([{ id: 'kyoto_copyist_aki_lift', role: ['抄写人阿纪', 'Aki the copyist'],
     region: 'kyoto', position: [0, 0, 0], lines: [['我看见了那处改写。', 'I saw where they changed it.']] }]);
+  witness.group.name = 'KyotoCopyistAki';
   platform.add(witness.group);
   const safetyPin = target(Y.pin, 'KyotoPaperLiftPin', [lx - .54, ly + 3.81, lz - 1.25]);
 
@@ -58,7 +60,23 @@ export function createKyotoWitnessScene(actions: ReadonlyMap<string, AdventureAc
   part(bell, new THREE.CylinderGeometry(.23, .43, .65, 12), metal, [0, 0, 0]);
   const notice = part(root, new THREE.BoxGeometry(1.62, .72, .052), cloth, [bx, by + 1.15, bz - 1.32]);
   const [sx, sy, sz] = actions.get(Y.private)!.p;
+  // A public reading and a sealed handover have different silhouettes at this fork.
+  const readingRack = new THREE.Group(); readingRack.name = 'KyotoPublicCorrections'; root.add(readingRack);
+  for (const x of [-.6, 0, .6]) {
+    part(readingRack, new THREE.BoxGeometry(.42, .54, .035), cloth, [bx + x, by + 1.35, bz - 1.25]);
+    for (const row of [1.48, 1.4, 1.32])
+      part(readingRack, new THREE.BoxGeometry(.24, .015, .012), wood, [bx + x, by + row, bz - 1.227]);
+    part(readingRack, new THREE.BoxGeometry(.13, .12, .045), red, [bx + x, by + 1.16, bz - 1.22]);
+  }
+  art.box([sx, sy + .85, sz - 1.05], [1.75, .12, .85], '#75533e');
+  for (const x of [-.69, .69]) art.box([sx + x, sy + .42, sz - 1.05], [.13, .84, .62], '#75533e');
+  const [tx, ty, tz] = actions.get(Y.testimony)!.p;
   const sealed = part(root, new THREE.BoxGeometry(.58, .09, .34), red, [sx, sy + .93, sz - 1.05]);
+  const officers = createSettlementNpcs([
+    { id: 'kyoto_temple_envoy', role: ['寺方副官', 'Temple officer'], region: 'kyoto', position: [sx - 1.25, sy, sz - 1.35], yaw: 1.25, lines: [] },
+    { id: 'kyoto_camp_envoy', role: ['营方副官', 'Camp officer'], region: 'kyoto', position: [sx + .9, sy, sz - 2], yaw: -.75, lines: [] },
+  ]);
+  root.add(officers.group);
   const [gx, gy, gz] = actions.get(Y.gate)!.p;
   const screen = part(root, new THREE.BoxGeometry(4.25, 2.85, .25), wood, [gx, gy + 1.43, gz - 1.6]);
   const screenGeometry = screen.geometry.clone().translate(...screen.position.toArray());
@@ -69,9 +87,11 @@ export function createKyotoWitnessScene(actions: ReadonlyMap<string, AdventureAc
     { id: 'kyoto_court_witness', role: ['外院证人', 'Court witness'], region: 'kyoto', position: [gx + 1.3, gy, gz - 3.15], lines: [['我还在这里。', 'I am still here.']] },
   ]);
   root.add(survivors.group);
+  const courtWitness = survivors.group.getObjectByName('Resident_kyoto_court_witness')!;
   art.finish('kyoto'); root.name = 'KyotoWitnessAndDispatch';
 
-  let seeded = false;
+  const paperShop = kyotoStreetPoint(180, 6.25, 51.6);
+  let seeded = false, crossing = 0;
   function apply(done: ReadonlySet<string>, dt: number) {
     root.visible = kyotoWitnessActive(done) && done.has('musashi_meet');
     belt.visible = root.visible && kyotoWitnessActionReady(Y.cut, done);
@@ -80,25 +100,39 @@ export function createKyotoWitnessScene(actions: ReadonlyMap<string, AdventureAc
     const liftY = ly + (kyotoHoistLowered(done) ? .06 : 3.25);
     const screenY = gy + (done.has(Y.gate) ? 4.28 : 1.43);
     screenCollider.enabled = root.visible && !done.has(Y.gate);
-    if (!seeded) { platform.position.y = liftY; screen.position.y = screenY; seeded = true; }
-    else {
+    if (!seeded) {
+      crossing = done.has(JC.walk) ? 1 : 0;
+      platform.position.y = liftY;
+      screen.position.y = screenY;
+      seeded = true;
+    } else {
       platform.position.y = THREE.MathUtils.damp(platform.position.y, liftY, 2.5, dt);
       screen.position.y = THREE.MathUtils.damp(screen.position.y, screenY, 3, dt);
     }
-    // Aki is one resident: use the same model at the paper table before the
-    // two-source inquiry, then at the existing lift scene. Never clone her.
     const atPaperShop = !kyotoStreetReady(done) && !done.has(Y.reel);
-    const parent = atPaperShop ? root : platform;
+    const onLift = !atPaperShop && !done.has(Y.testimony);
+    const parent = onLift ? platform : root;
     if (witness.group.parent !== parent) parent.add(witness.group);
-    witness.group.position.fromArray(atPaperShop ? kyotoStreetPoint(180, 6.25, 51.6) : [0, 0, 0]);
-    witness.group.visible = !done.has(Y.testimony);
+    const walking = done.has(JC.walk);
+    crossing = walking ? Math.min(1, crossing + Math.max(0, dt) / 3.4) : 0;
+    // The same rescued resident identifies the signatures, waits at the chosen
+    // handover, then actually crosses the raised fire screen in the last scene.
+    if (onLift) witness.group.position.set(0, 0, 0);
+    else if (atPaperShop) witness.group.position.fromArray(paperShop);
+    else if (done.has(Y.gate)) witness.group.position.set(gx - 1.05, gy, gz - 3.2 + 4.7 * crossing);
+    else if (done.has(Y.public)) witness.group.position.set(bx - 1.35, by, bz + .3);
+    else if (done.has(Y.private)) witness.group.position.set(sx + 1.1, sy, sz - .3);
+    else witness.group.position.set(tx - 1.1, ty, tz + .2);
+    courtWitness.position.z = gz - 3.15 + 4.2 * crossing;
+    officers.group.visible = done.has(Y.testimony) && !done.has(Y.public) && !done.has(Y.gate);
+    readingRack.visible = done.has(Y.public);
     survivors.group.visible = kyotoOrdersDelivered(done);
     notice.visible = done.has(Y.public); sealed.visible = done.has(Y.private);
     bell.rotation.z = done.has(Y.public) ? .16 : 0;
   }
   function dispose() {
     screenCollider.enabled = false; screenGeometry.dispose();
-    witness.dispose(); survivors.dispose();
+    witness.dispose(); survivors.dispose(); officers.dispose();
     root.traverse(node => { if (node instanceof THREE.Mesh) node.geometry.dispose(); });
     for (const mat of [wood, metal, cloth, highlighted, red, ...Object.values(art.materials)]) mat.dispose();
     root.removeFromParent();

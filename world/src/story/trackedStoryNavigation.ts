@@ -1,6 +1,17 @@
 import {adventureTravelOpen} from './openWorldCampaign';
 import { GATES } from '../map/regions';
 
+// The four authored passes form one road across the mainland. Either side
+// can be the player's starting point, including on a return trip.
+const road: readonly string[] = ['britain', 'alpha', 'winter', 'blacksail', 'kyoto'];
+const passes = [GATES.britain, GATES.winter, GATES.blacksail, GATES.kyoto];
+export function nextStoryPass(here: string, destination: string) {
+  const from = road.indexOf(here), to = road.indexOf(destination);
+  if (from < 0 || to < 0 || from === to) return null;
+  const next = from + Math.sign(to - from);
+  return { gate: passes[Math.min(from, next)], toward: road[next] };
+}
+
 export function trackedStoryRouteBlocked(here: string, destination: string, done: ReadonlySet<string>): boolean {
   return here !== destination && !adventureTravelOpen(done);
 }
@@ -10,8 +21,9 @@ export function trackedStoryRouteBlocked(here: string, destination: string, done
 export function resolveTrackedStoryPoint(here: string, destination: string, done: ReadonlySet<string>, localTarget?: readonly [number, number, number] | null): [number, number, number] | null {
   if (trackedStoryRouteBlocked(here, destination, done)) return null;
   if (here === destination) return localTarget ? [...localTarget] : null;
-  const gate = here === 'alpha' ? GATES[destination] : GATES[here];
-  return gate ? [...gate.p] : null;
+  const passage = nextStoryPass(here, destination);
+  if (passage) return [...passage.gate.p];
+  return localTarget ? [...localTarget] : null;
 }
 
 /**

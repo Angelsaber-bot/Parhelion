@@ -1,5 +1,6 @@
 import { bilingual, localizeText } from '../../../shared-client/i18n';
 import { GATES, REGIONS } from './regions';
+import { adventureTravelOpen } from '../story/openWorldCampaign';
 import type { Layout } from '../core/types';
 import type { MapBox, MapPoint } from './minimapMarkers';
 import { EXPANSION_PLANS } from './worldPlan';
@@ -82,7 +83,7 @@ export function fullMapPresentation(
   }
   const sources = [
     ...regions.filter(def => GATES[def.id]).map(def => ({ id: `entrance:${def.id}`, kind: 'entrance' as const,
-      position: [GATES[def.id].p[0], GATES[def.id].p[2]] as const, name: '', locked: !done.has('summon_circle') })),
+      position: [GATES[def.id].p[0], GATES[def.id].p[2]] as const, name: '', locked: !adventureTravelOpen(done) })),
     ...regions.flatMap(def => {
       const area = layout.areas.find(area => area.region === def.id && area.id === OVERVIEW[def.id].hub);
       return area ? [{ id: `travel:${def.id}:${area.id}`, kind: 'travel' as const, position: area.tp, name: OVERVIEW[def.id].nameEn?bilingual(area.name,area.nameEn):localizeText(area.name), locked: false }] : [];

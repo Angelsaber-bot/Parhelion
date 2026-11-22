@@ -61,3 +61,18 @@ test('portrait speech uses stable, bounded morph buffers and releases owned geom
  system.setSpeaking(JOURNEY_CAST.alpha.npc);for(let i=0;i<90;i++)system.update(1/60,new THREE.Vector3(0,0,2));assert.ok(head.morphTargetInfluences![0]>.1);
  system.setSpeaking(null);for(let i=0;i<90;i++)system.update(1/60,new THREE.Vector3(0,0,2));assert.ok(head.morphTargetInfluences![0]<.001);assert.equal(head.geometry,geometry);system.dispose();
 });
+
+test('the field report from the preceding keeper changes the next briefing only after the player collected it', () => {
+ const done = facts(); done.add(D.opening);
+ for (const [from, to] of [['britain','winter'], ['winter','blacksail'], ['blacksail','kyoto']] as const) {
+   const npc = JOURNEY_CAST[to].npc;
+   const original = journeyScene(npc, done)!;
+   done.add(D.report(from));
+   const linked = journeyScene(npc, done)!;
+   assert.equal(linked.beat, 'brief');
+   assert.notEqual(linked.text[0], original.text[0]);
+   assert.notEqual(linked.text[1], original.text[1]);
+   assert.deepEqual(linked.choices, original.choices);
+   assert.equal(done.has(D.brief(to)), false);
+ }
+});

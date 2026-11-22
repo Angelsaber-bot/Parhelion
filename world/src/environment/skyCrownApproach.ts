@@ -7,6 +7,7 @@ import { JOURNEY as J, journeyStepReady, legacySkyApproach, type JourneyPoint } 
 import { addSkyCrownArchitecture } from './skyCrownArchitecture';
 import { landscapeWalkway } from './landscapeWalkway';
 import { SKY_LIFT } from './skyServiceLift';
+import { OF } from '../story/orleansFinale';
 
 type Deck = { p: JourneyPoint; w: number; d: number };
 const DECK = {
@@ -137,6 +138,21 @@ export function addSkyCrownApproach(art: SiteArt) {
       ports.push({ dx: direction.x, dz: direction.z, width }); entrances.set(node, ports);
     }
     const start = points[0];
+    // The hall's two exits must be identifiable before committing to the stairs.
+    // Paired brass rails mark the exposed latch route; single teal studs lead below.
+    if (a === DECK.hall && (b === DECK.light || b === DECK.service)) {
+      for (const distance of [2, 5, 8]) {
+        const p = start.clone().addScaledVector(startDirection, -distance);
+        const cross = new THREE.Vector3(-startDirection.z, 0, startDirection.x);
+        const exposed = b === DECK.light;
+        for (const offset of exposed ? [-.4, .4] : [0]) {
+          const mark = p.clone().addScaledVector(cross, offset);
+          mark.y += .075;
+          const tip = mark.clone().addScaledVector(startDirection, exposed ? 1.3 : .35);
+          art.beam(mark.toArray(), tip.toArray(), .14, exposed ? bronze : teal, false, 'glow');
+        }
+      }
+    }
     if (support) for (const landing of points.slice(1, -1)) art.beam(
       [support.x, support.y, support.z], [landing.x, landing.y - .35, landing.z], .5, steel);
     // A continuous ribbon: round joint pads sit at landing height and would leave a ~0.6 m lip
@@ -197,7 +213,29 @@ export function addSkyCrownApproach(art: SiteArt) {
     art.beam([DECK.throat.p[0] + x, DECK.throat.p[1] + .13, DECK.throat.p[2] - 13], [DECK.throat.p[0] + x, DECK.throat.p[1] + .13, DECK.throat.p[2] + 14], .12, teal, false, 'choiceA');
   }
   art.box([cx, DECK.hall.p[1] + 1.36, cz - 6.2], [2.45, 1.13, .17], steel);
-  art.box([cx, DECK.hall.p[1] + 1.36, cz - 6.1], [2.15, .85, .026], teal);
+  // Archive and live panes share a horizon. Only the live pane advances when the ground crew answers.
+  for (const offset of [-.56, .56]) {
+    art.box([cx + offset, DECK.hall.p[1] + 1.36, cz - 6.1], [1.03, .85, .026], offset < 0 ? slate : teal);
+  }
+  const glyph = new THREE.BoxGeometry(1, 1, .035);
+  const feedMaterial = new THREE.MeshBasicMaterial({color: '#fff1be'});
+  const panes = [-.56, .56].map((offset, index) => {
+    const group = new THREE.Group();
+    group.name = index === 0 ? 'SkyRecordedCrossing' : 'SkyLiveCrossing';
+    group.position.set(cx + offset, DECK.hall.p[1] + 1.28, cz - 6.04);
+    const hull = new THREE.Mesh(glyph, feedMaterial);
+    hull.scale.set(.30, .08, 1);
+    const cabin = new THREE.Mesh(glyph, feedMaterial);
+    cabin.position.set(-.04, .08, 0); cabin.scale.set(.11, .09, 1);
+    const ferry = new THREE.Group(); ferry.add(hull, cabin);
+    const bar = new THREE.Group();
+    bar.position.x = -.30;
+    const arm = new THREE.Mesh(glyph, feedMaterial);
+    arm.scale.set(.60, .06, 1); arm.position.x = .30; bar.add(arm);
+    group.add(ferry, bar); art.root.add(group);
+    return { group, ferry, bar };
+  });
+  let feedTime = 0;
   const tellMaterial = new THREE.MeshBasicMaterial({ color: '#ffad57', transparent: true, opacity: .53, depthWrite: false, side: THREE.DoubleSide });
   const tell = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), tellMaterial);
   tell.name = 'SkyRangingLock'; tell.visible = false; art.root.add(tell);
@@ -205,6 +243,11 @@ export function addSkyCrownApproach(art: SiteArt) {
   const direction = new THREE.Vector3(0, 0, 1);
   const from = new THREE.Vector3(...DECK.range.p).add(new THREE.Vector3(0, 0, -7.8));
   function apply(done: ReadonlySet<string>) {
+    for (const pane of panes) {
+      pane.group.visible = done.has(J.skyScan) && (done.has(OF.quayBell) || done.has(OF.bridgeBell));
+      pane.ferry.visible = done.has(OF.quayBell);
+      pane.bar.visible = !pane.ferry.visible;
+    }
     rangeTarget.visible = journeyStepReady(J.skyScan, done);
     latch.visible = journeyStepReady(J.eastLatch, done);
     for (const { collider, node, flag } of lockedGates) {
@@ -214,6 +257,12 @@ export function addSkyCrownApproach(art: SiteArt) {
     if (!rangeTarget.visible) { tell.visible = locked = false; timer = 1; }
   }
   function update(dt: number, player: THREE.Vector3, hurt: (damage: number) => void) {
+    if (panes[1].group.visible && dt > 0 && Math.hypot(player.x - cx, player.z - cz) < 32) {
+      feedTime = (feedTime + Math.min(dt, .25)) % 6;
+      const motion = (1 - Math.cos(feedTime * Math.PI / 3)) * .5;
+      panes[1].ferry.position.x = (motion - .5) * .55;
+      panes[1].bar.rotation.z = motion * 1.25;
+    }
     if (!rangeTarget.visible || Math.abs(player.y - from.y) > 3 || Math.hypot(player.x - from.x, player.z - from.z) > 25) {
       tell.visible = locked = false; timer = 1; return;
     }
@@ -233,5 +282,5 @@ export function addSkyCrownApproach(art: SiteArt) {
     tell.visible = locked = false; timer = 2.3;
   }
   return { markers, colliders, targets: [rangeTarget, latch], apply, update,
-    materials: [gateMaterial, workingMaterial, tellMaterial] };
+    materials: [gateMaterial, workingMaterial, tellMaterial, feedMaterial] };
 }

@@ -25,20 +25,42 @@ export function createQinCampaignScene(ground:(x:number,z:number,y:number)=>numb
   root.updateMatrixWorld(true);const g=new THREE.BoxGeometry(2.6,2.3,.8).translate(.85,1.15,.12).applyMatrix4(group.matrixWorld);geometries.add(g);const c:Collider={name:`QinChapterShields${index}`,enabled:false,bvh:new MeshBVH(g)};colliders.push(c);return{group,c};
  });
  const latchAt=at(Q.road),latch=box(root,[latchAt[0]+1.2,latchAt[1]+1,latchAt[2]],[.35,.35,.3],0xc2a462);latch.userData.target=Q.road;targets.push(latch);
+ const junction=at(Q.relay);
+ const signal=new THREE.Group();signal.name='QinBendSignal';signal.position.set(junction[0]+.8,junction[1],junction[2]);root.add(signal);
+ box(signal,[0,1.35,0],[.21,2.7,.21],0x755943);
+ const arms=[0,Math.PI/2].map((angle,i)=>{
+  const facing=new THREE.Group(),pivot=new THREE.Group();
+  facing.rotation.y=angle;facing.position.y=2.5-i*.46;signal.add(facing);facing.add(pivot);
+  box(pivot,[.56,0,0],[1.12,.14,.14],0x987641);
+  box(pivot,[.91,0,0],[.36,.32,.18],0xe3c692);
+  return pivot;
+ });
  const actors=createSettlementNpcs([{id:'qin_chapter_linhe',region:'alpha',worldRegion:'qin',role:['蔺禾 · 持符工匠','Lin He · Tally holder'],position:at(Q.loan),appearance:{coat:0x9c7659},lines:[]}]);root.add(actors.group);
  const tally=box(root,[0,0,0],[.1,.35,.09],0xc5a663);
  const crew=new THREE.Group();crew.name='QinReverseProcessionBeamCrew';root.add(crew);
  box(crew,[0,1.4,0],[1,.3,4.8],0x8e6c48);const carriers:THREE.Group[]=[];for(const z of [-1.6,1.6])for(const x of [-.7,.7]){const c=new THREE.Group();c.name=`QinBeamCarrier_${carriers.length}`;c.position.set(x,0,z);crew.add(c);carriers.push(c);box(c,[0,.5,0],[.4,1,.4],0x89876d);box(c,[0,1.15,0],[.3,.3,.3],0x89876d);}
- const route:P[]=[world([-17,28,-156]),world([-17,19,-190]),world([31,10,-190])];
- function along(t:number){const lengths=route.slice(1).map((b,i)=>new THREE.Vector3(...b).distanceTo(new THREE.Vector3(...route[i])));let n=t*lengths.reduce((a,b)=>a+b,0);for(let i=0;i<lengths.length;i++){if(n<=lengths[i]||i===lengths.length-1)return new THREE.Vector3(...route[i]).lerp(new THREE.Vector3(...route[i+1]),Math.min(1,n/lengths[i]));n-=lengths[i];}return new THREE.Vector3(...route[0]);}
+ const route=[world([-17,28,-156]),world([-17,19,-190]),world([31,10,-190])].map(p=>new THREE.Vector3(...p));
+ const upperLength=route[0].distanceTo(route[1]),lowerLength=route[1].distanceTo(route[2]);
+ const crewPoint=new THREE.Vector3();
  crew.visible=false;tally.visible=false;
  const kiln=box(root,world([155,46.25,-120]),[1.5,.2,1.5],0xe4a25b);
  return{root,markers,targets,colliders,
   apply(d:ReadonlySet<string>,progress:number){
    shieldGroups.forEach((g,i)=>g.group.visible=g.c.enabled=d.has(i?Q.take:Q.guard));
    kiln.visible=!d.has(Q.take);latch.visible=!d.has(Q.road);
-   const p=along(progress);p.y=ground(p.x,p.z,p.y+3)??p.y;crew.position.copy(p);crew.visible=d.has(Q.halt);
-   for(const c of carriers){const y=ground(p.x+c.position.x,p.z+c.position.z,p.y+3);if(y!==null)c.position.y=y-p.y;}
+   arms.forEach(arm=>arm.rotation.z=d.has(Q.relay)?0:-Math.PI*.45);
+   const distance=THREE.MathUtils.clamp(progress,0,1)*(upperLength+lowerLength);
+   const p=distance<=upperLength?crewPoint.lerpVectors(route[0],route[1],distance/upperLength)
+    :crewPoint.lerpVectors(route[1],route[2],(distance-upperLength)/lowerLength);
+   p.y=ground(p.x,p.z,p.y+3)??p.y;crew.position.copy(p);crew.visible=d.has(Q.halt);
+   // The carriers turn the long beam inside the landing before entering the narrow gallery.
+   const angle=-Math.PI/2*THREE.MathUtils.smoothstep(distance,upperLength-1.6,upperLength+1.6);
+   crew.rotation.y=angle;
+   for(const c of carriers){
+    const {x,z}=c.position;
+    const y=ground(p.x+x*Math.cos(angle)+z*Math.sin(angle),p.z-x*Math.sin(angle)+z*Math.cos(angle),p.y+3);
+    if(y!==null)c.position.y=y-p.y;
+   }
    const linheY=ground(p.x+1.3,p.z,p.y+3)??p.y;actors.pose('qin_chapter_linhe',[p.x+1.3,linheY,p.z],0);
    tally.position.set(p.x+1.5,linheY+1.1,p.z);tally.visible=qinTallyBorrowed(d);
   },

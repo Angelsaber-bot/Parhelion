@@ -2,7 +2,10 @@
 export const CAMPAIGN_REGION_IDS = ['alpha', 'britain', 'blacksail', 'winter', 'kyoto'] as const;
 export type CampaignRegionId = typeof CAMPAIGN_REGION_IDS[number];
 
-/** New areas are exploration blockouts; they do not impersonate completed campaign chapters. */
+/** Recommended first journey. A player who reaches another open region can work there first. */
+export const FIRST_REALMS = ['britain', 'winter', 'blacksail', 'kyoto'] as const;
+
+/** Regions with their own map plans and chapter runtimes. */
 export const EXPANSION_REGION_IDS = ['orleans', 'egypt', 'qin', 'home'] as const;
 export type ExpansionRegionId = typeof EXPANSION_REGION_IDS[number];
 export const WORLD_REGION_IDS = [...CAMPAIGN_REGION_IDS, ...EXPANSION_REGION_IDS] as const;

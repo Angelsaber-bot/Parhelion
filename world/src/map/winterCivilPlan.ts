@@ -9,6 +9,9 @@ export const WINTER_CIVIL_PATHS = [
   [[-96, 226], [-112, 225], [-112, 265], [-96, 264]],
 ] as const;
 
+/** North pedestrian crossing, alongside the clear stretcher lane (winter-local coordinates). */
+export const WINTER_FLAG_RAIL = { x: -4, z: 226.56, deck: 2.44, halfLength: 2.45 } as const;
+
 /** Reject the whole tree, including its snow tiers and collision proxy. */
 export function winterCivilClearance(x: number, z: number, crown = 0) {
   if (WINTER_CIVIL_CLEARANCE.some(r => x > r[0] - crown && x < r[2] + crown && z > r[1] - crown && z < r[3] + crown)) return true;

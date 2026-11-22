@@ -1,3 +1,4 @@
+import { FIRST_REALMS } from '../core/regionIdentity';
 import type {Localized,RegionId} from '../settlements/types';
 import type {NarrativeChoice} from '../ui/narrativePanel';
 import { VALLEY_PROLOGUE } from './valleyPrologue';
@@ -12,11 +13,11 @@ export const dramaBriefed=(region:RegionId,done:ReadonlySet<string>,started:read
 export const JOURNEY_CAST:Readonly<Record<RegionId,{npc:string;name:Localized;chapter:Localized;desire:Localized}>>={
  alpha:{npc:'alpha_signal_keeper',name:['岚','Lan'],chapter:['序章 · 有人在等回答','Prologue · Someone Is Waiting'],desire:['守住一个会有人回答的频道。','Keep a channel with someone listening.']},
  britain:{npc:'britain_oath_witness',name:['艾妲','Ada'],chapter:['第一章 · 迟到的名字','Chapter I · The Names That Arrived Late'],desire:['让回家的人拥有自己的名字。','Let the returners keep their own names.']},
- blacksail:{npc:'blacksail_lamplighter',name:['玛拉','Mara'],chapter:['第二章 · 最后一班归航','Chapter II · The Last Homeward Voyage'],desire:['在港灯熄灭前，等到一艘真正离港的船。','See one ship truly depart before the harbor light goes out.']},
- winter:{npc:'winter_stretcher_bearer',name:['米哈伊','Mikhail'],chapter:['第三章 · 车轮留下的路','Chapter III · A Road Written by Wheels'],desire:['把药交到病人手里，再谈胜利。','Get medicine to the patients before calling it victory.']},
+ blacksail:{npc:'blacksail_lamplighter',name:['玛拉','Mara'],chapter:['第三章 · 最后一班归航','Chapter III · The Last Homeward Voyage'],desire:['在港灯熄灭前，等到一艘真正离港的船。','See one ship truly depart before the harbor light goes out.']},
+ winter:{npc:'winter_stretcher_bearer',name:['米哈伊','Mikhail'],chapter:['第二章 · 车轮留下的路','Chapter II · A Road Written by Wheels'],desire:['把药交到病人手里，再谈胜利。','Get medicine to the patients before calling it victory.']},
  kyoto:{npc:'kyoto_paper_keeper',name:['澄','Sumi'],chapter:['第四章 · 纸上没有的那个人','Chapter IV · The Person Missing from the Page'],desire:['保住写得不漂亮、却确实发生过的事。','Save the imperfect account of what actually happened.']},
 };
-export const JOURNEY_REGIONS=['britain','blacksail','winter','kyoto'] as const;
+export const JOURNEY_REGIONS = FIRST_REALMS;
 export const dramaActive=(done:ReadonlySet<string>)=>done.has(JOURNEY_DRAMA.started)&&done.has('adventure_v2');
 export const dramaReported=(done:ReadonlySet<string>)=>JOURNEY_REGIONS.filter(r=>done.has(JOURNEY_DRAMA.report(r)));
 export const dramaDecision=(done:ReadonlySet<string>)=>done.has(JOURNEY_DRAMA.decision+'open')?'open':done.has(JOURNEY_DRAMA.decision+'watch')?'watch':null;
@@ -48,6 +49,17 @@ const BRIEF:Record<RegionId,Localized>={
  winter:['米哈伊用指背碰了碰药箱，又把手收回衣袖。\n“撤离记录写我们用了十二分钟。我的同伴叫列夫。他在第十三分钟还活着。”\n他没有请求你报仇，只把车辕扶正：“你可以走快些。我得跟这辆车一起走。到了渡口，还要有人亲手接过去。”','Mikhail touches the medicine chest with the back of his hand, then tucks it into his sleeve.\n“The evacuation record says twelve minutes. My partner was called Lev. He was still alive in minute thirteen.”\nHe asks for no revenge. He straightens the cart’s shaft. “You may move faster. I must go with this cart. And someone must take it from us at the crossing.”'],
  kyoto:['澄展开一张晾干的纸。上面只有半个手印，和一行写错了又改过的地址。\n“大家都说，烧掉旧记录，就能重新开始。我以前也信。直到有人问我：那没回来的人，是不是也能一起划掉？”\n她把纸压在石头下面：“去寺里看看原来的命令。别替它补一句好听的结尾。”','Sumi unfolds a dried sheet: half a handprint and an address crossed out and corrected.\n“People say burning old records lets us begin again. I believed it too. Then someone asked whether we could cross out the people who never came back.”\nShe pins the paper beneath a stone. “Read the original orders at the temple. Do not add a comforting ending for them.”'],
 };
+// A receipt only changes the conversation once the player has collected it in person.
+const incomingEvidence: Partial<Record<RegionId, { from: RegionId; line: Localized }>> = {
+ winter: { from: 'britain', line: ['米哈伊认出了艾妲带给你的回执抬头。他翻过药车交接单：“也印着这个。到渡口，帮我看看是谁签的。”', 'Mikhail recognizes the heading on Ada’s receipt. He turns over his waybill. “Same heading. At the crossing, find out who signed ours.”'] },
+ blacksail: { from: 'winter', line: ['你给玛拉看渡口的交接单。她从灯座下抽出航次簿：“米哈伊等到了接车的人。你看看，我女儿这趟是谁收的船？”', 'You show Mara the crossing’s waybill. She pulls the sailing log from under her lamp. “Someone met Mikhail’s cart. Who met my daughter’s ship?”'] },
+ kyoto: { from: 'blacksail', line: ['你把港口的签字给澄看。她找来两张战报，对着火光一叠。连同一个墨点都透在一起。“去拿原件。我想知道这是谁亲眼看见的。”', 'You show Sumi the harbor signature. She holds two dispatches up to the fire. Even the ink blot lines up. “Bring the original. I want to know who saw this happen.”'] },
+};
+function regionalBrief(region: RegionId, done: ReadonlySet<string>): Localized {
+ const clue = incomingEvidence[region];
+ if (!clue || !done.has(JOURNEY_DRAMA.report(clue.from))) return BRIEF[region];
+ return [BRIEF[region][0] + '\n' + clue.line[0], BRIEF[region][1] + '\n' + clue.line[1]];
+}
 const REPORT:Record<RegionId,Localized>={
  alpha:['频道接通了。岚听见四个方向传来的呼叫，没有再按下‘全部完成’。\n“你决定先去哪边。我留在这里。你回来的时候，先叫我的名字。”','The channel opens. Lan hears calls from four directions and does not press All Clear again.\n“You choose which way first. I will stay here. When you return, say my name before anything else.”'],
  britain:['艾妲没有先问你王倒下没有。她走到门边，数了数灯下的人。\n“有人改口说自己是木匠，不是骑士。”她笑了一下，“我把那一栏改了。原来册子也能这样写。”\n她撕下封锁令背面的旧回执：‘接收端已确认全员归营。’落款，是谷地观测所。','Ada does not ask first whether the King has fallen. She counts the people under the gate lamp.\n“One of them corrected me. A carpenter, not a knight.” She smiles. “I changed the entry. Apparently a ledger can be used that way.”\nOn the back of the blockade order is an old receipt: All personnel home, confirmed by receiving station. Signed at the Valley Observatory.'],
@@ -68,7 +80,7 @@ export function journeyScene(npc:string,done:ReadonlySet<string>):DramaScene|nul
   if(done.has('adventure_escaped')&&dramaReported(done).length===4&&done.has(JOURNEY_DRAMA.confession)&&!dramaDecision(done))return {...base,beat:'decision',text:['塔不再替所有人回答。岚把值守牌和频率表摆在你面前。\n“这一次，我不能再替所有人签字。你想让这个频道变成什么？”\n开放频道，让每个地区留下自己的原始呼叫；或者保留一盏值守灯，让五地轮班的人亲口确认每一次抵达。两条路都不再用沉默证明安全。','The tower no longer answers for everyone. Lan places the watch roster beside the frequency list.\n“This time, I cannot sign for all of them. What should this channel become?”\nOpen it so each region keeps its own calls, or keep a watch light staffed in turns by all five regions. Neither choice treats silence as proof of safety.'],choices:[{id:'open',label:['开放频道，各地保留自己的声音。','Open the channel. Let each region keep its own voice.']},{id:'watch',label:['保留值守，五地轮班确认抵达。','Keep the watch. Take turns confirming each arrival.']}]};
   return {...base,beat:'revisit',text:dramaReported(done).length?['岚把频率表往你这边推了推：“别只带回终端的答案。告诉我，你见到了谁。”','Lan slides the frequency list toward you. “Bring more than the terminal’s answer. Tell me who you met.”']:REPORT.alpha,choices:[{id:'personal',label:['先聊聊收讯台。','Tell me about your receiver.']},{id:'later',label:['我会再来。','I will return.']}]};
  }
- if(!done.has(JOURNEY_DRAMA.brief(region)))return {...base,beat:'brief',text:BRIEF[region],choices:BRIEF_REPLY[region]};
+ if(!done.has(JOURNEY_DRAMA.brief(region)))return {...base,beat:'brief',text:regionalBrief(region,done),choices:BRIEF_REPLY[region]};
  if(dramaChapterReady(region,done)&&!done.has(JOURNEY_DRAMA.report(region)))return {...base,beat:'report',text:REPORT[region],choices:acknowledge};
  return null;
 }

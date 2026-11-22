@@ -1,5 +1,5 @@
 import type { Localized } from '../settlements/types';
-export const QIN_CAMPAIGN={restore:'qin_campaign_restore',started:'qin_campaign_started',guard:'qin_campaign_guard',take:'qin_campaign_take',locked:'qin_campaign_locked',observe:'qin_campaign_observe',halt:'qin_campaign_halt',loan:'qin_campaign_loan',road:'qin_campaign_road',arrived:'qin_campaign_arrived',returned:'qin_campaign_returned',complete:'qin_campaign_complete',backup:'parhelion.world.qin.predeparture.v1'} as const;
+export const QIN_CAMPAIGN={restore:'qin_campaign_restore',started:'qin_campaign_started',guard:'qin_campaign_guard',take:'qin_campaign_take',locked:'qin_campaign_locked',observe:'qin_campaign_observe',halt:'qin_campaign_halt',loan:'qin_campaign_loan',relay:'qin_campaign_relay',road:'qin_campaign_road',arrived:'qin_campaign_arrived',returned:'qin_campaign_returned',complete:'qin_campaign_complete',backup:'parhelion.world.qin.predeparture.v1'} as const;
 const Q=QIN_CAMPAIGN;
 export const qinTallyBorrowed=(d:ReadonlySet<string>)=>d.has(Q.loan)&&!d.has(Q.returned);
 export type QinChapterAction={id:string;chapter:string;local:[number,number,number];label:Localized;line:Localized;after:readonly string[];kind?:'shot';choice?:boolean};
@@ -12,7 +12,8 @@ export const QIN_CHAPTER_ACTIONS:readonly QinChapterAction[]=[
  a(Q.locked,'Q06',[118,46,-108],['按此编组出发 · 保存出发前进度','Depart with this formation · Save preparation'],['编组固定，普通死亡与读档保留此选择。要改方案，可恢复明确的出发前存档。','Formation locked. Death and reload retain it. Restore the explicit predeparture save to change the plan.'],[Q.started]),
  a(Q.observe,'Q06',[-37,28,-115],['军道侧槽 · 观察交错队列','Garrison side aisle · Observe crossing ranks'],['葬仪向内，你们向外。先让载梁队驻在安全点，再越过下一道军路。','The procession moves inward; your crew moves outward. Halt the beam crew safely before crossing the next road.'],[Q.locked]),
  a(Q.halt,'Q06',[-17,28,-156],['安全落位 · 驻定载梁队','Safe berth · Halt the beam crew'],['载梁队驻定。蔺禾在发令范围内，接下来的前路由你去开。','The beam crew is halted. Lin He stays within command range while you open the way ahead.'],[Q.observe]),
- a(Q.loan,'Q06',[-17,28,-156],['暂交工符 · 蔺禾持符','Lend the tally · Lin He holds authority'],['蔺禾接过同一枚工符。她按约定运梁，你暂时不能命令这支编组。','Lin He takes the same tally. She moves the beam as agreed; you cannot order this crew while she holds it.'],[Q.halt]),
+ a(Q.loan,'Q06',[-17,28,-156],['暂交工符 · 蔺禾持符','Lend the tally · Lin He holds authority'],['你把工符放进蔺禾手里。她数过担架才肯走：“转角看不见队尾。下斜井有个双臂信架，你替我立起来，前后都能看见。前面的止回扣，还得你去开。”始皇让开了发令位。','You put the tally in Lin He’s hand. She counts the stretchers. “I lose sight of the rear at the bend. Raise the two signal arms at the foot of the shaft so both ends can see. I still need you to open the latch ahead.” The emperor steps away from the command post.'],[Q.halt]),
+ a(Q.relay,'Q06',[-18.5,19,-190],['斜井转角 · 可为队尾立起信架','Shaft bend · Optional signal for the rear crew'],['你将两臂分别转向斜井与横廊。后队举手，蔺禾才发令。隔着转角，两头也看得见对方的停、行。','You point one arm up the shaft and the other down the gallery. The rear crew raises a hand. Only then does Lin He give the order. Both ends can now relay a halt or a march around the blind corner.'],[Q.loan]),
  {...a(Q.road,'Q06',[32,10,-190],['前路止回扣 · 打开接应通道','Forward latch · Open the receiving passage'],['前路已通，蔺禾继续把队伍送向安全点。','The receiving route is open. Lin He continues moving the crew to safety.'],[Q.loan]),kind:'shot'},
  a(Q.returned,'Q06',[32,10,-190],['当面接回工符','Receive the tally in person'],['蔺禾先让队伍驻定，再把工符交回。临时借符结束，独立授权仍要在校令台登记。','Lin He halts the crew, then returns the tally. Temporary delegation ends; independent authority still requires registration at the command court.'],[Q.road,Q.arrived]),
 ];
@@ -21,13 +22,36 @@ export function qinChapterReady(id:string,d:ReadonlySet<string>){const a=qinChap
  if(id===Q.started)return d.has('journey_qin_workers')&&!d.has('journey_qin_public_order');
  if(a.choice)return !d.has(Q.locked);
  if(id===Q.locked)return d.has(Q.guard)||d.has(Q.take);
+ if(id===Q.relay)return qinTallyBorrowed(d)&&!d.has(Q.arrived);
  return true;
 }
 export function commitQinChapter(id:string,d:Set<string>){if(!qinChapterReady(id,d))return false;if(id===Q.guard)d.delete(Q.take);if(id===Q.take)d.delete(Q.guard);d.add(id);if(id===Q.returned)d.add(Q.complete);return true;}
 export const qinChapterGuide=(d:ReadonlySet<string>)=>d.has(Q.complete)||d.has('journey_qin_public_order')?null:QIN_CHAPTER_ACTIONS.find(a=>a.id!==Q.restore&&(!a.choice||!d.has(Q.guard)&&!d.has(Q.take))&&!d.has(a.id)&&qinChapterReady(a.id,d))??(qinTallyBorrowed(d)?QIN_CHAPTER_ACTIONS.at(-1)!:null);
-/** Five durable segments, 45 seconds total. Pause and leaving the local domain stop movement. */
-export function createQinCrewTransit(done:Set<string>,save:()=>boolean,changed:()=>void){let seconds=0;return{
- update(dt:number,active:boolean){if(!active||!qinTallyBorrowed(done)||!done.has(Q.road)||done.has(Q.arrived)||!Number.isFinite(dt)||dt<=0)return;seconds+=Math.min(dt,.1);if(seconds<9)return;seconds=0;let n=0;while(done.has(`${Q.arrived}_${n+1}`))n++;const flag=`${Q.arrived}_${n+1}`;done.add(flag);if(n===4)done.add(Q.arrived);if(!save()){done.delete(flag);if(n===4)done.delete(Q.arrived);}changed();},
- progress(){if(done.has(Q.arrived))return 1;let n=0;while(done.has(`${Q.arrived}_${n+1}`))n++;return Math.min(1,(n+seconds/9)/5);},
- reset(){seconds=0;},
-};}
+/** Five durable segments. A raised signal lets the crew keep pace through the blind bend. */
+export function createQinCrewTransit(done:Set<string>,save:()=>boolean,changed:()=>void){
+ let seconds=0;
+ function completedLegs(){
+  let count=0;
+  while(count<5&&done.has(`${Q.arrived}_${count+1}`))count++;
+  return count;
+ }
+ return {
+  update(dt:number,active:boolean){
+   if(!active||!qinTallyBorrowed(done)||!done.has(Q.road)||done.has(Q.arrived)||!Number.isFinite(dt)||dt<=0)return;
+   seconds+=Math.min(dt,.1)*(done.has(Q.relay)?1.5:1);
+   if(seconds<9)return;
+   seconds-=9;
+   const leg=completedLegs()+1, flag=`${Q.arrived}_${leg}`;
+   done.add(flag);
+   if(leg===5)done.add(Q.arrived);
+   if(!save()){
+    done.delete(flag);
+    if(leg===5)done.delete(Q.arrived);
+    seconds=0;
+   }
+   changed();
+  },
+  progress(){return done.has(Q.arrived)?1:Math.min(1,(completedLegs()+seconds/9)/5);},
+  reset(){seconds=0;},
+ };
+}

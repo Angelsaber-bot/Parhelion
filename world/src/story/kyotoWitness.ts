@@ -41,9 +41,9 @@ export const KYOTO_WITNESS_LINES: Record<KyotoWitnessAction, Localized> = {
   [Y.cut]: ['皮带断了，卷轴停止送料。先前读到的副本还在。','The belt snaps and the press stops. The copy you read is safe.'],
   [Y.winch]: ['平台降到河岸。等阿纪脚下站稳，再核对誊令簿。','The platform lowers to the riverbank. Let Aki reach the ground, then compare the register.'],
   [Y.pin]: ['保险销断开，平台沿导架回落到河岸。','The safety pin breaks and the platform lowers along its guides.'],
-  [Y.testimony]: ['阿纪指出鸦印改过的行。公开更正会让街坊立即看到，也会暴露证人的姓名。定向交接保护姓名，只有双方副官先收到撤令。','Aki points to the lines the Crow Seal amended. Publishing the correction informs the street and reveals the witness names. A direct handover protects the names and reaches the two officers first.'],
-  [Y.public]: ['街钟响了。印出的更正和原令留在公开阅示架上，双方副官收到同一份撤令。','The street bell rings. The correction and original are on the public stand. Both officers receive the same ceasefire order.'],
-  [Y.private]: ['双方副官在同一张桌上签收撤令。证人姓名封存，水门侧路交给你使用。','Both officers receive the order at the same table. Witness names are sealed and the water-gate route is opened for you.'],
+  [Y.testimony]: ['阿纪把指甲压在被改过的那行：“敲钟，整条街都能读到我的名字。或去水门边的桌子，让两个副官当面签收。”她等你选。','Aki puts her nail under the altered line. “Ring the bell and the whole street can read my name. Or take it to the table by the water gate and make both officers sign.” She waits for your answer.'],
+  [Y.public]: ['阿纪站到街钟下，一笔一画签了真名。看客把架上的三张更正传着读，两边的士兵都听见了。','Under the street bell, Aki signs her full name. People read the three posted corrections aloud. Soldiers on both sides hear them.'],
+  [Y.private]: ['水门桌边，两名副官各签一角。阿纪压住封套，等最后一笔干了才松手。水门侧路开放，她的名字没有上墙。','At the water-gate table each officer signs one corner. Aki holds the envelope shut until the ink dries. The side route opens; her name stays off the wall.'],
   [Y.gate]: ['防火屏升起。屏后的人仍然活着，而接收器仍在报本能寺已毁。带走这两份互相矛盾的记录。','The fire screen rises. People behind it are alive while the receiver still reports the temple destroyed. Take both accounts.'],
 };
 
