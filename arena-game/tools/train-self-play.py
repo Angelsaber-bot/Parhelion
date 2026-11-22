@@ -239,7 +239,7 @@ def warm_start_controls(previous, reference):
     counters = {key: previous.get(key, 0) for key in
                 ("generation", "optimizerSteps", "totalSteps", "totalGames", "totalEnvironmentSteps")}
     return {**counters, "signature": reference["signature"], "model": reference["model"],
-            "split": {**previous["split"], **reference["split"]}, "controller": CONTROLLER}
+            "split": {**previous["split"], **reference["split"]}, "controller": CONTROLLER, "practiceSchema": 2}
 
 
 def file_hash(path):
@@ -327,6 +327,8 @@ def run(args):
     actor.load_state_dict(saved["model"])
     if args.command == "export":
         bc.write_json(args.output, actor_json(actor, signature, saved.get("controller")))
+        if args.report_practice:
+            print(json.dumps({"practiceSchema": saved.get("practiceSchema", 0)}))
         return
 
     direct_controls = saved.get("controller") == CONTROLLER
@@ -475,6 +477,7 @@ def run(args):
                        referenceHoldout=bc.evaluate(reference, loader, "cpu", weights),
                        holdoutWindows=len(test), holdoutCaptures=capture_count)
     state = {"kind": CHECKPOINT_KIND, "signature": signature, "model": actor.state_dict(), "critic": critic.state_dict(),
+             "practiceSchema": saved.get("practiceSchema", 0),
              "controller": output_controller, "coachedGenerations": coached_generations + int(coach_weight > 0),
              "coachArchive": archive,
              "optimizer": optimizer.state_dict(), "reference": reference.state_dict(), "split": human_split,
@@ -489,6 +492,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     export = commands.add_parser("export")
+    export.add_argument("--report-practice", action="store_true")
     update = commands.add_parser("update")
     warm_start = commands.add_parser("warm-start")
     warm_start.add_argument("--prior", type=Path, required=True)

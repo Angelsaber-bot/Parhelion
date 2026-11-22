@@ -15,6 +15,9 @@ const SELF_PLAY_INTERVAL = 5 * 60 * 1000;
 const CORPUS_LIMIT = 4096;
 const CORPUS_RETENTION = 30 * DEDUP_WINDOW;
 const CORPUS_READ_LIMIT = 8;
+// Withdraw the original bootstrap trained with a future turn in some search histories.
+// Other direct-control releases, including later promoted champions, stay pinned.
+const WITHDRAWN_BOOTSTRAP = '5070318ab15e277f6b342b0c5d2769b3c694f03141493f3824cb9ef5c22a45bd';
 const MAX_MODEL_BODY = 12 * 1024 ** 2;
 const MODEL_CHUNK = 240 * 1024;
 const MAX_CHECKPOINT_BODY = 8 * 1024 ** 2;
@@ -265,7 +268,7 @@ export class ArenaTraining extends DurableObject<Env> {
     let model: NeuralPolicyModel | undefined;
     if (promote !== undefined) {
       try { model = parseNeuralPolicy(JSON.parse(promote)); } catch { /* rejected below */ }
-      if (!directPolicy(model) || await sha256(promote) !== digest) return new Response(null, { status: 400 });
+      if (!directPolicy(model) || digest === WITHDRAWN_BOOTSTRAP || await sha256(promote) !== digest) return new Response(null, { status: 400 });
     }
     const requestHash = await sha256(text);
     // All reads affecting CAS occur after the final await, with no yield through the commit.
@@ -313,7 +316,7 @@ export class ArenaTraining extends DurableObject<Env> {
       return bytes ? parseNeuralPolicy(JSON.parse(bytes)) : undefined;
     };
     const saved = read();
-    if (directPolicy(saved)) return this.currentModel = saved;
+    if (directPolicy(saved) && this.release()?.digest !== WITHDRAWN_BOOTSTRAP) return this.currentModel = saved;
 
     // Initialize an empty registry or replace an old motor-assisted release. Recheck
     // after hashing: a concurrent promotion always wins over the bundled checkpoint.
@@ -321,7 +324,7 @@ export class ArenaTraining extends DurableObject<Env> {
     const digest = await sha256(bytes);
     return this.ctx.storage.transactionSync(() => {
       const latest = this.currentModel ?? read();
-      if (directPolicy(latest)) return this.currentModel = latest;
+      if (directPolicy(latest) && this.release()?.digest !== WITHDRAWN_BOOTSTRAP) return this.currentModel = latest;
       this.storeLiveModel(bytes, digest, Date.now());
       return this.currentModel = bundledOpponent;
     });
@@ -382,6 +385,7 @@ export class ArenaTraining extends DurableObject<Env> {
     if (!directPolicy(model)) return new Response(null, { status: 400 });
     const weights = JSON.stringify(model);
     const digest = await sha256(weights);
+    if (digest === WITHDRAWN_BOOTSTRAP) return new Response(null, { status: 400 });
     if (release?.digest === digest) return Response.json(release);
     const at = Date.now();
     this.ctx.storage.transactionSync(() => this.storeLiveModel(weights, digest, at));

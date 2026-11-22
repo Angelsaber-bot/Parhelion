@@ -64,7 +64,7 @@ def train(args):
         smoky = (obs[:, 24:27] < 0).any(dim=1)
         history[smoky, -1, 24:27] = obs[smoky, 24:27]
         history[64:128, -1, 16:18] = obs[64:128, 16:18]
-        history[64:128, -1, -3:] = obs[64:128, -3:]
+        history[64:128, -1, 18:] = obs[64:128, 18:]
         # Include short, persistent contacts as well as sudden changes of view.
         repeat = torch.rand(len(obs)) < .5
         history[repeat, -2, :5] = obs[repeat, :5]
@@ -74,7 +74,11 @@ def train(args):
         # Outcome-weighted regression. These controls came from independent random
         # draws that hit or recovered contact, never from target-angle action labels.
         camera = F.smooth_l1_loss(axes[:64], group[:64, -2:], beta=.07)
-        search = F.smooth_l1_loss(axes[64:], group[64:128, -2:], beta=.15)
+        # A hidden target can be recovered by more than one turn. Fit density at
+        # successful controls so two opposite turns need not average to zero.
+        search_error = (axes[64:] - group[64:128, -2:]).square().sum(dim=1)
+        bandwidth = .45 - .23 * step / args.steps
+        search = -torch.exp(-.5 * search_error / bandwidth**2).mean()
         trigger = F.binary_cross_entropy_with_logits(logits[128:, 4], group[128:, -2])
         ids = torch.randint(len(hx), (64,))
         imitation = bc.losses(actor(hx[ids]), hy[ids], weights).mean()
@@ -90,7 +94,7 @@ def train(args):
         glimpses[:, :, 5:16] = domain[:, :, 5:16]
         glimpses[:, :, 18:23] = domain[:, :, 18:23]
         ordinary_turn = F.smooth_l1_loss(actor(glimpses)[:, :2].tanh(), hy[quiet, :2], beta=.08)
-        loss = .12 * movement + 1.5 * camera + .12 * search + .6 * trigger + .06 * imitation + .5 * ordinary_turn
+        loss = .12 * movement + 1.5 * camera + .5 * search + .6 * trigger + .06 * imitation + .5 * ordinary_turn
         optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(actor.parameters(), 1., error_if_nonfinite=True)

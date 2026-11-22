@@ -240,11 +240,11 @@ def cycle(args, service, work, progress):
     phase("collecting")
     try:
         ts = ["node", "--import", "tsx"]
-        run([sys.executable, TRAINER, "export", "--resume", checkpoint, "--output", actor])
+        info = run([sys.executable, TRAINER, "export", "--resume", checkpoint, "--output", actor, "--report-practice"], json_result=True)
         parent_digest = hashlib.sha256(actor.read_bytes()).hexdigest()
         if parent and parent_digest != old["digest"]:
             raise ValueError("Restored actor differs from the last committed generation")
-        if json.loads(actor.read_bytes())["version"] != 4:
+        if json.loads(actor.read_bytes())["version"] != 4 or info["practiceSchema"] != 2:
             # Verify the original digest above before changing the rollout environment.
             # A fresh critic and optimizer learn from actions actually executed by the new controller.
             initial = work / "direct-controls.pt"
@@ -272,7 +272,7 @@ def cycle(args, service, work, progress):
             model = service.request("/neural?version=" + live["digest"], raw=True)
             if hashlib.sha256(model).hexdigest() != live["digest"]:
                 raise ValueError("Live Arena model changed while restoring the opponent pool")
-            if json.loads(model)["version"] in (1, 4):
+            if json.loads(model)["version"] in (1, 4) and live["digest"] != "5070318ab15e277f6b342b0c5d2769b3c694f03141493f3824cb9ef5c22a45bd":
                 incumbent.write_bytes(model)
             else:
                 # A runner can start during deployment while the previous Worker is still serving.
