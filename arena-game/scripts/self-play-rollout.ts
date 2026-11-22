@@ -14,6 +14,7 @@ import type { NavNode } from '../shared/nav.ts';
 import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolicy.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { opponentLeague } from './self-play-league.ts';
+import { loadFallback, type PublicFallback } from './self-play-opponents.ts';
 import { decisionCoach, type CoachTargets } from './self-play-coach.ts';
 
 const AXIS_STD = .35;
@@ -28,7 +29,8 @@ interface Step {
   coach?: CoachTargets;
 }
 interface FrozenActor { hash: string; model: NeuralPolicyModel }
-type Opponent = { mode: 'self-play' | 'scripted' } | { mode: 'frozen'; actor: FrozenActor };
+type Opponent = { mode: 'self-play' | 'scripted' } | { mode: 'frozen'; actor: FrozenActor } |
+  { mode: 'deployed'; fallback: PublicFallback };
 
 function rng(seed: number) {
   // Adjacent generation numbers should start on different regions of the map/roster sequence.
@@ -173,7 +175,8 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
     // Only self-play explores on both sides. Archived rivals use the same action selection as a live released bot.
     const driver = friendly || opponent.mode === 'self-play'
       ? learnedController(actor, rng(seed32()), id === 'pilot' ? steps : undefined)
-      : new Bot(seed32(), BOT_SKILL.normal, TACTICS, undefined, undefined, opponent.mode === 'frozen' ? opponent.actor.model : undefined);
+      : new Bot(seed32(), BOT_SKILL.normal, opponent.mode === 'deployed' ? undefined : TACTICS, undefined,
+        opponent.mode === 'deployed' ? opponent.fallback.exploration : undefined, opponent.mode === 'frozen' ? opponent.actor.model : undefined);
     game.addPlayer(id, { name: id, team: side, char, skins: [], bot: true, loadout: randomBotLoadout(rand), utility: randomBotUtility(rand) }, driver);
   }
   game.phase = 'countdown';
@@ -202,7 +205,8 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   if (!steps.length) throw Error('No live decisions in the simulated match');
   const outcome = Math.sign(game.score[team] - game.score[enemy]);
   steps[steps.length - 1].reward += outcome;
-  const opponentHash = opponent.mode === 'frozen' ? opponent.actor.hash : opponent.mode === 'self-play' ? actor.hash : 'scripted';
+  const opponentHash = opponent.mode === 'frozen' ? opponent.actor.hash : opponent.mode === 'self-play' ? actor.hash :
+    opponent.mode === 'deployed' ? opponent.fallback.digest ?? 'public-scripted' : 'scripted';
   return { map, layout, seed, team, scenario: start.scenario, opponent: opponentHash, opponentMode: opponent.mode,
     score: game.score, outcome, ticks: game.tick - firstTick, steps };
 }
@@ -234,6 +238,7 @@ function curriculum(count: number, focus: Focus[], rand: () => number) {
 function main() {
   const { values } = parseArgs({ options: {
     model: { type: 'string' }, output: { type: 'string' }, opponent: { type: 'string', multiple: true, default: [] },
+    'deployed-fallback': { type: 'string' },
     focus: { type: 'string', multiple: true, default: [] }, league: { type: 'string' },
     seed: { type: 'string', default: '777' }, episodes: { type: 'string', default: '8' }, seconds: { type: 'string', default: '30' },
   } });
@@ -246,6 +251,10 @@ function main() {
   });
   const actor = readActor(values.model);
   const pool = new Map<string, Opponent>([['self-play', { mode: 'self-play' }], ['scripted', { mode: 'scripted' }]]);
+  if (values['deployed-fallback']) {
+    const fallback = loadFallback(values['deployed-fallback']);
+    pool.set(fallback.digest ?? 'public-scripted', { mode: 'deployed', fallback });
+  }
   for (const file of values.opponent) {
     const rival = readActor(file);
     pool.set(rival.hash, { mode: 'frozen', actor: rival });
@@ -254,6 +263,7 @@ function main() {
   const mapOffset = Math.floor(random() * MAPS.length);
   const order = [...MAPS.slice(mapOffset), ...MAPS.slice(0, mapOffset)];
   const episodes = [];
+  const appearances: Record<string, number> = {};
   const schedule = curriculum(count, focus, random);
   const previous = values.league ? JSON.parse(readFileSync(values.league, 'utf8')) : {};
   const league = opponentLeague([...pool.keys()], count, previous, random);
@@ -262,6 +272,7 @@ function main() {
     const team = i % 2 ? 'B' : 'A';
     const { scenario, focused } = schedule[i];
     const rival = league.select(i);
+    appearances[rival] = (appearances[rival] ?? 0) + 1;
     const episode = play(actor, pool.get(rival)!, order[i % order.length].id, layout, team, scenario, Math.floor(random() * 4294967296), seconds);
     league.observe(rival, episode.outcome);
     episodes.push({ ...episode, focused });
@@ -269,6 +280,7 @@ function main() {
   const payload = { version: 1, rulesVersion: RULES_VERSION, actorHash: actor.hash, axisStd: AXIS_STD, focus, episodes };
   writeFileSync(values.output, JSON.stringify(payload), { mode: 0o600 });
   if (values.league) writeFileSync(values.league, JSON.stringify(league.payoffs), { mode: 0o600 });
+  console.log('Training opponent appearances:', JSON.stringify(appearances));
   console.log(`Simulated ${count} matches, collected ${episodes.reduce((n, e) => n + e.steps.length, 0)} policy decisions.`);
 }
 

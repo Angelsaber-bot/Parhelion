@@ -135,8 +135,16 @@ export function mountTrainingStatus() {
         'public-exploration': bilingual('公网探索模型', 'live exploration model') };
       const opponent = opponents[report.opponent];
       const formatSeconds = (n: number) => number.format(Math.round(n * 100) / 100) + ' s';
-      row('背后搜敌（候选 / 对手）', 'Rear acquisition (candidate / opponent)',
-        formatSeconds(report.rearSeconds) + ' / ' + formatSeconds(report.referenceRearSeconds));
+      const comparison = formatSeconds(report.rearSeconds) + ' / ' + formatSeconds(report.referenceRearSeconds);
+      if (report.perceptionMatchedReference) row('背后搜敌（候选 / 同视野对手）', 'Rear acquisition (candidate / equal-vision opponent)', comparison);
+      else row('背后搜敌（候选 / 对手）', 'Rear acquisition (candidate / opponent)', comparison);
+      if (report.humanCamera) {
+        const { captures, windows, turn, quiet } = report.humanCamera;
+        const errorPair = (pair: number[]) => pair.map(n => number.format(Math.round(n * 1800 / Math.PI) / 10) + '°').join(' / ');
+        row('真人留出对局 / 操作片段', 'Held-out human matches / windows', count(captures) + ' / ' + count(windows));
+        row('主动转向误差（候选 / 真人模仿基线）', 'Turn error (candidate / imitation baseline)', errorPair(turn));
+        row('静止视角误差（候选 / 真人模仿基线）', 'Quiet camera error (candidate / imitation baseline)', errorPair(quiet));
+      }
       const percent = new Intl.NumberFormat(zh ? 'zh-CN' : 'en-US', { style: 'percent', maximumFractionDigits: 1 });
       row('脱离墙角 / 烟雾中盲射', 'Wall escapes / blind fire in smoke',
         percent.format(report.wallEscape) + ' / ' + percent.format(report.smokeBlindFire));

@@ -36,9 +36,11 @@ class Service:
         self.http = urllib.request.build_opener(NoRedirect())
         self.replay_key = None
 
-    def request(self, path, payload=None, optional=False, raw=False):
-        headers = {"Authorization": "Bearer " + self.token, "Accept": "application/json",
-                   "User-Agent": "Parhelion-Arena-Training/1.0", "Content-Type": "application/json"}
+    def request(self, path, payload=None, optional=False, raw=False, public=False):
+        headers = {"Accept": "application/json", "User-Agent": "Parhelion-Arena-Training/1.0",
+                   "Content-Type": "application/json"}
+        if not public:
+            headers["Authorization"] = "Bearer " + self.token
         data = json.dumps(payload, separators=(",", ":")).encode() if payload is not None else None
         request = urllib.request.Request(SERVICE + path, data=data, headers=headers, method="PUT" if data else "GET")
         for attempt in range(3):
@@ -123,7 +125,7 @@ def human_gates(metrics):
     }
 
 
-def evaluation_report(results):
+def evaluation_report(results, metrics):
     scenarios = results["byScenario"]
     probe = results.get("diagnostic")
     official = results["byMode"]
@@ -134,12 +136,30 @@ def evaluation_report(results):
     def tally(mode):
         row = modes[mode]
         return [row["legWins"], row["legDraws"], row["legLosses"]]
-    return dict(rearSeconds=scenarios["rear-search"]["candidate"]["meanContactSeconds"],
+    report = dict(rearSeconds=scenarios["rear-search"]["candidate"]["meanContactSeconds"],
                 referenceRearSeconds=scenarios["rear-search"]["opponent"]["meanContactSeconds"],
                 smokeBlindFire=scenarios["smoke"]["candidate"]["smokeHiddenFireFraction"],
                 wallEscape=scenarios["wall"]["candidate"]["wallClearFraction"],
                 roundSet="diagnostic" if probe else "tournament", opponent=opponent,
                 duel=tally("1v1"), team=tally("2v2"))
+    if results.get("perceptionMatchedReference"):
+        report["perceptionMatchedReference"] = True
+    if metrics.get("holdout") and metrics.get("referenceHoldout"):
+        sides = [metrics[key]["cameraAndMovement"] for key in ("holdout", "referenceHoldout")]
+        if all(side[group]["windows"] for side in sides for group in ("unseenTurn", "unseenQuiet")):
+            report["humanCamera"] = dict(captures=metrics["holdoutCaptures"], windows=metrics["holdoutWindows"],
+                turn=[side["unseenTurn"]["yawMaeRad"] for side in sides],
+                quiet=[side["unseenQuiet"]["yawMaeRad"] for side in sides])
+    return report
+
+
+def verify_game_release(service, digest):
+    # Verify the same public endpoints used in the lobby and between matches.
+    status = service.request("/status", public=True)
+    model = service.request("/neural?version=" + digest, raw=True, public=True)
+    if (status.get("neural") or {}).get("digest") != digest or hashlib.sha256(model).hexdigest() != digest:
+        raise RuntimeError("Committed Arena release differs from the weights served to the game")
+    print(f"Verified public Arena release {digest}", flush=True)
 
 
 def cycle(args, service, work, progress):
@@ -202,12 +222,17 @@ def cycle(args, service, work, progress):
             print("Additional practice informed by last evaluation:", ", ".join(focus), flush=True)
         live = status.get("neural")
         incumbent = work / "incumbent.json"
+        fallback = work / "public-fallback.json"
         if live:
             model = service.request("/neural?version=" + live["digest"], raw=True)
             if hashlib.sha256(model).hexdigest() != live["digest"]:
                 raise ValueError("Live Arena model changed while restoring the opponent pool")
             incumbent.write_bytes(model)
             collect += ["--opponent", incumbent]
+        else:
+            # Offline practice includes the stock room bot alongside the tactical baseline.
+            fallback.write_bytes(service.request("/exploration?active=1", raw=True) if service else b"null")
+            collect += ["--deployed-fallback", fallback]
         for index, snapshot in enumerate(history):
             opponent = work / f"opponent-{index}.json"
             opponent.write_text(snapshot)
@@ -240,8 +265,6 @@ def cycle(args, service, work, progress):
                 cmd += ["--incumbent", incumbent]
             elif service:
                 # RoomCore uses the released exploration model (or the plain scripted fallback).
-                fallback = work / "public-fallback.json"
-                fallback.write_bytes(service.request("/exploration?active=1", raw=True))
                 cmd += ["--deployed-fallback", fallback]
             results = run(cmd, json_result=True)
             gates = human_gates(metrics)
@@ -267,13 +290,17 @@ def cycle(args, service, work, progress):
                       failedGates=failed, checkpoint=pack(output.read_bytes()),
                       history=pack(json.dumps(archive, separators=(",", ":")).encode()))
         if evaluate:
-            report = evaluation_report(results)
+            report = evaluation_report(results, metrics)
             if report:
                 record["evaluationReport"] = report
         if service:
             if promoted:
                 record.update(promote=model_text, expectedReleaseDigest=live["digest"] if live else None)
-            service.request("/selfplay", record)
+            committed = service.request("/selfplay", record)
+            if committed["generation"] != generation or committed["digest"] != digest or committed["published"] != promoted:
+                raise RuntimeError("Arena checkpoint acknowledgement differs from the submitted generation")
+            if promoted:
+                verify_game_release(service, digest)
         else:
             record["lastEvaluation"] = (dict(generation=generation, reason=record["reason"],
                                              failedGates=failed, published=False, report=report)

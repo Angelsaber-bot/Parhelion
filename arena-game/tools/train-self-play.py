@@ -14,6 +14,7 @@ from torch import nn
 from torch.distributions import Bernoulli, Categorical, Normal, kl_divergence
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
+from arena_camera_intent import calibrate_yaw
 
 bc = import_module("train-arena-policy")
 AXIS_STD = 0.35
@@ -148,7 +149,8 @@ def generalized_advantages(rewards, values, ends):
 
 def human_data(path, split, rules, context, include_holdout):
     _, batches = bc.load_captures(path, rules, allow_empty=True)
-    captures = bc.usable_captures(batches)
+    eligible = {"train", "holdout"} if include_holdout else {"train"}
+    captures = bc.usable_captures({key: rows for key, rows in batches.items() if split.get(key) in eligible})
     groups = [[rows for capture, rows in captures.items() if split.get(capture) == name]
               for name in ("train", "holdout")]
     if not groups[0]:
@@ -157,7 +159,8 @@ def human_data(path, split, rules, context, include_holdout):
     holdout = bc.ArenaDataset(groups[1], context) if include_holdout and groups[1] else None
     positive = train.targets[:, 4:11].sum(dim=0)
     weights = ((len(train) - positive) / positive.clamp_min(1)).sqrt().clamp(1, 12)
-    return train, holdout, weights, len(groups[1])
+    capture_ends = list(itertools.accumulate(map(len, groups[0])))
+    return train, holdout, weights, len(groups[1]), capture_ends
 
 
 def replay_weights(dataset):
@@ -337,7 +340,7 @@ def run(args):
                     coach_replays += len(rows)
                 loss = loss + coach_weight * correction
             if human:
-                human_train, _, weights, _ = human
+                human_train, _, weights, _, _ = human
                 selection = torch.multinomial(demo_weights, min(len(ix), 64), replacement=True)
                 replayed_windows += len(selection)
                 demo_x, demo_y = zip(*(human_train[i] for i in selection.tolist()))
@@ -359,6 +362,15 @@ def run(args):
         if stopped:
             break
 
+    behavior_kl = rollout_kl(actor, states, old_logits)
+    camera_fit = {"status": "no_training_captures" if not human else "disabled"}
+    if human and not args.skip_camera_calibration:
+        camera_fit = calibrate_yaw(actor, reference, human[0], human[4], states, old_logits, behavior_kl, args.target_kl,
+                                   AXIS_STD, bc.YAW_SCALE, bc.SEARCH_TURN_RADIANS)
+        if camera_fit["status"] == "applied":
+            behavior_kl = rollout_kl(actor, states, old_logits)
+            for parameter in (actor.out.weight, actor.out.bias):
+                optimizer.state[parameter]["exp_avg"][0].zero_()
     bc.write_json(args.output, actor_json(actor, signature, CONTROLLER))
     actor_hash = file_hash(args.output)
     if actor_hash == parent_hash:
@@ -370,7 +382,7 @@ def run(args):
         "totalSteps": saved.get("totalSteps", 0) + len(rewards), "totalGames": saved.get("totalGames", 0) + len(ends),
         "environmentSteps": env_ticks, "totalEnvironmentSteps": saved.get("totalEnvironmentSteps", 0) + env_ticks,
         "samplingParityMaxError": parity_error, "objective": sum(objectives) / len(objectives),
-        "behaviorKL": rollout_kl(actor, states, old_logits), "targetKL": args.target_kl, "klStopped": stopped,
+        "behaviorKL": behavior_kl, "targetKL": args.target_kl, "klStopped": stopped, "cameraIntent": camera_fit,
         "predictionHorizon": PREDICTION_HORIZON, "predictionPairs": prediction_pairs,
         "predictionLoss": prediction_sum / prediction_pairs if prediction_pairs else None,
         "humanReplayWindows": replayed_windows,
@@ -382,7 +394,7 @@ def run(args):
         "holdoutWindows": 0, "holdoutCaptures": 0,
     }
     if human and human[1] is not None:
-        _, test, weights, capture_count = human
+        _, test, weights, capture_count, _ = human
         loader = DataLoader(test, batch_size=256)
         metrics.update(holdout=bc.evaluate(actor, loader, "cpu", weights),
                        referenceHoldout=bc.evaluate(reference, loader, "cpu", weights),
@@ -419,6 +431,8 @@ def main():
                         help="Stop PPO minibatches when the measured old-to-new joint action KL reaches this many nats")
     update.add_argument("--coach-weight", type=float, default=.65,
                         help="Initial corrective imitation weight; zero disables coaching for an ablation")
+    update.add_argument("--skip-camera-calibration", action="store_true",
+                        help="Keep the PPO yaw readout for a paired ablation")
     update.add_argument("--seed", type=int, default=61855)
     args = parser.parse_args()
     if args.command == "update" and not (1 <= args.epochs <= 50 and 1 <= args.batch_size <= 4096

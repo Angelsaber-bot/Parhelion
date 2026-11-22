@@ -7,6 +7,12 @@ on:
       - '.github/workflows/arena-training.yml'
       - 'arena-game/scripts/self-play-*'
       - 'arena-game/tools/train-self-play.py'
+      - 'arena-game/tools/arena_camera_intent.py'
+      - 'arena-game/tools/train-arena-policy.py'
+      - 'arena-game/shared/botNeuralControl.ts'
+      - 'arena-game/shared/perceptualMotor.ts'
+      - 'arena-game/shared/searchOcclusion.ts'
+      - 'arena-game/shared/neuralPolicy.ts'
       - 'arena-game/test/bench/evaluate-self-play.ts'
   workflow_dispatch:
     inputs:

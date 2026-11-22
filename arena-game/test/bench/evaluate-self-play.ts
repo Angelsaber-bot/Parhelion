@@ -8,13 +8,13 @@ import { learnedTactics } from '../../shared/botTactics.ts';
 import tacticsModel from '../../shared/botTacticsModel.json';
 import { MATCH_TICKS, SMOKE, TEAM_CAPACITY, TICK_HZ, WEAPONS, loadoutWeapon, randomBotHero, randomBotLoadout, randomBotUtility, type Team } from '../../shared/content.ts';
 import { settleSmoke, smokeBlocks } from '../../shared/grenade.ts';
-import { parseExplorationModel, type ExplorationModel } from '../../shared/exploration.ts';
+import { loadFallback, type PublicFallback } from '../../scripts/self-play-opponents.ts';
 import { humanObservation, wrapAngle } from '../../shared/humanCombat.ts';
-import { rayShield } from '../../shared/hit.ts';
+import { playerHitbox, rayShield } from '../../shared/hit.ts';
 import { lineOfSight, type ArenaMap, type Vec3 } from '../../shared/map.ts';
 import { Match, type Controller } from '../../shared/match.ts';
 import { parseNeuralPolicy, type NeuralPolicyModel } from '../../shared/neuralPolicy.ts';
-import { BTN, canSlideTo, forward } from '../../shared/sim.ts';
+import { BTN, canSlideTo, forward, playerEye } from '../../shared/sim.ts';
 
 type Mode = '1v1' | '2v2';
 type Scenario = 'round' | 'rear-search' | 'smoke' | 'wall';
@@ -53,22 +53,47 @@ function load(path: string) {
   return { model, sha256: createHash('sha256').update(bytes).digest('hex') };
 }
 
-interface PublicFallback { exploration?: ExplorationModel; digest?: string }
-function loadFallback(path: string): PublicFallback {
-  const bytes = readFileSync(path), raw = JSON.parse(bytes.toString('utf8'));
-  if (raw === null) return {};
-  const exploration = parseExplorationModel(raw);
-  if (!exploration) throw Error('Invalid released Arena exploration policy');
-  return { exploration, digest: createHash('sha256').update(bytes).digest('hex') };
-}
-
 function counters() {
   return { live: 0, unseen: 0, glimpseTicks: 0, offscreenFire: 0, searchRadians: 0, moving: 0, stuck: 0,
     smokeHidden: 0, smokeHiddenFire: 0, firstContact: 0, acquired: 0, pilots: 0, wallTrials: 0, wallCleared: 0, wallClearTicks: 0 };
 }
 type Counters = ReturnType<typeof counters>;
 
-function monitor(bot: Bot, counters: Counters, duration: number, wallSeat: boolean): Controller {
+function cameraContact(m: Match, id: string) {
+  const me = m.player(id)!;
+  const targets = [...m.slots.values()].map(s => s.state).concat(m.heroes.decoys())
+    .filter(p => p.alive && p.team !== me.team)
+    .map(p => ({ team: p.team, crouched: p.crouched, feet: [p.x, p.y, p.z] as Vec3 }));
+  return humanObservation(m.map, me, targets, (a, b) => m.heroes.visible(a, b), [0, 0],
+    undefined, undefined, (a, b) => m.heroes.visible(a, b, true));
+}
+
+/** Use the ordinary scripted controller with exactly one camera observation in acquisition trials.
+ * Its normal close-range/damage detection, live roster positions and marks still operate in full games.
+ * A thin silhouette is reconstructed from its quantized bearing and distance, including its uncertainty. */
+export function cameraLimitedScript(script: Controller): Controller {
+  return { think(m, id) {
+    const own = m.slots.get(id)!, me = own.state;
+    const [confidence, yaw, pitch, range, crouch] = cameraContact(m, id);
+    const slots = new Map([[id, own]]);
+    if (confidence) {
+      const distance = range * 45, bearing = me.yaw + yaw, crouched = !!crouch;
+      const center = ((crouched ? .65 : 1.1) + playerHitbox(crouched).headY) / 2;
+      const team: Team = me.team === 'A' ? 'B' : 'A';
+      // Build the contact from the camera alone. Identity, velocity and hidden position never enter the view.
+      const contact = { ...me, id: 'camera-contact', team, crouched, x: me.x - Math.sin(bearing) * distance,
+        z: me.z - Math.cos(bearing) * distance, y: me.y + playerEye(m.map, me) + Math.tan(me.pitch + pitch) * distance - center };
+      slots.set(contact.id, { ...own, state: contact, info: { ...own.info, team } });
+    }
+    const heroes = Object.assign(Object.create(m.heroes), { marks: [], entities: [], decoys: () => [],
+      visible: (_a: Vec3, _b: Vec3, allowGlimpse = false) => confidence === 1 || allowGlimpse && confidence > 0 });
+    // A read-only view of this tick is passed to think(). Match.step() acts on the untouched authoritative roster.
+    const view: Match = Object.assign(Object.create(m), { slots, heroes, grenades: [] });
+    return script.think(view, id);
+  } };
+}
+
+function monitor(bot: Controller, counters: Counters, duration: number, wallSeat: boolean): Controller {
   let prev: { life: number; x: number; z: number; moving: boolean; obstructed: boolean } | undefined;
   let contact = false, stalls = 0;
   let firstLiveTick: number | undefined;
@@ -169,10 +194,13 @@ function place(m: Match, scenario: Scenario, rand: () => number) {
       }
       if (!wall) continue;
     } else {
+      // Each policy must begin with a clear target at the same geometry when the cloud is removed.
+      if (cameraContact(m, 'A0')[0] !== 1 || cameraContact(m, 'B0')[0] !== 1) continue;
       const cloud = settleSmoke(m.map, { id: -1, owner: 'evaluation', x: (u.x + v.x)/2, y: (u.y + v.y)/2,
         z: (u.z + v.z)/2, life: SMOKE.clear + 3 * TICK_HZ });
       if (!smokeBlocks([cloud], ...eyes)) continue;
       m.smokes.push(cloud);
+      if (cameraContact(m, 'A0')[0] || cameraContact(m, 'B0')[0]) { m.smokes.pop(); continue; }
     }
     for (const slot of m.slots.values()) slot.spawnProtectedUntilTick = 0;
     return;
@@ -242,7 +270,10 @@ export function play(map: ArenaMap, mode: Mode, scenario: Scenario, seed: number
       undefined, fallback?.exploration, team === side ? candidate : opponent);
     const char = randomBotHero([...m.slots.values()].map(s => s.info), team, rand);
     m.addPlayer(id, { name: id, team, bot: true, char, skins: [], loadout: randomBotLoadout(rand), utility: randomBotUtility(rand) });
-    pilots.set(id, scenario === 'round' ? bot : monitor(bot, counts[team], duration, scenario === 'wall' && id === 'A0'));
+    const learningPolicy = team === side ? candidate : opponent;
+    const perceptionTrial = scenario === 'rear-search' || scenario === 'smoke';
+    const pilot = perceptionTrial && !learningPolicy ? cameraLimitedScript(bot) : bot;
+    pilots.set(id, scenario === 'round' ? bot : monitor(pilot, counts[team], duration, scenario === 'wall' && id === 'A0'));
   }
   // Enter the live round through Match so spawn selection, protection and ability cooldowns
   // are initialized exactly as they are when players start a real match.
@@ -350,8 +381,10 @@ function main() {
     hiddenTargetInvariant: hiddenTargetChecks.every(Boolean),
     sufficientCoverage: maps.length >= 3 && seeds >= 2 && seconds >= 8,
     candidateHasSearch: search.candidate.unseenTurnDegreesPerSecond > .3 && search.candidate.acquisitionFraction >= .5,
-    rearSearch: search.candidate.meanContactSeconds <= search.opponent.meanContactSeconds + 2,
-    smokeContact: smoke.candidate.meanContactSeconds < seconds && smoke.candidate.meanContactSeconds <= smoke.opponent.meanContactSeconds + 2,
+    // Leave at least half of the trial (after the scheduled smoke clear for smoke trials) for combat.
+    rearSearch: search.candidate.meanContactSeconds <= Math.min(seconds / 2, search.opponent.meanContactSeconds + 2),
+    smokeContact: smoke.candidate.acquisitionFraction >= .5 && smoke.candidate.meanContactSeconds <=
+      Math.min(3 + (seconds - 3) / 2, smoke.opponent.meanContactSeconds + 2),
     smokeOffscreenTrigger: smoke.candidate.offscreenFireFraction <= Math.max(.04, smoke.opponent.offscreenFireFraction + .02) &&
       smoke.candidate.smokeHidden >= smoke.candidate.pilots && smoke.candidate.smokeHiddenFireFraction <= Math.max(.04, smoke.opponent.smokeHiddenFireFraction + .02),
     wallStalls: clearsWall(wall.candidate, wall.opponent),
@@ -394,6 +427,7 @@ function main() {
     gates.bothModes = Object.values(byMode).every(modes => MODES.every(mode => modes[mode].winFractionWithDraws >= .5));
   }
   console.log(JSON.stringify({ passed: tournament && Object.values(gates).every(Boolean), gates, byMode, byMap, byScenario, comparisons,
+    perceptionMatchedReference: !incumbent,
     candidate: candidate.sha256, incumbent: incumbent?.sha256 ?? 'baseline', comparedOpponent,
     config: { maps, tournamentMaps, seeds, firstSeed, seconds, explorationDigest: publicFallback?.digest },
     fullRounds: [...rounds.values()].reduce((sum, legs) => sum + legs.length, 0), diagnostic }));
