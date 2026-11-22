@@ -60,11 +60,27 @@ class CameraIntentTest(unittest.TestCase):
         self.assertEqual(result["status"], "applied")
         self.assertLess(result["appliedQuietMae"], result["beforeQuietMae"])
         self.assertLess(result["appliedTurnMae"], result["stillTurnMae"])
+        self.assertLessEqual(result["appliedTurnMae"], result["beforeTurnMae"])
         out = model(states).detach()
         torch.testing.assert_close(out[:, 1:], logits[:, 1:], rtol=0., atol=0.)
         kl = (out[:, 0] - logits[:, 0]).square().mean() / (2 * .35**2)
         self.assertLessEqual(float(kl), .3 * .03 + 1e-7)
         self.assertAlmostEqual(float(kl), result["yawUpdateKL"], places=6)
+
+        # Weak directional cues: suppressing yaw makes waiting more accurate
+        # but can also erase a real advantage during active search.
+        data.targets *= torch.where(torch.arange(len(data)) % 14 < 8, 1, -1)[:, None]
+        with torch.no_grad():
+            old.out.weight[0].copy_(torch.tensor([0., .09]))
+            old.out.bias[0] = .025
+        logits = old(states).detach()
+        result = calibrate_yaw(old, copy.deepcopy(old), data, [40, 80, 120, 160],
+                               states, logits, 0., .03, .35, .9, .045)
+        if result["status"] == "applied":
+            self.assertLessEqual(result["appliedTurnMae"], result["beforeTurnMae"])
+            self.assertLessEqual(result["appliedQuietMae"], result["beforeQuietMae"])
+        else:
+            torch.testing.assert_close(old(states).detach(), logits, rtol=0., atol=0.)
 
 
 if __name__ == "__main__":

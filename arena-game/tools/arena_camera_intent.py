@@ -116,9 +116,8 @@ def calibrate_yaw(actor, reference, dataset, capture_ends, rollout, behavior_log
              "beforeTurnMae": turning[0], "beforeQuietMae": resting[0],
              "referenceTurnMae": errors(ref.tanh()[None], y, active, yaw_scale)[0],
              "referenceQuietMae": errors(ref.tanh()[None], y, quiet, yaw_scale)[0]}
-    # Require a meaningful fraction of any directional advantage over standing
-    # still; a near-zero yaw policy must not win by fitting only quiet periods.
-    limit = still - .60 * max(0., still - turning[0])
+    # Preserve the PPO step's turn accuracy when reducing idle camera motion.
+    limit = min(still, turning[0])
     best, score = 0, 2.
     for i in range(1, len(turning)):
         cost = turning[i] / max(.04, turning[0]) + resting[i] / max(.01, resting[0])
@@ -144,13 +143,17 @@ def calibrate_yaw(actor, reference, dataset, capture_ends, rollout, behavior_log
         blend *= .5
     if blend <= 1e-4:
         return dict(audit, status="trust_limit")
+    blended = oof[0].lerp(oof[best], blend).tanh()[None]
+    turn_mae = errors(blended, y, active, yaw_scale)[0]
+    quiet_mae = errors(blended, y, quiet, yaw_scale)[0]
+    if turn_mae > turning[0] or quiet_mae > resting[0]:
+        return dict(audit, status="retained")
     w = base + blend * (fitted - base)
     actor.out.weight[0].copy_(w[:-1])
     actor.out.bias[0].copy_(w[-1])
-    blended = oof[0].lerp(oof[best], blend).tanh()[None]
     return dict(audit, status="applied", model=HEADS[(best - 1) // len(MIXTURES)],
                 selectedFraction=MIXTURES[(best - 1) % len(MIXTURES)],
                 selectedTurnMae=turning[best], selectedQuietMae=resting[best], appliedFraction=blend,
-                appliedTurnMae=errors(blended, y, active, yaw_scale)[0],
-                appliedQuietMae=errors(blended, y, quiet, yaw_scale)[0],
+                appliedTurnMae=turn_mae,
+                appliedQuietMae=quiet_mae,
                 yawUpdateKL=distance * blend**2)
