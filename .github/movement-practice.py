@@ -47,8 +47,21 @@ def inspect():
         info.append(dict(map=name,at=match["at"],score=match["score"],result=match["result"],ticks=match["ticks"],batches=len(batches),source=match["source"]))
     from hashlib import sha256
     model=json.loads(Path('arena-game/shared/directPolicy.json').read_bytes())
-    result=import_module("fit-player-policy").fit_player(model, selected_batches, holdout=3)
-    result["captures"]=[sha256(b[0]["capture"].encode()).hexdigest() for b in selected_batches]
+    import torch
+    torch.set_num_threads(2)
+    bc=import_module("train-arena-policy")
+    make=import_module("fit-match-movement").actor_from_json
+    ds=bc.ArenaDataset([list(bc.capture_windows(selected_batches[3],include_smoke=True))],model["context"])
+    states=torch.stack([ds[i][0] for i in range(len(ds))]); y=ds.targets
+    def grade(m):
+        with torch.no_grad(): logits=make(m)(states)
+        return dict(movement=float((logits[:,2:4].tanh()-y[:,2:4]).abs().mean()),
+                    yaw=float((logits[:,0].tanh()-y[:,0]).abs().mean()),
+                    trigger=float((logits[:,4].sigmoid()-y[:,4]).square().mean()),
+                    loss=float(bc.losses(logits,y,torch.ones(7)).mean()))
+    result=dict(before=grade(model),rows=len(ds))
+    model["out"]=json.loads(Path('.github/practice-head.json').read_bytes())
+    result["after"]=grade(model)
     return result
 try: result=inspect()
 except Exception as exc: result=dict(error=type(exc).__name__,detail=str(exc)[:110] if 'rows' not in str(exc) else 'invalid training input')
