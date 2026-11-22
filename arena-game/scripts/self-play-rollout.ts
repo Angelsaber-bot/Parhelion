@@ -16,6 +16,7 @@ import { RULES_VERSION } from '../shared/protocol.ts';
 import { opponentLeague } from './self-play-league.ts';
 import { loadFallback, type PublicFallback } from './self-play-opponents.ts';
 import { decisionCoach, type CoachTargets } from './self-play-coach.ts';
+import { seedVersion, trainingSeed } from './self-play-seeds.ts';
 
 const AXIS_STD = .35;
 const TACTICS = learnedTactics(tactics.weights, tactics.margin);
@@ -166,7 +167,9 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   const rand = rng(seed), seed32 = () => Math.floor(rand() * 4294967296);
   const enemy = team === 'A' ? 'B' : 'A';
   const game = new Match(getMap(map), layout);
-  const steps: Step[] = [];
+  const seats = (layout === '2v2' ? ['pilot', 'partner'] : ['pilot']).map(id => ({
+    id, steps: [] as Step[], wasAlive: false,
+  }));
   const bots = layout === '2v2' ? ['pilot', 'rival', 'partner', 'other'] : ['pilot', 'rival'];
   for (const id of bots) {
     const friendly = id === 'pilot' || id === 'partner';
@@ -174,7 +177,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
     const char = randomBotHero([...game.slots.values()].map(slot => slot.info), side, rand);
     // Only self-play explores on both sides. Archived rivals use the same action selection as a live released bot.
     const driver = friendly || opponent.mode === 'self-play'
-      ? learnedController(actor, rng(seed32()), id === 'pilot' ? steps : undefined)
+      ? learnedController(actor, rng(seed32()), seats.find(seat => seat.id === id)?.steps)
       : new Bot(seed32(), BOT_SKILL.normal, opponent.mode === 'deployed' ? undefined : TACTICS, undefined,
         opponent.mode === 'deployed' ? opponent.fallback.exploration : undefined, opponent.mode === 'frozen' ? opponent.actor.model : undefined);
     game.addPlayer(id, { name: id, team: side, char, skins: [], bot: true, loadout: randomBotLoadout(rand), utility: randomBotUtility(rand) }, driver);
@@ -189,26 +192,32 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   // Timeout is the actual end of each shortened match in Match.stepPhase; there is no bootstrap tick.
   while (game.phaseT > 0) {
     if (start.smoke && game.tick === firstTick + TICK_HZ) game.smokes.push(start.smoke);
-    const pilot = game.player('pilot')!, wasAlive = pilot.alive;
+    for (const seat of seats) seat.wasAlive = game.player(seat.id)!.alive;
     const scoreDiff = game.score[team] - game.score[enemy];
     game.step();
     const events = game.snapshot().events;
-    const last = steps.at(-1);
-    if (!last) continue;
-    last.reward += .25 * (game.score[team] - game.score[enemy] - scoreDiff);
-    for (const event of events) {
-      if (event.t !== 'hit') continue;
-      if (event.shooter === 'pilot' && game.player(event.victim)?.team === enemy) last.reward += .001 * event.dmg;
-      if (event.victim === 'pilot' && wasAlive && game.player(event.shooter)?.team === enemy) last.reward -= .001 * event.dmg;
+    const teamReward = .25 * (game.score[team] - game.score[enemy] - scoreDiff);
+    for (const { id, steps, wasAlive } of seats) {
+      const last = steps.at(-1);
+      if (!last) continue;
+      last.reward += teamReward;
+      for (const event of events) {
+        if (event.t !== 'hit') continue;
+        if (event.shooter === id && game.player(event.victim)?.team === enemy) last.reward += .001 * event.dmg;
+        if (event.victim === id && wasAlive && game.player(event.shooter)?.team === enemy) last.reward -= .001 * event.dmg;
+      }
     }
   }
-  if (!steps.length) throw Error('No live decisions in the simulated match');
   const outcome = Math.sign(game.score[team] - game.score[enemy]);
-  steps[steps.length - 1].reward += outcome;
+  for (const seat of seats) {
+    if (!seat.steps.length) throw Error(`No live decisions for ${seat.id} in the simulated match`);
+    seat.steps[seat.steps.length - 1].reward += outcome;
+  }
+  const trajectories = Object.fromEntries(seats.map(({ id, steps }) => [id, steps]));
   const opponentHash = opponent.mode === 'frozen' ? opponent.actor.hash : opponent.mode === 'self-play' ? actor.hash :
     opponent.mode === 'deployed' ? opponent.fallback.digest ?? 'public-scripted' : 'scripted';
   return { map, layout, seed, team, scenario: start.scenario, opponent: opponentHash, opponentMode: opponent.mode,
-    score: game.score, outcome, ticks: game.tick - firstTick, steps };
+    score: game.score, outcome, ticks: game.tick - firstTick, trajectories };
 }
 
 function boundedInteger(s: string, name: string, min: number, max: number) {
@@ -241,9 +250,11 @@ function main() {
     'deployed-fallback': { type: 'string' },
     focus: { type: 'string', multiple: true, default: [] }, league: { type: 'string' },
     seed: { type: 'string', default: '777' }, episodes: { type: 'string', default: '8' }, seconds: { type: 'string', default: '30' },
+    'seed-version': { type: 'string' },
   } });
   if (!values.model || !values.output) throw Error('Specify --model actor.json --output trajectories.json');
   const seed = boundedInteger(values.seed, 'seed', 0, 4294967295);
+  const version = seedVersion(values['seed-version']);
   const count = boundedInteger(values.episodes, 'episodes', 1, 256), seconds = boundedInteger(values.seconds, 'seconds', 1, 300);
   const focus = [...new Set(values.focus)].map(value => {
     if (value === 'wall' || value === 'rear' || value === 'smoke') return value;
@@ -263,7 +274,7 @@ function main() {
   const mapOffset = Math.floor(random() * MAPS.length);
   const order = [...MAPS.slice(mapOffset), ...MAPS.slice(0, mapOffset)];
   const episodes = [];
-  const appearances: Record<string, number> = {};
+  const appearances: Record<'1v1' | '2v2', Record<string, number>> = { '1v1': {}, '2v2': {} };
   const schedule = curriculum(count, focus, random);
   const previous = values.league ? JSON.parse(readFileSync(values.league, 'utf8')) : {};
   const league = opponentLeague([...pool.keys()], count, previous, random);
@@ -271,17 +282,18 @@ function main() {
     const layout = i % 4 === 1 || i % 4 === 2 ? '2v2' : '1v1';
     const team = i % 2 ? 'B' : 'A';
     const { scenario, focused } = schedule[i];
-    const rival = league.select(i);
-    appearances[rival] = (appearances[rival] ?? 0) + 1;
-    const episode = play(actor, pool.get(rival)!, order[i % order.length].id, layout, team, scenario, Math.floor(random() * 4294967296), seconds);
-    league.observe(rival, episode.outcome);
+    const rival = league.select(i, layout);
+    appearances[layout][rival] = (appearances[layout][rival] ?? 0) + 1;
+    const episode = play(actor, pool.get(rival)!, order[i % order.length].id, layout, team, scenario, trainingSeed(random(), version), seconds);
+    league.observe(rival, episode.outcome, layout);
     episodes.push({ ...episode, focused });
   }
-  const payload = { version: 1, rulesVersion: RULES_VERSION, actorHash: actor.hash, axisStd: AXIS_STD, focus, episodes };
+  const payload = { version: 2, seedVersion: version, seed, rulesVersion: RULES_VERSION, actorHash: actor.hash, axisStd: AXIS_STD, focus, episodes };
   writeFileSync(values.output, JSON.stringify(payload), { mode: 0o600 });
   if (values.league) writeFileSync(values.league, JSON.stringify(league.payoffs), { mode: 0o600 });
   console.log('Training opponent appearances:', JSON.stringify(appearances));
-  console.log(`Simulated ${count} matches, collected ${episodes.reduce((n, e) => n + e.steps.length, 0)} policy decisions.`);
+  const decisions = episodes.flatMap(e => Object.values(e.trajectories)).reduce((n, steps) => n + steps.length, 0);
+  console.log(`Simulated ${count} matches, collected ${decisions} policy decisions.`);
 }
 
 try { main(); } catch (e) {

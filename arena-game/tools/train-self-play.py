@@ -34,18 +34,30 @@ def checked_vector(row, key, length, limit):
 
 def read_trajectories(path, parent_hash, rules, context):
     doc = json.loads(path.read_bytes())
-    if (doc["version"] != 1 or doc["actorHash"] != parent_hash or doc["rulesVersion"] != rules
+    if (doc["version"] not in (1, 2) or doc["actorHash"] != parent_hash or doc["rulesVersion"] != rules
             or doc["axisStd"] != AXIS_STD or not doc["episodes"]):
         raise ValueError("Rollout does not match the frozen behavior policy, rules, or sampling distribution")
     observations, actions, logp, rewards, ends, resets = [], [], [], [], [], []
-    env_ticks, coaching = 0, []
+    streams, coaching = [], []
+    counts = {"games": len(doc["episodes"]), "environmentSteps": 0, "policyTrajectories": 0, "partnerDecisions": 0}
     for episode in doc["episodes"]:
         if not bc.integer(episode["ticks"], 1, 10**8):
             raise ValueError("Invalid number of simulated game ticks")
-        env_ticks += episode["ticks"]
-        steps = episode["steps"]
+        counts["environmentSteps"] += episode["ticks"]
+        if doc["version"] == 1:
+            streams.append(episode["steps"])
+            continue
+        seats = ("pilot", "partner") if episode["layout"] == "2v2" else ("pilot",)
+        trajectories = episode["trajectories"]
+        if (episode["layout"] not in ("1v1", "2v2") or not isinstance(trajectories, dict)
+                or set(trajectories) != set(seats) or any(not isinstance(trajectories[s], list) for s in seats)):
+            raise ValueError("Rollout trajectories must cover each friendly seat in this match")
+        streams.extend(trajectories[seat] for seat in seats)
+        counts["partnerDecisions"] += len(trajectories.get("partner", []))
+    counts["policyTrajectories"] = len(streams)
+    for steps in streams:
         if not steps or steps[0]["reset"] is not True:
-            raise ValueError("A rollout episode must begin at a fresh policy context")
+            raise ValueError("Each actor trajectory must begin at a fresh policy context")
         history = []
         for step in steps:
             if type(step["reset"]) is not bool:
@@ -72,10 +84,10 @@ def read_trajectories(path, parent_hash, rules, context):
             coaching.append([UNLABELED if value is None else value for value in labels])
         ends.append(len(actions))
     tensors = [torch.tensor(rows, dtype=torch.float32) for rows in (observations, actions, logp, rewards)]
-    # Each episode begins with a reset. A successor belongs to the same life only
+    # Each actor trajectory begins with a reset. A successor belongs to the same life only
     # if it exists and the actor did not clear its memory at that decision.
     successors = ~torch.tensor(resets[1:] + [True], dtype=torch.bool)
-    return (*tensors, ends, env_ticks, successors, torch.tensor(coaching, dtype=torch.float32))
+    return (*tensors, ends, counts, successors, torch.tensor(coaching, dtype=torch.float32))
 
 
 def correction_loss(logits, labels):
@@ -268,7 +280,7 @@ def run(args):
     parent_hash = file_hash(args.actor)
     if json.loads(args.actor.read_bytes()) != actor_json(actor, signature, saved.get("controller")):
         raise ValueError("Rollout actor and source checkpoint weights differ")
-    states, actions, logged, rewards, ends, env_ticks, successors, coaching = read_trajectories(
+    states, actions, logged, rewards, ends, counts, successors, coaching = read_trajectories(
         args.rollout, parent_hash, signature["rulesVersion"], config.context)
     prior = load_saved(args.prior) if args.prior else saved
     if (args.prior and prior.get("kind") is not None) or prior["signature"] != signature:
@@ -379,9 +391,9 @@ def run(args):
     archive = aggregate_corrections(previous_coaching, states, coaching, coach_random)
     metrics = {
         "generation": generation + 1, "optimizerSteps": previous_updates + updates, "updates": updates,
-        "steps": len(rewards), "games": len(ends), "parentHash": parent_hash, "actorHash": actor_hash,
-        "totalSteps": saved.get("totalSteps", 0) + len(rewards), "totalGames": saved.get("totalGames", 0) + len(ends),
-        "environmentSteps": env_ticks, "totalEnvironmentSteps": saved.get("totalEnvironmentSteps", 0) + env_ticks,
+        **counts, "steps": len(rewards), "parentHash": parent_hash, "actorHash": actor_hash,
+        "totalSteps": saved.get("totalSteps", 0) + len(rewards), "totalGames": saved.get("totalGames", 0) + counts["games"],
+        "totalEnvironmentSteps": saved.get("totalEnvironmentSteps", 0) + counts["environmentSteps"],
         "samplingParityMaxError": parity_error, "objective": sum(objectives) / len(objectives),
         "behaviorKL": behavior_kl, "targetKL": args.target_kl, "klStopped": stopped, "cameraIntent": camera_fit,
         "predictionHorizon": PREDICTION_HORIZON, "predictionPairs": prediction_pairs,

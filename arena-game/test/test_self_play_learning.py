@@ -24,9 +24,10 @@ class SelfPlayLearningTest(unittest.TestCase):
             path = Path(directory) / "episodes.json"
             path.write_text(json.dumps(dict(version=1, axisStd=trainer.AXIS_STD, actorHash="actor",
                                             rulesVersion=43, episodes=episodes)))
-            _, actions, _, _, ends, _, successors, coaching = trainer.read_trajectories(path, "actor", 43, 4)
+            _, actions, _, _, ends, counts, successors, coaching = trainer.read_trajectories(path, "actor", 43, 4)
         self.assertTrue((coaching == trainer.UNLABELED).all())
         self.assertEqual(ends, [4, 8])
+        self.assertEqual(counts, dict(games=2, environmentSteps=96, policyTrajectories=2, partnerDecisions=0))
         self.assertEqual(successors.tolist(), [True, False, True, False, True, True, True, False])
 
         torch.manual_seed(73)
@@ -43,6 +44,37 @@ class SelfPlayLearningTest(unittest.TestCase):
         torch.testing.assert_close(loss, other)
         loss.backward()
         self.assertGreater(dynamics.next_state.weight_ih.grad.abs().sum().item(), 0)
+
+    def test_teammate_histories_returns_and_match_counts(self):
+        def step(value, reset, reward=0.):
+            return dict(obs=[value] * trainer.bc.FEATURES, axes=[0.] * 4, buttons=[0] * 7,
+                        weapon=0, logp=0., reward=reward, reset=reset)
+
+        duo = dict(layout="2v2", ticks=13, trajectories={
+            "pilot": [step(1, True), step(2, False)],
+            "partner": [step(3, True), step(4, False, 1.)],
+        })
+        solo = dict(layout="1v1", ticks=12, trajectories={"pilot": [step(5, True, -1.)]})
+        doc = dict(version=2, axisStd=trainer.AXIS_STD, actorHash="actor", rulesVersion=43, episodes=[duo, solo])
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "episodes.json"
+            path.write_text(json.dumps(doc))
+            states, _, _, rewards, ends, counts, successors, _ = trainer.read_trajectories(path, "actor", 43, 2)
+            self.assertEqual(states[:, :, 0].tolist(), [[0, 1], [1, 2], [0, 3], [3, 4], [0, 5]])
+            self.assertEqual(ends, [2, 4, 5])
+            self.assertEqual(successors.tolist(), [True, False, True, False, False])
+            self.assertEqual(counts, dict(games=2, environmentSteps=25, policyTrajectories=3, partnerDecisions=2))
+            _, returns = trainer.generalized_advantages(rewards, torch.zeros_like(rewards), ends)
+            torch.testing.assert_close(returns, torch.tensor([0., 0., .99 * .95, 1., -1.]))
+
+            duo["trajectories"]["partner"][0]["reset"] = False
+            path.write_text(json.dumps(doc))
+            with self.assertRaisesRegex(ValueError, "fresh policy context"):
+                trainer.read_trajectories(path, "actor", 43, 2)
+            del duo["trajectories"]["partner"]
+            path.write_text(json.dumps(doc))
+            with self.assertRaisesRegex(ValueError, "each friendly seat"):
+                trainer.read_trajectories(path, "actor", 43, 2)
 
     def test_joint_behavior_kl(self):
         actor = nn.Identity()

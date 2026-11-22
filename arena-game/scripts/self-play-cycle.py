@@ -276,7 +276,9 @@ def cycle(args, service, work, progress):
             phase("evaluating")
             cmd = ts + ["test/bench/evaluate-self-play.ts", candidate, "--seeds", "2", "--seed", random.SystemRandom().randrange(500000000, 1900000000)]
             if live:
-                cmd += ["--incumbent", incumbent]
+                # Freeze the comparison budget before scoring: twelve independent map/seed blocks
+                # against the live policy, with both sides and game modes within every block.
+                cmd += ["--incumbent", incumbent, "--incumbent-seeds", "4"]
             elif service:
                 # RoomCore uses the released exploration model (or the plain scripted fallback).
                 cmd += ["--deployed-fallback", fallback]

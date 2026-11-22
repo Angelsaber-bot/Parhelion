@@ -15,6 +15,7 @@ import { lineOfSight, type ArenaMap, type Vec3 } from '../../shared/map.ts';
 import { Match, type Controller } from '../../shared/match.ts';
 import { parseNeuralPolicy, type NeuralPolicyModel } from '../../shared/neuralPolicy.ts';
 import { BTN, canSlideTo, forward, playerEye } from '../../shared/sim.ts';
+import { seedVersion, tournamentSeeds, trialSeed } from '../../scripts/self-play-seeds.ts';
 
 type Mode = '1v1' | '2v2';
 type Scenario = 'round' | 'rear-search' | 'smoke' | 'wall';
@@ -26,10 +27,6 @@ const CHALLENGES: Scenario[] = ['rear-search', 'smoke', 'wall'];
 function random(seed: number) {
   let state = seed >>> 0;
   return () => (state = (Math.imul(1664525, state) + 1013904223) >>> 0) / 2 ** 32;
-}
-
-function trialSeed(campaign: number, stage: string, map: string, index = 0) {
-  return createHash('sha256').update(JSON.stringify([campaign, stage, map, index])).digest().readUInt32LE();
 }
 
 /** Hold back a different set of Arena maps for the tournament, with the same match budget.
@@ -44,6 +41,14 @@ export function evaluationMaps(seed: number, requested?: string) {
   const ordered = available.sort((a, b) => trialSeed(seed, 'maps', a) - trialSeed(seed, 'maps', b));
   const count = Math.min(3, ordered.length);
   return { screen: ordered.slice(0, count), tournament: ordered.slice(-count) };
+}
+
+export function tournamentLegs(campaign: number, maps: string[], count: number, version: 1 | 2) {
+  const legs: { map: string; seed: number; mode: Mode; side: Team }[] = [];
+  for (const map of maps) for (const seed of tournamentSeeds(campaign, map, count, version)) {
+    for (const mode of MODES) for (const side of TEAMS) legs.push({ map, seed, mode, side });
+  }
+  return legs;
 }
 
 function load(path: string) {
@@ -354,7 +359,8 @@ function numberArg(v: string, min: number, max: number) {
 function main() {
   const { positionals, values } = parseArgs({ allowPositionals: true, options: {
     incumbent: { type: 'string' }, seeds: { type: 'string', default: '3' }, seed: { type: 'string', default: '13093847' },
-    'deployed-fallback': { type: 'string' },
+    'deployed-fallback': { type: 'string' }, 'incumbent-seeds': { type: 'string' },
+    'seed-version': { type: 'string' },
     maps: { type: 'string' }, seconds: { type: 'string', default: '12' },
     'screen-only': { type: 'boolean', default: false },
   } });
@@ -364,19 +370,21 @@ function main() {
   if (incumbent && publicFallback) throw Error('Specify one deployed opponent');
   const comparedOpponent = incumbent ? 'incumbent' : publicFallback?.exploration ? 'public-exploration' : publicFallback ? 'public-scripted' : 'baseline';
   const seeds = numberArg(values.seeds, 1, 100), firstSeed = numberArg(values.seed, 0, 2**31 - seeds - 1);
+  const incumbentSeeds = values['incumbent-seeds'] === undefined ? seeds : numberArg(values['incumbent-seeds'], seeds, 100);
+  const version = seedVersion(values['seed-version']);
   const seconds = numberArg(values.seconds, 1, 60);
   const { screen: maps, tournament: tournamentMaps } = evaluationMaps(firstSeed, values.maps);
   const challenges: Leg[] = [];
   const rounds = new Map<string, Leg[]>();
   for (const id of maps) for (let i = 0; i < seeds; i++) {
     for (const side of TEAMS) for (const scenario of CHALLENGES) {
-      const mixedSeed = trialSeed(firstSeed, scenario, id, i);
+      const mixedSeed = trialSeed(firstSeed, scenario, id, i, version);
       challenges.push(play(getMap(id), '1v1', scenario, mixedSeed, side, seconds * TICK_HZ, candidate.model, incumbent?.model, publicFallback));
     }
   }
   const byScenario = Object.fromEntries(CHALLENGES.map(s => [s, scenarioStats(challenges.filter(l => l.scenario === s))]));
   const smoke = byScenario.smoke, wall = byScenario.wall, search = byScenario['rear-search'];
-  const hiddenTargetChecks = maps.map(map => hiddenTargetInvariant(getMap(map), trialSeed(firstSeed, 'occlusion', map), candidate.model));
+  const hiddenTargetChecks = maps.map(map => hiddenTargetInvariant(getMap(map), trialSeed(firstSeed, 'occlusion', map, 0, version), candidate.model));
   const gates: Record<string, boolean> = {
     hiddenTargetInvariant: hiddenTargetChecks.every(Boolean),
     sufficientCoverage: maps.length >= 3 && seeds >= 2 && seconds >= 8,
@@ -397,7 +405,7 @@ function main() {
     // Keep these four probes out of the promotion dataset and off tournament maps when possible.
     const reserved = MAPS.filter(m => !maps.includes(m.id) && !tournamentMaps.includes(m.id));
     const id = reserved.length ? reserved[trialSeed(firstSeed, 'diagnostic-map', '') % reserved.length].id : maps[0];
-    const seed = trialSeed(firstSeed, 'diagnostic', id);
+    const seed = trialSeed(firstSeed, 'diagnostic', id, 0, version);
     const modes = Object.fromEntries(MODES.map(mode => [mode, score(TEAMS.map(side =>
       play(getMap(id), mode, 'round', seed, side, MATCH_TICKS, candidate.model, incumbent?.model, publicFallback)))]));
     diagnostic = { map: id, seed, opponent: comparedOpponent, modes };
@@ -406,12 +414,9 @@ function main() {
     const opponents: { name: string; model?: NeuralPolicyModel; fallback?: PublicFallback }[] = [{ name: 'baseline' }];
     if (incumbent || publicFallback) opponents.push({ name: comparedOpponent, model: incumbent?.model, fallback: publicFallback });
     for (const opponent of opponents) {
-      const legs: Leg[] = [];
-      for (const id of tournamentMaps) for (let i = 0; i < seeds; i++) for (const mode of MODES) {
-        // Tournament seeds are disjoint from the preceding development-screen starts.
-        const mixedSeed = trialSeed(firstSeed, 'round', id, i);
-        for (const side of TEAMS) legs.push(play(getMap(id), mode, 'round', mixedSeed, side, MATCH_TICKS, candidate.model, opponent.model, opponent.fallback));
-      }
+      const roundSeeds = opponent.name === 'incumbent' ? incumbentSeeds : seeds;
+      const legs = tournamentLegs(firstSeed, tournamentMaps, roundSeeds, version).map(({ map, seed, mode, side }) =>
+        play(getMap(map), mode, 'round', seed, side, MATCH_TICKS, candidate.model, opponent.model, opponent.fallback));
       rounds.set(opponent.name, legs);
     }
   }
@@ -429,7 +434,7 @@ function main() {
   console.log(JSON.stringify({ passed: tournament && Object.values(gates).every(Boolean), gates, byMode, byMap, byScenario, comparisons,
     perceptionMatchedReference: !incumbent,
     candidate: candidate.sha256, incumbent: incumbent?.sha256 ?? 'baseline', comparedOpponent,
-    config: { maps, tournamentMaps, seeds, firstSeed, seconds, explorationDigest: publicFallback?.digest },
+    config: { maps, tournamentMaps, seeds, incumbentSeeds, firstSeed, seedVersion: version, seconds, explorationDigest: publicFallback?.digest },
     fullRounds: [...rounds.values()].reduce((sum, legs) => sum + legs.length, 0), diagnostic }));
 }
 

@@ -11,9 +11,9 @@ it('prioritizes losses observed in the same generation while retaining every riv
   const league = opponentLeague(ids, 256, {}, random(7579));
   const counts = { 'self-play': 0, scripted: 0, frozen: 0 };
   for (let i = 0; i < 256; i++) {
-    const id = league.select(i) as keyof typeof counts;
+    const id = league.select(i, '1v1') as keyof typeof counts;
     counts[id]++;
-    league.observe(id, id === 'scripted' ? -1 : id === 'frozen' ? 1 : 0);
+    league.observe(id, id === 'scripted' ? -1 : id === 'frozen' ? 1 : 0, '1v1');
   }
   expect(Math.min(...Object.values(counts))).toBeGreaterThan(0);
   expect(counts.scripted).toBeGreaterThan(2 * counts['self-play']);
@@ -26,12 +26,28 @@ it('restores discounted results only for opponents present this generation', () 
   const ids = ['anchor', 'replacement', 'self-play'];
   const league = opponentLeague(ids, 3, old, random(811));
   expect(league.payoffs).toEqual({ anchor: { games: 17, points: 3.4 }, replacement: { games: 0, points: 0 }, 'self-play': { games: 0, points: 0 } });
-  expect(new Set([league.select(0), league.select(1), league.select(2)])).toEqual(new Set(ids));
-  league.observe('anchor', 0);
+  expect(new Set([league.select(0, '1v1'), league.select(1, '2v2'), league.select(2, '1v1')])).toEqual(new Set(ids));
+  league.observe('anchor', 0, '2v2');
   expect(old.anchor).toEqual({ games: 20, points: 4 });
 });
 
 it('covers distinct opponents when the rollout budget is smaller than the pool', () => {
   const league = opponentLeague(['a', 'b', 'c', 'd'], 2, {}, random(101));
-  expect(league.select(0)).not.toBe(league.select(1));
+  expect(league.select(0, '1v1')).not.toBe(league.select(1, '2v2'));
+});
+
+it('preserves mode-specific weaknesses when two rivals have identical pooled scores', () => {
+  const saved = { a: { games: 40, points: 20, byMode: { '1v1': { games: 20, points: 0 }, '2v2': { games: 20, points: 20 } } },
+    b: { games: 40, points: 20, byMode: { '1v1': { games: 20, points: 20 }, '2v2': { games: 20, points: 0 } } } };
+  const league = opponentLeague(['a', 'b'], 200, saved, random(597));
+  const harder = { '1v1': 0, '2v2': 0 };
+  for (let i = 0; i < 200; i++) {
+    const layout = i % 2 ? '1v1' : '2v2';
+    if (league.select(i, layout) === (layout === '1v1' ? 'a' : 'b')) harder[layout]++;
+  }
+  expect(harder['1v1']).toBeGreaterThan(85);
+  expect(harder['2v2']).toBeGreaterThan(85);
+  league.observe('a', 0, '1v1');
+  expect(league.payoffs.a.byMode?.['1v1']).toEqual({ games: 18, points: .5 });
+  expect(saved.a.byMode['1v1']).toEqual({ games: 20, points: 0 });
 });
