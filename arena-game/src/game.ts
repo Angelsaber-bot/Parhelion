@@ -6,13 +6,14 @@ import { bilingual } from '../../shared-client/i18n.ts';
 // Client game loop: fixed 60 Hz input ticks with local prediction of the own player, server
 // reconciliation (replay unacknowledged inputs), and ~100 ms interpolation of everyone else.
 
-import { DT, INTERP_TICKS, TICK_HZ, WEAPONS } from '../shared/content.ts';
+import { DT, WEAPONS } from '../shared/content.ts';
 import { hiddenFromView } from './rendering/edictReveal.ts';
 import { humanObservation, type CombatContact } from '../shared/humanCombat.ts';
 import { explorationScene } from '../shared/exploration.ts';
 import { rayPlayer, rayShield } from '../shared/hit.ts';
 import { tacticalArea, raycastMap, lineOfSight, type ArenaMap, type Vec3 } from '../shared/map.ts';
 import { type NetEvent, type PlayerSnap, type Snapshot } from '../shared/match.ts';
+import { SnapshotInterpolation, type RemotePose } from './network/snapshotInterpolation.ts';
 import { BackgroundTicker } from './network/backgroundTicker.ts';
 import { aimDir, applyInput, clonePlayer, playerEye, quantAngle, type Input, type PlayerState, type SimEvent } from '../shared/sim.ts';
 import { sfx } from './rendering/audio.ts';
@@ -28,19 +29,16 @@ import { RangeStats } from './ui/rangeStats.ts';
 import { AIM_FOV } from './player/aim.ts';
 import type { HumanDemo } from './player/humanDemo.ts';
 
-const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
-
 export class Game {
   lesson:HeroLesson|null=null;
   private me: PlayerState | null = null;
   private pending: Input[] = [];
   private outbox: Input[] = [];
   private seq = 0;
-  private snaps: Snapshot[] = [];
+  private readonly interpolation = new SnapshotInterpolation();
+  private remotes: RemotePose[] = [];
   private latest: Snapshot | null = null;
   private meleeContact: Vec3 | null = null; // server contact point of my latest swing
-  private latestAt = 0;
-  private renderTick = 0;
   private acc = 0;
   private last = performance.now();
   private background = new BackgroundTicker((seconds) => { if (this.running && !this.paused) this.advance(Math.min(.25, seconds)); });
@@ -48,7 +46,6 @@ export class Game {
   private raf = 0;
   private running = true;
   private pausedFrames=new FrameGate(10);
-  private snapGap = 50; // ms between snapshots, smoothed
   /** Round trip from pressing a key to the server's snapshot confirming it (smoothed), and when each input left. */
   private rtt = 0;
   private sentAt = new Map<number, number>();
@@ -113,21 +110,17 @@ export class Game {
     if (s.phase === 'ended' && previousPhase !== 'ended') this.humanDemo?.pause();
     if ((previousPhase === 'ended' && s.phase !== 'ended') || (s.phase === 'live' && previousPhase !== 'live')) {
       const wasEnded = this.ended;
-      this.pending = []; this.outbox = []; this.snaps = []; this.remotes = []; this.sentAt.clear(); this.rtt = 0;
-      this.smooth = [0, 0, 0]; this.renderTick = 0; this.acc = 0; this.streak = 0;
+      this.pending = []; this.outbox = []; this.interpolation.resetRound(); this.remotes = []; this.sentAt.clear(); this.rtt = 0;
+      this.smooth = [0, 0, 0]; this.acc = 0; this.streak = 0;
       this.feel = new Feel(); this.controls.clearAll(); this.controls.resultsScoreboard = false;
       this.controls.weapon = 0; this.aimWeapon = -1; this.resetAim(); this.hud.resetRound(); this.scene.clearCombatEffects();
       this.rematchPending = false; this.ended = false; this.paused = false; this.session.setPaused(false);
       if (wasEnded) this.onRestart();
     }
     const now = performance.now();
-    if (this.latest) this.snapGap += ((now - this.latestAt) - this.snapGap) * 0.1;
     this.latest = s;
-    this.latestAt = now;
-    this.snaps.push(s);
-    while (this.snaps.length > 40) this.snaps.shift();
+    this.interpolation.push(s, now);
     for (const p of s.players) this.names.set(p.id, p);
-    if (this.renderTick === 0) this.renderTick = s.tick - INTERP_TICKS;
 
     const mine = s.players.find((p) => p.id === this.session.id);
     if (mine) {
@@ -334,13 +327,7 @@ export class Game {
     this.background.frame(t);
     this.advance(dt);
 
-    // advance the remote render clock, steering toward (newest snapshot - interpolation delay)
-    if (this.latest) {
-      const target = this.latest.tick + ((performance.now() - this.latestAt) / 1000) * TICK_HZ - INTERP_TICKS;
-      this.renderTick += real * TICK_HZ;
-      const err = target - this.renderTick;
-      this.renderTick = Math.abs(err) > 30 ? target : this.renderTick + err * 0.08;
-    }
+    this.interpolation.advance(real, performance.now());
 
     const k = Math.exp(-dt * 12);
     this.smooth = [this.smooth[0] * k, this.smooth[1] * k, this.smooth[2] * k];
@@ -369,7 +356,7 @@ export class Game {
       pitch: quantAngle(c.pitch),
       buttons: active ? s.buttons : 0,
       weapon: c.weapon,
-      view: Math.round(this.renderTick * 100) / 100,
+      view: Math.round(this.interpolation.renderTick * 100) / 100,
     };
     if (this.humanDemo && active && this.me?.alive && (this.humanDemo.automatic || WEAPONS[this.me.weapon].kind === 'gun') && this.latest?.phase === 'live' && document.visibilityState === 'visible' && document.hasFocus()) {
       this.recordHumanDemo(this.humanDemo, this.me, inp, this.latest);
@@ -452,40 +439,10 @@ export class Game {
     }
   }
 
-  private remotes: { snap: PlayerSnap; pos: Vec3; yaw: number; pitch: number }[] = [];
-
-  /** Interpolated remote players at renderTick. */
-  private interpolate() {
-    const out: typeof this.remotes = [];
-    const snaps = this.snaps;
-    if (!snaps.length) return out;
-    const rt = this.renderTick;
-    let a = snaps[0], b = snaps[0];
-    for (let i = snaps.length - 1; i >= 0; i--) {
-      if (snaps[i].tick <= rt) { a = snaps[i]; b = snaps[Math.min(i + 1, snaps.length - 1)]; break; }
-    }
-    const f = b.tick > a.tick ? Math.max(0, Math.min(1, (rt - a.tick) / (b.tick - a.tick))) : 0;
-    const latest = this.latest!;
-    for (const p of latest.players) {
-      if (p.id === this.session.id) continue;
-      const pa = a.players.find((q) => q.id === p.id) ?? p, pb = b.players.find((q) => q.id === p.id) ?? p;
-      // don't interpolate across a respawn teleport
-      const jump = Math.hypot(pb.x - pa.x, pb.z - pa.z) > 4;
-      const g = jump ? 1 : f;
-      out.push({
-        snap: { ...p, alive: g < 0.5 ? pa.alive : pb.alive, hp: pb.hp, weapon: pb.weapon },
-        pos: [pa.x + (pb.x - pa.x) * g, pa.y + (pb.y - pa.y) * g, pa.z + (pb.z - pa.z) * g],
-        yaw: pa.yaw + wrap(pb.yaw - pa.yaw) * g,
-        pitch: pa.pitch + (pb.pitch - pa.pitch) * g,
-      });
-    }
-    return out;
-  }
-
   private draw(dt: number) {
     if(this.latest)this.lesson?.update(this.latest,this.me);
-    this.remotes = this.interpolate();
-    if (this.latest) { this.scene.syncHeroes(this.latest,this.session.id,this.map,this.me?{...this.me,yaw:this.controls.yaw,pitch:this.controls.pitch}:null); this.scene.syncShields(this.latest.shields); this.scene.syncGrenades(this.latest.grenades ?? [], this.latest.smokes ?? [], (performance.now() - this.latestAt) / 1000); }
+    this.remotes = this.interpolation.sample(this.session.id);
+    if (this.latest) { this.scene.syncHeroes(this.latest,this.session.id,this.map,this.me?{...this.me,yaw:this.controls.yaw,pitch:this.controls.pitch}:null); this.scene.syncShields(this.latest.shields); this.scene.syncGrenades(this.latest.grenades ?? [], this.latest.smokes ?? [], this.interpolation.ageSeconds(performance.now())); }
 
     const me = this.me;
     if (me) {
@@ -545,7 +502,7 @@ export class Game {
       this.humanDemo.captureView(this.scene.renderer.domElement);
     }
     const room = this.session.roomCode ? bilingual(`房间 ${this.session.roomCode} · `, `Room ${this.session.roomCode} · `) : '';
-    const ping = room + (this.session.online ? bilingual(`延迟 ${this.rtt ? Math.round(this.rtt) : '—'} ms · 快照 ${Math.round(this.snapGap)} ms`, `Latency ${this.rtt ? Math.round(this.rtt) : '—'} ms · Snapshots ${Math.round(this.snapGap)} ms`) : bilingual('单机', 'Offline'));
+    const ping = room + (this.session.online ? bilingual(`延迟 ${this.rtt ? Math.round(this.rtt) : '—'} ms · 快照 ${Math.round(this.interpolation.arrivalGapMs)} ms`, `Latency ${this.rtt ? Math.round(this.rtt) : '—'} ms · Snapshots ${Math.round(this.interpolation.arrivalGapMs)} ms`) : bilingual('单机', 'Offline'));
     if (this.rangeStats && performance.now() - this.rangeStatsAt > 200) { this.rangeStatsAt = performance.now(); const panel = document.getElementById('range-stats'); if (panel) panel.innerHTML = this.rangeStats.render(performance.now() / 1000); }
     this.hud.update(dt, me, this.latest, this.session.id, this.ended ? this.controls.resultsScoreboard : this.controls.scoreboard, ping, this.map);
   }

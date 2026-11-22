@@ -5,7 +5,7 @@ import { Bot, navFor } from '../shared/bot.ts';
 import { Match } from '../shared/match.ts';
 import { lineOfSight } from '../shared/map.ts';
 import { wrapAngle } from '../shared/humanCombat.ts';
-import { cameraLimitedScript, clearsWall, evaluationMaps, play, score } from './bench/evaluate-self-play.ts';
+import { cameraLimitedScript, clearsWall, evaluationMaps, play, score } from '../scripts/evaluation/evaluate-self-play.ts';
 
 it('holds separate rotation maps for the tournament and can replay a campaign by seed', () => {
   const screened = new Set<string>(), heldBack = new Set<string>();

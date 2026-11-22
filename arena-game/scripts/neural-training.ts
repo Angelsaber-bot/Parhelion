@@ -201,7 +201,7 @@ async function train(data: Awaited<ReturnType<typeof corpusInfo>>) {
     }
     await status('evaluating', data);
     await reportCloud('evaluating', metrics);
-    const run = await execute(process.execPath, ['--import', 'tsx', 'test/bench/evaluate-neural.ts', candidate, '--seeds', '1']);
+    const run = await execute(process.execPath, ['--import', 'tsx', 'scripts/evaluation/evaluate-neural.ts', candidate, '--seeds', '1']);
     const simulation = JSON.parse(run.stdout);
     await writeFile(path.join(stage, 'simulation.json'), run.stdout, { mode: 0o600 });
     if (values.cloud) {

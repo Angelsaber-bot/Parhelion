@@ -6,6 +6,7 @@ import {CHARACTERS,PLAYABLE_HERO_INDICES} from '../shared/content.ts';
 import {BTN,applyInput,clonePlayer} from '../shared/sim.ts';
 import {predictAbility} from '../src/player/abilityPrediction.ts';
 import {HeroEffects} from '../src/rendering/heroEffects.ts';
+import {SnapshotInterpolation} from '../src/network/snapshotInterpolation.ts';
 import {Game} from '../src/game.ts';
 import {AimState} from '../src/player/aim.ts';
 afterEach(()=>vi.unstubAllGlobals());
@@ -29,7 +30,7 @@ it('the actual game draw loop keeps ADS held, FOV and sensitivity stable through
   const demo=new HeroDemo(char),me=demo.match.player('hero')!;me.weapon=weapon;const aim=new AimState();for(let n=0;n<60;n++)aim.update(1/60,true,true,weapon);
   const controls={yaw:.2,pitch:.1,aimHeld:true,locked:true,adsSensitivity:.85,lookScale:1,clearAim:vi.fn(function(this:{aimHeld:boolean}){this.aimHeld=false;})};
   const no=()=>{},vm={set:no,look:no,hands:{update:no},aim:1};const scene={endAvatars:no,pruneAvatars:no,setView:vi.fn(),viewmodel:vm,update:no,render:no};
-  const game=Object.assign(Object.create(Game.prototype),{me,aim,aimWeapon:weapon,controls,scene,map:demo.match.map,session:{id:'hero',online:false},snaps:[],latest:null,names:new Map(),hud:{aim:no,scope:no,bloom:no,update:no},feel:{update:no,offsets:()=>[0,0,0],fov:0,bloom:0},smooth:[0,0,0],lastLook:[.2,.1],stepDistance:0});
+  const game=Object.assign(Object.create(Game.prototype),{me,aim,aimWeapon:weapon,controls,scene,map:demo.match.map,session:{id:'hero',online:false},interpolation:new SnapshotInterpolation(),latest:null,names:new Map(),hud:{aim:no,scope:no,bloom:no,update:no},feel:{update:no,offsets:()=>[0,0,0],fov:0,bloom:0},smooth:[0,0,0],lastLook:[.2,.1],stepDistance:0});
   const values=[];for(const phase of ['idle','windup','guard','return','recovery']){me.ability.phase=phase as typeof me.ability.phase;me.ability.lockUntil=999;game.draw(1/60);values.push([aim.fov(weapon),controls.lookScale]);expect(controls.aimHeld).toBe(true);}expect(controls.clearAim).not.toHaveBeenCalled();for(const v of values)expect(v).toEqual(values[0]);
  }
 });

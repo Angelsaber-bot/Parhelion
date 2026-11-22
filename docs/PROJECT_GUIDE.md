@@ -11,11 +11,13 @@
 |---|---|---|
 | 游戏如何启动 | `world/src/main.ts` | 场景、玩家、战斗与剧情如何接入 |
 | 大世界如何制作 | `world/tools/build-world.ts`、`world/tools/gen/layout.ts`、`world/tools/gen/terrain.ts` | 设计布局，用高度函数生成地形，再组装建筑和植被 |
-| 五个区域如何连接 | `world/src/map/regions.ts` | 统一世界坐标、区域偏移与连接通道 |
+| 各区域如何连接 | `world/src/map/regions.ts` | 统一世界坐标、区域偏移与连接通道 |
 | 大世界如何控制加载量 | `world/src/map/regionVisualStreaming.ts` | 当前与临近区域的美术按需加载、远离后释放 |
+| World 如何载入地图 | `world/src/map/regionAssets.ts` | 载入区域布局和核心模型，处理地形、碰撞和旧地图标记 |
 | 玩家如何移动 | `world/src/player/player.ts`、`world/src/player/skinnedCharacter.ts` | 移动碰撞与骨骼动画 |
 | 战斗如何实现 | `world/src/combat/combat.ts`、`world/src/combat/combatView.ts` | 战斗规则与画面表现的分工 |
 | 联机如何实现 | `arena-game/src/network/session.ts`、`arena-game/worker/index.ts` | 客户端连接与服务器处理 |
+| Arena 如何平滑显示其他玩家 | `arena-game/src/network/snapshotInterpolation.ts` | 缓存服务器快照，按渲染时钟采样位置和朝向 |
 | 地图建模源文件 | `arena/assets/aster_research_station.blend` | ASTER 原生 Blender 场景 |
 | 角色建模源文件 | `assets/characters/player_v2/authoring/Chaldea_Editable_Master.blend` | 可编辑主角模型、服装与骨骼 |
 
@@ -86,8 +88,11 @@ Parhelion/
 | `shared/` | 客户端、服务器共用的规则、模拟、协议与地图数据 |
 | `server/` | 本机 Colyseus 联机服务 |
 | `worker/` | Cloudflare 联机部署入口与 World 中继 |
-| `tools/` | 模型导出、浏览器验收等制作工具 |
+| `scripts/` | 训练调度、自博弈和战术训练命令。正式评估器在 `scripts/evaluation/`，由训练流程和回归测试共用 |
+| `tools/` | PyTorch 训练器、模型导出与浏览器验收工具 |
 | `test/` | 规则、联机、界面和资源验证 |
+
+整站构建和 Arena 增量安装都调用 `site/scripts/game-build.mjs`，由它为游戏页面接入首页导航，并打包本机联机服务器。
 
 ## 常用命令
 

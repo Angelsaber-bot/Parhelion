@@ -13,7 +13,7 @@ on:
       - 'arena-game/shared/perceptualMotor.ts'
       - 'arena-game/shared/searchOcclusion.ts'
       - 'arena-game/shared/neuralPolicy.ts'
-      - 'arena-game/test/bench/evaluate-self-play.ts'
+      - 'arena-game/scripts/evaluation/**'
   workflow_dispatch:
     inputs:
       pixel_audition:

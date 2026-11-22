@@ -274,7 +274,7 @@ def cycle(args, service, work, progress):
         promoted = False
         if evaluate:
             phase("evaluating")
-            cmd = ts + ["test/bench/evaluate-self-play.ts", candidate, "--seeds", "2", "--seed", random.SystemRandom().randrange(500000000, 1900000000)]
+            cmd = ts + ["scripts/evaluation/evaluate-self-play.ts", candidate, "--seeds", "2", "--seed", random.SystemRandom().randrange(500000000, 1900000000)]
             if live:
                 # Freeze the comparison budget before scoring: twelve independent map/seed blocks
                 # against the live policy, with both sides and game modes within every block.

@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { seedVersion, tournamentSeeds, trainingSeed, trialSeed } from '../scripts/self-play-seeds.ts';
-import { evaluationMaps, tournamentLegs } from './bench/evaluate-self-play.ts';
+import { evaluationMaps, tournamentLegs } from '../scripts/evaluation/evaluate-self-play.ts';
 
 it('reserves disjoint episode-seed ranges for training, screening and promotion', () => {
   expect(trainingSeed(0, 2)).toBe(0);

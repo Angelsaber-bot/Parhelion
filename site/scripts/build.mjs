@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { addHomeNavigation, bundleLocalServer } from './game-build.mjs';
 
 const site = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const repo = path.dirname(site);
@@ -75,20 +76,10 @@ async function main() {
   // Language toggle for the homepage, bundled from shared-client so it tracks the game dictionary.
   await build({ entryPoints: [path.join(site, 'web/home.ts')], outfile: path.join(pub, 'site/home-language.js'), bundle: true, format: 'esm', target: 'es2022', minify: true, logLevel: 'warning' });
 
-  // Static home link for both games, so the public (no local server) site has it too.
-  const homeNav = '<link rel="stylesheet" href="/site/nav.css"><script type="module" src="/site/home-nav.js"></script>';
   for (const app of ['arena', 'world']) {
-    const page = path.join(pub, app, 'index.html');
-    const html = await fs.readFile(page, 'utf8');
-    if (!html.includes('</body>')) throw new Error(`${app}/index.html has no </body> for the home link.`);
-    await fs.writeFile(page, html.replace('</body>', `${homeNav}</body>`));
+    await addHomeNavigation(path.join(pub, app, 'index.html'));
   }
-
-  await build({
-    absWorkingDir: site, entryPoints: ['scripts/server.ts'], outfile: 'dist/server.cjs',
-    bundle: true, platform: 'node', format: 'cjs', target: 'node22',
-    nodePaths: [path.join(repo, 'arena-game/node_modules')], legalComments: 'linked', logLevel: 'info',
-  });
+  await bundleLocalServer(dist);
   await fs.writeFile(path.join(dist, 'THIRD_PARTY_NOTICES.txt'), await thirdPartyNotices());
   const hashes = {};
   const hash = createHash('sha256');

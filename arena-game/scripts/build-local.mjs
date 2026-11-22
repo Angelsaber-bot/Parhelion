@@ -1,3 +1,4 @@
+import { addHomeNavigation, bundleLocalServer } from '../../site/scripts/game-build.mjs';
 import {sourceFingerprint} from './local-install.mjs';
 // Update only the local Arena client and its shared-rules server. Never runs Git or a deployment.
 import fs from 'node:fs/promises';
@@ -21,9 +22,8 @@ async function main(){
  const version={sourceFingerprint:await sourceFingerprint(arena),rulesVersion:RULES_VERSION,contentManifest:CONTENT_MANIFEST,heroes:PLAYABLE_HERO_INDICES.map(i=>CHARACTERS[i].id),localOnly:true};
  await fs.writeFile(path.join(arena,'dist/arena-version.json'),JSON.stringify(version,null,2)+'\n');
  await fs.cp(path.join(arena,'dist'),path.join(stage,'arena'),{recursive:true});
- const page=path.join(stage,'arena/index.html'),html=await fs.readFile(page,'utf8');if(!html.includes('</body>'))throw Error('Missing Arena body');
- await fs.writeFile(page,html.replace('</body>','<link rel="stylesheet" href="/site/nav.css"><script type="module" src="/site/home-nav.js"></script></body>'));
- await build({absWorkingDir:site,entryPoints:['scripts/server.ts'],outfile:path.join(stage,'server.cjs'),bundle:true,platform:'node',format:'cjs',target:'node22',nodePaths:[path.join(arena,'node_modules')],legalComments:'linked',logLevel:'info'});
+ await addHomeNavigation(path.join(stage, 'arena', 'index.html'));
+ await bundleLocalServer(stage);
  if(JSON.stringify(worldBefore)!==JSON.stringify(await hashes(path.join(dist,'public/world'))))throw Error('World output changed during preparation; run again after that build finishes.');
  const target=path.join(dist,'public/arena');await fs.cp(target,path.join(stage,'previous-arena'),{recursive:true});
  const previous=await fs.readFile(path.join(dist,'build.json'));for(const name of ['server.cjs','server.cjs.LEGAL.txt'])await fs.copyFile(path.join(dist,name),path.join(stage,'previous-'+name));

@@ -15,7 +15,7 @@ export async function sourceFingerprint(arena){
     let entries=[];try{entries=await fs.readdir(assets);}catch(e){if(e.code!=='ENOENT')throw e;}
     for(const file of entries.filter(f=>f.endsWith('.glb')).sort())sum.update('maps/'+id+'/'+file+'\0'+hash(await fs.readFile(path.join(assets,file)))+'\n');
   }
-  for(const file of ['../arena/runtime/map.json','../arena/assets/station_visual.glb','index.html','package.json','vite.config.ts','../site/scripts/server.ts','../site/scripts/http.mjs','../arena-maps/homeward/runtime/map.json','../arena-maps/homeward/assets/homeward_visual.glb']){try{sum.update(file+'\0'+hash(await fs.readFile(path.join(arena,file)))+'\n');}catch(e){if(e.code!=='ENOENT')throw e;}}
+  for(const file of ['../arena/runtime/map.json','../arena/assets/station_visual.glb','index.html','package.json','vite.config.ts','../site/scripts/server.ts','../site/scripts/http.mjs','../site/scripts/game-build.mjs','../arena-maps/homeward/runtime/map.json','../arena-maps/homeward/assets/homeward_visual.glb']){try{sum.update(file+'\0'+hash(await fs.readFile(path.join(arena,file)))+'\n');}catch(e){if(e.code!=='ENOENT')throw e;}}
   return sum.digest('hex');
 }
 export async function localInstallCurrent(arena,site){

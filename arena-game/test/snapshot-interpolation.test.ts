@@ -1,0 +1,41 @@
+import { expect, it } from 'vitest';
+import { getMap } from '../shared/arenaMap.ts';
+import { Match } from '../shared/match.ts';
+import { SnapshotInterpolation } from '../src/network/snapshotInterpolation.ts';
+
+it('samples remote motion on the delayed clock, snaps teleports and starts a fresh history each round', () => {
+  const match = new Match(getMap('aster'), '1v1');
+  match.addPlayer('local', { name: 'Local', team: 'A', char: 0, skins: [], bot: false });
+  match.addPlayer('remote', { name: 'Remote', team: 'B', char: 1, skins: [], bot: false });
+  const remote = match.player('remote')!;
+  match.tick = 100;
+  remote.x = 0;
+  remote.yaw = Math.PI - .1;
+  const before = match.snapshot();
+  const timeline = new SnapshotInterpolation();
+  timeline.push(before, 0);
+  match.tick = 110;
+  remote.x = 2;
+  remote.yaw = -Math.PI + .1;
+  const after = match.snapshot();
+  timeline.push(after, 100);
+  timeline.advance(10 / 60, 100);
+  expect(timeline.renderTick).toBeCloseTo(104);
+  const [pose] = timeline.sample('local');
+  expect(timeline.sample('local')).toHaveLength(1);
+  expect(pose.snap.id).toBe('remote');
+  expect(pose.pos[0]).toBeCloseTo(.8);
+  expect(pose.yaw).toBeCloseTo(Math.PI - .02, 3);
+
+  match.tick = 120;
+  remote.x = 40;
+  timeline.push(match.snapshot(), 200);
+  timeline.advance(10 / 60, 200);
+  expect(timeline.sample('local')[0].pos[0]).toBe(40);
+  const gap = timeline.arrivalGapMs;
+  timeline.resetRound();
+  expect(timeline.sample('local')).toEqual([]);
+  expect(timeline.renderTick).toBe(0);
+  expect(timeline.ageSeconds(300)).toBeCloseTo(.1);
+  expect(timeline.arrivalGapMs).toBe(gap);
+});

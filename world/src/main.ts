@@ -11,7 +11,7 @@ import { createValleyTownArchitecture } from './environment/valleyTownArchitectu
 import { createHomeTownDistricts } from './environment/homeTownDistricts';
 import { createSkyCrownLandmarks } from './environment/skyCrownLandmarks';
 import { HOME_DISTRICTS } from './story/homeTownDistrictActions';
-import { applyBuildingVariety, createBuildingOrnaments } from './map/buildingVariety';
+import { createBuildingOrnaments } from './map/buildingVariety';
 import { KINGDOM_K04 } from './story/kingdomBackPassage';
 import { WINTER_CHAPTERS } from './story/winterChapters';
 import { BLACKSAIL_CHAPTERS } from './story/blacksailChapters';
@@ -53,10 +53,9 @@ import { EGYPT_WATER_PLAN, EGYPT_WATER_OPTIONS, EGYPT_WATER_IDS, egyptWaterFlag,
 import { createEgyptTempleMechanisms } from './environment/egyptTempleMechanisms';
 import { EGYPT_TEMPLE_WORKS_STATE as ETW, EGYPT_TEMPLE_WORK_LABELS } from './story/egyptTempleWorks';
 import { createEgyptTempleMaintenance } from './environment/egyptTempleMaintenance';
-import { clearLandscapeProps, removeComponentsInBox, editComponents, type ComponentBounds } from './map/landscapeClearance';
 import { createValleyTransportLandscape } from './environment/valleyTransportLandscape';
-import { VALLEY_TRANSPORT_CLEARANCE, VALLEY_TRANSPORT_ROUTES } from './map/valleyTransportPlan';
-import { carveValleyFoundation, lowerLookbackChannel, insideValleyFoundation, applyValleyFoundationGrid, VALLEY_FOUNDATION_CLEARANCE, VALLEY_FOUNDATION_LIGHTS, VALLEY_FOUNDATION_WATER_CUTS } from './map/valleyFoundationPlan';
+import { VALLEY_TRANSPORT_CLEARANCE } from './map/valleyTransportPlan';
+import { carveValleyFoundation, insideValleyFoundation, applyValleyFoundationGrid, VALLEY_FOUNDATION_CLEARANCE, VALLEY_FOUNDATION_LIGHTS, VALLEY_FOUNDATION_WATER_CUTS } from './map/valleyFoundationPlan';
 import { createValleyFoundationLandscape } from './environment/valleyFoundationLandscape';
 import { createKingdomRoadLandscape } from './environment/kingdomRoadLandscape';
 import { KINGDOM_ROAD_LABELS, KINGDOM_ROAD_LINES, kingdomRoadReady, commitKingdomRoad } from './story/kingdomRoad';
@@ -123,7 +122,6 @@ import { FLAGSHIP_WORK_IDS } from './story/flagshipWorks';
 import { createKyotoStreetLandscape, KYOTO_MAP_WORK } from './environment/kyotoStreetLandscape';
 import { KYOTO_STREET_IDS } from './story/kyotoStreetWorks';
 import {RegionVisualStreaming,streamedOutlineDistance} from './map/regionVisualStreaming';
-import {carveCoreRing} from './exploration/bossArenas';
 import { FarPropCuller } from './rendering/farPropCuller';
 import {ADVENTURE,adventureActive,adventureTravelOpen,getCurrentAdventureGuide} from './story/openWorldCampaign';
 import {createAdventureSites} from './story/adventureSites';
@@ -236,7 +234,7 @@ import { toonMaterial, addOutline, outlineColorFor, makeSky, timeUniform, cloudS
 import { Player, PLAYER, type Collider } from './player/player';
 import { WorldMap } from './map/map';
 import type { Layout, Marker } from './core/types';
-import { loadLayout } from './core/load';
+import { clearProductionLandscape, loadRegionCore } from './map/regionAssets';
 import { loadSkinnedCharacter, SkinnedCharacterAnimator } from './player/skinnedCharacter';
 import { PlayerTerrainSupport } from './player/playerTerrainSupport';
 import { attachExplorerRifle } from './weapons/weaponArt';
@@ -245,12 +243,11 @@ import { ShoulderAim, shoulderArmLength } from './player/aim';
 import { SettingsStore, createSettingsPanel } from '../../shared-client/settings';
 import '../../shared-client/settings.css';
 import './ui/worldInterface.css';
-import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt, placeRegion, regionToWorld } from './map/regions';
+import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt, regionToWorld } from './map/regions';
 import { BOSSES, PERFECT_EVADE } from './combat/combat';
 import { nearbyElite } from './combat/eliteNavigation';
 import { WorldGrid } from './map/grid';
 import { chunkMesh, DistanceCuller, freezeStaticArt, isStaticArtEligible } from './rendering/chunk';
-import { regionLoader, bakeQuantized } from './rendering/glb';
 import { KingdomTwilight } from './map/twilight';
 import { COMPANIONS, FirstContract, SERVANTS, servantByContract, type CompanionId, type ServantId } from './companions/contracts';
 import { KitCompanion } from './companions/kitCompanion';
@@ -441,79 +438,7 @@ const progress = (file: string) => (e: ProgressEvent) => {
   loaded.set(file, e.loaded / e.total);
   setLoading(`加载地图… ${Math.round([...loaded.values()].reduce((a, b) => a + b, 0) / REGIONS.length * 100)}%`);
 };
-// The valley's south seam once opened onto Kyoto; since the 2026-11-10 relayout nothing lies
-// south of the valley, so its torii, stone foxes, seam pylons and barrier are retired at load.
-const VALLEY_SOUTH_TORII: readonly [number, number, number, number] = [18, 286, 62, 366];
-const VALLEY_SOUTH_SEAM_PIECES = /^(Seams|Glow_Props|COL_Props|Valley_Exploration_Detail_(Metal|Brass|Ceramic))$/;
-function retireValleySouthSeam(name: string, geometry: THREE.BufferGeometry) {
-  if (/^(COL_)?Seam_south_(Veil|Gate)$/.test(name)) { const empty = geometry.clone(); empty.setIndex([]); return empty; }
-  return VALLEY_SOUTH_SEAM_PIECES.test(name) ? removeComponentsInBox(geometry, VALLEY_SOUTH_TORII) : null;
-}
-// The distant true capital was authored on a north-west ridge that the continental coast later
-// turned into open sea (ground -5 m). Move the whole set piece onto the ridge north of Camelot,
-// clearing trees, bushes and rocks from its new footprint. Britain-local coordinates.
-const FAR_CAMELOT_FROM: readonly [number, number, number, number] = [-345, -348, -268, -276];
-const FAR_CAMELOT_TO: readonly [number, number, number, number] = [-253, -362, -177, -290];
-const FAR_CAMELOT_OFFSET: readonly [number, number, number] = [91, 16, -14];
-const inside = (b: ComponentBounds, r: readonly [number, number, number, number]) => {
-  const x = (b.min[0] + b.max[0]) / 2, z = (b.min[2] + b.max[2]) / 2;
-  return x > r[0] && x < r[2] && z > r[1] && z < r[3];
-};
-const treeProxy = (b: ComponentBounds) => Math.abs(b.max[1] - b.min[1] - 4) < .08 && b.max[0] - b.min[0] < 1.4 && b.max[2] - b.min[2] < 1.4;
-function relocateFarCamelot(name: string, geometry: THREE.BufferGeometry) {
-  if (/^(Trees_\w+|Bushes|Rocks\w*)$/.test(name)) return editComponents(geometry, b => inside(b, FAR_CAMELOT_TO) ? 'remove' : null);
-  if (!/^(Britain_Physical_\w+|Glow_Props|COL_Props)$/.test(name)) return null;
-  return editComponents(geometry, b => {
-    if (name === 'COL_Props' && treeProxy(b)) return inside(b, FAR_CAMELOT_TO) ? 'remove' : null;
-    return inside(b, FAR_CAMELOT_FROM) ? FAR_CAMELOT_OFFSET : null;
-  });
-}
-/** Map edits at load, then per-copy colour variety for repeated buildings (tools/building-variety.ts). */
-function clearProductionLandscape(region: string, name: string, geometry: THREE.BufferGeometry) {
-  const edited = clearProductionLandscapeBase(region, name, geometry);
-  const varied = applyBuildingVariety(region, name, edited ?? geometry);
-  if (varied && edited && edited !== geometry) edited.dispose();
-  return varied ?? edited;
-}
-function clearProductionLandscapeBase(region: string, name: string, geometry: THREE.BufferGeometry) {
-  if (region === 'alpha') {
-    // Streamed visual terrain follows the same Lookback stream bed as the core terrain and collision.
-    if (name === 'Terrain') { const copy = geometry.clone(); return lowerLookbackChannel(copy) ? copy : (copy.dispose(), null); }
-    const retired = retireValleySouthSeam(name, geometry);
-    return clearLandscapeProps(name, retired ?? geometry, [...VALLEY_FOUNDATION_CLEARANCE, ...VALLEY_TRANSPORT_CLEARANCE], VALLEY_TRANSPORT_ROUTES) ?? retired;
-  }
-  if (region === 'winter') return clearLandscapeProps(name, geometry, [[38, 89, 65, 122], ...WINTER_CIVIL_CLEARANCE], WINTER_CIVIL_PATHS);
-  if (region === 'blacksail') return clearLandscapeProps(name, geometry, BLACKSAIL_CIVIL_CLEARANCE, BLACKSAIL_CIVIL_PATHS);
-  if (region === 'britain') {
-    const moved = relocateFarCamelot(name, geometry), source = moved ?? geometry;
-    if (!/^Trees_|^COL_Props$/.test(name)) return moved;
-    return clearLandscapeProps(name, source, [],
-      [[[-120, -70], [-151, -30], [-151, 20], [-170, 60], [-176, 105], [-154, 144], [-120, 184]]]) ?? moved;
-  }
-  return carveCoreRing(region, name, geometry);
-}
-const parts = await Promise.all(REGIONS.map(async (def) => {
-  const [lay, gltf] = await Promise.all([
-    loadLayout(`./assets/${def.file}.layout.json`),
-    regionLoader().loadAsync(`./assets/${def.file}.core.glb`, progress(def.file)),
-  ]);
-  for (const name of ['ART', 'COLLISION', 'Terrain']) {
-    if (!gltf.scene.getObjectByName(name)) throw new Error(bilingual(`地图模型缺少 ${name} 节点`, `Map model is missing the ${name} node`));
-  }
-  bakeQuantized(gltf.scene);
-  gltf.scene.traverse(object => {
-    // Duck-typed like region visual streaming: a second three.js copy (tests, tools) fails instanceof.
-    const node = object as THREE.Mesh; if (!node.isMesh) return;
-    const carved = def.id === 'alpha' && /^(Terrain|COL_Terrain)$/.test(node.name) ? carveValleyFoundation(node.geometry) : clearProductionLandscape(def.id, node.name, node.geometry);
-    if (carved) { node.geometry.dispose(); node.geometry = carved; }
-    if (def.id === 'alpha' && /^(Terrain|COL_Terrain)$/.test(node.name)) lowerLookbackChannel(node.geometry);
-  });
-  placeRegion(gltf.scene, def);
-  if (def.id === 'alpha') lay.markers = lay.markers.filter(marker => marker.id !== 'seam_south');
-  // W08 and B08 replaced the old era bosses' identities; the reviewed map labels still carry the old names.
-  for (const marker of lay.markers) { if (marker.id === 'boss_winter_warden') marker.label = '最后方阵（Boss）'; if (marker.id === 'boss_drowned_admiral') marker.label = '梅瑞克（Boss）'; if (marker.id === 'boss_hellfire_lord') marker.label = '鸦印（Boss）'; }
-  return { def, layout: lay, root: gltf.scene };
-}));
+const parts = await Promise.all(REGIONS.map(def => loadRegionCore(def, progress(def.file))));
 if (worldExited || !(await graphicsRecovery.whenContextAvailable())) return;
 const layout = mergeLayouts(parts);
 seaLevelUniform.value = layout.world.waterLevel;
