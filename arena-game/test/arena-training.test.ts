@@ -67,6 +67,19 @@ describe('automatic Arena data', () => {
     expect(state.exploration?.trained).toBe(1);
   });
 
+  it('distinguishes a clear smoke ray sample from a capture with no smoke sensor', () => {
+    const batches: TrainingBatch[] = [];
+    const demo = new HumanDemo('aster', batch => batches.push(batch));
+    const player = newPlayer('p', 'A', 0);
+    const scene = () => explorationScene(getMap('aster'), player);
+    demo.record(player, input, observe, scene, () => undefined);
+    demo.beginRound();
+    demo.record(player, input, observe, scene);
+    demo.flush();
+    expect(parseTrainingBatch(batches[0])?.smokeDepths).toEqual([]);
+    expect(parseTrainingBatch(batches[1])).not.toHaveProperty('smokeDepths');
+  });
+
   it('retains smoke samples independently of the legacy exploration learner', () => {
     const batches: TrainingBatch[] = [];
     const demo = new HumanDemo('aster', batch => batches.push(batch));

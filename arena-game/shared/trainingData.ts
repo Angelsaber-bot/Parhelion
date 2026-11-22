@@ -64,7 +64,7 @@ export function parseTrainingBatch(raw: unknown): TrainingBatch | null {
   }
   // Strip unknown fields before retaining any payload. New transports cannot smuggle chat or names.
   return { version: b.version, rulesVersion: b.rulesVersion, capture: b.capture, sequence: b.sequence, start: b.start, map: b.map, rows: b.rows, views: b.views,
-    ...(b.exploration ? { exploration: b.exploration } : {}), ...(b.smokeDepths?.length ? { smokeDepths: b.smokeDepths } : {}) };
+    ...(b.exploration ? { exploration: b.exploration } : {}), ...(b.smokeDepths !== undefined ? { smokeDepths: b.smokeDepths } : {}) };
 }
 
 const outputs = 14;

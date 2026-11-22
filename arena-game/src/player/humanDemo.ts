@@ -37,6 +37,7 @@ export class HumanDemo {
   private trainingViews: TrainingView[] = [];
   private exploration: ExplorationSample[] = [];
   private smokeDepths: [number, ...SmokeDepths][] = [];
+  private sampledSmoke = false;
   private recorded = 0;
   private startedAt = 0;
   private sequence = 0;
@@ -65,7 +66,7 @@ export class HumanDemo {
     const views = this.trainingViews.filter(view => view[0] >= start - 18);
     const batch: TrainingBatch = { version: 1, rulesVersion: RULES_VERSION, capture: this.capture, map: this.map,
       sequence: this.sequence++, start, rows: this.frames, views, ...(this.exploration.length ? { exploration: this.exploration } : {}),
-      ...(this.smokeDepths.length ? { smokeDepths: this.smokeDepths } : {}) };
+      ...(this.sampledSmoke ? { smokeDepths: this.smokeDepths } : {}) };
     let bytes = JSON.stringify(batch).length;
     for (let i = 0; bytes > MAX_TRAINING_BODY && i < views.length; i++) {
       const [tick, segment, frame] = views[i];
@@ -78,6 +79,7 @@ export class HumanDemo {
     this.trainingViews = views.slice(-1);
     this.exploration = [];
     this.smokeDepths = [];
+    this.sampledSmoke = false;
   }
 
   record(me: PlayerState, input: Input, observe: (previous: readonly [number, number]) => number[], scene?: (lastContact: LastObservedBearing) => number[],
@@ -98,6 +100,7 @@ export class HumanDemo {
       if (features[0]) { this.seenBearing = me.yaw + features[1]; this.seenAt = this.size; }
       if (this.size % EXPLORATION_TICKS === 0) {
         this.exploration.push([this.size, ...scene([this.seenBearing, this.size - this.seenAt]).map(round)]);
+        if (smoke) this.sampledSmoke = true;
         const depths = smoke?.();
         if (depths) this.smokeDepths.push([this.size, ...depths]);
       }
