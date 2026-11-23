@@ -116,5 +116,88 @@
         "failedGates": ["closeMovingDamage"]
       }
     ]
+  },
+  "restoredYawAblation": {
+    "change": "From the pairedStrafeFollowup candidate, also restore out.weight[0] from baseline. This restores the entire yaw output row. Other weights and biases are identical to that candidate.",
+    "method": "Use the directionGateConfirmation fixtures and field orders. The first two seeds compare the two candidate versions at identical starts. The last two are independent confirmations.",
+    "releaseDecision": "Retain incumbent. Two-second moving damage is near incumbent in each direction, but rearSearch failed on every seed. New consented holdout and match scores were unavailable.",
+    "runs": [
+      {
+        "seed": 792579283,
+        "closeRows": [
+          ["frostcourt", 0, 16, 4, 5, 8, 9],
+          ["frostcourt", -1, 16, 8, 7, 10, 9],
+          ["frostcourt", 1, 16, 0, 0, 3, 4],
+          ["homeward", 0, 16, 3, 4, 5, 4],
+          ["homeward", -1, 16, 8, 8, 12, 14],
+          ["homeward", 1, 16, 1, 1, 1, 1],
+          ["blackflag", 0, 16, 2, 2, 10, 10],
+          ["blackflag", -1, 16, 10, 9, 12, 11],
+          ["blackflag", 1, 16, 2, 2, 4, 4]
+        ],
+        "spawn": [
+          [1.7415, 0.1697, 1, 12],
+          [1.8132, 0.1469, 0, 12]
+        ],
+        "failedGates": ["rearSearch"]
+      },
+      {
+        "seed": 1639803607,
+        "closeRows": [
+          ["frostcourt", 0, 16, 7, 7, 12, 14],
+          ["frostcourt", -1, 16, 8, 8, 11, 12],
+          ["frostcourt", 1, 16, 0, 0, 4, 4],
+          ["homeward", 0, 16, 7, 8, 9, 10],
+          ["homeward", -1, 16, 8, 7, 9, 9],
+          ["homeward", 1, 16, 5, 5, 6, 6],
+          ["blackflag", 0, 16, 9, 9, 12, 13],
+          ["blackflag", -1, 16, 6, 6, 9, 9],
+          ["blackflag", 1, 16, 2, 2, 3, 3]
+        ],
+        "spawn": [
+          [1.8253, 0.1684, 0, 12],
+          [1.8291, 0.1218, 0, 12]
+        ],
+        "failedGates": ["rearSearch", "spawnSearchProgress"]
+      },
+      {
+        "seed": 955305047,
+        "closeRows": [
+          ["frostcourt", 0, 16, 7, 7, 11, 12],
+          ["frostcourt", -1, 16, 8, 7, 11, 12],
+          ["frostcourt", 1, 16, 2, 2, 6, 6],
+          ["homeward", 0, 16, 10, 10, 12, 12],
+          ["homeward", -1, 16, 6, 6, 8, 8],
+          ["homeward", 1, 16, 0, 0, 2, 2],
+          ["blackflag", 0, 16, 8, 9, 12, 12],
+          ["blackflag", -1, 16, 8, 8, 11, 11],
+          ["blackflag", 1, 16, 4, 4, 5, 6]
+        ],
+        "spawn": [
+          [1.9994, 0.0995, 2, 12],
+          [2.2197, 0.0896, 2, 12]
+        ],
+        "failedGates": ["candidateHasSearch", "rearSearch", "smokeContact"]
+      },
+      {
+        "seed": 184256033,
+        "closeRows": [
+          ["frostcourt", 0, 16, 7, 8, 11, 13],
+          ["frostcourt", -1, 16, 5, 4, 9, 8],
+          ["frostcourt", 1, 16, 2, 0, 6, 5],
+          ["homeward", 0, 16, 9, 9, 10, 10],
+          ["homeward", -1, 16, 12, 12, 12, 12],
+          ["homeward", 1, 16, 7, 7, 9, 9],
+          ["blackflag", 0, 16, 8, 10, 15, 15],
+          ["blackflag", -1, 16, 9, 8, 10, 9],
+          ["blackflag", 1, 16, 2, 2, 5, 5]
+        ],
+        "spawn": [
+          [1.9417, 0.0784, 2, 12],
+          [1.8219, 0.1075, 2, 12]
+        ],
+        "failedGates": ["candidateHasSearch", "rearSearch"]
+      }
+    ]
   }
 }
