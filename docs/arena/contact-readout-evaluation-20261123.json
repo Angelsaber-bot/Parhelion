@@ -1,0 +1,394 @@
+{
+  "source": "4789d4e783a1ca2275877bd6012f25e6d7043593",
+  "parent": "stationaryRouteSelection in stationary-search-20261123.json",
+  "selection": "Add yaw and fire logit offsets to the parent. On five maps (frostcourt, blackflag, homeward, orleans, camlann) use fixtures seed 387931471, six repeats, 30s. For closeContact use seed 69678721, eight pairs. For margins in left/still/right order maximize min(two)+0.3*min(half)+0.15*sum(two)+30*waitingAcquired-7*lowDisplacementFraction+forwardMetersPerSecond.",
+  "trials": [
+    {
+      "yaw": -0.1,
+      "fire": 0.65,
+      "val": 8.44352075056042,
+      "two": [3, 5, 8],
+      "half": [6, 4, 0],
+      "found": 0,
+      "n": 30,
+      "forward": 3.0564837135233818,
+      "low": 0.001851851851851852
+    },
+    {
+      "yaw": -0.1,
+      "fire": 0,
+      "val": 6.941671160918267,
+      "two": [2, 5, 7],
+      "half": [6, 4, 0],
+      "found": 0,
+      "n": 30,
+      "forward": 2.9708224524311815,
+      "low": 0.01845018450184502
+    },
+    {
+      "yaw": -0.2,
+      "fire": 0.65,
+      "val": 4.765152798093665,
+      "two": [3, 3, 2],
+      "half": [9, -6, 0],
+      "found": 0,
+      "n": 30,
+      "forward": 3.3651527980936655,
+      "low": 0
+    },
+    {
+      "yaw": -0.2,
+      "fire": 0,
+      "val": 3.4790046280009457,
+      "two": [2, 3, 1],
+      "half": [8, -6, 0],
+      "found": 0,
+      "n": 30,
+      "forward": 3.3790046280009456,
+      "low": 0
+    },
+    {
+      "yaw": 0,
+      "fire": 0.65,
+      "val": -4.452821161565588,
+      "two": [-9, 7, 18],
+      "half": [-2, 8, 4],
+      "found": 2,
+      "n": 30,
+      "forward": 2.0406570993039765,
+      "low": 0.1847826086956522
+    },
+    {
+      "yaw": 0,
+      "fire": 0,
+      "val": -4.626467635824067,
+      "two": [-9, 7, 18],
+      "half": [-3, 8, 4],
+      "found": 2,
+      "n": 30,
+      "forward": 2.04900406228914,
+      "low": 0.16792452830188678
+    },
+    {
+      "yaw": -0.35,
+      "fire": 0.65,
+      "val": -13.060710358956406,
+      "two": [-4, -11, -2],
+      "half": [1, -10, 0],
+      "found": 0,
+      "n": 30,
+      "forward": 3.489289641043595,
+      "low": 0
+    },
+    {
+      "yaw": -0.35,
+      "fire": 0,
+      "val": -13.367880015254027,
+      "two": [-5, -11, -3],
+      "half": [-1, -10, 0],
+      "found": 0,
+      "n": 30,
+      "forward": 3.4821199847459736,
+      "low": 0
+    },
+    {
+      "yaw": 0.1,
+      "fire": 0.65,
+      "val": -19.50733014109184,
+      "two": [-18, 4, 17],
+      "half": [-10, 11, 14],
+      "found": 2,
+      "n": 30,
+      "forward": 1.2025211600234045,
+      "low": 0.30855018587360594
+    },
+    {
+      "yaw": 0.1,
+      "fire": 0,
+      "val": -20.499783638598455,
+      "two": [-18, 3, 17],
+      "half": [-10, 10, 14],
+      "found": 1,
+      "n": 30,
+      "forward": 1.2396900456120734,
+      "low": 0.29135338345864664
+    },
+    {
+      "yaw": 0.2,
+      "fire": 0,
+      "val": -22.646430740407062,
+      "two": [-19, -8, 11],
+      "half": [-10, 0, 11],
+      "found": 1,
+      "n": 30,
+      "forward": 1.7958486713576436,
+      "low": 0.14889705882352944
+    },
+    {
+      "yaw": 0.2,
+      "fire": 0.65,
+      "val": -23.26513924159857,
+      "two": [-19, -7, 13],
+      "half": [-10, 1, 12],
+      "found": 0,
+      "n": 30,
+      "forward": 1.738764104126341,
+      "low": 0.15055762081784388
+    },
+    {
+      "yaw": 0.35,
+      "fire": 0,
+      "val": -25.545605328460418,
+      "two": [-20, -18, 9],
+      "half": [-10, -10, 12],
+      "found": 0,
+      "n": 30,
+      "forward": 1.9208456881754452,
+      "low": 0.0166358595194085
+    },
+    {
+      "yaw": 0.35,
+      "fire": 0.65,
+      "val": -25.81085939693669,
+      "two": [-20, -18, 9],
+      "half": [-10, -10, 12],
+      "found": 0,
+      "n": 30,
+      "forward": 1.6156433353037518,
+      "low": 0.01092896174863388
+    }
+  ],
+  "conditional": "Use parent rollout from close-contact-distillation-20261123.json. Frozen final encoded state with constant. Minimize mean squared error against one for clear contacts within 12m; against zero for all-empty windows with expired contact memory (weight 2) and remaining windows (weight 1). Ridge 0.01 on all coefficients including intercept. Fold learned coefficients times each selected offset into the two parent output rows. No runtime observation or decision logic changes.",
+  "conditionalReadout": [
+    {
+      "axis": 0,
+      "weight": [0.06911097119240452, -0.09251559699173867, 0.12688933738559974, 0.2196615860445919, -0.0020391032154290657, -0.08938352410803294, -0.1525388141301821, 0.27706818790420934, 0.14146447688449268, -0.015791420131495905, -0.036479155015685535, 0.13789631640938127, -0.11230622537088386, 0.14213675948789767, -0.062116675738375315, 0.04438900482729496, -0.02519588227652627, 0.06275840500803662, 0.16353703283197804, -0.0069094615551075975, 0.044825435903955296, 0.1358714999714999, -0.17392088670021222, 0.004773334674218923],
+      "bias": 0.13742904851068596
+    },
+    {
+      "axis": 4,
+      "weight": [0.579608276148444, 0.7960290812724722, 0.5854107451640914, 0.14082669681336793, -0.6517203706629614, 0.24505730218990596, -1.4335063841069826, 0.40935492885923863, -0.6470906008344056, -0.2514546810791844, -0.2855312958134797, -0.5229814665291561, -0.18716845397968074, -1.4061627879105172, 0.5092949522051189, -0.14595746613131694, 0.3874032639568069, -0.4470488038023236, 0.42144845317919377, -0.3170142520123721, -0.559712489182615, 0.32720653456416215, -0.08538946324787236, -0.025455880082999635],
+      "bias": 0.1526589308607205
+    }
+  ],
+  "screens": [
+    {
+      "actor": "conditional",
+      "seed": 1581118147,
+      "failed": ["rearSearch"],
+      "rounds": 0,
+      "winsLossesDraws": {}
+    },
+    {
+      "actor": "conditional",
+      "seed": 219549313,
+      "failed": ["improved", "bothModes"],
+      "rounds": 72,
+      "winsLossesDraws": {
+        "baseline": [0, 23, 1],
+        "incumbent": [14, 15, 19]
+      }
+    },
+    {
+      "actor": "conditional",
+      "seed": 935604679,
+      "failed": ["rearSearch", "wallStalls", "spawnSearchProgress"],
+      "rounds": 0,
+      "winsLossesDraws": {}
+    },
+    {
+      "actor": "constant",
+      "seed": 1581118147,
+      "failed": ["spawnSearchProgress"],
+      "rounds": 0,
+      "winsLossesDraws": {}
+    },
+    {
+      "actor": "constant",
+      "seed": 219549313,
+      "failed": ["spawnSearchProgress"],
+      "rounds": 0,
+      "winsLossesDraws": {}
+    },
+    {
+      "actor": "constant",
+      "seed": 935604679,
+      "failed": ["rearSearch", "smokeContact", "spawnSearchProgress"],
+      "rounds": 0,
+      "winsLossesDraws": {}
+    }
+  ],
+  "confirmation": {
+    "maps": ["frostcourt", "homeward", "blackflag", "orleans", "suntemple"],
+    "repeats": 12,
+    "seconds": 30,
+    "closePairs": 8,
+    "spawnFields": ["netForwardMetersPerSecond", "lowDisplacementFraction", "stationaryAcquired", "stationaryTrials"],
+    "closeFields": ["map", "targetMx", "trials", "candidateHalf", "incumbentHalf", "candidateTwo", "incumbentTwo"],
+    "rows": [
+      {
+        "seed": 388045469,
+        "name": "bundled",
+        "spawn": [1.63182, 0.18157, 1, 60],
+        "close": []
+      },
+      {
+        "seed": 388045469,
+        "name": "parent",
+        "spawn": [1.81532, 0.23444, 13, 60],
+        "close": [
+          ["frostcourt", 0, 16, 13, 7, 15, 12],
+          ["frostcourt", -1, 16, 7, 11, 8, 14],
+          ["frostcourt", 1, 16, 3, 2, 10, 5],
+          ["homeward", 0, 16, 10, 4, 15, 11],
+          ["homeward", -1, 16, 4, 5, 4, 8],
+          ["homeward", 1, 16, 3, 0, 11, 5],
+          ["blackflag", 0, 16, 10, 10, 15, 13],
+          ["blackflag", -1, 16, 4, 9, 6, 11],
+          ["blackflag", 1, 16, 6, 2, 14, 8]
+        ]
+      },
+      {
+        "seed": 388045469,
+        "name": "fitted",
+        "spawn": [2.98507, 0.01808, 0, 60],
+        "close": [
+          ["frostcourt", 0, 16, 6, 7, 14, 12],
+          ["frostcourt", -1, 16, 10, 11, 13, 14],
+          ["frostcourt", 1, 16, 3, 2, 6, 5],
+          ["homeward", 0, 16, 5, 4, 13, 11],
+          ["homeward", -1, 16, 10, 5, 11, 8],
+          ["homeward", 1, 16, 0, 0, 6, 5],
+          ["blackflag", 0, 16, 6, 10, 13, 13],
+          ["blackflag", -1, 16, 9, 9, 13, 11],
+          ["blackflag", 1, 16, 3, 2, 9, 8]
+        ]
+      },
+      {
+        "seed": 1162173901,
+        "name": "bundled",
+        "spawn": [1.71372, 0.17084, 5, 60],
+        "close": []
+      },
+      {
+        "seed": 1162173901,
+        "name": "parent",
+        "spawn": [2.177, 0.09403, 19, 60],
+        "close": [
+          ["frostcourt", 0, 16, 10, 7, 13, 10],
+          ["frostcourt", -1, 16, 7, 7, 11, 12],
+          ["frostcourt", 1, 16, 6, 1, 11, 4],
+          ["homeward", 0, 16, 10, 9, 14, 10],
+          ["homeward", -1, 16, 9, 10, 10, 11],
+          ["homeward", 1, 16, 6, 5, 13, 7],
+          ["blackflag", 0, 16, 12, 7, 13, 12],
+          ["blackflag", -1, 16, 6, 9, 6, 13],
+          ["blackflag", 1, 16, 6, 2, 15, 7]
+        ]
+      },
+      {
+        "seed": 1162173901,
+        "name": "fitted",
+        "spawn": [3.0686, 0.00838, 0, 60],
+        "close": [
+          ["frostcourt", 0, 16, 9, 7, 15, 10],
+          ["frostcourt", -1, 16, 12, 7, 13, 12],
+          ["frostcourt", 1, 16, 1, 1, 7, 4],
+          ["homeward", 0, 16, 8, 9, 13, 10],
+          ["homeward", -1, 16, 11, 10, 11, 11],
+          ["homeward", 1, 16, 5, 5, 8, 7],
+          ["blackflag", 0, 16, 9, 7, 15, 12],
+          ["blackflag", -1, 16, 9, 9, 11, 13],
+          ["blackflag", 1, 16, 2, 2, 12, 7]
+        ]
+      },
+      {
+        "seed": 1863502283,
+        "name": "bundled",
+        "spawn": [1.68991, 0.16761, 3, 60],
+        "close": []
+      },
+      {
+        "seed": 1863502283,
+        "name": "parent",
+        "spawn": [1.89748, 0.22919, 14, 60],
+        "close": [
+          ["frostcourt", 0, 16, 10, 10, 11, 14],
+          ["frostcourt", -1, 16, 6, 7, 7, 9],
+          ["frostcourt", 1, 16, 9, 4, 14, 7],
+          ["homeward", 0, 16, 11, 5, 11, 11],
+          ["homeward", -1, 16, 6, 6, 7, 9],
+          ["homeward", 1, 16, 3, 2, 12, 6],
+          ["blackflag", 0, 16, 12, 7, 14, 12],
+          ["blackflag", -1, 16, 5, 8, 6, 10],
+          ["blackflag", 1, 16, 7, 2, 14, 4]
+        ]
+      },
+      {
+        "seed": 1863502283,
+        "name": "fitted",
+        "spawn": [2.885, 0.02624, 1, 60],
+        "close": [
+          ["frostcourt", 0, 16, 12, 10, 14, 14],
+          ["frostcourt", -1, 16, 9, 7, 10, 9],
+          ["frostcourt", 1, 16, 4, 4, 12, 7],
+          ["homeward", 0, 16, 7, 5, 11, 11],
+          ["homeward", -1, 16, 8, 6, 11, 9],
+          ["homeward", 1, 16, 2, 2, 9, 6],
+          ["blackflag", 0, 16, 10, 7, 15, 12],
+          ["blackflag", -1, 16, 12, 8, 13, 10],
+          ["blackflag", 1, 16, 2, 2, 10, 4]
+        ]
+      },
+      {
+        "seed": 388045469,
+        "name": "conditional",
+        "spawn": [1.99492, 0.15569, 9, 60],
+        "close": [
+          ["frostcourt", 0, 16, 8, 7, 14, 12],
+          ["frostcourt", -1, 16, 11, 11, 13, 14],
+          ["frostcourt", 1, 16, 3, 2, 7, 5],
+          ["homeward", 0, 16, 8, 4, 13, 11],
+          ["homeward", -1, 16, 6, 5, 6, 8],
+          ["homeward", 1, 16, 0, 0, 7, 5],
+          ["blackflag", 0, 16, 7, 10, 15, 13],
+          ["blackflag", -1, 16, 10, 9, 13, 11],
+          ["blackflag", 1, 16, 3, 2, 12, 8]
+        ]
+      },
+      {
+        "seed": 1162173901,
+        "name": "conditional",
+        "spawn": [2.03607, 0.13306, 8, 60],
+        "close": [
+          ["frostcourt", 0, 16, 8, 7, 14, 10],
+          ["frostcourt", -1, 16, 11, 7, 13, 12],
+          ["frostcourt", 1, 16, 1, 1, 8, 4],
+          ["homeward", 0, 16, 11, 9, 14, 10],
+          ["homeward", -1, 16, 10, 10, 10, 11],
+          ["homeward", 1, 16, 5, 5, 9, 7],
+          ["blackflag", 0, 16, 12, 7, 16, 12],
+          ["blackflag", -1, 16, 10, 9, 11, 13],
+          ["blackflag", 1, 16, 2, 2, 13, 7]
+        ]
+      },
+      {
+        "seed": 1863502283,
+        "name": "conditional",
+        "spawn": [1.95522, 0.16458, 10, 60],
+        "close": [
+          ["frostcourt", 0, 16, 12, 10, 14, 14],
+          ["frostcourt", -1, 16, 9, 7, 10, 9],
+          ["frostcourt", 1, 16, 4, 4, 11, 7],
+          ["homeward", 0, 16, 7, 5, 11, 11],
+          ["homeward", -1, 16, 7, 6, 10, 9],
+          ["homeward", 1, 16, 2, 2, 9, 6],
+          ["blackflag", 0, 16, 9, 7, 16, 12],
+          ["blackflag", -1, 16, 12, 8, 14, 10],
+          ["blackflag", 1, 16, 2, 2, 12, 4]
+        ]
+      }
+    ]
+  },
+  "decision": "Keep incumbent. Conditional correction improved left-moving first damage over its parent, but independent full matches did not meet promotion criteria. No fresh consented holdout or live scores were available."
+}
