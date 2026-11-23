@@ -1,0 +1,43 @@
+{
+  "sourceCommit": "c7df5b88f658a9848c650e8081a2c13af829c5dd",
+  "decision": "Offline comparison only. The candidate regressed on low displacement and moving-target opening damage.",
+  "baseline": "arena-game/shared/directPolicy.json",
+  "lastVerifiedReleaseDigest": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+  "candidate": {
+    "start": "arena-game/tools/challengers/route-policy.json",
+    "replaceYawRowWith": "arena-game/tools/challengers/spawn-search-head.json row 0",
+    "copyWeightAndBiasRowsFromBaseline": [1, 4, 8, 10, 11, 12, 13],
+    "averageRemainingWeightAndBiasRowsWithBaseline": [0, 2, 3, 5, 6, 7, 9],
+    "baselineFraction": 0.5
+  },
+  "screen": {
+    "seeds": [1820475209, 953726169, 535164371],
+    "maps": ["frostcourt", "homeward", "blackflag", "orleans", "suntemple"],
+    "spawnRepeatsPerMap": 12,
+    "seconds": 30,
+    "order": ["candidate", "baseline"],
+    "forwardMetersPerSecondMeanAcrossMapSeedBlocks": [1.8149, 1.6345],
+    "lowDisplacementWindows": [[835, 3077], [635, 3301]],
+    "stationaryAcquisitions": [[14, 180], [7, 180]],
+    "closePairsPerMapSeed": 8,
+    "closeRowFields": ["map", "moving", "trials", "candidateHalfSecond", "baselineHalfSecond", "candidateTwoSeconds", "baselineTwoSeconds"],
+    "closeRows": [
+      ["frostcourt", false, 48, 33, 21, 42, 27],
+      ["frostcourt", true, 48, 7, 17, 21, 28],
+      ["homeward", false, 48, 30, 25, 33, 30],
+      ["homeward", true, 48, 11, 14, 20, 25],
+      ["blackflag", false, 48, 44, 34, 46, 38],
+      ["blackflag", true, 48, 16, 21, 26, 25]
+    ]
+  },
+  "frostcourtConfirmation": {
+    "seeds": [1065978533, 1526632799, 527903189, 1117649731, 1337551641, 601049877],
+    "closePairsPerMapSeed": 12,
+    "closeRows": [
+      ["frostcourt", false, 144, 97, 71, 120, 92],
+      ["frostcourt", true, 144, 40, 64, 58, 83]
+    ]
+  },
+  "holdoutReplay": "Unavailable while training/status returned 503 storage_limit.",
+  "latestPreviouslyVerifiedHumanBotScores": {"frostcourt": [7, 1], "homeward": [7, 2], "blackflag": [7, 1]}
+}
