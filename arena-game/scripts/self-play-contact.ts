@@ -89,6 +89,13 @@ export function courseRival(driver: Controller, course: RivalCourse, start: numb
 
 interface RewardStep { obs: readonly number[]; reward: number; reset: boolean }
 
+// Only an initially clear close-range drill can earn this once, on the first
+// positive damage event. Count elapsed simulation ticks, including the hit tick.
+export function openingDamageCredit(initialView: readonly number[], elapsed: number) {
+  if (initialView[0] !== 1 || !(initialView[3] <= 12 / 45) || elapsed < 1 || elapsed > 2 * TICK_HZ) return 0;
+  return elapsed <= TICK_HZ / 2 ? .08 : .04;
+}
+
 /** One small contact bonus per probe. Two delayed clear observations confirm recovery;
  * silhouettes and resets cannot earn the bonus. Rewards go to actions preceding the observation. */
 export function scoreContactDrill(steps: RewardStep[], drill: ContactDrill | 'rear', duration: number, period: number,

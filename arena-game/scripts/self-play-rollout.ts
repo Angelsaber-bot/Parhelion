@@ -14,7 +14,7 @@ import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolic
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { EXPLORATION_TICKS } from '../shared/exploration.ts';
 import { scoreSearchProgress } from './search-progress.ts';
-import { courseRival, rivalCourse, scoreContactDrill, waitingApproach } from './self-play-contact.ts';
+import { courseRival, openingDamageCredit, rivalCourse, scoreContactDrill, waitingApproach } from './self-play-contact.ts';
 import { opponentLeague } from './self-play-league.ts';
 import { seedVersion, trainingSeed } from './self-play-seeds.ts';
 
@@ -227,6 +227,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   game.phaseT = seconds * TICK_HZ;
   const start = placeEncounter(game, scenario, focused, rand);
   const firstTick = game.tick;
+  let openingDuel = layout === '1v1' && start.scenario === 'encounter';
   // Some players hold their spawn. In this exercise the learner has to initiate contact.
   // The rival resumes its ordinary policy on first damage or when the sampled wait expires.
   const waitingTicks = scenario === 'waiting' ? Math.round((focused ? 30 : 12 + 18 * rand()) * TICK_HZ) : 0;
@@ -248,6 +249,14 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
     game.step();
     if ((start.smoke || scenario === 'rear') && rivalLifeEnd === undefined && !game.player('rival')!.alive) rivalLifeEnd = seats[0].steps.length;
     const events = game.snapshot().events;
+    if (openingDuel) {
+      const steps = seats[0].steps, elapsed = game.tick - firstTick;
+      if (steps.length && events.some(e => e.t === 'hit' && e.shooter === 'pilot' && e.victim === 'rival' && e.dmg > 0)) {
+        steps[steps.length - 1].reward += openingDamageCredit(steps[0].obs, elapsed);
+        openingDuel = false;
+      }
+      if (!game.player('pilot')!.alive || !game.player('rival')!.alive || elapsed >= 2 * TICK_HZ) openingDuel = false;
+    }
     if (waiting.length && (game.tick - firstTick >= waitingTicks || events.some(event => event.t === 'hit'))) {
       for (const { slot, driver } of waiting) slot.controller = driver;
       waiting.length = 0;

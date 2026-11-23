@@ -3,7 +3,7 @@ import { HUMAN_FEATURES, humanObservation } from '../shared/humanCombat.ts';
 import { getMap } from '../shared/arenaMap.ts';
 import { navFor } from '../shared/botLocomotion.ts';
 import { Match } from '../shared/match.ts';
-import { escapeFor, waitingApproach, rivalCourse, scoreContactDrill } from '../scripts/self-play-contact.ts';
+import { escapeFor, openingDamageCredit, waitingApproach, rivalCourse, scoreContactDrill } from '../scripts/self-play-contact.ts';
 
 const steps = (contact: number[]) => contact.map((confidence, index) => ({ obs: [confidence], reset: index === 0, reward: 0 }));
 
@@ -78,4 +78,11 @@ it('places remedial searches on hidden walkable approaches to the actual opposin
         (a, b) => game.heroes.visible(a, b), [0, 0])[0]).toBe(0);
     }
   }
+});
+
+it('uses inclusive first-damage deadlines only for initially visible close-range opponents', () => {
+  const close = [1, 0, 0, 12 / 45];
+  expect([1, 30, 31, 120, 121].map(tick => openingDamageCredit(close, tick))).toEqual([.08, .08, .04, .04, 0]);
+  for (const view of [[0, 0, 0, 0], [.5, 0, 0, .1], [1, 0, 0, 13 / 45]])
+    expect(openingDamageCredit(view, 1)).toBe(0);
 });
