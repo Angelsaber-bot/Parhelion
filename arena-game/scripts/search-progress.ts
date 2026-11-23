@@ -24,6 +24,24 @@ function creditProgress(steps: Decision[], bounds: MapData['bounds'], start: num
   if (total > 0) for (const [offset, gain] of gains.entries()) steps[start + offset].reward += reward * gain / total;
 }
 
+// A stalled search can end with a useful sidestep. Attribute the wall-press
+// penalty to forward requests followed by little actual movement.
+function penalizeStall(steps: Decision[], bounds: MapData['bounds'], start: number, end: number, secondsPerDecision: number) {
+  const blocked: number[] = [];
+  for (let j = start; j < end; j++) {
+    if (Math.tanh(steps[j].axes[3]) <= .3) continue;
+    const before = steps[j].obs, after = steps[j + 1].obs;
+    const dx = (after[scene] - before[scene]) * (bounds.max[0] - bounds.min[0]) / 2;
+    const dz = (after[scene + 2] - before[scene + 2]) * (bounds.max[2] - bounds.min[2]) / 2;
+    if (Math.hypot(dx, dz) < .5 * secondsPerDecision) blocked.push(j);
+  }
+  if (blocked.length) {
+    for (const j of blocked) steps[j].reward -= .015 / blocked.length;
+  } else {
+    steps[end - 1].reward -= .015;
+  }
+}
+
 export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds'], period: number, tickRate: number) {
   const horizon = Math.max(2, Math.round(3 * tickRate / period));
   let unseenSteps = 0, unseenStartX = 0, unseenStartZ = 0, searchReach = 0;
@@ -64,7 +82,10 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
       } else if (i - recovery.start >= horizon && !recovery.timedOut) {
         recovery.timedOut = true;
         stayedBlocked++;
-        if (negativeCredits < 8) { steps[i - 1].reward -= .015; negativeCredits++; }
+        if (negativeCredits < 8) {
+          penalizeStall(steps, bounds, recovery.start, i, period / tickRate);
+          negativeCredits++;
+        }
       }
     }
     if (obs[0] > 0) {
@@ -113,7 +134,9 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
         (range < 2.5 && (scanned || previousSearchStalled)) ||
         (range < 1.5 && pushing)
       )) {
-        steps[i - 1].reward -= .015; negativeCredits++;
+        if (range < 1.5 && pushing) penalizeStall(steps, bounds, i + 1 - count, i, period / tickRate);
+        else steps[i - 1].reward -= .015;
+        negativeCredits++;
       }
       if (route.length >= 3) {
         const path = route.join('/');

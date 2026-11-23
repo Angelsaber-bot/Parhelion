@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/arena-training.yml'
       - 'arena-game/scripts/self-play-*'
+      - 'arena-game/scripts/search-progress.ts'
       - 'arena-game/tools/train-self-play.py'
       - 'arena-game/tools/arena_camera_intent.py'
       - 'arena-game/tools/arena_recent_replay.py'

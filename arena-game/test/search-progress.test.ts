@@ -5,12 +5,12 @@ import type { MapData } from '../shared/map.ts';
 import { bundledOpponent } from '../shared/learnedOpponent.ts';
 import { assess, fixtures, passesSpawnSearch } from '../scripts/evaluation/evaluate-spawn-search.ts';
 const bounds: MapData['bounds'] = { min: [-20, 0, -20], max: [20, 6, 20] };
-function measuredTrial(path: (i: number) => [number, number, number], length = 16, resetAt = -1, forward = 0) {
+function measuredTrial(path: (i: number) => [number, number, number], length = 16, resetAt = -1, forward: number | ((i: number) => number) = 0) {
   const rows = Array.from({ length }, (_, i) => {
     const [x, yaw, seen] = path(i);
     const obs = Array(HUMAN_FEATURES.length + 12).fill(0); obs[0] = seen;
     obs[HUMAN_FEATURES.length] = x / 20; obs[HUMAN_FEATURES.length + 3] = Math.sin(yaw); obs[HUMAN_FEATURES.length + 4] = Math.cos(yaw);
-    return { obs, axes: [0, 0, 0, forward], reset: i === 0 || i === resetAt, reward: 0 };
+    return { obs, axes: [0, 0, 0, typeof forward === 'number' ? forward : forward(i)], reset: i === 0 || i === resetAt, reward: 0 };
   });
   const outcome = scoreSearchProgress(rows, bounds, 12, 60);
   return { ...outcome, rewards: rows.map(s => s.reward), reward: rows.reduce((sum, s) => sum + s.reward, 0) };
@@ -58,6 +58,17 @@ describe('self-play search outcomes', () => {
     expect(trial(() => [0, 0, 0], 15, -1, 1)).toBeLessThan(0);
     expect(trial(() => [0, 0, 1], 15, -1, 1)).toBe(0);
     expect(trial(i => [i * .7, 0, 0], 15, -1, 1)).toBeGreaterThan(0);
+  });
+  it('keeps wall pressure debit off a lateral or forward step that gained ground', () => {
+    const x = (i: number) => Math.max(0, i - 12) * .3;
+    const trace = measuredTrial(i => [x(i), 0, 0], 15, -1, i => Number(i !== 13));
+    expect(trace.reward).toBeCloseTo(-.015);
+    for (const r of trace.rewards.slice(0, 12)) expect(r).toBeCloseTo(-.015 / 12);
+    expect(trace.rewards.slice(12)).toEqual([0, 0, 0]);
+    const timeout = measuredTrial(i => [i === 29 ? .4 : 0, 0, 0], 30, -1, i => Number(i !== 28));
+    expect(timeout.stayedBlocked).toBe(1);
+    expect(timeout.rewards[28]).toBe(0);
+    expect(timeout.reward).toBeCloseTo(-.045);
   });
   it('rewards facing newly covered ground and excludes motion through respawns', () => {
     const forward = trial(i => [i * .7, -Math.PI / 2, 0], 15);
