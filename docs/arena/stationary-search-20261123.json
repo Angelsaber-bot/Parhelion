@@ -271,5 +271,163 @@
       }
     ],
     "decision": "Both candidates failed spawnSearchProgress and rearSearch on both independent seeds. Retain incumbent. Storage limitation precluded fresh human replay and scores."
+  },
+  "searchDistillationScreen": {
+    "source": "03c9069",
+    "rollout": "Bundled policy; self-play-rollout.ts --episodes 56 --seconds 28 --focus encounter --focus waiting --seed 168375361",
+    "windows": 11646,
+    "eligibleSearch": 7840,
+    "closeWindows": 1195,
+    "procedure": "Frozen bundled encoder. Append 1 to final encoded state. Solve double-precision ridge regression on the raw teacher minus bundled logits for axes 0,2,3. Minimize mean squared residual on search_demonstrations eligible states plus squared output delta on all ineligible states and strength times squared output delta on clear contacts within 12m. Normalize each group by its count. Ridge is 0.025 including bias. Add fitted columns to the bundled readouts.",
+    "actorHashes": {
+      "1": "7ea975c01cfd2c970dfdfcf28f880c3c1b73d5d19cfe2a02fba1f775315fce9c",
+      "6": "4493d50c140944cdf07dcb352ae938d75b612a844101a93c0b15c119594bf792"
+    },
+    "fields": "spawn and close rows follow yawInterpolationScreen",
+    "screens": [
+      {
+        "strength": 1,
+        "seed": 137381791,
+        "failed": ["rearSearch", "closeMovingDamage", "spawnSearchProgress"],
+        "spawn": [
+          [2.472, 0.0439, 0, 12],
+          [2.0397, 0.1581, 1, 12]
+        ],
+        "close": [
+          ["frostcourt", 0, 16, 11, 10, 12, 12],
+          ["frostcourt", -1, 16, 6, 8, 10, 12],
+          ["frostcourt", 1, 16, 5, 5, 9, 7],
+          ["homeward", 0, 16, 9, 6, 12, 10],
+          ["homeward", -1, 16, 3, 4, 6, 9],
+          ["homeward", 1, 16, 2, 3, 6, 5],
+          ["blackflag", 0, 16, 9, 7, 11, 11],
+          ["blackflag", -1, 16, 6, 11, 7, 14],
+          ["blackflag", 1, 16, 3, 3, 8, 4]
+        ]
+      },
+      {
+        "strength": 1,
+        "seed": 982615369,
+        "failed": ["rearSearch", "spawnSearchProgress"],
+        "spawn": [
+          [2.289, 0.0727, 0, 12],
+          [2.2085, 0.12, 1, 12]
+        ],
+        "close": [
+          ["frostcourt", 0, 16, 10, 8, 13, 11],
+          ["frostcourt", -1, 16, 5, 6, 7, 8],
+          ["frostcourt", 1, 16, 4, 4, 8, 6],
+          ["homeward", 0, 16, 6, 4, 7, 8],
+          ["homeward", -1, 16, 4, 5, 6, 7],
+          ["homeward", 1, 16, 0, 0, 2, 4],
+          ["blackflag", 0, 16, 10, 9, 14, 12],
+          ["blackflag", -1, 16, 8, 10, 8, 10],
+          ["blackflag", 1, 16, 3, 2, 8, 6]
+        ]
+      },
+      {
+        "strength": 6,
+        "seed": 137381791,
+        "failed": ["smokeContact", "closeMovingDamage", "spawnSearchProgress"],
+        "spawn": [
+          [2.5637, 0.055, 0, 12],
+          [2.0397, 0.1581, 1, 12]
+        ],
+        "close": [
+          ["frostcourt", 0, 16, 11, 10, 12, 12],
+          ["frostcourt", -1, 16, 7, 8, 10, 12],
+          ["frostcourt", 1, 16, 5, 5, 8, 7],
+          ["homeward", 0, 16, 9, 6, 10, 10],
+          ["homeward", -1, 16, 3, 4, 7, 9],
+          ["homeward", 1, 16, 3, 3, 4, 5],
+          ["blackflag", 0, 16, 9, 7, 12, 11],
+          ["blackflag", -1, 16, 10, 11, 12, 14],
+          ["blackflag", 1, 16, 3, 3, 4, 4]
+        ]
+      },
+      {
+        "strength": 6,
+        "seed": 982615369,
+        "failed": ["candidateHasSearch", "rearSearch", "spawnSearchProgress"],
+        "spawn": [
+          [2.4843, 0.0588, 0, 12],
+          [2.2085, 0.12, 1, 12]
+        ],
+        "close": [
+          ["frostcourt", 0, 16, 10, 8, 14, 11],
+          ["frostcourt", -1, 16, 6, 6, 8, 8],
+          ["frostcourt", 1, 16, 3, 4, 5, 6],
+          ["homeward", 0, 16, 7, 4, 8, 8],
+          ["homeward", -1, 16, 4, 5, 7, 7],
+          ["homeward", 1, 16, 0, 0, 3, 4],
+          ["blackflag", 0, 16, 10, 9, 12, 12],
+          ["blackflag", -1, 16, 9, 10, 9, 10],
+          ["blackflag", 1, 16, 4, 2, 6, 6]
+        ]
+      }
+    ],
+    "confirmation": {
+      "strength": 1,
+      "maps": ["frostcourt", "homeward", "blackflag", "orleans", "suntemple"],
+      "repeats": 8,
+      "seconds": 30,
+      "runs": [
+        {
+          "seed": 638950571,
+          "spawn": [
+            [1.9718, 0.1687, 0, 40],
+            [1.581, 0.1967, 3, 40]
+          ],
+          "close": [
+            ["frostcourt", 0, 16, 12, 9, 13, 11],
+            ["frostcourt", -1, 16, 5, 5, 6, 9],
+            ["frostcourt", 1, 16, 1, 1, 5, 3],
+            ["homeward", 0, 16, 11, 9, 11, 11],
+            ["homeward", -1, 16, 7, 7, 8, 9],
+            ["homeward", 1, 16, 3, 3, 6, 7],
+            ["blackflag", 0, 16, 10, 6, 13, 8],
+            ["blackflag", -1, 16, 5, 7, 6, 12],
+            ["blackflag", 1, 16, 0, 0, 8, 3]
+          ]
+        },
+        {
+          "seed": 1524954733,
+          "spawn": [
+            [2.1976, 0.1052, 0, 40],
+            [1.7895, 0.168, 2, 40]
+          ],
+          "close": [
+            ["frostcourt", 0, 16, 10, 10, 13, 11],
+            ["frostcourt", -1, 16, 8, 12, 11, 15],
+            ["frostcourt", 1, 16, 5, 6, 7, 8],
+            ["homeward", 0, 16, 6, 5, 12, 8],
+            ["homeward", -1, 16, 5, 3, 6, 6],
+            ["homeward", 1, 16, 0, 0, 3, 1],
+            ["blackflag", 0, 16, 8, 8, 14, 12],
+            ["blackflag", -1, 16, 7, 11, 9, 13],
+            ["blackflag", 1, 16, 2, 2, 9, 5]
+          ]
+        },
+        {
+          "seed": 713618399,
+          "spawn": [
+            [2.1456, 0.1194, 0, 40],
+            [1.6765, 0.2131, 0, 40]
+          ],
+          "close": [
+            ["frostcourt", 0, 16, 8, 6, 11, 9],
+            ["frostcourt", -1, 16, 5, 5, 7, 9],
+            ["frostcourt", 1, 16, 1, 2, 5, 5],
+            ["homeward", 0, 16, 7, 4, 12, 8],
+            ["homeward", -1, 16, 8, 8, 10, 9],
+            ["homeward", 1, 16, 1, 1, 2, 2],
+            ["blackflag", 0, 16, 11, 11, 14, 13],
+            ["blackflag", -1, 16, 2, 4, 3, 5],
+            ["blackflag", 1, 16, 2, 1, 8, 3]
+          ]
+        }
+      ]
+    },
+    "decision": "Retain incumbent: repeated stationary acquisition and rear-search failures. No live checkpoint or fresh human holdout was available."
   }
 }
