@@ -48,6 +48,13 @@ describe('self-play search outcomes', () => {
     expect(trial(() => [0, 0, 1], 15, -1, 1)).toBe(0);
     expect(trial(i => [i * .7, 0, 0], 15, -1, 1)).toBeGreaterThan(0);
   });
+  it('rewards facing newly covered ground and excludes motion through respawns', () => {
+    const forward = trial(i => [i * .7, -Math.PI / 2, 0], 15);
+    const backward = trial(i => [i * .7, Math.PI / 2, 0], 15);
+    expect(forward).toBeGreaterThan(backward);
+    expect(backward).toBeGreaterThan(0);
+    expect(trial(i => [i >= 7 ? 10 : 0, -Math.PI / 2, 0], 15, 7)).toBe(0);
+  });
   it('reduces credit for repeatedly following the same unsuccessful path', () => {
     const lap = (i: number): [number, number, number] => [(i % 15) * .72, 0, 0];
     expect(trial(lap, 60)).toBeLessThan(trial(lap, 30));

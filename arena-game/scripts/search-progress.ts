@@ -10,7 +10,7 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
   const horizon = Math.max(2, Math.round(3 * tickRate / period));
   let count = 0, turn = 0, range = 0, startX = 0, startZ = 0, heading = 0;
   let minimumYaw = 0, maximumYaw = 0, previousSearchStalled = false;
-  let forwardAttempts = 0;
+  let forwardAttempts = 0, forwardMeters = 0, lastX = 0, lastZ = 0;
   let positiveCredits = 0, negativeCredits = 0, newCells = 0;
   const visited = new Set<string>();
   // A respawn starts a new segment but revisiting the same ground is still a revisit.
@@ -28,15 +28,16 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
       if (!reset && count >= 2 && range >= 2 && positiveCredits <= 10) { steps[i - 1].reward += .02; positiveCredits += 2; }
       count = 0; previousSearchStalled = false; visited.add(cell); continue;
     }
-    if (!count) { forwardAttempts = 0; startX = x; startZ = z; turn = minimumYaw = maximumYaw = 0; range = 0; newCells = 0; route = []; }
+    if (!count) { forwardAttempts = forwardMeters = 0; startX = x; startZ = z; turn = minimumYaw = maximumYaw = 0; range = 0; newCells = 0; route = []; }
     else {
       // Only past actions could have produced the displacement observed now.
       if (Math.tanh(steps[i - 1].axes[3]) > .3) forwardAttempts++;
+      forwardMeters -= (x - lastX) * Math.sin(yaw) + (z - lastZ) * Math.cos(yaw);
       turn += wrapAngle(yaw - heading);
       minimumYaw = Math.min(minimumYaw, turn);
       maximumYaw = Math.max(maximumYaw, turn);
     }
-    heading = yaw;
+    lastX = x; lastZ = z; heading = yaw;
     range = Math.max(range, Math.hypot(x - startX, z - startZ));
     if (!visited.has(cell)) newCells++;
     if (route.at(-1) !== cell) route.push(cell);
@@ -44,7 +45,9 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
       // Credit and debit remain small compared with a frag or the match outcome.
       if (newCells >= 2 && Math.hypot(x - startX, z - startZ) >= 4 && positiveCredits < 12) {
         // Give the actions that finally left a stagnant search area credit for the recovery.
-        const credits = Math.min(previousSearchStalled ? 2 : 1, 12 - positiveCredits);
+        // The same ground can be covered backing away from the camera. Reward
+        // additional forward progress only on a genuinely new, displaced route.
+        const credits = Math.min(1 + Number(previousSearchStalled) + Number(forwardMeters >= 4), 12 - positiveCredits);
         steps[i - 1].reward += .01 * credits; positiveCredits += credits;
       } else if (negativeCredits < 8 && (
         (range < 2.5 && (maximumYaw - minimumYaw > Math.PI * .65 || previousSearchStalled)) ||

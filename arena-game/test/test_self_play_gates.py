@@ -3,7 +3,7 @@ import hashlib
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, call, patch
+from unittest.mock import MagicMock, Mock, call, patch
 
 import torch
 from torch.utils.data import DataLoader, TensorDataset
@@ -22,6 +22,25 @@ class FixedActions(torch.nn.Module):
 
 
 class HumanGateTest(unittest.TestCase):
+    def test_checkpoint_retry_reuses_payload_and_preserves_conflicts(self):
+        service = cycle.Service.__new__(cycle.Service)
+        service.token, service.http = "unused", Mock()
+        def error(status):
+            return cycle.urllib.error.HTTPError("https://test.invalid/", status, "test", {}, None)
+        success = MagicMock()
+        success.__enter__.return_value.read.return_value = b'{"generation":931}'
+        record = {"parent": 930, "generation": 931}
+        service.http.open.side_effect = [error(500) for _ in range(4)] + [success]
+        with patch.object(cycle.time, "sleep") as sleep:
+            self.assertEqual(service.request("/selfplay", record), {"generation": 931})
+            self.assertEqual(sleep.call_count, 4)
+        requests = [c.args[0] for c in service.http.open.call_args_list]
+        self.assertTrue(all(r is requests[0] for r in requests))
+        service.http.open.side_effect = error(409)
+        with patch.object(cycle.time, "sleep") as sleep, self.assertRaises(cycle.urllib.error.HTTPError):
+            service.request("/selfplay", record)
+        sleep.assert_not_called()
+
     def test_worker_and_playable_build_support_the_candidate_before_release(self):
         runtime = {"rulesVersion": cycle.RULES, "neuralPolicyVersion": 3}
         service = cycle.Service.__new__(cycle.Service)

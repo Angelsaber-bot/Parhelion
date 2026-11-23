@@ -43,7 +43,10 @@ class Service:
             headers["Authorization"] = "Bearer " + self.token
         data = json.dumps(payload, separators=(",", ":")).encode() if payload is not None else None
         request = urllib.request.Request(SERVICE + path, data=data, headers=headers, method="PUT" if data else "GET")
-        for attempt in range(3):
+        # A commit is deduplicated by its exact request hash at the Worker.
+        # Keep the finished generation in memory across a brief write outage.
+        attempts = 7 if path == "/selfplay" and payload is not None else 3
+        for attempt in range(attempts):
             try:
                 with self.http.open(request, timeout=55) as result:
                     body = result.read(LIMIT + 1)
@@ -53,10 +56,10 @@ class Service:
             except urllib.error.HTTPError as exc:
                 if optional and exc.code == 404:
                     return None
-                if exc.code not in (408, 429, 500, 502, 503, 504) or attempt == 2:
+                if exc.code not in (408, 429, 500, 502, 503, 504) or attempt + 1 == attempts:
                     raise
             except OSError:
-                if attempt == 2:
+                if attempt + 1 == attempts:
                     raise
             time.sleep(2 ** attempt)
 
