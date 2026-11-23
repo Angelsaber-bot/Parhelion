@@ -149,6 +149,7 @@ body.world-interface #world-vitals .combat-rounds{font-size:11px;font-weight:600
 body.world-interface #world-vitals .combat-rounds::before{content:'';display:inline-block;width:3px;height:9px;margin:0 9px 0 0;border-radius:1px;background:currentColor;box-shadow:4px 0 0 currentColor;opacity:.75;vertical-align:-1px}
 body.world-interface #world-vitals .combat-track,body.world-interface #world-vitals small{grid-column:1/-1}
 body.world-interface #world-vitals small:empty{display:none}
+body.world-valley-opening :is(#xp-hud,#world-vitals .combat-rounds){display:none}
 #world-vitals[data-ammo="low"] .combat-rounds{color:#ffd27a}#world-vitals[data-ammo="empty"] .combat-rounds{color:#ff8a7a}
 #world-vitals[data-ammo] span{color:inherit}
 body.world-interface #world-boss small:empty{display:none}
@@ -161,3 +162,5 @@ body.world-interface #world-boss small:empty{display:none}
 .travel-card>h2,.travel-card>p,.travel-card>button{flex:none}
 .travel-card>div{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
 .travel-card>button{align-self:flex-start;margin-top:10px}
+
+#world-settings .new-game-confirmation { width: min(430px, 90vw); }

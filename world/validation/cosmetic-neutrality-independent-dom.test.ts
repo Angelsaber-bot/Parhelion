@@ -39,8 +39,8 @@ test('NON-GPU all earned finishes keep live geometry, muzzle, enemy ray hitbox, 
   for(let i=0;i<120;i++){select.value=finishes[i%finishes.length];select.dispatchEvent(new window.Event('change',{bubbles:true}));}
   const after:THREE.Mesh[]=[];w.rig.root.traverse((o:THREE.Object3D)=>{if((o as THREE.Mesh).isMesh)after.push(o as THREE.Mesh);});assert.deepEqual(after,meshes);
   select.value='ember';select.dispatchEvent(new window.Event('change',{bubbles:true}));
-  (d.getElementById('start')as HTMLElement).click();await Promise.resolve();window.confirm=()=>true;
-  d.body.dispatchEvent(new window.KeyboardEvent('keydown',{code:'KeyR',bubbles:true}));d.body.dispatchEvent(new window.KeyboardEvent('keyup',{code:'KeyR',bubbles:true}));
+  (d.getElementById('start')as HTMLElement).click();await Promise.resolve();
+  h.newGame();
   for(const x of authored){assert.equal(x.material.color.getHex(),x.color,'reset restores authored color');assert.equal(x.material.map,x.map,'reset restores original texture');}
   assert.equal(w.done.size,0);assert.equal(w.weaponFinishStore.preference,'ember');assert.equal(w.weaponFinishStore.active(w.done),'original');assert.equal(w.rifle.finish,'original');assert.equal(w.blade.finish,'original');
   assert.equal(Array.from(select.options).find(o=>o.value==='ember')!.disabled,true);select.value='ember';select.dispatchEvent(new window.Event('change',{bubbles:true}));assert.equal(w.rifle.finish,'original');assert.equal(w.done.size,0);

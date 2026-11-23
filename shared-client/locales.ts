@@ -321,6 +321,8 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['秦帝国', 'Qin Empire'], ['古埃及', 'Solar Egypt'], ['奥尔良', 'Orleans'], ['主角城镇', 'Home Town'],
   ['动漫风 3D 射击 · 竞技场对战 · 开放世界', 'Anime-style 3D shooter · Arena battles · Open world'],
   ['进入世界', 'Enter the World'], ['WORLD · 五个时代', 'WORLD · Five eras'],
+  ['进入世界主线', 'Play the World story'], ['世界 · 地区直达', 'World destinations'],
+  ['主线旅程', 'Story journey'], ['起点 · 幻日谷', 'Begins in Parhelion Valley'],
   ['第 1 章', 'Chapter 1'], ['第 2 章', 'Chapter 2'], ['第 3 章', 'Chapter 3'], ['第 4 章', 'Chapter 4'], ['第 5 章', 'Chapter 5'],
   ['键盘 + 鼠标', 'Keyboard + mouse'],
 ];

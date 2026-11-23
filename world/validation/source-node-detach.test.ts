@@ -71,8 +71,8 @@ test('detaching consumed source COLLISION/MARKERS preserves production capsule, 
     const ray=new THREE.Raycaster(from,center.sub(from).normalize());const hit=ray.intersectObject(target,false)[0];assert.ok(hit,`real ART target ray ${id}`);hits.push(hit.distance);
     state(['summon_circle',id]);assert.equal(target.visible,false);assert.equal(w.colliders.find((c:any)=>c.name===`COL_${target.name}`).enabled,false);state(['summon_circle']);
    }
-   (window.document.getElementById('start') as HTMLElement).click();window.confirm=()=>true;
-   state(['summon_circle','kikyo_banner_1']);key('KeyR');assert.equal(w.done.size,0);
+   (window.document.getElementById('start') as HTMLElement).click();
+   state(['summon_circle','kikyo_banner_1']);h.newGame();assert.equal(w.done.size,0);
    for(const id of ['Fort_Tower_Drums','Kyoto_Hillside_Foundations','Winter_House_Foundations','Winter_Ruin_Shells'])assert.equal(w.colliders.find((c:any)=>c.name===`COL_${id}`)?.enabled,true,'permanent structural supports survive progress reset');
    assert.equal(w.colliders.find((c:any)=>c.name==='COL_Seam_west_Gate').enabled,true);assert.equal(targets.find(t=>t.userData.target==='kikyo_banner_1')!.visible,true);
    return{paths,hits,resetPosition:w.player.pos.toArray()};

@@ -63,7 +63,7 @@ test('NON-GPU five legacy-save chronicles require deliberate work/branch choices
    const restored=new WorldProgress(window.localStorage);assert.deepEqual([...restored.done].sort(),completed);assert.ok(restored.found.has('old_discovery'));
    for(const flag of legacy)assert.ok(w.done.has(flag),'old campaign flag survives');
   });
-  window.confirm=()=>true;key('KeyR');assert.equal(w.done.size,0);assert.equal(w.found.size,0);const resetWrites=writes;staleChoice?.click();assert.equal(w.done.size,0,'stale branch button cannot revive a reset save');assert.equal(writes,resetWrites);
+  h.newGame();assert.equal(w.done.size,0);assert.equal(w.found.size,0);const resetWrites=writes;staleChoice?.click();assert.equal(w.done.size,0,'stale branch button cannot revive a reset save');assert.equal(writes,resetWrites);
   for(const site of w.campaignSites.sites)assert.equal(site.root.userData.campaignState.stage,0);
   assert.deepEqual(h.errors,[]);assert.deepEqual(h.warnings,[]);
  }finally{window.Storage.prototype.setItem=originalSet;await h.close();}

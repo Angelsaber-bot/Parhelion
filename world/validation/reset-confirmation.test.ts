@@ -1,9 +1,44 @@
-import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import{readFileSync}from'node:fs';import{transformSync}from'esbuild';
-const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
-const body=source.slice(source.indexOf('function requestProgressReset()'),source.indexOf('function press(binding:'));
-function run(answer:boolean|'unavailable'){
- let reset=0,cleared=0,unlocked=0;let message='';const context=vm.createContext({clearInput(){cleared++;},resetProgress(){reset++;},document:{pointerLockElement:{},exitPointerLock(){unlocked++;}},window:{confirm(text:string){message=text;if(answer==='unavailable')throw Error('blocked');return answer;}},bilingual:(_zh:string,en:string)=>en});
- vm.runInContext(transformSync(body+'\nrequestProgressReset();',{loader:'ts'}).code,context);return{reset,cleared,unlocked,message};
-}
-test('reset hotkey requires deliberate confirmation; cancel or unavailable dialog never clears progress',()=>{for(const answer of [false,'unavailable'] as const){const r=run(answer);assert.equal(r.reset,0);assert.equal(r.cleared,1);assert.equal(r.unlocked,1);}assert.equal(run(true).reset,1);});
-test('reset confirmation explains affected progress and preserved preferences',()=>{const r=run(false);assert.match(r.message,/quests, contracts and discoveries/);assert.match(r.message,/Controls, language and graphics settings are kept/);assert.match(source,/action === 'reset'.*requestProgressReset/);});
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { JSDOM } from 'jsdom';
+import { installNewGameControl } from '../src/ui/newGameControl';
+
+test('new game requires both open dialogs and explicit confirmation, with Cancel focused first', () => {
+  const dom = new JSDOM('<dialog open><section></section></dialog>');
+  const { window } = dom, doc = window.document;
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: doc });
+  window.HTMLDialogElement.prototype.showModal = function() { this.open = true; };
+  window.HTMLDialogElement.prototype.close = function() { this.open = false; this.dispatchEvent(new window.Event('close')); };
+  let resets = 0;
+  const menu = installNewGameControl(doc.querySelector('section')!, () => { resets++; });
+  try {
+    const button = doc.getElementById('world-new-game')!;
+    const cancel = doc.getElementById('world-new-game-cancel')!;
+    const confirm = doc.getElementById('world-new-game-confirm')!;
+    const prompt = confirm.closest('dialog')!, settings = doc.querySelector('dialog')!;
+    confirm.click();
+    button.click();
+    assert.equal(doc.activeElement, cancel);
+    assert.match(prompt.textContent!, /任务、契约与发现|quests, contracts and discoveries/);
+    assert.match(prompt.textContent!, /按键、语言和画质|controls, language and graphics/);
+    for (const key of ['Enter', ' ']) {
+      const repeat = new window.KeyboardEvent('keydown', { key, repeat: true, bubbles: true, cancelable: true });
+      assert.equal(confirm.dispatchEvent(repeat), false);
+    }
+    cancel.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    assert.equal(prompt.open, false);
+    confirm.click();
+    button.click(); cancel.click(); confirm.click();
+    button.click(); settings.close(); confirm.click();
+    assert.equal(prompt.open, false);
+    assert.equal(resets, 0);
+    settings.showModal();
+    button.click(); confirm.click(); confirm.click();
+    assert.equal(resets, 1);
+  } finally {
+    menu.dispose(); dom.window.close();
+    if (previous) Object.defineProperty(globalThis, 'document', previous);
+    else Reflect.deleteProperty(globalThis, 'document');
+  }
+});

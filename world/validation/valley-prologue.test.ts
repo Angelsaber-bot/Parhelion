@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { Vector3 } from 'three';
 import { ARMORY_MARKER, WORLD_PROGRESS_KEY } from '../src/core/progress';
@@ -11,7 +12,12 @@ test('prologue choices are exclusive, resume from saved actions and preserve exi
     const act = (id: string) => advanceValleyPrologue(valleyPrologueStage(done), id, done);
     assert.equal(act(P.radio), null);
     assert.equal(act(P.steward), null);
-    assert.ok(act(P.room));
+    const fragment = act(P.room)!;
+    for (const subtitle of fragment) {
+      assert.match(subtitle, /18:42/);
+      assert.doesNotMatch(subtitle, /18:39|顾桥|Gu Qiao/);
+    }
+    assert.equal(act(P.room), null);
     assert.ok(act(P.steward));
     assert.ok(act(cart));
     assert.equal(act(cart === P.cartStop ? P.cartReturn : P.cartStop), null);
@@ -62,6 +68,18 @@ test('fresh World: real inputs save the cart and a shot opens the rescue route',
     for (let i = 0; i < 12 && w.narrative.open; i++) tap('interact');
     assert.equal(w.narrative.open, false);
   };
+  const checkOpeningHud = (quiet: boolean) => {
+    // The isolated boot omits stylesheets. Apply the shipped HUD rules for this observation.
+    const style = d.createElement('style');
+    style.textContent = readFileSync(new URL('../src/ui/worldInterface.css', import.meta.url), 'utf8');
+    d.head.append(style);
+    try {
+      for (const selector of ['#xp-hud', '#world-vitals .combat-rounds']) {
+        assert.equal(h.window.getComputedStyle(d.querySelector(selector)!).display === 'none', quiet, selector);
+      }
+      assert.equal(d.getElementById('world-action-bar')!.hidden, quiet);
+    } finally { style.remove(); }
+  };
   const use = (id: string, dx = 0, dz = 0) => {
     const [x, y, z] = marker(id);
     place(x + dx, y, z + dz);
@@ -73,7 +91,15 @@ test('fresh World: real inputs save the cart and a shot opens the rescue route',
     frame(30);
     assert.match(d.getElementById('objective')!.textContent!, /旧收音机/);
     assert.ok(w.player.pos.distanceTo(new Vector3(...marker(P.room))) < 3, 'new game starts inside the room');
+    checkOpeningHud(true);
+    let transmissions = 0;
+    const radioCue = w.audio.radioTransmission.bind(w.audio);
+    w.audio.radioTransmission = () => { transmissions++; radioCue(); };
+    w.audio.setMuted(true);
     use(P.room); assert.ok(w.done.has(P.room));
+    assert.match(d.getElementById('world-dialogue-text')!.textContent!, /18:42.*已撤走一人/);
+    assert.equal(transmissions, 1);
+    closeDialogue();
     const [sx, sy, sz] = w.settlementNpcs.getPosition(P.steward);
     place(sx, sy, sz + 1.1);
     tap('interact');
@@ -86,9 +112,12 @@ test('fresh World: real inputs save the cart and a shot opens the rescue route',
     use(ARMORY_MARKER, -.6, -1);
     assert.ok(w.worldProgress.armed);
     closeDialogue();
+    frame(30);
+    checkOpeningHud(false);
     use(P.radio, 0, .4);
     assert.ok(w.done.has(P.radio));
     assert.match(d.getElementById('world-dialogue-text')!.textContent!, /18:39.*18:42/);
+    assert.equal(transmissions, 2);
     closeDialogue();
     use(P.survey, 0, .25);
     assert.ok(w.done.has(P.survey));

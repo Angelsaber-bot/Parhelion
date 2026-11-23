@@ -46,7 +46,7 @@ for (const reloadMode of ['noop', 'throw'] as const) test(`accepted import retir
     assert.equal(d.getElementById('world-progress-status'), null, 'old restore/reset controls are retired');
     const before = { p: w.player.pos.toArray(), hp: w.combat.state.hp, flags: [...w.done], found: [...w.found], saved: h.window.localStorage.getItem(WORLD_PROGRESS_KEY) };
     let renders = 0; const render = w.renderer.render.bind(w.renderer); w.renderer.render = (...args: any[]) => { renders++; return render(...args); };
-    (d.getElementById('start') as HTMLElement).click(); key('forward', true); key('reset', true); key('reset', false);
+    (d.getElementById('start') as HTMLElement).click(); key('forward', true); d.body.dispatchEvent(new h.window.KeyboardEvent('keydown', { code: 'KeyR', bubbles: true }));
     const canvas = d.getElementById('view')!;
     canvas.dispatchEvent(new h.window.Event('webglcontextlost', { cancelable: true })); canvas.dispatchEvent(new h.window.Event('webglcontextrestored'));
     for (let i = 0; i < 120; i++) frame(); key('forward', false);

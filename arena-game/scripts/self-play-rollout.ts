@@ -14,6 +14,7 @@ import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolic
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { EXPLORATION_TICKS } from '../shared/exploration.ts';
 import { scoreSearchProgress } from './search-progress.ts';
+import { creditWaitingSearch } from './waiting-search-credit.ts';
 import { courseRival, openingDamageCredit, rivalCourse, scoreContactDrill, waitingApproach } from './self-play-contact.ts';
 import { opponentLeague } from './self-play-league.ts';
 import { seedVersion, trainingSeed } from './self-play-seeds.ts';
@@ -234,6 +235,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   const waiting = [...game.slots.values()].filter(slot => waitingTicks && slot.info.team === enemy)
     .map(slot => ({ slot, driver: slot.controller }));
   for (const { slot } of waiting) slot.controller = undefined;
+  let waitingDecisionCount: number | undefined;
   const smokeWindow = { start: Infinity, end: Infinity };
   let rivalLifeEnd: number | undefined;
   // Timeout is the actual end of each shortened match in Match.stepPhase; there is no bootstrap tick.
@@ -258,6 +260,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
       if (!game.player('pilot')!.alive || !game.player('rival')!.alive || elapsed >= 2 * TICK_HZ) openingDuel = false;
     }
     if (waiting.length && (game.tick - firstTick >= waitingTicks || events.some(event => event.t === 'hit'))) {
+      waitingDecisionCount = seats[0].steps.length;
       for (const { slot, driver } of waiting) slot.controller = driver;
       waiting.length = 0;
     }
@@ -272,6 +275,9 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
         if (event.victim === id && wasAlive && game.player(event.shooter)?.team === enemy) last.reward -= .001 * event.dmg;
       }
     }
+  }
+  if (scenario === 'waiting' && layout === '1v1') {
+    creditWaitingSearch(seats[0].steps.slice(0, waitingDecisionCount), game.map.data.bounds);
   }
   const outcome = Math.sign(game.score[team] - game.score[enemy]);
   for (const seat of seats) {

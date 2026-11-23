@@ -26,7 +26,7 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
   const art = new SiteArt();
   const slate = '#394d59', cream = '#ccd1c6', amber = '#eca64d', steel = '#75848a', dark = '#253540';
   const wood = '#7c6551';
-  const roomRadio = court(-7.25, 1.61, -11.22);
+  const roomRadio = (x: number, y: number, z: number) => court(-6.84 + x, 1.61 + y, -11.22 + z);
   art.box(court(-7.25, .29, -9.85), [2.65, .58, 3.5], wood, true);
   for (let i = 0; i < 3; i++) {
     const height = .17 * (3 - i);
@@ -35,8 +35,12 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
   art.box(court(-7.25, .97, -11.3), [1.7, .78, .62], wood, true);
   art.box(court(-7.25, 1.39, -11.3), [1.82, .12, .73], cream);
   art.paper(ox - 7.75, oy + 1.458, oz - 11.25, .43, .32);
-  art.box(roomRadio, [.59, .29, .34], slate, false, 'choiceB');
-  art.beam(court(-7.49, 1.72, -11.28), court(-7.58, 2.17, -11.4), .028, steel, false, 'choiceB');
+  art.box(roomRadio(0, 0, 0), [.59, .29, .34], slate, false, 'choiceB');
+  art.beam(roomRadio(-.24, .11, -.06), roomRadio(-.33, .56, -.18), .028, steel, false, 'choiceB');
+  art.box(roomRadio(-.095, 0, .173), [.32, .19, .014], dark, false, 'choiceB');
+  for (const y of [-.06, -.02, .02, .06]) art.box(roomRadio(-.095, y, .184), [.28, .012, .014], steel, false, 'choiceB');
+  art.box(roomRadio(.16, .066, .174), [.16, .04, .015], amber, false, 'choiceB');
+  art.cyl(roomRadio(.16, -.04, .185), .047, .038, cream, false, 'choiceB', [Math.PI / 2, 0, 0]);
   const [mx, my, mz] = repair;
   art.box([mx, my + .46, mz - .77], [1.22, .91, .49], wood);
   art.box([mx, my + .94, mz - .77], [1.44, .14, .69], slate);
@@ -174,7 +178,7 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
   // The everyday errands answer from a comfortable step away (reach is measured from the feet to a panel at
   // chest height, so 1.85 only left about 1.5 m on the ground). The rescue controls keep the tight reach.
   const cartReturn = marker(P.cartReturn, [...cartStart], ERRAND_REACH);
-  const markers = [marker(P.room, court(-7.25, 1.5, -10.55), ERRAND_REACH), marker(P.workshop, [mx, my + .91, mz], ERRAND_REACH),
+  const markers = [marker(P.room, roomRadio(0, -.11, .67), ERRAND_REACH), marker(P.workshop, [mx, my + .91, mz], ERRAND_REACH),
     marker(P.cartStop, court(8.25, 1.08, 9.77), ERRAND_REACH), cartReturn,
     marker(P.radio, [rx, ry + 1.1, rz], ERRAND_REACH), marker(P.survey, bay(0, VALLEY_SURVEY_HEIGHT, 3.5)),
     marker(P.breaker, bay(-1.72, 1.13, 2.89)), marker(P.ratchet, bay(1.73, 1.13, 2.92)),

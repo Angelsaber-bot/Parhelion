@@ -141,6 +141,13 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
     // `ready` does not block optional art; tests explicitly settle its real task chain.
     await settleAssets();
     return{window,world:(window as any).__world,errors,warnings,settleAssets,virtualConsole:dom.virtualConsole,
+      newGame(accept = true) {
+        const doc = window.document;
+        doc.exitPointerLock();
+        doc.getElementById('settings-open')!.click();
+        doc.getElementById('world-new-game')!.click();
+        doc.getElementById(accept ? 'world-new-game-confirm' : 'world-new-game-cancel')!.click();
+      },
       async snapshot(title:string){
         const clone=window.document.documentElement.cloneNode(true) as HTMLElement;
         clone.querySelectorAll('script,link').forEach(node=>node.remove());

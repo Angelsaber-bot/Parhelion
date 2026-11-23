@@ -34,8 +34,8 @@ test('actual main quest browser only pins deliberately, advances saved steps, an
   open();const link=[...panel.querySelectorAll<HTMLButtonElement>('button')].find(b=>/Optional investigations & chronicles/.test(b.textContent!))!;link.click();assert.equal(panel.hidden,true);assert.equal(w.campaignJournal.open,true);key('Escape','Escape');
   open();const categories=panel.querySelectorAll('select')[1];categories.value='main';categories.dispatchEvent(new h.window.Event('change'));
   panel.querySelector<HTMLButtonElement>('[data-quest-track="main:alpha"]')!.click();await enter();frames();assert.ok(d.getElementById('world-tracked-story'));
-  assert.equal(w.settings.bind('reset','KeyK',true),null);h.window.confirm=()=>false;key('KeyK');assert.equal(w.done.has('armory_rack'),true,'canceling reset preserves actual progress');
-  await enter();h.window.confirm=()=>true;key('KeyK');frames();assert.equal(w.done.has('armory_rack'),false);assert.equal(d.getElementById('world-tracked-story'),null,'confirmed reset clears old explicit quest pin');
+  assert.equal(w.settings.bind('reset','KeyK',true),'reserved');key('KeyK');h.newGame(false);assert.equal(w.done.has('armory_rack'),true,'canceling reset preserves actual progress');
+  h.newGame();frames();assert.equal(w.done.has('armory_rack'),false);assert.equal(d.getElementById('world-tracked-story'),null,'confirmed reset clears old explicit quest pin');
   // Finished exploration landmarks use continuous-world navigation, independently
   // of the still-unreleased Orleans campaign and the old story gate prerequisites.
   const belfry=w.layout.markers.find((m:{id:string})=>m.id==='orleans_belfry_view')!;

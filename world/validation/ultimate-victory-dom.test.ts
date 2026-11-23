@@ -21,7 +21,7 @@ test('NON-GPU ultimate boss victory waits for gameplay and new-game reset discar
    const toast=window.document.getElementById('toast')!;toast.textContent='before ultimate';let killed=false;
    for(let i=0;i<1200&&w.ultimateDirector.active;i++){frame();if(boss.hp===0){killed=true;assert.doesNotMatch(toast.textContent??'',/已击败|再次挑战成功|defeated|Rematch won/,'victory must not be consumed behind the full-screen stage');}}
    assert.equal(killed,true,'production ultimate actually kills boss');assert.equal(w.combat.state.bossStarted,false);assert.equal(w.ultimateDirector.active,false);assert.equal(w.actions.skills.casting,false);
-   if(discard){window.confirm=()=>true;key('KeyR');assert.equal(w.done.has('armory_rack'),false,'real reset path ran');(window.document.getElementById('start') as HTMLElement).click();frame(4);assert.doesNotMatch(toast.textContent??'',/已击败|再次挑战成功|defeated|Rematch won/,'reset drops the deferred old-game victory');}
+   if(discard){h.newGame();assert.equal(w.done.has('armory_rack'),false,'real reset path ran');(window.document.getElementById('start') as HTMLElement).click();frame(4);assert.doesNotMatch(toast.textContent??'',/已击败|再次挑战成功|defeated|Rematch won/,'reset drops the deferred old-game victory');}
    else{frame();assert.match(toast.textContent??'',/已击败|再次挑战成功|defeated|Rematch won/,'victory shown on first normal gameplay frame');assert.equal(toast.classList.contains('show'),true);}
   });
   await h.settleAssets();assert.deepEqual(h.errors,[]);assert.deepEqual(h.warnings,[]);

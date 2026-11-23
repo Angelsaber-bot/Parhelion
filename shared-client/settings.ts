@@ -27,9 +27,7 @@ export const ACTIONS: Record<SettingsMode, ActionDef[]> = {
     { id: 'summon', label: '召唤／收回从者', binding: 'KeyT' }, { id: 'inspectServant', label: '查看从者模型', binding: 'KeyU' }, { id: 'switchServant', label: '切换从者', binding: 'KeyY' },
     { id: 'ping', label: '联机标记', binding: 'Mouse1', secondary: 'KeyL' },
     { id: 'map', label: '大地图', binding: 'KeyM' }, { id: 'guide', label: '任务指引', binding: 'KeyG' }, { id: 'objectives', label: '任务栏 显示／隐藏', binding: 'KeyJ' },
-    { id: 'help', label: '帮助开关', binding: 'KeyH' }, { id: 'fly', label: '自由飞行调试', binding: 'KeyV' },
-    { id: 'collision', label: '碰撞体调试', binding: 'KeyC' }, { id: 'reset', label: '重置进度', binding: 'KeyR' },
-    ...[1,2,3,4,5,6,7].map((n) => ({ id: `teleport${n}`, label: `调试传送 ${n}`, binding: `Digit${n}` }))],
+    { id: 'help', label: '帮助开关', binding: 'KeyH' }],
 };
 export function defaultSettings(mode: SettingsMode): InputSettings {
   return { version: 3, sensitivity: 1, adsSensitivity: mode === 'arena' ? .85 : .55, invertY: false,
@@ -55,7 +53,7 @@ function normalizeSettings(mode: SettingsMode, raw: unknown): { value: InputSett
   const legacy = value.version === 1;
   const assignments: { action: string; slot: BindingSlot; binding: string; custom: boolean; order: number }[] = [];
   for (const [order, a] of ACTIONS[mode].entries()) {
-    const oldDefault = a.id === 'aim' ? 'Mouse2' : mode === 'world' && a.id === 'interact' ? 'KeyE' : mode === 'world' && a.id === 'fly' ? 'KeyF' : a.binding;
+    const oldDefault = a.id === 'aim' ? 'Mouse2' : mode === 'world' && a.id === 'interact' ? 'KeyE' : a.binding;
     const old = primary[a.id], custom = bindingAllowed(a.id, old) && (!legacy || old !== oldDefault);
     if (old !== undefined && !bindingAllowed(a.id, old)) notices.push(`「${a.label}」的无效主按键已修复。`);
     assignments.push({ action: a.id, slot: 'primary', binding: custom ? old as string : a.binding, custom, order });
@@ -90,7 +88,7 @@ function normalizeSettings(mode: SettingsMode, raw: unknown): { value: InputSett
   if (legacy) {
     const keys = (action: string) => [next.bindings[action], next.secondaryBindings[action]].filter(Boolean).map(bindingLabel).join(' / ');
     notices.unshift(mode === 'world'
-      ? `操作已更新：${keys('aim')} 按住瞄准，${keys('interact')} 互动，${keys('fly')} 自由飞行调试；已移除手动飞行升降，跳跃、滑翔和上升气流保留。自定义按键已保留。`
+      ? `操作已更新：${keys('aim')} 按住瞄准，${keys('interact')} 互动。`
       : `操作已更新：${keys('aim')} 均可按住瞄准；自定义按键已保留。`);
   }
   if (value.version !== 3) {

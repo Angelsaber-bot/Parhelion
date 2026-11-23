@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
 import { WORLD_PROGRESS_KEY, INITIAL_SPAWN_ID } from '../src/core/progress';
 
-test('NON-GPU actual travel buttons and reset keys execute production handlers with revalidation', async (t) => {
+test('NON-GPU actual travel and new-game buttons execute production handlers with revalidation', async (t) => {
   const harness = await bootWorldWithoutGpu({ deterministic: true });
   try {
     const { window, world } = harness, document = window.document;
@@ -70,7 +70,7 @@ test('NON-GPU actual travel buttons and reset keys execute production handlers w
       assert.equal(world.player.pos.x, stops[1].position[0]); assert.equal(world.player.pos.z, stops[1].position[2]);
     });
 
-    await t.test('actual R cancel preserves progress; actual R accept clears gameplay and retains preferences', async () => {
+    await t.test('R is harmless and only the confirmed menu action clears gameplay and retains preferences', async () => {
       world.settings.update({ sensitivity: 1.3, adsSensitivity: .7, invertY: true });
       const volume = document.getElementById('world-audio-volume') as HTMLInputElement;
       volume.value = '.2'; volume.dispatchEvent(new window.Event('input', { bubbles: true }));
@@ -84,14 +84,16 @@ test('NON-GPU actual travel buttons and reset keys execute production handlers w
       window.localStorage.setItem(WORLD_PROGRESS_KEY, JSON.stringify({ done: [...world.done], found: [...world.found] }));
       window.localStorage.setItem('fixture-unrelated-preference', 'keep');
       const progress = window.localStorage.getItem(WORLD_PROGRESS_KEY), done = [...world.done], found = [...world.found], position = world.player.pos.clone();
-      let prompts = 0;
-      window.confirm = message => { prompts++; assert.match(message, /新游戏|new game/); return false; };
-      key('KeyR');
-      assert.equal(prompts, 1); assert.equal(document.pointerLockElement, null);
+      window.confirm = () => { throw new Error('Unexpected native reset prompt'); };
+      key('KeyR'); key('KeyC'); key('KeyV'); key('Digit1');
+      assert.equal(document.pointerLockElement, document.getElementById('view'));
+      assert.ok(world.player.pos.equals(position));
+      harness.newGame(false);
+      assert.equal(document.pointerLockElement, null);
       assert.deepEqual([...world.done], done); assert.deepEqual([...world.found], found); assert.ok(world.player.pos.equals(position));
       assert.equal(window.localStorage.getItem(WORLD_PROGRESS_KEY), progress);
-      await enter(); window.confirm = () => { prompts++; return true; }; key('KeyR');
-      assert.equal(prompts, 2); assert.equal(document.pointerLockElement, null);
+      harness.newGame();
+      assert.equal(document.pointerLockElement, null);
       assert.equal(world.done.size, 0); assert.equal(world.found.size, 0); assert.equal(world.contract.roster.length, 0);
       assert.equal(world.actions.skills.energy, 0); assert.equal(world.actions.skills.cooldown('skill'), 0);
       assert.equal(world.rig.joints.Gun.visible, false);

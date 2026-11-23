@@ -35,11 +35,10 @@ test('NON-GPU actual legacy startup migrates once; confirmed new game remains em
     for (const key of LEGACY_WORLD_PROGRESS_KEYS) assert.equal(window.localStorage.getItem(key), null);
     const migrated = window.localStorage.getItem(WORLD_PROGRESS_KEY);
     const enter = async () => { (document.getElementById('start') as HTMLElement).click(); await Promise.resolve(); };
-    const reset = () => { document.body.dispatchEvent(new window.KeyboardEvent('keydown', { code: 'KeyR', key: 'r', bubbles: true, cancelable: true })); document.body.dispatchEvent(new window.KeyboardEvent('keyup', { code: 'KeyR', bubbles: true })); };
-    await enter(); window.confirm = () => false; reset();
+    await enter(); first.newGame(false);
     assert.equal(window.localStorage.getItem(WORLD_PROGRESS_KEY), migrated);
     assert.equal(world.contract.companionSummoned, true);
-    await enter(); window.confirm = () => true; reset();
+    first.newGame();
     assert.equal(world.done.size, 0); assert.equal(world.found.size, 0); assert.equal(world.rig.joints.Gun.visible, false);
     assert.equal(world.contract.roster.length, 0); assert.equal(world.contract.companionSummoned, false);
     for (const [key, value] of Object.entries(preferences)) assert.equal(window.localStorage.getItem(key), value, key);

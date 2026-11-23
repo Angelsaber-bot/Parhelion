@@ -12,7 +12,7 @@ import { createHomeTownDistricts } from './environment/homeTownDistricts';
 import { createSkyCrownLandmarks } from './environment/skyCrownLandmarks';
 import { HOME_DISTRICTS } from './story/homeTownDistrictActions';
 import { KINGDOM_K04 } from './story/kingdomBackPassage';
-import { WINTER_CHAPTERS } from './story/winterChapters';
+import { WINTER_CHAPTERS, WC } from './story/winterChapters';
 import { BLACKSAIL_CHAPTERS } from './story/blacksailChapters';
 import { KYOTO_COURT, JC } from './story/kyotoDecreeCourt';
 import { ORLEANS_ENTRIES, OE, orleansEntryRequired } from './story/orleansEntries';
@@ -265,6 +265,7 @@ import { WorldCombat } from './combat/combatView';
 import { WorldGraphicsRecovery } from './rendering/graphicsRecovery';
 import { WorldProgress, ARMORY_MARKER, INITIAL_SPAWN_ID, clearStartOverrides } from './core/progress';
 import { createProgressPanel } from './ui/progressPanel';
+import { installNewGameControl } from './ui/newGameControl';
 import { WeaponFinishStore } from './weapons/weaponFinishes';
 import { WorldCoop } from './coop/worldCoop';
 import { createCoopPanel } from './coop/coopPanel';
@@ -831,6 +832,7 @@ addEventListener('pagehide', event => { if (!event.persisted) egyptWaterPlanLand
 const egyptRiverConsequences = createEgyptRiverConsequences((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
 const qinCampaignScene=createQinCampaignScene((x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null,p=>residentQueries.clear(p,.38,1.8));
 world.add(qinCampaignScene.root);layout.markers.push(...qinCampaignScene.markers);targets.push(...qinCampaignScene.targets);colliders.push(...qinCampaignScene.colliders);
+let fieldChapters:ReturnType<typeof createFieldChapters>|undefined;
 let qinCampaign:ReturnType<typeof createChapterWorkRuntime>|undefined;
 let qinCrewTransit:ReturnType<typeof createQinCrewTransit>|undefined;
 addEventListener('pagehide',e=>{if(!e.persisted)qinCampaignScene.dispose();});
@@ -1112,6 +1114,11 @@ function valleyGuide() {
   return point ? { ...guide, p: point } : null;
 }
 function journeyGuide() {
+  const escort = fieldChapters?.escortGuide();
+  if (escort) {
+    const action = fieldChapters!.action(escort.id)!;
+    return { region: action.region, targetId: escort.id, p: escort.p, title: action.label, text: escort.label };
+  }
   const here = insideSkyCrown(player.pos) ? 'sky' : regionAt(player.pos.x, player.pos.z).id;
   if (typeof activeRealmClimax !== 'undefined' && activeRealmClimax) {
     const fight = activeRealmClimax;
@@ -1423,6 +1430,8 @@ function passageLabel(passage: NonNullable<ReturnType<typeof nextStoryPass>>) {
   return bilingual(`经${passage.gate.via}前往${name}`, `Via ${localizeText(passage.gate.via)} to ${localizeText(name)}`);
 }
 function guideTarget(): { p: [number, number, number]; label: string } | null {
+  const escort = fieldChapters?.escortGuide();
+  if (escort) return { p: escort.p, label: bilingual(...escort.label) };
   const here = regionAt(player.pos.x, player.pos.z).id;
   const quest=trackedQuest();
   if(quest){
@@ -1992,6 +2001,12 @@ function resetProgress() {
 const keys = new Set<string>();
 const aim = new ShoulderAim();
 const settings = new SettingsStore('world');
+const debugKeys = new Map<string, string>();
+if (params.get('debugControls') === '1') {
+  debugKeys.set('KeyV', 'fly');
+  debugKeys.set('KeyC', 'collision');
+  for (let n = 1; n <= 7; n++) debugKeys.set(`Digit${n}`, `teleport${n}`);
+}
 // Input capture may use native pointer lock or the explicit accessible drag mode.
 let locked = false, dragLook = false;
 const start = $('start');
@@ -2079,16 +2094,9 @@ document.addEventListener('mousemove', (e) => {
   player.yaw -= e.movementX * sensitivity;
   player.pitch = THREE.MathUtils.clamp(player.pitch - e.movementY * sensitivity * (settings.value.invertY ? -1 : 1), -1.5, 1.5);
 });
-function requestProgressReset() {
-  clearInput();
-  if (document.pointerLockElement) document.exitPointerLock();
-  let accepted = false;
-  try { accepted = window.confirm(bilingual('确定开始新游戏吗？这会清除大世界任务、契约和发现，并空手回到初始营地。按键、语言和画质设置保留。', 'Start a new game? This clears World quests, contracts and discoveries, returning you unarmed to the starting camp. Controls, language and graphics settings are kept.')); } catch { /* An unavailable confirmation never destroys progress. */ }
-  if (accepted) resetProgress();
-}
 function press(binding: string, repeat = false) {
   if (bootFailed || worldExited || graphicsRecovery?.blocked) return;
-  const action = settings.action(binding);
+  const action = settings.action(binding) ?? debugKeys.get(binding);
   if (!action || !locked || settingsPanel.open || document.visibilityState !== 'visible' || !document.hasFocus()) return;
   if (action === 'interact' && narrative?.open) { if (!repeat) { narrative.advance(); hudRevision++; } return; }
   if (action === 'travel') { if (!repeat) travelPanel.show(); return; }
@@ -2107,6 +2115,14 @@ function press(binding: string, repeat = false) {
   if (!gameplayActive() || combat.defeated) return;
   if (repeat) return;
   if (fieldSideSites?.royalFerry?.riding) return;
+  if (typeof fieldChapters !== 'undefined' && fieldChapters?.escorting()) {
+    if (action === 'interact') {
+      fieldChapters.interruptEscort();
+      toast(bilingual('队伍在最近的交接点等你。回来互动即可继续。', 'The party will wait at its last checkpoint. Interact there to continue.'));
+      return;
+    }
+    if (['fire','melee','skill','evade','ultimate','jump','fly'].includes(action) || action.startsWith('teleport')) fieldChapters.interruptEscort();
+  }
   if (['fire','melee','skill','evade','ultimate','jump'].includes(action)) {orleansWorksRuntime?.interrupt(); compactRelayRuntime?.interrupt(); kingdomGateRuntime?.interrupt(); adventureRuntime?.interrupt(); }
   if (actions?.press(action)) { hudRevision++; return; }
   keys.add(binding);
@@ -2131,7 +2147,6 @@ function press(binding: string, repeat = false) {
     if (next) { const n = servantName(next); toast(bilingual(`切换从者：${n.zh}`, `Servant switched: ${n.en}`)); }
     else toast(bilingual('缔结第二份契约后才能切换从者', 'Contract a second servant to switch'));
   }
-  if (action === 'reset' && !down('sprint')) requestProgressReset();
   if (action.startsWith('teleport')) {
     clearInput(); const n = Number(action.slice('teleport'.length));
     const here = layout.areas.filter((a) => a.region === regionAt(player.pos.x, player.pos.z).id);
@@ -2155,7 +2170,7 @@ addEventListener('keydown', (e) => {
       return;
     }
   }
-  if (!settingsPanel.open && locked && settings.action(e.code)) e.preventDefault();
+  if (!settingsPanel.open && locked && (settings.action(e.code) || debugKeys.has(e.code))) e.preventDefault();
   press(e.code, e.repeat);
 });
 addEventListener('keyup', (e) => release(e.code));
@@ -2181,7 +2196,7 @@ const reducedEffects = () => reducedOverride ?? reducedMotion.matches;
 const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatToast, reducedEffects, groundHeight: (x, z) => grid.sampleHeight(x, z),
   onVictory(core) { done.add(core); save(); applyWorldState(); },
   onDamage(hit) { actions?.recordDamage(hit); audio.contact(); },
-  onHurt(damage, from) { relayDamageRevision++; audio.hurt(); if (from) anim.flinch(Math.atan2(from.x - player.pos.x, from.z - player.pos.z), Math.min(1, .45 + damage / 30)); },
+  onHurt(damage, from) { fieldChapters?.interruptEscort(); relayDamageRevision++; audio.hurt(); if (from) anim.flinch(Math.atan2(from.x - player.pos.x, from.z - player.pos.z), Math.min(1, .45 + damage / 30)); },
   feedbackCues: { precise: () => audio.precise(), chain: n => audio.chain(n), heartbeat: () => audio.heartbeat() },
   onPartnerHurt(damage) { if (typeof coop !== 'undefined') coop.partnerHurt(damage); },
   onPerfectEvade() { perfectEvadeSlow = PERFECT_EVADE.slow; if (actions) actions.evade.cooldown = 0; audio.perfectEvade(); },
@@ -2382,7 +2397,6 @@ for(const c of FIELD_CHAPTER_CONTENT)for(const a of c.set.actions)for(const flag
 const storyShotSeen=new Set([...storyShotBeats.keys()].filter(f=>done.has(f)));
 fieldChapterScene.apply(done);
 world.add(fieldChapterScene.root);layout.markers.push(...fieldChapterScene.markers);for(const marker of fieldChapterScene.markers)markers.set(marker.id,marker);targets.push(...fieldChapterScene.targets);
-let fieldChapters:ReturnType<typeof createFieldChapters>|undefined;
 // B08: two lift covers on Meyrick's command deck. They rise from his second stage (real colliders),
 // ride with the flagship, and sink back when the fight is not running.
 const meyrickCovers=[-4.5,4.5].map(dx=>{
@@ -2419,9 +2433,9 @@ function updateMeyrickCovers(dt:number){
 addEventListener('pagehide',e=>{if(!e.persisted)fieldChapterScene.dispose();});
 colliders.push(...homeTown.activities.colliders);targets.push(...homeTown.activities.targets);
 addEventListener('pagehide',e=>{if(!e.persisted)homeTown?.dispose();});
-function speakDialogue(line: [string,string], speaker: [string,string] = ['交谈','Conversation']) {
+function speakDialogue(line: [string,string], speaker: [string,string] = ['交谈','Conversation'], cue: 'interaction' | 'radioTransmission' = 'interaction') {
   if (graphicsRecovery?.blocked || bootFailed || worldExited) return;
-  clearInput(); narrative!.show(line,speaker); hudRevision++; audio.interaction();
+  clearInput(); narrative!.show(line,speaker); hudRevision++; audio[cue]();
 }
 const actionHud = createActionHud(action => settings.label(action));
 weaponFinishControl = createWeaponFinishControl(weaponFinishStore, done, () => applyWeaponFinish());
@@ -2435,7 +2449,7 @@ function reloadImportedProgress() {
   // replacement flags if browser navigation is blocked, canceled or throws.
   graphicsRecovery?.dispose();
   abortUltimate(); clearInput(); falseDawnRuntime?.dispose(); compactRelayRuntime?.dispose(); combat.cancelStoryEncounter();
-  travelPanel.hide(); arenaTrainingPanel.hide(); campaignJournal?.hide(); questJournal?.hide(); settingsPanel.close(); progressPanel.dispose();
+  travelPanel.hide(); arenaTrainingPanel.hide(); campaignJournal?.hide(); questJournal?.hide(); settingsPanel.close(); newGameControl.dispose(); progressPanel.dispose();
   audio.setActive(false);
   if (document.pointerLockElement) document.exitPointerLock();
   const retry = document.createElement('button'); retry.id = 'world-reload-import'; retry.type = 'button';
@@ -2455,7 +2469,13 @@ function reloadImportedProgress() {
 }
 const progressPanel = createProgressPanel(worldProgress, reloadImportedProgress);
 document.querySelector('#world-settings .settings-sliders')?.after(progressPanel.root);
-addEventListener('pagehide', event => { if (!event.persisted) progressPanel.dispose(); });
+const newGameControl = installNewGameControl(progressPanel.root, () => {
+  if (bootFailed || worldExited || graphicsRecovery?.blocked || !settingsPanel.open) return;
+  progressPanel.cancelPendingRead();
+  settingsPanel.close();
+  resetProgress();
+});
+addEventListener('pagehide', event => { if (!event.persisted) { newGameControl.dispose(); progressPanel.dispose(); } });
 const audioGroup=document.createElement('div');audioGroup.className='settings-sliders';
 const volumeLabel=document.createElement('label'),volumeText=document.createElement('span'),volume=document.createElement('input');
 volume.type='range';volume.min='0';volume.max='1';volume.step='.05';volume.value=String(audio.volume);volume.id='world-audio-volume';volumeLabel.append(volumeText,volume);
@@ -2470,7 +2490,7 @@ function travelContext(): TravelContext {
   const threatened = combat.state.enemies.some(e => e.active && !e.pacified && e.mode !== 'dead' && Math.hypot(e.p.x-player.pos.x,e.p.z-player.pos.z)<28);
   return { sessionReady: !bootFailed && !worldExited && !graphicsRecovery?.blocked, defeated: combat.defeated, combatActive: combat.bossStarted || !!combat.storyEncounter || !!compactRelayRuntime?.active || (typeof helionFight !== 'undefined' && helionFight.active) || (typeof activeRealmClimax !== 'undefined' && !!activeRealmClimax), threatened, quietSeconds: combat.state.quietFor,
     flying: player.flying, gliding: player.gliding, swimming: player.swimming, onGround: player.onGround,
-    carrying: !!residentEventRuntime?.carrying||!!homeTown?.activities.carrying, mounted: fortCannon.mounted || !!fieldSideSites?.royalFerry?.riding || egyptSolarBoat.aboard(player), actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
+    carrying: !!residentEventRuntime?.carrying||!!homeTown?.activities.carrying||!!fieldChapters?.escorting(), mounted: fortCannon.mounted || !!fieldSideSites?.royalFerry?.riding || egyptSolarBoat.aboard(player), actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
 }
 function updateSettlementCheckpoint() {
   const context = travelContext(), pos = player.pos.toArray();
@@ -3975,7 +3995,16 @@ egyptCampaign=createChapterWorkRuntime({done,actions:egyptChapterById,ready:egyp
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
  start:spec=>{const cast=EGYPT_FIGHT_CASTS[spec.id];if(cast)spec={...spec,actors:cast};const slots:[number,number][]=[];for(const r of [4,6,8])for(let i=0;i<12;i++)slots.push([Math.cos(i*Math.PI/6)*r,Math.sin(i*Math.PI/6)*r]);const actors=selectStoryPositions(spec,spec.actors,slots);return actors.length===spec.actors.length&&combat.startStoryEncounter({...spec,actors},{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated}).ok;},
 });
+const fieldEscorts = FIELD_CHAPTER_CONTENT.flatMap(c => c.set.actions.filter(action => action.escort));
 fieldChapters=createFieldChapters({done,sets:FIELD_CHAPTER_CONTENT.map(c=>c.set),save,changed:applyWorldState,toast:line=>toast(bilingual(...line)),
+ escortRoute: id => {
+   const task = fieldEscorts.find(action => action.id === id)?.escort, origin = fieldChapterScene.point(id);
+   if (!task || !origin) return;
+   return task.offsets.map(([dx,dz]) => {
+     const x = origin[0] + dx, z = origin[2] + dz;
+     return [x, residentQueries.ground(x, z, origin[1] + 1.8)?.point.y ?? origin[1], z];
+   });
+ },
  position:id=>markers.get(id)?.p,
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachFieldMarker(m);},
  start:spec=>{const slots:[number,number][]=[];for(const r of [4,6,8])for(let i=0;i<12;i++)slots.push([Math.cos(i*Math.PI/6)*r,Math.sin(i*Math.PI/6)*r]);const actors=selectStoryPositions(spec,spec.actors,slots);return actors.length===spec.actors.length&&combat.startStoryEncounter({...spec,actors},{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated}).ok;},
@@ -4069,7 +4098,7 @@ function shootCannon() {
 function shoot() {
   if (fieldSideSites?.royalFerry?.riding) return;
   if(typeof homeTown!=='undefined'&&homeTown?.activities.carrying)return;
-  if(residentEventRuntime?.carrying)return;
+  if(residentEventRuntime?.carrying || fieldChapters?.carryingStretcher())return;
   if (fortCannon.mounted) { shootCannon(); return; }
   if (!worldProgress.armed || !gameplayActive() || inspectServant || player.flying || actions?.melee.active || (actions?.skills.casting && actions.skills.selected === null) || actions?.evade.active || !combat.canShoot()) return;
   const targetCollider = (c: Collider) => c.name.startsWith('COL_TGT_');
@@ -4398,8 +4427,8 @@ function advancePrologue(id: string) {
     settlementNpcs.gesture(id === P.steward ? P.steward : P.apprentice);
     speakDialogue(line, speaker);
     if (typeof noteTalk === 'function') noteTalk(id === P.steward ? P.steward : P.apprentice);
-  } else if (id === P.radio) {
-    speakDialogue(line, ['外勤电台', 'Field radio']);
+  } else if (id === P.room || id === P.radio) {
+    speakDialogue(line, id === P.room ? ['旧收音机', 'Old radio'] : ['外勤电台', 'Field radio'], 'radioTransmission');
   } else {
     if (id !== P.pin) audio.interaction();
     toast(bilingual(...line));
@@ -4761,7 +4790,7 @@ function finisherBeat(id: string) {
 /** This player's pose for the co-op partner's screen. */
 function coopWireState(speed: number, ads: number): PlayerWireState {
   const melee = actions?.melee.active ? [actions.melee.phase, actions.melee.combo, actions.melee.style?.id ?? equippedMeleeId] as [number, number, WorldMeleeId] : undefined;
-  const armed = worldProgress.armed && !residentEventRuntime?.carrying;
+  const armed = worldProgress.armed && !residentEventRuntime?.carrying && !fieldChapters?.carryingStretcher();
   return { p: [player.pos.x, player.pos.y, player.pos.z], f: anim.facing, v: speed, g: player.onGround ? 1 : 0, sw: player.swimming ? 1 : 0, gl: player.gliding ? 1 : 0,
     a: ads, pi: player.pitch, fi: armed && down('fire') && !actions?.melee.active ? 1 : 0, ar: armed ? 1 : 0, ...(melee ? { m: melee } : {}),
     gun: equippedGunId, mel: equippedMeleeId, hp: combat.state.hp, max: combat.state.maxHp };
@@ -4851,6 +4880,11 @@ function frame(now: number) {
     sprint: !combat.defeated && down('sprint'),
     evade: undefined as {x:number;z:number;strength:number}|undefined,
   };
+  if (fieldChapters?.escorting()) {
+    // Keep pace with the other carrier or the families. Diagonal input gets the same walking speed.
+    const pace = .55 / Math.max(1, Math.hypot(input.x, input.z));
+    input.x *= pace; input.z *= pace; input.sprint = false;
+  }
   if (cold.frozen) { input.x *= 0.55; input.z *= 0.55; input.sprint = false; }
   while (acc + 1e-9 >= STEP) {
     const active = gameplayActive() && !player.flying && !combat.defeated;
@@ -4877,10 +4911,10 @@ function frame(now: number) {
     acc = Math.max(0, acc - STEP);
   }
 
-  const canAim = worldProgress.armed && !residentEventRuntime?.carrying && (typeof homeTown==='undefined'||!homeTown?.activities.carrying) && gameplayActive() && !player.swimming && !player.gliding && !player.flying;
+  const canAim = worldProgress.armed && !fieldChapters?.carryingStretcher() && !residentEventRuntime?.carrying && (typeof homeTown==='undefined'||!homeTown?.activities.carrying) && gameplayActive() && !player.swimming && !player.gliding && !player.flying;
   if (!canAim) for (const binding of settings.bindingsFor('aim')) keys.delete(binding);
   const ads = aim.step(dt, canAim);
-  $('movement-mode').textContent = player.flying ? bilingual(`自由飞行调试 · ${settings.label('fly')} 退出`, `Free-flight test · ${settings.label('fly')} Exit`)
+  $('movement-mode').textContent = player.flying ? bilingual('自由飞行调试 · V 退出', 'Free-flight test · V to exit')
     : player.swimming ? bilingual(`游泳 · ${settings.label('jump')} 出水`, `Swimming · ${settings.label('jump')} Leave water`)
     : player.gliding ? bilingual(`滑翔 · ${settings.label('jump')} 收翼 · 上升气流可抬升`, `Gliding · ${settings.label('jump')} Fold glider · Updrafts provide lift`)
     : '';
@@ -4898,7 +4932,7 @@ function frame(now: number) {
   rig.root.visible = thirdPerson;
   // Talking with a resident: the protagonist turns to them as well.
   const talkAt = talkWith ? settlementNpcs.getPosition(talkWith) : null, talkYaw = talkAt ? Math.atan2(talkAt[0] - player.pos.x, talkAt[2] - player.pos.z) : null;
-  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : typeof talkYaw === 'number' ? talkYaw : null, gliding: player.gliding, carrying:residentEventRuntime?.carrying??(typeof homeTown!=='undefined'&&homeTown?.activities.carrying?'blanket':undefined), armed: worldProgress.armed&&!residentEventRuntime?.carrying&&(typeof homeTown==='undefined'||!homeTown?.activities.carrying), aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire') && !actions?.melee.active && !(actions?.skills.casting && actions.skills.selected === null), lookYaw: player.yaw + Math.PI, melee: actions?.melee.active ? { phase: actions.melee.phase, combo: actions.melee.combo, yaw: actions.melee.yaw, style: actions.melee.style?.id } : undefined });
+  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : typeof talkYaw === 'number' ? talkYaw : null, gliding: player.gliding, carrying:residentEventRuntime?.carrying??((typeof homeTown!=='undefined'&&homeTown?.activities.carrying)||fieldChapters?.carryingStretcher()?'blanket':undefined), armed: worldProgress.armed&&!fieldChapters?.carryingStretcher()&&!residentEventRuntime?.carrying&&(typeof homeTown==='undefined'||!homeTown?.activities.carrying), aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire') && !actions?.melee.active && !(actions?.skills.casting && actions.skills.selected === null), lookYaw: player.yaw + Math.PI, melee: actions?.melee.active ? { phase: actions.melee.phase, combo: actions.melee.combo, yaw: actions.melee.yaw, style: actions.melee.style?.id } : undefined });
   coop.update(dt, camera, gameplayActive() || coop.session.paired ? coopWireState(Math.min(hs, 12), ads) : null, player.pos, now, gameplayActive() && !player.flying);
   if (thirdPerson) {
     // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
@@ -5034,7 +5068,12 @@ function frame(now: number) {
   updateEraActors(dt);
   modelCompanion.update(dt, player.pos, anim.facing - Math.PI, !!modelCompanion.selected && contract.isFollowing(modelCompanion.selected) && companionEnabled(), !gameplayActive());
   actions?.flush(); actions?.present(dt); blade.update(!!actions?.melee.active);
-  if (hudBudget.due(now, {active: true, revision: hudRevision})) { renderContract(); actionHud.update(actions!, gameplayActive() && !inspectServant); updateTrackedStoryHud(); renderCompactRelayHud(); if (typeof syncChannelClearance === 'function') syncChannelClearance(); }
+  if (hudBudget.due(now, {active: true, revision: hudRevision})) {
+    const opening = visualRegion === 'alpha' && !worldProgress.armed && !done.has(VALLEY_PROLOGUE.record) && valleyPrologueStage(done) !== 'legacy';
+    document.body.classList.toggle('world-valley-opening', opening);
+    renderContract(); actionHud.update(actions!, gameplayActive() && !inspectServant && !opening);
+    updateTrackedStoryHud(); renderCompactRelayHud(); if (typeof syncChannelClearance === 'function') syncChannelClearance();
+  }
   settlements.update(player.pos);
   settlementApproaches.update(player.pos);
   const escortPoint=gateEscortPosition(kingdomGateRuntime?.escort??0);
@@ -5054,14 +5093,21 @@ function frame(now: number) {
   orleansCampaign?.update(dt,gameplayActive()&&!combat.defeated,regionAt(player.pos.x,player.pos.z).id==='orleans');
   if(done.has(JC.device))combat.state.earlySecondPhase.add('boss_hellfire_lord');else combat.state.earlySecondPhase.delete('boss_hellfire_lord');
   valleyTownArchitecture.apply(done);valleyTownArchitecture.update(player.pos);homeTownDistricts.update(player.pos,gameplayActive()?dt:0);skyCrownLandmarks.apply(done.has(JOURNEY.finish));updateMeyrickCovers(gameplayActive()?dt:0);updateFlagshipDrop(dt);
-  fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos,id=>fieldChapters?.progress(id)??0);qinProcessionScene.apply(done.has(QP.bridge)&&!done.has(QP.rejoin)?'cutting':done.has(QP.rejoin)&&!done.has('realm_qin_phase_1')&&!done.has('journey_qin_public_order')?'moved':'hidden');qinProcessionScene.update(gameplayActive()?dt:0,player.pos);qinStarCeiling?.update(dt,player.pos);orleansCrossingTeams.apply(done.has(ORLEANS_FINALE_FLAGS.run)?(done.has(ORLEANS_FINALE_FLAGS.o09)?'hidden':'done'):done.has('journey_orleans_crossing_open')?'rehearsing':'hidden');orleansCrossingTeams.update(gameplayActive()?dt:0,player.pos);egyptMigration.apply(done.has(EC.relocated)&&!done.has(EC.bell)?'walking':done.has(EC.bell)&&!done.has(EC.meal)?'gathered':'hidden');egyptMigration.update(gameplayActive()?dt:0,player.pos);
+  fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos,id=>fieldChapters?.progress(id)??0,id=>fieldChapters?.escortPose(id)??null);qinProcessionScene.apply(done.has(QP.bridge)&&!done.has(QP.rejoin)?'cutting':done.has(QP.rejoin)&&!done.has('realm_qin_phase_1')&&!done.has('journey_qin_public_order')?'moved':'hidden');qinProcessionScene.update(gameplayActive()?dt:0,player.pos);qinStarCeiling?.update(dt,player.pos);orleansCrossingTeams.apply(done.has(ORLEANS_FINALE_FLAGS.run)?(done.has(ORLEANS_FINALE_FLAGS.o09)?'hidden':'done'):done.has('journey_orleans_crossing_open')?'rehearsing':'hidden');orleansCrossingTeams.update(gameplayActive()?dt:0,player.pos);egyptMigration.apply(done.has(EC.relocated)&&!done.has(EC.bell)?'walking':done.has(EC.bell)&&!done.has(EC.meal)?'gathered':'hidden');egyptMigration.update(gameplayActive()?dt:0,player.pos);
   if(flagshipSplashArmed&&done.has('b06_tow')){flagshipSplashArmed=false;const at=fieldChapterScene.point('b07_hooks');if(at){flagshipSplash.trigger(new THREE.Vector3(at[0]+4,layout.world.waterLevel+.05,at[2]),9);audio.cannon();kickCamera(.8);}}
   {const inland=player.waterSurfaceAt?.(player.pos),surface=inland!=null&&Number.isFinite(inland)?inland:player.waterLevel;
    // A teleport or respawn must not read as a 300 m stride or a landing.
    if(player.pos.distanceToSquared(footDustLast)>36)footDust.clear();footDustLast.copy(player.pos);
    footDust.update(dt,player,dustSurface(regionAt(player.pos.x,player.pos.z).id,surface-player.pos.y),gameplayActive()&&!reducedEffects()&&rig.root.visible&&!(ferry?.riding));}
   iceFloes.update(dt,player.pos);
-  flagshipSplash.update(dt);fieldChapters?.update(dt,gameplayActive()&&player.onGround&&!combat.defeated,[player.pos.x,player.pos.y,player.pos.z]);
+  flagshipSplash.update(dt);
+  if (fieldChapters?.escorting() && (player.flying || player.swimming || player.gliding || combat.defeated || down('fire') || actions?.melee.active || actions?.skills.casting || actions?.evade.active)) fieldChapters.interruptEscort();
+  fieldChapters?.update(dt,gameplayActive()&&player.onGround&&!combat.defeated,[player.pos.x,player.pos.y,player.pos.z]);
+  // The interaction follows the party so a resumed save always picks up where the people are waiting.
+  for (const action of fieldEscorts) {
+    const pose = fieldChapters?.escortPose(action.id), marker = markers.get(action.id);
+    if (marker && pose) { marker.p[0] = pose.point[0]; marker.p[1] = pose.point[1] + .9; marker.p[2] = pose.point[2]; }
+  }
   orleansCampaignScene.apply(done,f=>orleansCampaign?.progress(f)??0);orleansCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);orleansWorksScene.update(gameplayActive()?dt:0,player.pos);
   const working=ORLEANS_WORK_ACTIONS.find(a=>a.id===orleansWorksRuntime?.active);orleansWorkHud.hidden=!working||!gameplayActive();
@@ -5189,9 +5235,15 @@ function frame(now: number) {
     (npcPrompt ? typeof guidedToNpc === 'function' && guidedToNpc(nearbyNpc!.position) : !!it && typeof guideBeam !== 'undefined' && Math.hypot(guideBeam.position.x - it.p[0], guideBeam.position.z - it.p[2]) < 1.6);
   if (guideOnIt) interactionPrompt = `${bilingual('◆ 主线', '◆ Story')} · ${interactionPrompt}`;
   else if (interactionPrompt && (npcPrompt || it) && document.getElementById('guide')?.classList.contains('on')) interactionPrompt = `${bilingual('可选', 'Optional')} · ${interactionPrompt}`;
+  const escorting = fieldChapters?.escorting();
+  if (escorting && gameplayActive()) {
+    const key = settings.label('interact');
+    interactionPrompt = escorting === WC.stretcher ? bilingual(`[${key}] 放下担架`, `[${key}] Set down the stretcher`)
+      : bilingual(`[${key}] 请家属在交接点等候`, `[${key}] Ask the families to wait`);
+  }
   const prompt = $('prompt');
   if (prompt.textContent !== interactionPrompt) prompt.textContent = interactionPrompt;
-  prompt.classList.toggle('story-step', guideOnIt);
+  prompt.classList.toggle('story-step', !!escorting || guideOnIt);
 
   const nowRegion = regionAt(player.pos.x, player.pos.z).id;
   if (nowRegion !== lastRegion) { lastRegion = nowRegion; renderObjective(); }

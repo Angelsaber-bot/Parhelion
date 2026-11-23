@@ -77,7 +77,7 @@ export function advanceValleyPrologue(stage: ValleyPrologueStage, id: string, do
   switch (stage) {
     case 'room':
       if (id !== P.room) return null;
-      line = ['装好旧收音机。窗边的单子还空着回程时间。', 'Old radio packed. The field slip by the window still has a blank return time.'];
+      line = ['「18:42。巡护 07 已撤走一人。还有……」一声杂音，旧收音机哑了。', '“18:42. Patrol 07 evacuated one. There’s still…” Static cuts the voice off. The old radio falls silent.'];
       break;
     case 'briefing':
       if (id !== P.steward) return null;
@@ -91,7 +91,7 @@ export function advanceValleyPrologue(stage: ValleyPrologueStage, id: string, do
       break;
     case 'workshop':
       if (id !== P.workshop) return null;
-      line = ['旧机只收不发。工坊留它检修，外勤电台在北门外。先去武器架。', 'The old set can receive but can’t transmit. Leave it here for repair. The field radio is outside the north side. Collect your gear first.'];
+      line = ['“这台只收不发。我来查天线。你领了装备，去北门外听听外勤电台，那台收得清楚。”', '“This set can only receive. I’ll check the aerial. Pick up your gear, then try the field radio outside the north door. The signal’s clearer there.”'];
       break;
     case 'radio':
       if (id !== P.radio) return null;

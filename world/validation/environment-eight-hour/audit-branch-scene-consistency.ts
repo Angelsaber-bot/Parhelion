@@ -54,7 +54,7 @@ for(const quality of ['low','med']as const)for(const branch of [0,1]){
   assert.deepEqual(colliders.map((g:any)=>hash(g.attributes.position.array)),collisionHashes);
   for(const [m,signature]of oldMaterials)assert.equal(JSON.stringify({color:m.color?.toArray(),emissive:m.emissive?.toArray(),intensity:m.emissiveIntensity,side:m.side,opacity:m.opacity}),signature,'old material untouched by branch projection');
   for(const [c,signature]of oldColors)assert.equal(hash(c.isInterleavedBufferAttribute?c.data.array:c.array),signature,'decoded color storage untouched');
-  h.window.confirm=()=>true;for(const type of ['keydown','keyup'])h.window.document.body.dispatchEvent(new h.window.KeyboardEvent(type,{code:'KeyR',bubbles:true}));frame();assert.equal(w.done.size,0);inspectCampaign(0,0);
+  h.newGame();frame();assert.equal(w.done.size,0);inspectCampaign(0,0);
   for(const site of w.falseDawnSites.sites){assert.equal(site.root.userData.falseDawnStage,'locked');assert.equal(site.art.layers.get('resolved')?.visible,false);}
   for(const layer of ['briefed','choiceA','choiceB'])assert.equal(w.falseDawnSites.sites[0].art.layers.get(layer)?.visible,false);
   assert.deepEqual(colliders.map((g:any)=>hash(g.attributes.position.array)),collisionHashes);for(const s of snapshot){assert.equal(s.m.geometry,s.g);assert.equal(s.m.material,s.mat);assert.equal(hash(s.g.attributes.position.array),s.positions);}assert.deepEqual(h.errors,[]);

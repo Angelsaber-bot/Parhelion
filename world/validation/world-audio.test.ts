@@ -48,6 +48,13 @@ test('volume/mute persist safely with low defaults, validation and denied storag
  map.set(WORLD_AUDIO_KEY,'{"volume":"loud","muted":"yes"}');const invalid=new WorldAudio({storage,listen:false});assert.equal(invalid.volume,.35);assert.equal(invalid.muted,false);
  for(const audio of[a,b,denied,invalid])audio.dispose();
 });
+test('radio carrier ends in a separate squelch and is silent when muted',()=>{
+ const f=fixture();f.audio.unlock(trusted);f.audio.setActive(true);f.audio.radioTransmission();
+ const [opening,carrier,squelch]=f.context.sources;
+ assert.equal(f.audio.activeVoices,3);assert.ok(opening.buffer);assert.equal(carrier.type,'triangle');assert.equal(squelch.buffer,opening.buffer);
+ assert.ok(opening.stopTimes[0]!<carrier.stopTimes[0]! && carrier.stopTimes[0]!<squelch.stopTimes[0]! && squelch.stopTimes[0]!<.5);
+ f.audio.setMuted(true);f.audio.radioTransmission();assert.equal(f.audio.activeVoices,0);assert.equal(f.context.sources.length,3);f.audio.dispose();
+});
 test('all cues are bounded transients; repeated dispose or later calls cannot recreate resources',()=>{
  const f=fixture();f.audio.unlock(trusted);f.audio.setActive(true);
  for(const name of ['shot','cannon','melee','contact','hurt','kill','skill','evade','interaction'] as const){f.audio[name]();for(const node of f.context.sources)node.end();assert.equal(f.audio.activeVoices,0);}

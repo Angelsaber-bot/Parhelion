@@ -42,7 +42,7 @@ test('NON-GPU four chapters: fresh save, resident, mandatory route, victory, ret
   try {
     await enter();
     for (const region of ERA_IDS) await t.test(region, async () => {
-      if (w.done.size) { closeDialogue(); window.confirm = () => true; key('KeyR'); await enter(); }
+      if (w.done.size) { closeDialogue(); h.newGame(); await enter(); }
       assert.equal(w.done.size, 0, 'each chapter starts with empty World progress');
       const chapter = ERA_STORIES[region], boss = BOSSES.find(b => b.core === chapter.core)!;
       resident(chapter.npc);
@@ -110,7 +110,7 @@ test('NON-GPU four chapters: fresh save, resident, mandatory route, victory, ret
       assert.equal(getEraStoryGuide(region, rehydrated.done), null);
       const saved = JSON.parse(window.localStorage.getItem(WORLD_PROGRESS_KEY)!);
       assert.deepEqual([...saved.done].sort(), [...w.done].sort());
-      window.confirm = () => true; key('KeyR');
+      h.newGame();
       assert.equal(site.group.userData.state.discovered, false, 'reset restores the unrepaired scene state');
       assert.equal(w.done.size, 0); assert.equal(w.found.size, 0); assert.equal(w.contract.roster.length, 0);
       assert.equal(JSON.parse(window.localStorage.getItem(WORLD_PROGRESS_KEY)!).done.length, 0);

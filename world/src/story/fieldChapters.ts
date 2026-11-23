@@ -1,6 +1,8 @@
 import type { Localized } from '../settlements/types';
 import type { EnemyRole } from '../combat/enemyRoles';
 import type { StoryEncounterSpec } from './storyEncounters';
+import { advanceEscort, escortPoseAt, prepareEscortRoute, type EscortRoute, type EscortTask } from './fieldEscort';
+export type { FieldEscortPose } from './fieldEscort';
 
 /** Regional main-story chapters authored as real field actions on the existing maps.
  * Every action is a physical marker: talk/operate, a story fight, a shot target, or timed work
@@ -20,7 +22,8 @@ export interface FieldAction {
   readonly any?: readonly string[];
   /** Closed once any of these is done. */
   readonly not?: readonly string[];
-  readonly kind?: 'fight' | 'shot' | 'work';
+  readonly kind?: 'fight' | 'shot' | 'work' | 'escort';
+  readonly escort?: EscortTask;
   /** Alternative methods: the first one done closes the others. */
   readonly alt?: string;
   /** Switchable plan choice: picking one clears its siblings until `lock` is done. */
@@ -76,6 +79,7 @@ export interface FieldChapterHooks {
   toast(line: Localized): void;
   reachable(id: string): boolean;
   position(id: string): [number, number, number] | undefined;
+  escortRoute?(id: string): readonly V3[] | undefined;
   start(spec: StoryEncounterSpec): boolean;
 }
 /** Shared transaction rules: a failed save rolls the field state back; nothing advances while paused. */
@@ -83,6 +87,14 @@ export function createFieldChapters(h: FieldChapterHooks) {
   const byId = new Map<string, { a: FieldAction; set: FieldChapterSet }>();
   for (const set of h.sets) for (const a of set.actions) byId.set(a.id, { a, set });
   let pending: string | null = null, working: string | null = null, work = 0;
+  const routes = new Map<string, EscortRoute>();
+  for (const [id, { a }] of byId) {
+    if (!a.escort) continue;
+    const points = h.escortRoute?.(id);
+    const route = points && prepareEscortRoute(points);
+    if (route) routes.set(id, route);
+  }
+  let escort: { id: string; distance: number; waiting: boolean } | null = null;
   function finish(id: string) {
     const entry = byId.get(id); if (!entry) return false;
     const before = new Set(h.done);
@@ -91,7 +103,49 @@ export function createFieldChapters(h: FieldChapterHooks) {
     h.changed(); h.toast(entry.a.line); return true;
   }
   const segments = (id: string) => { let n = 0; while (n < 3 && h.done.has(`${id}_${n + 1}`)) n++; return n; };
+  const savedDistance = (id: string, route: EscortRoute) => route.length * (h.done.has(id) ? 1 : segments(id) / 4);
+  const escortPose = (id: string) => {
+    const route = routes.get(id);
+    if (!route) return null;
+    const active = escort?.id === id;
+    const pose = escortPoseAt(route, active ? escort!.distance : savedDistance(id, route), active);
+    pose.waiting = active && escort!.waiting;
+    return pose;
+  };
+  function updateEscort(dt: number, player: [number, number, number]) {
+    if (!escort) return;
+    const { id } = escort, e = byId.get(id)!, route = routes.get(id)!;
+    if (!fieldActionReady(e.a, h.done, e.set.actions)) { escort = null; return; }
+    const next = advanceEscort(route, escort.distance, player, Math.min(dt, .1));
+    escort.distance = next.distance;
+    escort.waiting = next.waiting;
+    if (route.length - escort.distance < .0001) {
+      escort = null;
+      finish(id);
+      return;
+    }
+    const checkpoint = segments(id) + 1;
+    if (checkpoint > 3 || next.distance < checkpoint * route.length / 4) return;
+    const flag = `${id}_${checkpoint}`;
+    h.done.add(flag);
+    if (h.save()) { h.changed(); return; }
+    h.done.delete(flag);
+    escort = null;
+    h.toast(['保存失败。回到队伍上一个交接点可以重试。', 'Save failed. Rejoin the party at its last checkpoint to retry.']);
+  }
   return {
+    escortPose,
+    escortGuide() {
+      if (!escort) return null;
+      const a = byId.get(escort.id)!.a, route = routes.get(escort.id)!;
+      const leg = route.legs.find(leg => escort!.distance < leg.start + leg.span - .0001) ?? route.legs[route.legs.length - 1];
+      const distance = escort.waiting ? escort.distance : Math.min(leg.start + leg.span, escort.distance + 2.8);
+      const label: Localized = escort.waiting ? ['队伍停下了。回到他们身边，再一起前进。', 'The party is waiting. Return to them and walk on together.'] : a.escort!.instruction;
+      return { id: escort.id, p: escortPoseAt(route, distance, true).point, label };
+    },
+    escorting: () => escort?.id ?? null,
+    carryingStretcher: () => !!(escort && !escort.waiting && byId.get(escort.id)?.a.escort?.carry),
+    interruptEscort() { escort = null; },
     has: (id: string) => byId.has(id),
     action: (id: string) => byId.get(id)?.a,
     ready: (id: string) => { const e = byId.get(id); return !!e && fieldActionReady(e.a, h.done, e.set.actions); },
@@ -99,6 +153,14 @@ export function createFieldChapters(h: FieldChapterHooks) {
       const e = byId.get(id); if (!e || !h.reachable(id)) return false;
       if (!fieldActionReady(e.a, h.done, e.set.actions)) { h.toast(['先完成这一章当前的现场目标。已做的工作会保留。', 'Finish the current field objective of this chapter first. Completed work remains.']); return true; }
       if (e.a.kind === 'shot') { h.toast(['用枪击中标出的部件。', 'Shoot the marked part.']); return true; }
+      if (e.a.kind === 'escort') {
+        const route = routes.get(id);
+        if (!route || !e.a.escort) return false;
+        if (escort?.id !== id) escort = { id, distance: savedDistance(id, route), waiting: false };
+        working = null;
+        h.toast(e.a.escort.instruction);
+        return true;
+      }
       if (e.a.kind === 'work') {
         working = id; work = 0;
         h.toast(['开始作业。留在现场即可推进；离开或暂停会停下，已完成的段落会保留。', 'Work started. Stay on site to progress; leaving or pausing stops it, finished segments remain.']);
@@ -124,6 +186,7 @@ export function createFieldChapters(h: FieldChapterHooks) {
     },
     /** Timed work: four durable quarters while the player stays within 9 m and play is active. */
     update(dt: number, playable: boolean, player: [number, number, number]) {
+      if (escort && playable && Number.isFinite(dt) && dt > 0) updateEscort(dt, player);
       if (!working) return;
       const e = byId.get(working), p = h.position(working);
       if (!e || !p || !fieldActionReady(e.a, h.done, e.set.actions)) { working = null; return; }
@@ -137,9 +200,9 @@ export function createFieldChapters(h: FieldChapterHooks) {
       const flag = `${working}_${n + 1}`; h.done.add(flag);
       if (!h.save()) h.done.delete(flag); else h.changed();
     },
-    progress(id: string) { if (h.done.has(id)) return 1; const e = byId.get(id); return Math.min(1, (segments(id) + (working === id ? work / ((e?.a.seconds ?? 8) / 4) : 0)) / 4); },
-    working: () => working,
-    reset() { pending = null; working = null; work = 0; },
+    progress(id: string) { if (h.done.has(id)) return 1; if (escort?.id === id) return escort.distance / routes.get(id)!.length; const e = byId.get(id); return Math.min(1, (segments(id) + (working === id ? work / ((e?.a.seconds ?? 8) / 4) : 0)) / 4); },
+    working: () => escort?.id ?? working,
+    reset() { pending = null; working = null; work = 0; escort = null; },
   };
 }
 
@@ -156,7 +219,7 @@ export interface FieldProp {
   readonly moved?: { readonly when: string | ((d: ReadonlySet<string>) => boolean); readonly off: V3; readonly rot?: V3 };
   readonly target?: string;
   /** Draw a modelled object of this size instead of a plain block (visual only). */
-  readonly model?: 'chaser' | 'pennant' | 'standard' | 'shell';
+  readonly model?: 'chaser' | 'pennant' | 'standard' | 'shell' | 'stretcher' | 'receiving-mat' | 'muster-board';
   /** Slide from `off` to `moved.off` as this work action progresses (instead of jumping on completion). */
   readonly glide?: string;
 }
@@ -166,6 +229,8 @@ export interface FieldActor {
   readonly role: Localized;
   readonly coat: number;
   readonly place: (d: ReadonlySet<string>) => readonly [string, number, number] | null;
+  /** Local right/forward offset from the escort route's lead position. */
+  readonly escort?: { action: string; right: number; forward: number; grips?: boolean };
 }
 export interface FieldChapterContent {
   readonly set: FieldChapterSet;

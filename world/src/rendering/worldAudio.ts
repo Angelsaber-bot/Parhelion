@@ -93,11 +93,11 @@ export class WorldAudio {
   private persist(){try{if(!this.storage){this.saved=false;return;}this.storage.setItem(WORLD_AUDIO_KEY,JSON.stringify({volume:this.volumeValue,muted:this.mutedValue}));this.saved=true;}catch{this.saved=false;}}
   private applyGain(){try{if(this.master&&this.context){this.master.gain.cancelScheduledValues(this.context.currentTime);this.master.gain.setValueAtTime(this.active&&!this.mutedValue&&this.foreground()?this.volumeValue:0,this.context.currentTime);}}catch{/* no gameplay dependency */}}
   private playable(){return !this.disposed&&this.active&&!this.mutedValue&&this.volumeValue>0&&this.foreground()&&this.context?.state==='running';}
-  private voice(kind:'noise'|OscillatorType,duration:number,frequency:number,gain:number,slide=1,attack=.004) {
+  private voice(kind:'noise'|OscillatorType,duration:number,frequency:number,gain:number,slide=1,attack=.004,delay=0) {
     if(!this.playable()||this.voices.size>=WORLD_AUDIO_VOICES)return;
     const context=this.context!,nodes:AudioNode[]=[];let source:AudioScheduledSourceNode|undefined,voice:Voice|undefined;
     try {
-      const now=context.currentTime;
+      const now=context.currentTime+delay;
       if(kind==='noise'){
         const noise=context.createBufferSource();source=noise;nodes.push(noise);noise.buffer=this.noise;
         const filter=context.createBiquadFilter();nodes.push(filter);filter.type='bandpass';filter.frequency.value=frequency;filter.Q.value=.7;noise.connect(filter);
@@ -222,6 +222,12 @@ export class WorldAudio {
     }
   }
   interaction(){this.voice('sine',.12,520,.055,1.5);}
+  radioTransmission() {
+    // The same carrier and closing burst identify the voice on both receivers.
+    this.voice('noise',.07,1850,.10);
+    this.voice('triangle',.26,930,.035,.94,.025,.05);
+    this.voice('noise',.12,2350,.13,1,.006,.31);
+  }
   /** One local bell strike, sharing mute, suspension and the bounded voice pool. */
   bell(){this.voice('sine',2.8,196,.055,.995,.002);this.voice('sine',2.2,196*2.76,.022,.998,.003);this.voice('sine',1.5,196*5.4,.012,.99,.002);}
   pipeKnocks(lower:boolean){

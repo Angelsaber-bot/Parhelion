@@ -1,8 +1,9 @@
 import { makeChaserShip, makeLungingShell, makeRelayPennant, makeWavingStandard } from './chaserShip';
 import * as THREE from 'three';
 import type { Marker } from '../core/types';
-import type { FieldChapterContent } from '../story/fieldChapters';
+import type { FieldChapterContent, FieldEscortPose } from '../story/fieldChapters';
 import { createSettlementNpcs } from '../settlements/npcs';
+import { residentWalkRig } from '../settlements/residentWalk';
 import { buildFieldProp, supportPosts } from './fieldPropArt';
 
 type P = [number, number, number];
@@ -52,6 +53,48 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
     if (shootable) { const g = new THREE.BoxGeometry(size[0], size[1], size[2]); geo.add(g); hit = new THREE.Mesh(g, hidden); hit.name = 'FieldPropHitBox'; group.add(hit); }
     return { group, hit };
   }
+  type EscortModel = 'stretcher' | 'receiving-mat' | 'muster-board';
+  function escortModel(kind: EscortModel) {
+    const group = new THREE.Group();
+    function part(name: string, geometry: THREE.BufferGeometry, color: number, x: number, y: number, z: number) {
+      geo.add(geometry);
+      const mesh = new THREE.Mesh(geometry, material(`escort:${color}`, () => new THREE.MeshStandardMaterial({ color, roughness: .87 })));
+      mesh.name = name; mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = true; group.add(mesh);
+      return mesh;
+    }
+    if (kind === 'receiving-mat') {
+      part('WovenReceivingMat', new THREE.BoxGeometry(2.04, .04, 2.44), 0x947351, 0, .025, -.65);
+      for (const x of [-.84, .84]) part('MatBorder', new THREE.BoxGeometry(.07, .012, 2.44), 0x60564e, x, .05, -.65);
+      part('LampPost', new THREE.CylinderGeometry(.046, .07, 1.39, 8), 0x705742, 1.07, .69, .08);
+      part('LampHood', new THREE.ConeGeometry(.19, .14, 8), 0x4d4643, 1.07, 1.52, .08);
+      const lamp = part('Lantern', new THREE.CylinderGeometry(.12, .10, .23, 8), 0xf3d895, 1.07, 1.34, .08);
+      lamp.material.emissive.setHex(0xac742e); lamp.material.emissiveIntensity = .6;
+      return group;
+    }
+    if (kind === 'muster-board') {
+      for (const x of [.63, 1.53]) part('MusterUpright', new THREE.BoxGeometry(.09, 1.65, .12), 0x654b39, x, .82, .25);
+      part('SlatRail', new THREE.BoxGeometry(1.15, .1, .14), 0x604832, 1.08, 1.52, .25);
+      for (let i = 0; i < 7; i++) {
+        const x = .71 + i * .126;
+        part('BambooRegister', new THREE.BoxGeometry(.105, .60 - i % 3 * .03, .065), 0xbd9e68, x, 1.17, .27);
+        for (const y of [1.19, 1.30]) part('InkMark', new THREE.BoxGeometry(.047, .025, .006), 0x564831, x, y, .307);
+      }
+      part('GatheringPennant', new THREE.BoxGeometry(.31, .61, .04), 0x975742, 1.75, 1.21, .25);
+      return group;
+    }
+    for (const x of [-.28, .28]) {
+      part('StretcherHandle', new THREE.CylinderGeometry(.034, .035, 2.32, 8).rotateX(Math.PI / 2), 0x79583d, x, 0, 0);
+      for (const z of [-.67, .67]) part('StretcherFoot', new THREE.BoxGeometry(.065, .14, .08), 0x644831, x, -.06, z);
+    }
+    part('StretcherCanvas', new THREE.BoxGeometry(.57, .055, 1.68), 0xbfb59d, 0, .022, 0);
+    part('CasualtyCoat', new THREE.CapsuleGeometry(.17, .52, 4, 10).rotateX(Math.PI / 2), 0x57636e, 0, .14, .02);
+    part('CasualtyFace', new THREE.SphereGeometry(.124, 12, 8), 0xbc937b, 0, .17, .55);
+    part('CasualtyWoolCap', new THREE.SphereGeometry(.127, 12, 8, 0, Math.PI * 2, 0, Math.PI * .54), 0x574e46, 0, .18, .57).rotation.x = .65;
+    const blanket = part('CasualtyBlanket', new THREE.SphereGeometry(1, 12, 8), 0x8f9e9a, 0, .12, -.13);
+    blanket.scale.set(.24, .15, .52);
+    for (const x of [-.1, .1]) part('CasualtyBoot', new THREE.CapsuleGeometry(.068, .22, 3, 8).rotateX(Math.PI / 2), 0x514a42, x, .10, -.62);
+    return group;
+  }
   const hidden = new THREE.MeshBasicMaterial({ visible: false });
   const posts: { prop: (typeof content)[number]['props'][number]; mesh: THREE.Object3D }[] = [];
   const lifts: { leaf: THREE.Object3D; ropes: THREE.Mesh[]; headY: number; halfHeight: number }[] = [];
@@ -69,7 +112,9 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
     const at = points.get(prop.at); if (!at) return [];
     let mesh: THREE.Object3D;
     let hitBox: THREE.Mesh | undefined;
-    if (prop.model) {
+    if (prop.model === 'stretcher' || prop.model === 'receiving-mat' || prop.model === 'muster-board') {
+      mesh = escortModel(prop.model); root.add(mesh);
+    } else if (prop.model) {
       let model: THREE.Object3D;
       if (prop.model === 'shell') { const shell = makeLungingShell(prop.size, geo, modelMaterials); model = shell.group; hitBox = shell.hit; }
       else model = prop.model === 'chaser' ? makeChaserShip(prop.size, geo, modelMaterials) : prop.model === 'pennant' ? makeRelayPennant(prop.size, geo, modelMaterials) : makeWavingStandard(prop.size, geo, modelMaterials);
@@ -104,7 +149,7 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
         lifts.push({ leaf: mesh, ropes, headY: cap.position.y, halfHeight: prop.size[1] / 2 });
       }
     }
-    mesh.name = `FieldProp_${prop.at}`;
+    mesh.name = prop.model === 'receiving-mat' || prop.model === 'muster-board' ? `FieldDestination_${prop.at}` : `FieldProp_${prop.at}`;
     // A modelled target is shot through its invisible hit box; the model hides with it.
     const shootable = hitBox ?? (mesh instanceof THREE.Mesh ? mesh : undefined);
     if (prop.target && shootable) { shootable.userData.target = prop.target; targets.push(shootable); }
@@ -114,6 +159,21 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
     id: actor.id, role: actor.role, ...(['alpha', 'britain', 'winter', 'blacksail', 'kyoto'].includes(set.region) ? { region: set.region as 'alpha' } : { region: 'alpha' as const, worldRegion: set.region as 'egypt' }), position: [0, -500, 0] as P, appearance: { coat: actor.coat }, lines: [],
   }))));
   root.add(actors.group);
+  const walkers = content.flatMap(({ actors: list }) => list.flatMap(actor => {
+    if (!actor.escort) return [];
+    const person = actors.group.getObjectByName('Resident_' + actor.id)!;
+    return [{ actor, escort: actor.escort, person, walk: residentWalkRig(person), baseY: person.position.y,
+      arms: [person.getObjectByName('ResidentArmLeft')!, person.getObjectByName('ResidentArmRight')!],
+      phase: 0, last: null as P | null, placed: false, moving: false, carrying: false }];
+  }));
+  const stretchers = props.filter(({ prop }) => prop.model === 'stretcher').map(entry => ({ ...entry, last: null as P | null }));
+  const receivingSites = props.filter(({ prop }) => prop.model === 'receiving-mat' || prop.model === 'muster-board');
+  function escortPosition(pose: FieldEscortPose, right: number, forward: number, previous: P | null): P {
+    const s = Math.sin(pose.yaw), c = Math.cos(pose.yaw);
+    const x = pose.point[0] + right * c + forward * s, z = pose.point[2] - right * s + forward * c;
+    if (previous && previous[0] === x && previous[2] === z) return previous;
+    return [x, ground(x, z, pose.point[1] + 1.2) ?? pose.point[1], z];
+  }
   const watched = [...new Set(content.flatMap(({ set }) => set.actions.flatMap(a => [a.id, ...(a.adds ?? [])])).concat(['sea_core', 'winter_core', 'sun_core']))];
   let lastKey = '';
   return {
@@ -140,8 +200,12 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
         const x = at[0] + where[1], z = at[2] + where[2], y = ground(x, z, at[1] + 2) ?? at[1];
         actors.pose(actor.id, [x, y, z], Math.atan2(at[0] - x, at[2] - z) || 0);
       }
+      for (const walker of walkers) {
+        walker.placed = !!walker.actor.place(d);
+        if (!walker.placed) walker.last = null;
+      }
     },
-    update(dt: number, viewer: THREE.Vector3, progress?: (id: string) => number) {
+    update(dt: number, viewer: THREE.Vector3, progress?: (id: string) => number, escortPose?: (id: string) => FieldEscortPose | null) {
       const o = follow?.offset();
       if (o && Math.hypot(o.x - shipX, o.y - shipY, o.z - shipZ) > .01) {
         shipX = o.x; shipY = o.y; shipZ = o.z;
@@ -153,7 +217,41 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
       }
       // Visible near any chapter site (sites span several regions, including Homeward Town).
       root.visible = [...points.values()].some(p => Math.abs(viewer.x - p[0]) < 260 && Math.abs(viewer.z - p[2]) < 260);
+      if (root.visible && escortPose) {
+        for (const { prop, mesh } of receivingSites) {
+          if (!mesh.visible) continue;
+          const pose = escortPose(prop.at);
+          if (pose) mesh.position.set(...pose.destination);
+        }
+        for (const stretcher of stretchers) {
+          const { prop, mesh } = stretcher;
+          if (!mesh.visible) continue;
+          const pose = escortPose(prop.at);
+          if (!pose || Math.hypot(pose.point[0] - viewer.x, pose.point[2] - viewer.z) > 100) continue;
+          stretcher.last = escortPosition(pose, prop.off[0], prop.off[2], stretcher.last);
+          const [x, y, z] = stretcher.last;
+          mesh.position.set(x, y + (pose.active && !pose.waiting ? .78 : prop.off[1]), z);
+          mesh.rotation.y = pose.yaw;
+        }
+        for (const walker of walkers) {
+          if (!walker.placed) continue;
+          const pose = escortPose(walker.escort.action);
+          if (!pose || Math.hypot(pose.point[0] - viewer.x, pose.point[2] - viewer.z) > 100) { walker.last = null; continue; }
+          const p = escortPosition(pose, walker.escort.right, walker.escort.forward, walker.last);
+          const step = walker.last ? Math.hypot(p[0] - walker.last[0], p[2] - walker.last[2]) : 0;
+          actors.pose(walker.actor.id, p, pose.yaw);
+          walker.phase += Math.min(step, .6) * 4.9;
+          walker.last = p;
+          walker.moving = pose.active && step > .001 && dt > 0;
+          walker.carrying = pose.active && !pose.waiting && !!walker.escort.grips;
+        }
+      }
       actors.update(dt, viewer);
+      if (root.visible && escortPose) for (const walker of walkers) {
+        if (!walker.last || !walker.placed || !walker.person.visible) continue;
+        walker.walk.update(walker.phase, walker.moving, walker.last[1] - walker.baseY);
+        if (walker.carrying) for (const arm of walker.arms) arm.rotation.x = -.48;
+      }
       clock += dt; if (root.visible) for (const o of animated) if (o.visible) (o.userData.animate as (t: number) => void)(clock);
       // Gliding props follow their work action's progress between the start and moved positions.
       if (progress && root.visible) for (const { prop, mesh } of props) {

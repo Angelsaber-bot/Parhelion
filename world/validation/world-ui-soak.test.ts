@@ -53,7 +53,7 @@ test('NON-GPU sixty production UI interruption cycles retain bounded nodes/liste
     const sceneNodes = () => { let count = 0; world.scene.traverse(() => count++); return count; };
     const sceneBaseline = sceneNodes(), bodyPosition = world.player.pos.clone();
     const baselineObjects = new Set<unknown>(); world.scene.traverse((object: unknown) => baselineObjects.add(object));
-    window.confirm = () => { confirmations++; return false; };
+    document.getElementById('world-new-game-cancel')!.addEventListener('click', () => { confirmations++; });
     let previousCooldown = paidCooldown;
     for (let iteration = 0; iteration < 60; iteration++) {
       await enter(); down('KeyW'); key('KeyF'); assert.equal(dialogue.hidden, false, `dialogue ${iteration}`);
@@ -66,7 +66,7 @@ test('NON-GPU sixty production UI interruption cycles retain bounded nodes/liste
       settingsOpen.click(); assert.equal(world.settingsPanel.open, true);
       language.value = iteration % 2 ? 'en' : 'zh'; language.dispatchEvent(new window.Event('change', { bubbles: true }));
       settingsClose.click(); assert.equal(world.settingsPanel.open, false); await enter();
-      if (iteration % 10 === 0) { key('KeyR'); assert.equal(document.pointerLockElement, null); await enter(); }
+      if (iteration % 10 === 0) { h.newGame(false); assert.equal(document.pointerLockElement, null); settingsClose.click(); await enter(); }
       window.dispatchEvent(new window.Event('blur')); frame();
       const cooldown = world.actions.skills.cooldown('ultimate');
       assert.ok(cooldown <= previousCooldown && cooldown > 0, `no cooldown reset/refund ${iteration}`); previousCooldown = cooldown;

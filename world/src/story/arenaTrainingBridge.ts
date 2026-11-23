@@ -32,7 +32,7 @@ export function arenaTrainingBriefing(worldKey: (action: string) => string, aren
       ['先在大厅查看两把枪与近战槽，再与人机练习射击与装填。', 'Review the two guns and melee slot in the lobby, then practise firing and reloading against the practice opponent.'],
       ['利用掩体侧移，试一次冲刺与护盾，再切近战；这是练习建议，不会自动判定或发奖励。', 'Strafe around cover, try a dash and shield, then switch to melee. These are practice suggestions, not automatic objectives or rewards.'],
     ],
-    warning: [`两种模式按键分别保存。回到世界后：${worldKey('reset')} 是重置进度确认，${[1,2,3].map(n => worldKey(`teleport${n}`)).join(' / ')} 是调试传送，不是装填或换枪。`, `Controls are saved separately. Back in World, ${worldKey('reset')} opens reset confirmation and ${[1,2,3].map(n => worldKey(`teleport${n}`)).join(' / ')} are debug teleports, not reload or weapon slots.`],
+    warning: [`两种模式按键分别保存。在世界中用 ${worldKey('nextWeapon')} 切换枪械。`, `Controls are saved separately. In World, use ${worldKey('nextWeapon')} to cycle your guns.`],
     fairness: ['世界等级、从者、能量与解锁不会转换成竞技场伤害或装备优势；离线练习和联机竞技仍使用竞技场自己的规则。', 'World progression, companions, energy and unlocks grant no Arena damage or equipment advantage. Offline practice and online play retain Arena rules.'],
   };
 }

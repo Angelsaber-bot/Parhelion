@@ -16,7 +16,7 @@ class Target {
   addEventListener(type: string, fn: (event: any) => unknown) { this.listeners.set(type, [...this.listeners.get(type) ?? [], fn]); }
   emit(type: string, event: Record<string, unknown> = {}) { const handler=(this as any)['on'+type];if(typeof handler==='function')handler({preventDefault(){},stopPropagation(){},...event});for (const fn of this.listeners.get(type) ?? []) fn({ preventDefault() {}, stopPropagation() {}, repeat: false, shiftKey: false, ...event }); }
 }
-function setup() {
+function setup(debugControls = false) {
   const source = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
   const section = source.slice(source.indexOf('const keys ='), source.indexOf('const reducedMotion ='));
   assert.ok(section.length > 500, 'production input section located');
@@ -39,7 +39,7 @@ function setup() {
   });
   (document as any).exitPointerLock = () => { document.pointerLockElement = null; document.emit('pointerlockchange'); };
   // Ordinary input fixture: no owned cinematic or presentation resources.
-  const context = vm.createContext({...campaignSourceContext,onLanguageChange(){},bootFailed:false, worldExited:false, graphicsRecovery:undefined, servantPanel:{open:false}, invalidateFrameClock(){}, ultimateDirector: undefined, abortUltimate() {}, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, inspectServant: false, servantRoot: () => ({visible:true}), combat: { defeated: false }, contract: { toggle: () => false, cycle: () => null }, servantName: () => ({ zh: 'Saber', en: 'Saber' }), bilingual: (zh: string) => zh, localizeText: (text: string) => text, languageToggle: { hidden: false }, setLoading: (text: string) => { $('loading').textContent = text; }, resetProgress() {}, ShoulderAim, SettingsStore, createSettingsPanel, shoot() { shots++; }, $, document, canvas, addEventListener: target.addEventListener.bind(target), player: { pos:{x:0,z:0}, flying: false, gliding: false, swimming: false, onGround: true, yaw: 0, pitch: 0 }, THREE: { MathUtils: { clamp: (n: number, min: number, max: number) => Math.max(min, Math.min(n,max)) } }, debugCol: { visible: false }, toast() {}, interactSettlementNpc: () => false, interact() { actions++; }, save() {}, applyWorldState() {}, done: new Set(['relay_b']), found: new Set(['secret_cave']), layout: { areas: [] }, spawnAt() {} });
+  const context = vm.createContext({...campaignSourceContext,params:new URLSearchParams(debugControls ? 'debugControls=1' : ''),onLanguageChange(){},bootFailed:false, worldExited:false, graphicsRecovery:undefined, servantPanel:{open:false}, invalidateFrameClock(){}, ultimateDirector: undefined, abortUltimate() {}, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, inspectServant: false, servantRoot: () => ({visible:true}), combat: { defeated: false }, contract: { toggle: () => false, cycle: () => null }, servantName: () => ({ zh: 'Saber', en: 'Saber' }), bilingual: (zh: string) => zh, localizeText: (text: string) => text, languageToggle: { hidden: false }, setLoading: (text: string) => { $('loading').textContent = text; }, resetProgress() {}, ShoulderAim, SettingsStore, createSettingsPanel, shoot() { shots++; }, $, document, canvas, addEventListener: target.addEventListener.bind(target), player: { pos:{x:0,z:0}, flying: false, gliding: false, swimming: false, onGround: true, yaw: 0, pitch: 0 }, THREE: { MathUtils: { clamp: (n: number, min: number, max: number) => Math.max(min, Math.min(n,max)) } }, debugCol: { visible: false }, toast() {}, interactSettlementNpc: () => false, interact() { actions++; }, save() {}, applyWorldState() {}, done: new Set(['relay_b']), found: new Set(['secret_cave']), layout: { areas: [] }, spawnAt() {} });
   vm.runInContext(transformSync(section + '\nglobalThis.state = {keys, aim, settings, settingsPanel, down, get locked(){return locked}};', { loader: 'ts', format: 'cjs' }).code, context);
   return { $, document, target, canvas, context, actions: () => actions, shots: () => shots, lock() { document.pointerLockElement = canvas; document.emit('pointerlockchange'); } };
 }
@@ -210,7 +210,7 @@ test('World alias rebind/menu/blur clear both keys and stale repeats never resto
   }
 });
 test('manual flight vertical controls are absent; Space stays jump/glide and F only interacts', () => {
-  const s = setup(); s.lock(); const settings = s.context.state.settings;
+  const s = setup(true); s.lock(); const settings = s.context.state.settings;
   assert.equal(settings.value.bindings.ascend, undefined); assert.equal(settings.value.bindings.descend, undefined);
   assert.equal(settings.action('Space'), 'jump'); assert.equal(settings.action('KeyQ'), 'skill'); assert.equal(settings.action('ControlLeft'), undefined);
   assert.doesNotMatch(s.$('help').textContent, /飞行上升|飞行下降|互动／飞行/);
