@@ -113,8 +113,12 @@ export class ArenaTraining extends DurableObject<Env> {
 
   async corpusRows(after = 0, through = Number.MAX_SAFE_INTEGER) {
     if (!this.env.ARENA_NEURAL_CORPUS_TOKEN) return [];
-    this.pruneCorpus(Date.now());
-    return this.ctx.storage.sql.exec<{ id: number; at: number; payload: string }>('SELECT id,at,payload FROM corpus WHERE id > ? AND id <= ? ORDER BY id LIMIT ?', after, through, CORPUS_READ_LIMIT).toArray()
+    // Inserts and the scheduled alarm enforce retention. Reading each export
+    // page only needs the cursor range and a receipt-time check.
+    return this.ctx.storage.sql.exec<{ id: number; at: number; payload: string }>(
+      'SELECT id,at,payload FROM corpus WHERE id > ? AND id <= ? AND at >= ? ORDER BY id LIMIT ?',
+      after, through, Date.now() - CORPUS_RETENTION, CORPUS_READ_LIMIT,
+    ).toArray()
       .map(({ id, at, payload }) => ({ id, receivedAt: at, batch: JSON.parse(payload) as TrainingBatch }));
   }
 
@@ -483,7 +487,18 @@ export async function trainingRequest(req: Request, storage: DurableObjectNamesp
     const version = url.searchParams.has('rules') ? Number(url.searchParams.get('rules')) : RULES_VERSION;
     if (!Number.isInteger(version) || version < 41 || version > RULES_VERSION) return new Response(null, { status: 404, headers });
     const selected = version === RULES_VERSION ? object : trainingStore(storage, version);
-    return Response.json(await selected.status(version, version === RULES_VERSION && (publicService || (local && !!corpusToken))), { headers: { ...headers, 'cache-control': 'no-store' } });
+    const statusHeaders = { ...headers, 'cache-control': 'no-store' };
+    try {
+      const status = await selected.status(version, version === RULES_VERSION && (publicService || (local && !!corpusToken)));
+      return Response.json(status, { headers: statusHeaders });
+    } catch (error) {
+      // Never expose raw storage errors or report an empty checkpoint as healthy.
+      const message = error instanceof Error ? error.message : String(error);
+      const limited = /quota|rate limit|free tier|daily limit|limit exceeded/i.test(message);
+      console.error('Arena training status failed', error);
+      return Response.json({ error: limited ? 'storage_limit' : 'status_unavailable' },
+        { status: 503, headers: statusHeaders });
+    }
   }
   if (pathname === '/training/exploration' && req.method === 'GET') return Response.json(await (url.searchParams.has('active') ? object.botExplorationModel() : object.explorationModel()), { headers: { ...headers, 'cache-control': 'no-store' } });
   if (pathname !== '/training' || req.method !== 'POST') return new Response(null, { status: 405, headers });
