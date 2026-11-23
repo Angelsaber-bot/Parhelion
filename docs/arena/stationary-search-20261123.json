@@ -429,5 +429,267 @@
       ]
     },
     "decision": "Retain incumbent: repeated stationary acquisition and rear-search failures. No live checkpoint or fresh human holdout was available."
+  },
+  "stationaryRouteSelection": {
+    "source": "5c1fd38",
+    "method": "Clone bundled; interpolate yaw, strafe and forward output weight and bias independently toward the three current search teacher rows. Select on six maps (homeward, frostcourt, blackflag, aster, camlann, sakura; spawn seed 1045637011, eight repeats, 30s) and closeContact seed 145145507 with four pairs. Rank by 20 times stationary acquisition fraction gain + forward speed gain - 8 times low-displacement fraction gain + 0.35 times min(0,left,right) two-second hit count margins.",
+    "training": [
+      {
+        "g": [0.75, 0, 0.5],
+        "score": 1.6467223538068447,
+        "found": 13,
+        "speed": 2.1988611786100924,
+        "low": 0.12987012987012986,
+        "margins": [-5, 9]
+      },
+      {
+        "g": [1, 0, 0],
+        "score": 1.5279200513824223,
+        "found": 11,
+        "speed": 2.5053576010756755,
+        "low": 0.1226158038147139,
+        "margins": [-4, 10]
+      },
+      {
+        "g": [1, 0, 0.5],
+        "score": 1.0749998335095037,
+        "found": 10,
+        "speed": 2.48026205206939,
+        "low": 0.12401055408970976,
+        "margins": [-4, 10]
+      },
+      {
+        "g": [0.75, 0, 0],
+        "score": 1.067092549754113,
+        "found": 12,
+        "speed": 2.0873695055395283,
+        "low": 0.13630406290956748,
+        "margins": [-5, 9]
+      },
+      {
+        "g": [1, 1, 1],
+        "score": 0.9078901997645783,
+        "found": 10,
+        "speed": 2.3797928178215515,
+        "low": 0.08859060402684564,
+        "margins": [-5, 11]
+      },
+      {
+        "g": [1, 0.5, 0],
+        "score": 0.8831932437204624,
+        "found": 10,
+        "speed": 2.4935560161578447,
+        "low": 0.10589812332439678,
+        "margins": [-5, 11]
+      },
+      {
+        "g": [0.5, 0, 0],
+        "score": 0.39039579467152175,
+        "found": 14,
+        "speed": 1.6967365337684261,
+        "low": 0.18872870249017037,
+        "margins": [-7, 7]
+      },
+      {
+        "g": [0.5, 0, 0.5],
+        "score": 0.2147390719002975,
+        "found": 12,
+        "speed": 1.5407764178101877,
+        "low": 0.2182741116751269,
+        "margins": [-4, 8]
+      },
+      {
+        "g": [0.5, 0.5, 0],
+        "score": 0.18950783354468204,
+        "found": 15,
+        "speed": 1.5300338063681052,
+        "low": 0.24508519003931847,
+        "margins": [-7, 9]
+      },
+      {
+        "g": [0.75, 0.5, 0],
+        "score": -0.42691985014327116,
+        "found": 10,
+        "speed": 2.084217119372406,
+        "low": 0.1747448979591837,
+        "margins": [-6, 9]
+      },
+      {
+        "g": [0.25, 0, 0],
+        "score": -0.9581876656038162,
+        "found": 10,
+        "speed": 1.5301780901632038,
+        "low": 0.2593984962406015,
+        "margins": [-4, 2]
+      },
+      {
+        "g": [0.25, 0, 0.5],
+        "score": -1.6131007247577904,
+        "found": 8,
+        "speed": 1.5111610056646947,
+        "low": 0.23471882640586794,
+        "margins": [-4, 3]
+      },
+      {
+        "g": [0, 0, 0.5],
+        "score": -1.8731554708083382,
+        "found": 1,
+        "speed": 1.9146991657976777,
+        "low": 0.12808460634547592,
+        "margins": [1, 1]
+      },
+      {
+        "g": [0, 0.5, 0],
+        "score": -1.9679079023740227,
+        "found": 3,
+        "speed": 1.7813575392783987,
+        "low": 0.1399276236429433,
+        "margins": [-2, 0]
+      },
+      {
+        "g": [0.25, 0.5, 0],
+        "score": -2.8747361773337756,
+        "found": 9,
+        "speed": 1.3446788273223378,
+        "low": 0.33619631901840485,
+        "margins": [-6, 3]
+      }
+    ],
+    "candidateFileSHA256": "d5ecd111e4a53c7682417cd01cd39d1aed35255b70731437dc9245822d3ba6b1",
+    "laneDiagnostic": "Five maps: frostcourt, homeward, blackflag, orleans, suntemple. Twelve repeats per map and seed, both sides, stationary trials only, 30 seconds. At policy decisions until acquisition, record whether the normal visibility test between the pilot eye and the living target head or chest succeeds without an angle restriction. clear counts trials with such a lane; miss counts clear trials without any acquisition. This evaluator-only observer supplies no policy inputs. previousFit is searchDistillationScreen strength 1.",
+    "confirmation": [
+      {
+        "seed": 642557239,
+        "actor": "bundled",
+        "n": 60,
+        "clear": 2,
+        "miss": 0,
+        "found": 2,
+        "speed": 1.7148795745077388,
+        "low": 0.17060810810810811
+      },
+      {
+        "seed": 642557239,
+        "actor": "previousFit",
+        "n": 60,
+        "clear": 3,
+        "miss": 3,
+        "found": 0,
+        "speed": 2.269294988784146,
+        "low": 0.1
+      },
+      {
+        "seed": 642557239,
+        "actor": "selected",
+        "n": 60,
+        "clear": 18,
+        "miss": 2,
+        "found": 16,
+        "speed": 2.1962172623823153,
+        "low": 0.15818181818181817
+      },
+      {
+        "seed": 1031863919,
+        "actor": "bundled",
+        "n": 60,
+        "clear": 4,
+        "miss": 1,
+        "found": 3,
+        "speed": 1.6104463252920818,
+        "low": 0.22866894197952217
+      },
+      {
+        "seed": 1031863919,
+        "actor": "previousFit",
+        "n": 60,
+        "clear": 1,
+        "miss": 1,
+        "found": 0,
+        "speed": 1.8307072840332483,
+        "low": 0.14166666666666666
+      },
+      {
+        "seed": 1031863919,
+        "actor": "selected",
+        "n": 60,
+        "clear": 15,
+        "miss": 1,
+        "found": 14,
+        "speed": 1.9430009796296275,
+        "low": 0.21492007104795738
+      },
+      {
+        "seed": 177766913,
+        "actor": "bundled",
+        "n": 60,
+        "clear": 7,
+        "miss": 0,
+        "found": 7,
+        "speed": 1.749095257831487,
+        "low": 0.16428571428571428
+      },
+      {
+        "seed": 177766913,
+        "actor": "previousFit",
+        "n": 60,
+        "clear": 1,
+        "miss": 1,
+        "found": 0,
+        "speed": 2.1020669227715145,
+        "low": 0.08499999999999999
+      },
+      {
+        "seed": 177766913,
+        "actor": "selected",
+        "n": 60,
+        "clear": 20,
+        "miss": 1,
+        "found": 19,
+        "speed": 2.421158576489366,
+        "low": 0.054820415879017016
+      }
+    ],
+    "gateFields": "spawn and close fields as in yawInterpolationScreen; screen uses --seeds 2 --incumbent-seeds 4",
+    "screens": [
+      {
+        "seed": 1683938621,
+        "failed": ["rearSearch", "smokeContact", "closeMovingDamage"],
+        "close": [
+          ["frostcourt", 0, 16, 11, 9, 14, 11],
+          ["frostcourt", -1, 16, 5, 6, 6, 12],
+          ["frostcourt", 1, 16, 5, 0, 15, 1],
+          ["homeward", 0, 16, 8, 6, 11, 8],
+          ["homeward", -1, 16, 6, 7, 9, 9],
+          ["homeward", 1, 16, 2, 0, 7, 1],
+          ["blackflag", 0, 16, 12, 5, 14, 10],
+          ["blackflag", -1, 16, 3, 4, 3, 8],
+          ["blackflag", 1, 16, 5, 0, 14, 1]
+        ],
+        "spawn": [
+          [2.147, 0.1846, 3, 12],
+          [2.1345, 0.1441, 0, 12]
+        ]
+      },
+      {
+        "seed": 293964001,
+        "failed": ["rearSearch", "smokeContact", "spawnSearchProgress"],
+        "close": [
+          ["frostcourt", 0, 16, 8, 6, 12, 11],
+          ["frostcourt", -1, 16, 7, 9, 8, 11],
+          ["frostcourt", 1, 16, 4, 0, 11, 4],
+          ["homeward", 0, 16, 11, 6, 13, 9],
+          ["homeward", -1, 16, 6, 6, 6, 11],
+          ["homeward", 1, 16, 3, 1, 11, 6],
+          ["blackflag", 0, 16, 10, 7, 12, 11],
+          ["blackflag", -1, 16, 7, 7, 7, 9],
+          ["blackflag", 1, 16, 7, 4, 15, 4]
+        ],
+        "spawn": [
+          [2.192, 0.1868, 1, 12],
+          [1.8802, 0.1947, 1, 12]
+        ]
+      }
+    ],
+    "decision": "Keep incumbent. Candidate improved routes to stationary targets but failed rear and smoke contact on both independent screens. New live checkpoint and consented holdout unavailable."
   }
 }
