@@ -35,6 +35,14 @@ describe('self-play search outcomes', () => {
     expect(before.forwardMetersPerSecond).toBeCloseTo(0);
     expect(after.forwardMetersPerSecond).toBeGreaterThan(.2);
     expect(after.reach).toBeGreaterThan(before.reach);
+    expect(before.backwardMetersPerSecond + before.lateralMetersPerSecond).toBeCloseTo(0);
+    const reversing = structuredClone(still), strafing = structuredClone(still);
+    reversing.out.bias[3] = -2;
+    strafing.out.bias[2] = 2;
+    const reverse = assess(reversing, still, trials, 4), strafe = assess(strafing, still, trials, 4);
+    expect(reverse.backwardMetersPerSecond).toBeGreaterThan(.2);
+    expect(reverse.forwardMetersPerSecond).toBeLessThan(-.2);
+    expect(strafe.lateralMetersPerSecond).toBeGreaterThan(.2);
     const reference = { ...after, waitingAcquired: .5, forwardMetersPerSecond: 2 };
     expect(passesSpawnSearch(reference, reference)).toBe(true);
     expect(passesSpawnSearch({ ...reference, forwardMetersPerSecond: .8 }, reference)).toBe(false);
@@ -57,6 +65,19 @@ describe('self-play search outcomes', () => {
     expect(forward).toBeGreaterThan(backward);
     expect(backward).toBeGreaterThan(0);
     expect(trial(i => [i >= 7 ? 10 : 0, -Math.PI / 2, 0], 15, 7)).toBe(0);
+  });
+  it('shares route and forward credit across the actions that produced each gain', () => {
+    // The route ends with a backward step and a blocked forward input.
+    const x = [0, 4, 12, 10, 10];
+    const run = (yaw: number) => measuredTrial(i => [x[Math.min(i, 4)], yaw, 0], 15, -1, 1);
+    const forward = run(-Math.PI / 2), backing = run(Math.PI / 2);
+    expect(forward.reward).toBeCloseTo(.02);
+    expect(backing.reward).toBeCloseTo(.01);
+    for (const result of [forward, backing]) {
+      expect(result.rewards[0]).toBeCloseTo(result.reward / 3);
+      expect(result.rewards[1]).toBeCloseTo(2 * result.reward / 3);
+      expect(result.rewards.slice(2).every(reward => reward === 0)).toBe(true);
+    }
   });
   it('credits discovery across a completed movement window within one life', () => {
     const approach = (i: number): [number, number, number] => [i * .7, 0, Number(i === 15)];

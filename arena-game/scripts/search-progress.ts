@@ -6,6 +6,24 @@ import type { MapData } from '../shared/map.ts';
 interface Decision { obs: number[]; axes: number[]; reset: boolean; reward: number }
 const scene = HUMAN_FEATURES.length;
 
+// The pose at index j + 1 is the first observation after action j.
+function creditProgress(steps: Decision[], bounds: MapData['bounds'], start: number, end: number, reward: number, facing: boolean) {
+  const scaleX = (bounds.max[0] - bounds.min[0]) / 2, scaleZ = (bounds.max[2] - bounds.min[2]) / 2;
+  const routeX = (steps[end].obs[scene] - steps[start].obs[scene]) * scaleX;
+  const routeZ = (steps[end].obs[scene + 2] - steps[start].obs[scene + 2]) * scaleZ;
+  let total = 0;
+  const gains: number[] = [];
+  for (let j = start; j < end; j++) {
+    const before = steps[j].obs, after = steps[j + 1].obs;
+    const dx = (after[scene] - before[scene]) * scaleX, dz = (after[scene + 2] - before[scene + 2]) * scaleZ;
+    const progress = facing ? -dx * after[scene + 3] - dz * after[scene + 4] : dx * routeX + dz * routeZ;
+    const gain = Math.max(0, progress);
+    gains.push(gain);
+    total += gain;
+  }
+  if (total > 0) for (const [offset, gain] of gains.entries()) steps[start + offset].reward += reward * gain / total;
+}
+
 export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds'], period: number, tickRate: number) {
   const horizon = Math.max(2, Math.round(3 * tickRate / period));
   let unseenSteps = 0, unseenStartX = 0, unseenStartZ = 0, searchReach = 0;
@@ -37,23 +55,9 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
           if (recovery.newGround && positiveCredits < 12) {
             // Assign the bounded recovery reward to actions which actually moved
             // the player toward the exit, including a useful sideways step.
-            const dx = x - recovery.x, dz = z - recovery.z;
-            let total = 0;
-            const gains = [];
-            for (let j = recovery.start; j < i; j++) {
-              const before = steps[j].obs, after = steps[j + 1].obs;
-              const advanceX = (after[scene] - before[scene]) * (bounds.max[0] - bounds.min[0]) * .5;
-              const advanceZ = (after[scene + 2] - before[scene + 2]) * (bounds.max[2] - bounds.min[2]) * .5;
-              const gain = Math.max(0, dx * advanceX + dz * advanceZ);
-              total += gain;
-              gains.push(gain);
-            }
             const credits = Math.min(2, 12 - positiveCredits);
-            if (total > 0) {
-              for (const [offset, gain] of gains.entries())
-                steps[recovery.start + offset].reward += .01 * credits * gain / total;
-              positiveCredits += credits;
-            }
+            creditProgress(steps, bounds, recovery.start, i, .01 * credits, false);
+            positiveCredits += credits;
           }
         }
         recovery = undefined;
@@ -98,8 +102,13 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
       if (newCells >= 2 && Math.hypot(x - startX, z - startZ) >= 4 && positiveCredits < 12) {
         // The same ground can be covered backing away from the camera. Reward
         // additional forward progress only on a genuinely new, displaced route.
-        const credits = Math.min(1 + Number(forwardMeters >= 4), 12 - positiveCredits);
-        steps[i - 1].reward += .01 * credits; positiveCredits += credits;
+        const start = i + 1 - count;
+        creditProgress(steps, bounds, start, i, .01, false);
+        positiveCredits++;
+        if (forwardMeters >= 4 && positiveCredits < 12) {
+          creditProgress(steps, bounds, start, i, .01, true);
+          positiveCredits++;
+        }
       } else if (negativeCredits < 8 && (
         (range < 2.5 && (scanned || previousSearchStalled)) ||
         (range < 1.5 && pushing)

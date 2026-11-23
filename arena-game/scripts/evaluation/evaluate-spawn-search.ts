@@ -27,7 +27,7 @@ function play(model: NeuralPolicyModel, opponent: NeuralPolicyModel, trial: Tria
   let firstSight: boolean | undefined;
   let travel = 0, heading = 0, reach = 0, bestReach = 0, life = -1, originX = 0, originZ = 0;
   let startX = 0, startZ = 0, previousYaw = 0, windowRange = 0, unseen = true, frames = 0, seq = 0;
-  let forwardTravel = 0, forwardRequests = 0, unseenTicks = 0, forwardInput = 0;
+  let forwardTravel = 0, backwardTravel = 0, lateralTravel = 0, forwardRequests = 0, unseenTicks = 0, forwardInput = 0;
   const cells = new Set<string>();
   const openingRoute = new Set<string>();
   const decisions: Parameters<typeof scoreSearchProgress>[0] = [];
@@ -69,7 +69,11 @@ function play(model: NeuralPolicyModel, opponent: NeuralPolicyModel, trial: Tria
     if (!visible && previousLife === me.lifeId && isLive()) {
       unseenTicks++;
       if (forwardInput > .3) forwardRequests++;
-      forwardTravel -= (me.x - x) * Math.sin(me.yaw) + (me.z - z) * Math.cos(me.yaw);
+      const dx = me.x - x, dz = me.z - z, sin = Math.sin(me.yaw), cos = Math.cos(me.yaw);
+      const forward = -dx * sin - dz * cos;
+      forwardTravel += forward;
+      backwardTravel += Math.max(0, -forward);
+      lateralTravel += Math.abs(dx * cos - dz * sin);
     }
     if (life !== me.lifeId) {
       life = me.lifeId; frames = 0; originX = me.x; originZ = me.z; previousYaw = me.yaw;
@@ -93,7 +97,7 @@ function play(model: NeuralPolicyModel, opponent: NeuralPolicyModel, trial: Tria
   }
   const { recovered, stayedBlocked } = scoreSearchProgress(decisions, game.map.data.bounds, EXPLORATION_TICKS, TICK_HZ);
   return { recovered, stayedBlocked, openingRoute, cells: cells.size, reach: bestReach, spins, stalled, windows, acquired: Number(acquired),
-    contacts, damage, received, travel, forwardTravel, forwardRequests, unseenTicks, initiallyVisible: Number(firstSight) };
+    contacts, damage, received, travel, forwardTravel, backwardTravel, lateralTravel, forwardRequests, unseenTicks, initiallyVisible: Number(firstSight) };
 }
 
 export function assess(model: NeuralPolicyModel, opponent: NeuralPolicyModel, trials: Trial[], seconds: number) {
@@ -108,6 +112,8 @@ export function assess(model: NeuralPolicyModel, opponent: NeuralPolicyModel, tr
     waitingTrials: waiting.length,
     waitingAcquired: waiting.reduce((n, r) => n + r.acquired, 0) / Math.max(1, waiting.length),
     forwardMetersPerSecond: TICK_HZ * mean('forwardTravel') / Math.max(1, mean('unseenTicks')),
+    backwardMetersPerSecond: TICK_HZ * mean('backwardTravel') / Math.max(1, mean('unseenTicks')),
+    lateralMetersPerSecond: TICK_HZ * mean('lateralTravel') / Math.max(1, mean('unseenTicks')),
     forwardRequestFraction: mean('forwardRequests') / Math.max(1, mean('unseenTicks')),
   };
   const score = stats.cells * .25 + stats.reach * .12 + stats.acquired * 6 + Math.min(40, stats.contacts) * .35 +
