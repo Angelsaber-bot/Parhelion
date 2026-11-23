@@ -57,6 +57,24 @@ class ContactMemoryTest(unittest.TestCase):
         torch.testing.assert_close(losses[0], 2 * losses[1])
         torch.testing.assert_close(losses[1], losses[2])
 
+    def test_rollout_anchors_use_distinct_observable_states(self):
+        source = Path(__file__).resolve().parents[1] / "shared/directPolicy.json"
+        policy = json.loads(source.read_bytes())
+        states = torch.zeros(4, policy["context"], bc.FEATURES)
+        states[1, -1, :4] = torch.tensor([1., 0., 0., 6 / 45])
+        states[2, -1, :4] = torch.tensor([1., 0., 0., 23 / 45])
+        states[3, -2, 0] = 1  # recently lost sight
+        prior = torch.full((4, bc.OUTPUTS), 9.)
+        search = rl.search_demonstrations(states, policy["rulesVersion"])
+        self.assertEqual(rl.anchor_rollout_controls(prior, states, search, source), 1)
+        incumbent = importlib.import_module("fit-match-movement").actor_from_json(policy)
+        torch.testing.assert_close(prior[1], incumbent(states[1:2])[0])
+        if search:
+            torch.testing.assert_close(prior[0, 2:4], search[1][0, 1:3])
+        self.assertTrue((prior[0, :2] == 9).all())
+        self.assertTrue((prior[0, 4:] == 9).all())
+        self.assertTrue((prior[2:] == 9).all())
+
     def test_history_expires_and_resets(self):
         examples = []
         for i in range(8):

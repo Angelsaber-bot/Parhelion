@@ -48,8 +48,29 @@ def search_demonstrations(states, rules):
     labels = states.new_zeros(len(states), len(SEARCH_AXES))
     for indices in eligible.nonzero().flatten().split(256):
         if len(indices):
-            labels[indices] = teacher(states[indices])[:, SEARCH_AXES].tanh()
+            labels[indices] = teacher(states[indices])[:, SEARCH_AXES]
     return eligible, labels
+
+
+@torch.no_grad()
+def anchor_rollout_controls(prior_logits, states, search_examples, incumbent):
+    # Anchor in raw policy space, before tanh. Otherwise the prior KL pulls the
+    # movement rows back toward the imitation reference on the very same views.
+    if search_examples is not None:
+        empty, teacher = search_examples
+        prior_logits[empty, 2:4] = teacher[empty, 1:3]
+    if incumbent is None:
+        return 0
+    model = json.loads(incumbent.read_bytes())
+    if (model.get("version") != 4 or model.get("synthetic") or
+            model["context"] != states.shape[1]):
+        return 0
+    close = (states[:, -1, 0] == 1) & (states[:, -1, 3] <= 12 / 45)
+    actor = import_module("fit-match-movement").actor_from_json(model)
+    for indices in close.nonzero().flatten().split(256):
+        if len(indices):
+            prior_logits[indices] = actor(states[indices])
+    return int(close.sum())
 
 
 def search_imitation_loss(logits, controls, states):
@@ -462,6 +483,8 @@ def run(args):
     values, targets, old_logits, prior_logits, parity_error = behavior(actor, critic, reference, states, actions, logged)
     demo_weights = replay_weights(human[0]) if human else None
     search_examples = search_demonstrations(states, signature["rulesVersion"]) if direct_controls and not signature.get("synthetic") else None
+    close_anchors = anchor_rollout_controls(prior_logits, states, search_examples,
+                                           args.incumbent if direct_controls else None)
     advantage, returns = generalized_advantages(rewards, values, ends)
     previous_updates = saved.get("optimizerSteps", 0)
     updates, objectives, prediction_sum, prediction_pairs = 0, [], 0., 0
@@ -495,7 +518,7 @@ def run(args):
                 eligible, controls = search_examples
                 mask = eligible[ix]
                 if mask.any():
-                    loss += .18 * search_imitation_loss(logits[mask], controls[ix[mask]], states[ix[mask]])
+                    loss += .18 * search_imitation_loss(logits[mask], controls[ix[mask]].tanh(), states[ix[mask]])
             if practice:
                 loss = loss + .12 * practice_loss(actor, len(ix), config.context, practice)
             if coach_weight:
@@ -559,6 +582,7 @@ def run(args):
         "predictionHorizon": PREDICTION_HORIZON, "predictionPairs": prediction_pairs,
         "predictionLoss": prediction_sum / prediction_pairs if prediction_pairs else None,
         "practiceSamples": [len(group) for group in practice] if practice else [],
+        "incumbentCloseWindows": close_anchors,
         "learnedSearchWindows": int(search_examples[0].sum()) if search_examples is not None else 0,
         "humanReplayWindows": replayed_windows, "humanReplayCoverage": recent.report(),
         "coachedDecisions": coached_decisions, "coachWeight": coach_weight,
@@ -601,6 +625,7 @@ def main():
     for name in ("actor", "rollout", "checkpoint", "metrics"):
         update.add_argument("--" + name, type=Path, required=True)
     update.add_argument("--prior", type=Path)
+    update.add_argument("--incumbent", type=Path, help="Frozen deployed opponent used for this rollout")
     update.add_argument("--dataset", type=Path)
     update.add_argument("--practice", type=Path)
     update.add_argument("--skip-holdout", action="store_true",

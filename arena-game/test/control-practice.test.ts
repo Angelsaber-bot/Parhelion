@@ -13,7 +13,10 @@ it.each([false, true])('records observations before every candidate action (hist
   try {
     const output = join(temp, 'observations.json');
     const script = fileURLToPath(new URL('../scripts/sample-control-practice.ts', import.meta.url));
-    execFileSync(process.execPath, ['--import', 'tsx', script, output, '83519', '250', ...(withHistory ? ['--with-history'] : [])]);
+    const log = execFileSync(process.execPath, ['--import', 'tsx', script, output, '83519', '250', ...(withHistory ? ['--with-history'] : [])]);
+    const lateral = Number(/(\d+) visible lateral histories/.exec(String(log))?.[1]);
+    if (withHistory) expect(lateral).toBeGreaterThan(0);
+    else expect(lateral).toBe(0);
     const trials: number[][] = JSON.parse(readFileSync(output, 'utf8'));
     let before: number[] | undefined;
     const kinds = new Set<number>();

@@ -9,7 +9,7 @@ import { addSmokeDepths, explorationScene, EXPLORATION_TICKS, visibleSmokeDepths
 import { rayPlayer } from '../shared/hit.ts';
 import { humanObservation } from '../shared/humanCombat.ts';
 import { Match } from '../shared/match.ts';
-import { playerEye, spreadDirs } from '../shared/sim.ts';
+import { applyInput, BTN, newPlayer, playerEye, spreadDirs } from '../shared/sim.ts';
 import { raycastMap, type Vec3 } from '../shared/map.ts';
 
 const output = process.argv[2];
@@ -21,7 +21,8 @@ const trials = Number(process.argv[4] ?? 22000);
 if (!Number.isInteger(trials) || trials < 1 || trials > 100000) throw Error('Invalid practice trial count');
 const withHistory = process.argv.includes('--with-history');
 const rows: number[][] = [];
-for (const name of ['aster','blackflag','sakura','homeward']) {
+let lateralObservations = 0;
+for (const name of [state % 2 ? 'frostcourt' : 'aster','blackflag','sakura','homeward']) {
   const map = getMap(name), nav = navFor({map}), game = new Match(map,'1v1');
   game.addPlayer('a',{team:'A',name:'a',bot:true,skins:[],char:2});
   const me = game.player('a')!;
@@ -75,6 +76,19 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
     const previousPitch = Math.max(-1.45, Math.min(1.45, pitch - .55 * signed()));
     me.yaw = previousYaw;
     me.pitch = previousPitch;
+    // On alternating short-range history trials, move the target using normal
+    // collision physics. Its future position is used only to score outcomes.
+    const mover = withHistory && band === 0 && trial % 2 === 0 ? newPlayer('runner', 'B', 2) : undefined;
+    const side = mover && draw() < .5 ? -1 : 1;
+    if (mover) Object.assign(mover, { x: b.x, y: b.y, z: b.z, yaw: lane + Math.PI, alive: true, grounded: true });
+    const advance = () => {
+      if (!mover) return;
+      for (let tick = 0; tick < EXPLORATION_TICKS; tick++)
+        applyInput(map, mover, { seq: mover.lastSeq + 1, view: mover.abilityTick, yaw: mover.yaw, pitch: 0, mx: side, mz: 0,
+          buttons: target.crouched ? BTN.CROUCH : 0, weapon: mover.weaponSlot });
+      feet[0] = mover.x; feet[1] = mover.y; feet[2] = mover.z;
+      target.crouched = mover.crouched;
+    };
     const previous = see();
     const history: number[] = [];
     if (withHistory) {
@@ -82,12 +96,13 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
       addSmokeDepths(pastScene, visibleSmokeDepths(map, me, game.smokes, game.shields));
       history.push(...previous, ...pastScene);
     }
+    advance();
     me.yaw = yaw;
     me.pitch = pitch;
     const obs = see([(yaw - previousYaw) / EXPLORATION_TICKS, (pitch - previousPitch) / EXPLORATION_TICKS]);
     const scene = explorationScene(map, me, withHistory && obs[0] ? [yaw + obs[1], 0] : previous[0] ? [previousYaw + previous[1], EXPLORATION_TICKS] : undefined);
     addSmokeDepths(scene, visibleSmokeDepths(map, me, game.smokes, game.shields));
-    // The probes are stationary. Use the same shot pattern for alternatives
+    // Use the same shot pattern for alternatives
     // at one pose, so a change of aim is compared under the same spread.
     const shotSequence = Math.floor(draw() * 0x7fffffff);
     const lands = () => spreadDirs(me, shotSequence, me.weapon, false).some(direction => {
@@ -98,6 +113,11 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
     // Log both outcomes of probe shots, including misses. The weapon decision is
     // fit to the observed utility of spending ammunition at this camera pose.
     rows.push([0, ...history, ...obs, ...scene, Number(lands()),0]);
+    if (obs[0] && mover) {
+      const x = mover.x, z = mover.z;
+      advance();
+      if (previous[0] && Math.hypot(x - b.x, z - b.z) > .25 && Math.hypot(mover.x - x, mover.z - z) > .25) lateralObservations++;
+    }
     for (let probe=0;probe<(obs[0] ? 48 : 8);probe++) {
       const scale = obs[0] && probe % 2 === 0 ? .06 : 1;
       const mx=scale*signed(), my=scale*signed(), horizon=obs[0] ? 1 : 1+Math.floor(draw()*5);
@@ -110,3 +130,4 @@ for (const name of ['aster','blackflag','sakura','homeward']) {
 }
 writeFileSync(output, JSON.stringify(rows));
 console.log(rows.reduce((counts,r)=>(counts[r[0]]++,counts),[0,0,0]), 'shot outcomes, hits after camera actions, recovered contacts');
+console.log(lateralObservations, 'visible lateral histories');
