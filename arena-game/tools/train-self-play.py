@@ -44,7 +44,11 @@ def search_demonstrations(states, rules):
     teacher = import_module("fit-match-movement").actor_from_json(base)
     # The last three scene features are the recency and bearing of an actual
     # sighting. Preserve the human imitation objective throughout contact loss.
-    eligible = (states[:, :, 0] == 0).all(dim=1) & (states[:, -1, -3] == 0)
+    # This search specialist was fitted on clear approaches. Smoke at the rim
+    # has its own training exercise and can appear without a current contact.
+    camera_depths = states[:, :, bc.OBSERVATIONS + 6:bc.OBSERVATIONS + 9]
+    eligible = ((states[:, :, 0] == 0).all(dim=1) & (states[:, -1, -3] == 0)
+                & (camera_depths >= 0).all(dim=(1, 2)))
     labels = states.new_zeros(len(states), len(SEARCH_AXES))
     for indices in eligible.nonzero().flatten().split(256):
         if len(indices):

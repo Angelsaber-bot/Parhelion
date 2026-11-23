@@ -18,18 +18,20 @@ class ContactMemoryTest(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         wire = (root / "shared/directPolicy.json").read_bytes()
         base = json.loads(wire)
-        states = torch.zeros(4, base["context"], bc.FEATURES)
+        states = torch.zeros(6, base["context"], bc.FEATURES)
         states[1, -1, 0] = .5
         states[2, 0, 0] = 1
         states[3, -1, -3] = .1
+        states[4, -1, bc.OBSERVATIONS + 7] = -.25
+        states[5, 0, bc.OBSERVATIONS + 6] = -.125
         result = rl.search_demonstrations(states, base["rulesVersion"])
         expected = json.loads((root / "tools/challengers/spawn-search-head.json").read_bytes())["baseSha256"]
         if expected == hashlib.sha256(wire).hexdigest():
             self.assertIsNotNone(result)
             mask, labels = result
-            self.assertEqual(mask.tolist(), [True, False, False, False])
+            self.assertEqual(mask.tolist(), [True, False, False, False, False, False])
             self.assertTrue(torch.isfinite(labels).all())
-            self.assertEqual(labels.shape, (4, 3))
+            self.assertEqual(labels.shape, (6, 3))
             self.assertTrue((labels[~mask] == 0).all())
         else:
             self.assertIsNone(result)

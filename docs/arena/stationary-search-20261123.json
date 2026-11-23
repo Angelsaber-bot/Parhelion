@@ -1,0 +1,184 @@
+{
+  "sourceCommit": "3b1a3db2422676ee4202647bee63556de815dec7",
+  "decision": "Use the new three-row movement and camera readout only as a training teacher on empty clear views. Retain the bundled gameplay opponent.",
+  "hashes": {
+    "algorithm": "SHA-256, file bytes unless noted",
+    "bundledFile": "317936bfc1d63a38a853842468a38d60ed8a56401c1662ce5a5a3704c3a73360",
+    "lastVerifiedPublicCompactJSON": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+    "previousTeacherHead": "5b2f3f3fc3d58081f215880fecf25372bc7aa76ff66b4818c56c41f371dcb776",
+    "newTeacherHead": "15fe3c97e2549216d5418edf091c5155bc56139ce2829463b6afb973c1aa4cd0"
+  },
+  "protocol": {
+    "seconds": 30,
+    "seeds": [
+      19350411,
+      17552391,
+      45749381
+    ],
+    "mapGroups": [
+      [
+        "frostcourt",
+        "homeward",
+        "blackflag"
+      ],
+      [
+        "lishan",
+        "suntemple",
+        "orleans"
+      ],
+      [
+        "aster",
+        "sakura",
+        "camlann"
+      ]
+    ],
+    "repeatsPerMapAndSeed": 12,
+    "allTrialsPerActor": 648,
+    "initiallyUnseenStationaryTrialsPerActor": 324,
+    "method": "Use scripts/evaluation/evaluate-spawn-search.ts at sourceCommit. For each group and seed call fixtures(group,seed,12), then assess(actor,bundled,trials,30). For either teacher clone bundled, replace out.weight and out.bias rows [0,2,3] from the head and pass the clone to assess. The previous head is at sourceCommit. Use the same normal spawn, side, posture and opponent conditions in each group. Found counts equal waitingTrials * waitingAcquired and trials.length * acquired. Rates for movement are unweighted means over the nine equal-size groups. The confirmation seeds were reserved from training and model selection."
+  },
+  "results": {
+    "bundled": {
+      "stationaryBySeed": [
+        8,
+        8,
+        6
+      ],
+      "allContactsBySeed": [
+        78,
+        74,
+        74
+      ],
+      "stationaryFound": 22,
+      "allFound": 226,
+      "forwardMetersPerSecondMean": 1.9064,
+      "lowDisplacementFractionMean": 0.1536
+    },
+    "previousTeacher": {
+      "stationaryBySeed": [
+        17,
+        22,
+        21
+      ],
+      "allContactsBySeed": [
+        94,
+        99,
+        101
+      ],
+      "stationaryFound": 60,
+      "allFound": 294,
+      "forwardMetersPerSecondMean": 2.8115,
+      "lowDisplacementFractionMean": 0.1242
+    },
+    "newTeacher": {
+      "stationaryBySeed": [
+        24,
+        25,
+        22
+      ],
+      "allContactsBySeed": [
+        99,
+        101,
+        102
+      ],
+      "stationaryFound": 71,
+      "allFound": 302,
+      "forwardMetersPerSecondMean": 2.3768,
+      "lowDisplacementFractionMean": 0.0978
+    }
+  },
+  "training": {
+    "newTeacher": "Direct outcome-based fine-tuning of the released transformer readout starting from the route-policy challenger. The final teacher imports only yaw, strafe and forward readouts into the frozen bundled encoder. The shipped runtime does not load the teacher.",
+    "signals": "Search training observed normal game outcomes on stationary, moving, rear-contact and smoke scenarios. The learned policy receives the usual player-visible features."
+  },
+  "livePromotion": {
+    "promoted": false,
+    "directSearchTeacherScreen": {
+      "seed": 58267721,
+      "seeds": 3,
+      "failed": [
+        "smokeContact",
+        "wallStalls",
+        "closeMovingDamage"
+      ]
+    },
+    "ppoCandidate": {
+      "sha256": "f1435c6b376f560e6fa7441b980af5653951f412a86ee6e48be0da2ed94a0449",
+      "seed": 58267721,
+      "seeds": 2,
+      "incumbentSeeds": 4,
+      "fullRounds": 72,
+      "vsScriptedBaseline": {
+        "won": 0,
+        "lost": 24,
+        "drawn": 0
+      },
+      "vsIncumbent": {
+        "won": 5,
+        "lost": 25,
+        "drawn": 18
+      },
+      "failed": [
+        "improved",
+        "bothModes"
+      ]
+    },
+    "humanHoldout": "No new human replay or online result was available for this evaluation.",
+    "newTeacherPPO": {
+      "actorFileSHA256": "2052f263ca916044e5f23847392d3b67ba4594f542f167a57dc46e290978ddb7",
+      "trainingGames": 40,
+      "environmentSteps": 84000,
+      "decisions": 10332,
+      "heldoutTrialsPerActor": 648,
+      "heldoutStationaryTrialsPerActor": 324,
+      "stationaryFound": 41,
+      "stationaryBySeed": [
+        14,
+        14,
+        13
+      ],
+      "allFound": 273,
+      "allContactsBySeed": [
+        87,
+        89,
+        97
+      ],
+      "failedScreenGates": {
+        "108151791": [
+          "closeMovingDamage",
+          "spawnSearchProgress"
+        ],
+        "143995541": [
+          "closeMovingDamage",
+          "spawnSearchProgress"
+        ],
+        "58267721": [
+          "wallStalls",
+          "closeMovingDamage",
+          "spawnSearchProgress"
+        ]
+      },
+      "promoted": false
+    },
+    "contactIsolationExperiment": {
+      "description": "Offline-only diagnostic using the new readout on clear, empty search contexts with expired contact memory and the original policy otherwise. All three close-contact maps passed the moving-target gate. No runtime wire changes were shipped.",
+      "seed": 58267721,
+      "seeds": 3,
+      "fullRounds": 72,
+      "vsScriptedBaseline": {
+        "legWins": 1,
+        "legLosses": 32,
+        "legDraws": 3
+      },
+      "vsIncumbent": {
+        "legWins": 12,
+        "legLosses": 8,
+        "legDraws": 16
+      },
+      "failed": [
+        "improved",
+        "bothModes"
+      ]
+    }
+  }
+}

@@ -25,6 +25,7 @@ test('NON-GPU sixty production UI interruption cycles retain bounded nodes/liste
     world.player.teleport(position.x, position.y + .05, position.z + 1); await enter();
     for (let i = 0; i < 45; i++) frame();
     assert.equal(world.player.onGround, true);
+    document.getElementById('world-new-game-cancel')!.addEventListener('click', () => { confirmations++; });
     // Warm all modal structures before counting persistent nodes and subsequent registrations.
     key('KeyF'); key('KeyM'); key('KeyM'); key('KeyN'); key('Escape');
     settingsOpen.click(); language.value = 'en'; language.dispatchEvent(new window.Event('change', { bubbles: true })); settingsClose.click(); await enter();
@@ -53,7 +54,6 @@ test('NON-GPU sixty production UI interruption cycles retain bounded nodes/liste
     const sceneNodes = () => { let count = 0; world.scene.traverse(() => count++); return count; };
     const sceneBaseline = sceneNodes(), bodyPosition = world.player.pos.clone();
     const baselineObjects = new Set<unknown>(); world.scene.traverse((object: unknown) => baselineObjects.add(object));
-    document.getElementById('world-new-game-cancel')!.addEventListener('click', () => { confirmations++; });
     let previousCooldown = paidCooldown;
     for (let iteration = 0; iteration < 60; iteration++) {
       await enter(); down('KeyW'); key('KeyF'); assert.equal(dialogue.hidden, false, `dialogue ${iteration}`);
