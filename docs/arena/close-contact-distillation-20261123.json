@@ -1,0 +1,243 @@
+{
+  "sourceCommit": "b6a460691dcb3f07852a46d83b7af22fad9f5210",
+  "start": "stationaryRouteSelection in stationary-search-20261123.json; base bundled, gains [0.75,0,0.5] on search teacher yaw, strafe, forward",
+  "rollout": "Parent samples actions against self or bundled opponent. self-play-rollout.ts, seed 1376087933, 64 episodes, 25 seconds, focus encounter and waiting. 11823 decisions: 1116 current clear contacts within 12m, 8364 empty windows with expired memory, 2343 remaining.",
+  "linear": "For strengths 0.5, 2, 8 fit a correction only to yaw weights and bias. Frozen final encoder plus constant. Target incumbent minus parent raw yaw on close states, zero elsewhere. Mean squared residual per group, weighted 1, strength, 0.25 respectively; ridge 0.015 including bias. Confirmation uses strength 2.",
+  "nonlinear": "Start again at parent. Train only up/down weights and biases in final transformer block; target raw incumbent outputs on clear close states, raw parent outputs everywhere else. Seed 21307551, Adam lr 0.0005, 320 steps, sample 48 windows from each group per step with replacement. Loss = mean squared logit error + 2 * yaw MSE + forward MSE.",
+  "sha256": {
+    "start.json": "d5ecd111e4a53c7682417cd01cd39d1aed35255b70731437dc9245822d3ba6b1",
+    "fit-0.5.json": "67c164871910a9d6ac70f2194a9f0d75e60d095f98285e0c83489fbd5c3a60ac",
+    "fit-2.json": "58d7587734e6e1caac99fc890236b7d16bdbba1f647ff5b0d7eab1a01dc223c9",
+    "fit-8.json": "9d0df18ecdf8929a70c96ad34360d42b42ab07132d1e446302d84b5851058e20",
+    "nonlinear.json": "25f8da0e79d9464187d9424f475314e343103f5656709620ca1a4c0195927cc9"
+  },
+  "screens": [
+    {
+      "actor": "0.5",
+      "seed": 120770257,
+      "failed": ["rearSearch", "closeMovingDamage"],
+      "passed": false
+    },
+    {
+      "actor": "0.5",
+      "seed": 1839984271,
+      "failed": ["rearSearch", "spawnSearchProgress"],
+      "passed": false
+    },
+    {
+      "actor": "2",
+      "seed": 120770257,
+      "failed": ["rearSearch", "smokeContact", "wallStalls", "closeMovingDamage"],
+      "passed": false
+    },
+    {
+      "actor": "2",
+      "seed": 1839984271,
+      "failed": ["rearSearch", "spawnSearchProgress"],
+      "passed": false
+    },
+    {
+      "actor": "8",
+      "seed": 120770257,
+      "failed": ["rearSearch", "wallStalls", "closeMovingDamage"],
+      "passed": false
+    },
+    {
+      "actor": "8",
+      "seed": 1839984271,
+      "failed": ["rearSearch", "spawnSearchProgress"],
+      "passed": false
+    },
+    {
+      "actor": "block",
+      "seed": 120770257,
+      "failed": ["rearSearch", "smokeContact", "closeMovingDamage"],
+      "passed": false
+    },
+    {
+      "actor": "block",
+      "seed": 1839984271,
+      "failed": ["rearSearch", "closeMovingDamage"],
+      "passed": false
+    },
+    {
+      "actor": "block",
+      "seed": 552945761,
+      "failed": ["rearSearch", "smokeContact", "closeMovingDamage", "spawnSearchProgress"],
+      "passed": false
+    }
+  ],
+  "confirmation": {
+    "maps": ["frostcourt", "homeward", "blackflag", "orleans", "suntemple"],
+    "spawnRepeats": 12,
+    "seconds": 30,
+    "closePairs": 8,
+    "spawnFields": ["forwardMetersPerSecond", "lowDisplacementFraction", "stationaryFound", "stationaryTrials"],
+    "closeFields": ["map", "targetMx", "trials", "candidateHalf", "incumbentHalf", "candidateTwo", "incumbentTwo"],
+    "rows": [
+      {
+        "seed": 107403833,
+        "name": "reference",
+        "spawn": [1.61314, 0.20522, 3, 60],
+        "close": []
+      },
+      {
+        "seed": 107403833,
+        "name": "parent",
+        "spawn": [2.03357, 0.19554, 17, 60],
+        "close": [
+          ["frostcourt", 0, 16, 7, 4, 11, 7],
+          ["frostcourt", -1, 16, 3, 4, 6, 8],
+          ["frostcourt", 1, 16, 4, 1, 8, 2],
+          ["homeward", 0, 16, 8, 11, 14, 11],
+          ["homeward", -1, 16, 6, 4, 6, 5],
+          ["homeward", 1, 16, 4, 2, 13, 5],
+          ["blackflag", 0, 16, 15, 6, 16, 11],
+          ["blackflag", -1, 16, 6, 10, 7, 13],
+          ["blackflag", 1, 16, 9, 2, 16, 5]
+        ]
+      },
+      {
+        "seed": 107403833,
+        "name": "fitted",
+        "spawn": [1.87471, 0.2126, 15, 60],
+        "close": [
+          ["frostcourt", 0, 16, 5, 4, 10, 7],
+          ["frostcourt", -1, 16, 4, 4, 7, 8],
+          ["frostcourt", 1, 16, 1, 1, 7, 2],
+          ["homeward", 0, 16, 11, 11, 12, 11],
+          ["homeward", -1, 16, 6, 4, 6, 5],
+          ["homeward", 1, 16, 3, 2, 12, 5],
+          ["blackflag", 0, 16, 15, 6, 16, 11],
+          ["blackflag", -1, 16, 6, 10, 7, 13],
+          ["blackflag", 1, 16, 3, 2, 11, 5]
+        ]
+      },
+      {
+        "seed": 806243009,
+        "name": "reference",
+        "spawn": [1.6177, 0.21949, 2, 60],
+        "close": []
+      },
+      {
+        "seed": 806243009,
+        "name": "parent",
+        "spawn": [2.23577, 0.13428, 18, 60],
+        "close": [
+          ["frostcourt", 0, 16, 12, 9, 13, 13],
+          ["frostcourt", -1, 16, 5, 3, 8, 6],
+          ["frostcourt", 1, 16, 5, 0, 13, 3],
+          ["homeward", 0, 16, 14, 9, 15, 13],
+          ["homeward", -1, 16, 8, 11, 9, 12],
+          ["homeward", 1, 16, 5, 4, 13, 7],
+          ["blackflag", 0, 16, 11, 10, 14, 15],
+          ["blackflag", -1, 16, 5, 8, 6, 14],
+          ["blackflag", 1, 16, 7, 2, 16, 7]
+        ]
+      },
+      {
+        "seed": 806243009,
+        "name": "fitted",
+        "spawn": [2.06473, 0.17853, 18, 60],
+        "close": [
+          ["frostcourt", 0, 16, 10, 9, 12, 13],
+          ["frostcourt", -1, 16, 3, 3, 5, 6],
+          ["frostcourt", 1, 16, 2, 0, 10, 3],
+          ["homeward", 0, 16, 10, 9, 13, 13],
+          ["homeward", -1, 16, 8, 11, 10, 12],
+          ["homeward", 1, 16, 5, 4, 10, 7],
+          ["blackflag", 0, 16, 13, 10, 16, 15],
+          ["blackflag", -1, 16, 5, 8, 6, 14],
+          ["blackflag", 1, 16, 2, 2, 12, 7]
+        ]
+      },
+      {
+        "seed": 1568150303,
+        "name": "reference",
+        "spawn": [1.60525, 0.20814, 2, 60],
+        "close": []
+      },
+      {
+        "seed": 1568150303,
+        "name": "parent",
+        "spawn": [2.00923, 0.22745, 16, 60],
+        "close": [
+          ["frostcourt", 0, 16, 11, 9, 14, 13],
+          ["frostcourt", -1, 16, 5, 4, 5, 8],
+          ["frostcourt", 1, 16, 4, 0, 15, 5],
+          ["homeward", 0, 16, 12, 9, 12, 11],
+          ["homeward", -1, 16, 7, 6, 7, 9],
+          ["homeward", 1, 16, 5, 3, 9, 6],
+          ["blackflag", 0, 16, 12, 10, 13, 14],
+          ["blackflag", -1, 16, 8, 11, 8, 13],
+          ["blackflag", 1, 16, 8, 5, 13, 10]
+        ]
+      },
+      {
+        "seed": 1568150303,
+        "name": "fitted",
+        "spawn": [2.07396, 0.17917, 16, 60],
+        "close": [
+          ["frostcourt", 0, 16, 13, 9, 15, 13],
+          ["frostcourt", -1, 16, 2, 4, 3, 8],
+          ["frostcourt", 1, 16, 4, 0, 12, 5],
+          ["homeward", 0, 16, 9, 9, 12, 11],
+          ["homeward", -1, 16, 6, 6, 7, 9],
+          ["homeward", 1, 16, 4, 3, 9, 6],
+          ["blackflag", 0, 16, 13, 10, 15, 14],
+          ["blackflag", -1, 16, 8, 11, 8, 13],
+          ["blackflag", 1, 16, 7, 5, 11, 10]
+        ]
+      },
+      {
+        "seed": 107403833,
+        "name": "nonlinear",
+        "spawn": [2.21656, 0.14587, 11, 60],
+        "close": [
+          ["frostcourt", 0, 16, 7, 4, 11, 7],
+          ["frostcourt", -1, 16, 4, 4, 5, 8],
+          ["frostcourt", 1, 16, 3, 1, 7, 2],
+          ["homeward", 0, 16, 12, 11, 12, 11],
+          ["homeward", -1, 16, 4, 4, 4, 5],
+          ["homeward", 1, 16, 2, 2, 10, 5],
+          ["blackflag", 0, 16, 13, 6, 13, 11],
+          ["blackflag", -1, 16, 2, 10, 3, 13],
+          ["blackflag", 1, 16, 7, 2, 13, 5]
+        ]
+      },
+      {
+        "seed": 806243009,
+        "name": "nonlinear",
+        "spawn": [2.26908, 0.11812, 11, 60],
+        "close": [
+          ["frostcourt", 0, 16, 14, 9, 14, 13],
+          ["frostcourt", -1, 16, 3, 3, 6, 6],
+          ["frostcourt", 1, 16, 4, 0, 10, 3],
+          ["homeward", 0, 16, 10, 9, 14, 13],
+          ["homeward", -1, 16, 9, 11, 11, 12],
+          ["homeward", 1, 16, 4, 4, 9, 7],
+          ["blackflag", 0, 16, 13, 10, 16, 15],
+          ["blackflag", -1, 16, 3, 8, 6, 14],
+          ["blackflag", 1, 16, 2, 2, 14, 7]
+        ]
+      },
+      {
+        "seed": 1568150303,
+        "name": "nonlinear",
+        "spawn": [2.10955, 0.18744, 10, 60],
+        "close": [
+          ["frostcourt", 0, 16, 11, 9, 12, 13],
+          ["frostcourt", -1, 16, 2, 4, 3, 8],
+          ["frostcourt", 1, 16, 4, 0, 12, 5],
+          ["homeward", 0, 16, 7, 9, 12, 11],
+          ["homeward", -1, 16, 7, 6, 8, 9],
+          ["homeward", 1, 16, 4, 3, 8, 6],
+          ["blackflag", 0, 16, 11, 10, 14, 14],
+          ["blackflag", -1, 16, 7, 11, 7, 13],
+          ["blackflag", 1, 16, 7, 5, 12, 10]
+        ]
+      }
+    ]
+  },
+  "decision": "Retain incumbent. All screens failed rearSearch. No fresh human holdout or live scores available during storage_limit."
+}
