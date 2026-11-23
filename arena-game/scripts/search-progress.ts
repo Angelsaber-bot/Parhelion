@@ -12,6 +12,8 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
   let count = 0, turn = 0, range = 0, startX = 0, startZ = 0, heading = 0;
   let minimumYaw = 0, maximumYaw = 0, previousSearchStalled = false;
   let forwardAttempts = 0, forwardMeters = 0, lastX = 0, lastZ = 0;
+  let recovery: { x: number; z: number; age: number; timedOut: boolean } | undefined;
+  let recovered = 0, stayedBlocked = 0;
   let discoveries = 0, positiveCredits = 0, negativeCredits = 0, newCells = 0;
   const visited = new Set<string>();
   // A respawn starts a new segment but revisiting the same ground is still a revisit.
@@ -24,6 +26,25 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
     const z = obs[scene + 2] * (bounds.max[2] - bounds.min[2]) * .5;
     const yaw = Math.atan2(obs[scene + 3], obs[scene + 4]);
     const cell = Math.floor(x / 4) + ',' + Math.floor(z / 4);
+    if (reset || obs[0] > 0) recovery = undefined;
+    if (recovery) {
+      // A scan or wall press is one event even if it lasts several windows.
+      // End the observation on contact or respawn; a truncated wait is unscored.
+      if (Math.hypot(x - recovery.x, z - recovery.z) >= 2) {
+        if (!recovery.timedOut) {
+          recovered++;
+          if (!visited.has(cell) && positiveCredits < 12) {
+            steps[i - 1].reward += .01;
+            positiveCredits++;
+          }
+        }
+        recovery = undefined;
+      } else if (++recovery.age >= horizon && !recovery.timedOut) {
+        recovery.timedOut = true;
+        stayedBlocked++;
+        if (negativeCredits < 8) { steps[i - 1].reward -= .015; negativeCredits++; }
+      }
+    }
     if (obs[0] > 0) {
       // A new approach that actually revealed a rival is more useful than distance alone.
       if (unseenSteps >= 2 && discoveries < 3 && Math.max(searchReach, Math.hypot(x - unseenStartX, z - unseenStartZ)) >= 2) {
@@ -52,16 +73,18 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
     if (!visited.has(cell)) newCells++;
     if (route.at(-1) !== cell) route.push(cell);
     if (++count >= horizon) {
+      const scanned = maximumYaw - minimumYaw > Math.PI * .65;
+      const pushing = forwardAttempts >= .75 * (horizon - 1);
+      if (!recovery && range < 1.5 && (scanned || pushing)) recovery = { x, z, age: 0, timedOut: false };
       // Credit and debit remain small compared with a frag or the match outcome.
       if (newCells >= 2 && Math.hypot(x - startX, z - startZ) >= 4 && positiveCredits < 12) {
-        // Give the actions that finally left a stagnant search area credit for the recovery.
         // The same ground can be covered backing away from the camera. Reward
         // additional forward progress only on a genuinely new, displaced route.
-        const credits = Math.min(1 + Number(previousSearchStalled) + Number(forwardMeters >= 4), 12 - positiveCredits);
+        const credits = Math.min(1 + Number(forwardMeters >= 4), 12 - positiveCredits);
         steps[i - 1].reward += .01 * credits; positiveCredits += credits;
       } else if (negativeCredits < 8 && (
-        (range < 2.5 && (maximumYaw - minimumYaw > Math.PI * .65 || previousSearchStalled)) ||
-        (range < 1.5 && forwardAttempts >= .75 * (horizon - 1))
+        (range < 2.5 && (scanned || previousSearchStalled)) ||
+        (range < 1.5 && pushing)
       )) {
         steps[i - 1].reward -= .015; negativeCredits++;
       }
@@ -87,4 +110,5 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
     }
     visited.add(cell);
   }
+  return { recovered, stayedBlocked };
 }

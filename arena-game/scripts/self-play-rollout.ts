@@ -238,7 +238,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
     for (const seat of seats) seat.wasAlive = game.player(seat.id)!.alive;
     const scoreDiff = game.score[team] - game.score[enemy];
     game.step();
-    if (start.smoke && rivalLifeEnd === undefined && !game.player('rival')!.alive) rivalLifeEnd = seats[0].steps.length;
+    if ((start.smoke || scenario === 'rear') && rivalLifeEnd === undefined && !game.player('rival')!.alive) rivalLifeEnd = seats[0].steps.length;
     const events = game.snapshot().events;
     if (waiting.length && (game.tick - firstTick >= waitingTicks || events.some(event => event.t === 'hit'))) {
       for (const { slot, driver } of waiting) slot.controller = driver;
@@ -264,6 +264,8 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   }
   // Reward observed reacquisition in the actual smoke window. Both actors
   // independently chose every control leading up to it.
+  if (layout === '1v1' && scenario === 'rear')
+    scoreContactDrill(seats[0].steps.slice(0, rivalLifeEnd), 'rear', 6 * TICK_HZ, EXPLORATION_TICKS);
   if (layout === '1v1' && start.smoke)
     scoreContactDrill(seats[0].steps.slice(0, rivalLifeEnd), 'smoke',
       start.smokeTick! + SMOKE.life - SMOKE.clear + 3 * TICK_HZ, EXPLORATION_TICKS, smokeWindow);

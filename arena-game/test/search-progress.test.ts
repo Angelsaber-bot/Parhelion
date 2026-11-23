@@ -5,15 +5,18 @@ import type { MapData } from '../shared/map.ts';
 import { bundledOpponent } from '../shared/learnedOpponent.ts';
 import { assess, fixtures, passesSpawnSearch } from '../scripts/evaluation/evaluate-spawn-search.ts';
 const bounds: MapData['bounds'] = { min: [-20, 0, -20], max: [20, 6, 20] };
-function trial(path: (i: number) => [number, number, number], length = 16, resetAt = -1, forward = 0) {
+function measuredTrial(path: (i: number) => [number, number, number], length = 16, resetAt = -1, forward = 0) {
   const rows = Array.from({ length }, (_, i) => {
     const [x, yaw, seen] = path(i);
     const obs = Array(HUMAN_FEATURES.length + 12).fill(0); obs[0] = seen;
     obs[HUMAN_FEATURES.length] = x / 20; obs[HUMAN_FEATURES.length + 3] = Math.sin(yaw); obs[HUMAN_FEATURES.length + 4] = Math.cos(yaw);
     return { obs, axes: [0, 0, 0, forward], reset: i === 0 || i === resetAt, reward: 0 };
   });
-  scoreSearchProgress(rows, bounds, 12, 60);
-  return rows.reduce((sum, s) => sum + s.reward, 0);
+  const outcome = scoreSearchProgress(rows, bounds, 12, 60);
+  return { ...outcome, reward: rows.reduce((sum, s) => sum + s.reward, 0) };
+}
+function trial(...args: Parameters<typeof measuredTrial>) {
+  return measuredTrial(...args).reward;
 }
 describe('self-play search outcomes', () => {
   it('measures world displacement while a rival waits at its spawn', () => {
@@ -60,6 +63,16 @@ describe('self-play search outcomes', () => {
     expect(trial(approach)).toBeCloseTo(trial(approach, 15) + .02);
     expect(trial(approach, 16, 15)).toBeCloseTo(trial(approach, 15));
     expect(trial(i => [i * .7, -Math.PI / 2, Number(i === 180)], 181)).toBeCloseTo(.14);
+  });
+  it('measures a single recovery opportunity and censors unfinished searches', () => {
+    const path = (i: number): [number, number, number] => [0, Math.min(i, 14) * .25, 0];
+    expect(measuredTrial(path, 75).stayedBlocked).toBe(1);
+    expect(measuredTrial(path, 22).stayedBlocked).toBe(0);
+    expect(measuredTrial(path, 30, 20).stayedBlocked).toBe(0);
+    expect(measuredTrial(i => [0, path(i)[1], Number(i >= 20)], 35).stayedBlocked).toBe(0);
+    const escaped = measuredTrial(i => [Math.max(0, i - 14) * .5, path(i)[1], 0], 35);
+    expect(escaped.recovered).toBe(1);
+    expect(escaped.stayedBlocked).toBe(0);
   });
   it('reduces credit for repeatedly following the same unsuccessful path', () => {
     const lap = (i: number): [number, number, number] => [(i % 15) * .72, 0, 0];

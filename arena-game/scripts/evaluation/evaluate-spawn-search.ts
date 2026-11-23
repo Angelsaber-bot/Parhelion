@@ -1,3 +1,5 @@
+import { scoreSearchProgress } from '../search-progress.ts';
+import { EXPLORATION_TICKS } from '../../shared/exploration.ts';
 import { getMap } from '../../shared/arenaMap.ts';
 import { greedyAction, neuralBotControl } from '../../shared/botNeuralControl.ts';
 import { randomBotLoadout, randomBotUtility, TICK_HZ } from '../../shared/content.ts';
@@ -28,11 +30,14 @@ function play(model: NeuralPolicyModel, opponent: NeuralPolicyModel, trial: Tria
   let forwardTravel = 0, forwardRequests = 0, unseenTicks = 0, forwardInput = 0;
   const cells = new Set<string>();
   const openingRoute = new Set<string>();
-  const actor = neuralBotControl(model, (obs, logits) => {
+  const decisions: Parameters<typeof scoreSearchProgress>[0] = [];
+  const actor = neuralBotControl(model, (obs, logits, reset) => {
     visible = !!obs[0]; acquired ||= visible;
     firstSight ??= visible;
     if (visible) contacts++;
-    return greedyAction(obs, logits);
+    const action = greedyAction(obs, logits);
+    decisions.push({ obs, reset, axes: logits.slice(0, 4), reward: 0 });
+    return action;
   });
   const kit = () => ({ skins: [], bot: true, char: Math.floor(random() * 7), loadout: randomBotLoadout(random), utility: randomBotUtility(random) });
   game.addPlayer('pilot', { ...kit(), name: 'pilot', team: trial.side }, {
@@ -86,7 +91,8 @@ function play(model: NeuralPolicyModel, opponent: NeuralPolicyModel, trial: Tria
       frames = 0;
     }
   }
-  return { openingRoute, cells: cells.size, reach: bestReach, spins, stalled, windows, acquired: Number(acquired),
+  const { recovered, stayedBlocked } = scoreSearchProgress(decisions, game.map.data.bounds, EXPLORATION_TICKS, TICK_HZ);
+  return { recovered, stayedBlocked, openingRoute, cells: cells.size, reach: bestReach, spins, stalled, windows, acquired: Number(acquired),
     contacts, damage, received, travel, forwardTravel, forwardRequests, unseenTicks, initiallyVisible: Number(firstSight) };
 }
 
@@ -97,6 +103,8 @@ export function assess(model: NeuralPolicyModel, opponent: NeuralPolicyModel, tr
   const stats = {
     cells: mean('cells'), reach: mean('reach'), spins: mean('spins'), stalled: mean('stalled'), windows: mean('windows'),
     acquired: mean('acquired'), contacts: mean('contacts'), damage: mean('damage'), received: mean('received'), travel: mean('travel'),
+    recoveryTrials: rows.reduce((n, r) => n + r.recovered + r.stayedBlocked, 0),
+    recoveries: rows.reduce((n, r) => n + r.recovered, 0),
     waitingTrials: waiting.length,
     waitingAcquired: waiting.reduce((n, r) => n + r.acquired, 0) / Math.max(1, waiting.length),
     forwardMetersPerSecond: TICK_HZ * mean('forwardTravel') / Math.max(1, mean('unseenTicks')),

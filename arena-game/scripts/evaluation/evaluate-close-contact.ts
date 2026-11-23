@@ -16,7 +16,7 @@ type Start = Pick<NavNode, 'x' | 'y' | 'z'>;
 // from aggregate match telemetry, separate from the consented training corpus.
 interface MatchReference { map: string; at: number; bot: number; human: number; kit: Loadout; humanScore: number; botScore: number }
 const references: MatchReference[] = [
-  { map: 'frostcourt', at: 1795396594422, bot: 3, human: 5, kit: ['firefly', 'halo', 'hammer'], humanScore: 7, botScore: 0 },
+  { map: 'frostcourt', at: 1795404024343, bot: 2, human: 5, kit: ['corona', 'longnight', 'hammer'], humanScore: 7, botScore: 1 },
   { map: 'homeward', at: 1795382557118, bot: 3, human: 7, kit: ['corona', 'longnight', 'polearm'], humanScore: 7, botScore: 2 },
   { map: 'blackflag', at: 1795381709043, bot: 6, human: 7, kit: ['corona', 'firefly', 'hammer'], humanScore: 7, botScore: 1 },
 ];
