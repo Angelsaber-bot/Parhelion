@@ -61,10 +61,10 @@ test('an earned Egypt checkpoint saves on foot and starts the next streamed sess
     assert.ok(JSON.parse(raw).found.includes('travel_egypt')); assert.ok(w.combat.state.ammo>0);
     assert.deepEqual(h.errors,[]);
   } finally {await h.close();}
-  const resumed=await bootWorldWithoutGpu({deterministic:true,streaming:true,initialStorage:{[WORLD_PROGRESS_KEY]:raw!}});
+  const resumed=await bootWorldWithoutGpu({deterministic:true,streaming:true,initialStorage:{[WORLD_PROGRESS_KEY]:raw!, 'parhelion-language-v1':'en'}});
   try {
     const w=resumed.world, stop=w.travelStops.find((s:any)=>s.id==='travel_egypt');
-    assert.match(resumed.window.document.getElementById('world-enter')!.textContent!,/继续旅程|Continue journey/);
+    assert.equal(resumed.window.document.getElementById('world-enter')!.textContent, 'Continue journey');
     assert.equal(w.player.pos.x,stop.position[0]); assert.equal(w.player.pos.z,stop.position[2]);
     assert.ok(Math.abs(w.player.pos.y-stop.position[1])<1.2);
     assert.ok(w.done.has('armory_rack')); assert.deepEqual(resumed.errors,[]);
