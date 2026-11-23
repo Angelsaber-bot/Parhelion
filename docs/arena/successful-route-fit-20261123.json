@@ -1,0 +1,218 @@
+{
+  "source": "f758e06ba72284b288800e4fae264c2183831c82",
+  "parent": "stationary actor (f2), rear-search-evaluation-20261123.json",
+  "teacher": "Bundled encoder and controls plus three rows from tools/challengers/spawn-search-head.json, in [yaw,strafe,forward] order.",
+  "collection": {
+    "seeds": [92874771, 1344240277, 155214383],
+    "maps": ["frostcourt", "blackflag", "homeward", "orleans", "suntemple", "aster", "sakura", "camlann"],
+    "repeats": 18,
+    "seconds": 30,
+    "stationaryTrials": 432,
+    "successfulApproaches": 89,
+    "windows": 7670,
+    "description": "At each selectAction decision in spawn evaluation collect empty observations up to the first clear acquisition of the stationary rival. Clear trajectory on policy reset. Use both seats; retain successful approaches only."
+  },
+  "fit": "Only adjust strafe and forward readouts. Target teacher minus parent raw outputs on the successful routes. Add a constant to the frozen final encoder state, weighting each route equally. Anchor residual at zero on the preceding 48-game rollout (rear-search-evaluation-20261123): 3351 contact/recent windows, group weight 2, and 5048 other windows, weight 0.25. Ridge including intercept 0.02. Runtime and primary candidate use zero history padding. Repeat-first-observation fit is reported separately as an experimental control.",
+  "fittedReadouts": [
+    {
+      "axis": 2,
+      "weight": [0.2555594324963466, -0.26538373821121314, 0.030779845806662036, -0.12243611977249644, -0.12386446232556937, -0.1561141913066451, -0.3361637849543191, -0.3029007054711902, -0.12018560171560984, 0.1067124895087766, 0.16255634626123, 0.23253710600136887, 0.2548920752290485, 0.19796262752554186, -0.030273078246280755, -0.20704211967138655, -0.036257991246087966, -0.2193201735424545, 0.3749443680265709, -0.2309106758207808, -0.3935843982674428, 0.21302660428785591, 0.018681441754351838, 0.44218889409964046],
+      "bias": -0.16506464453317737
+    },
+    {
+      "axis": 3,
+      "weight": [0.3268936942048383, -0.2304552811975228, -0.32547233035042894, 0.3009917579283424, 0.32892202578579216, -0.2009343390813228, -0.26448627768643723, 0.23131636911097506, 0.17818910804829668, -0.10143351540921433, 0.25279394450050713, 0.046868313297410605, -0.2009261102985109, 0.1013218292434819, 0.17853020063642777, 0.04703089797933652, 0.13596990905969547, -0.04393195926686043, -0.36150719228322925, 0.13434867432169523, 0.1637182989833929, 0.03831240436853339, -0.0465150525217035, -0.2129326186570489],
+      "bias": 0.06796576478150691
+    }
+  ],
+  "screens": [
+    {
+      "history": "zero",
+      "seed": 1544964449,
+      "failed": ["improved", "bothModes"],
+      "fullRounds": 72,
+      "winsLossesDraws": {
+        "baseline": [3, 20, 1],
+        "incumbent": [20, 9, 19]
+      }
+    },
+    {
+      "history": "zero",
+      "seed": 175489177,
+      "failed": ["smokeContact", "wallStalls"],
+      "fullRounds": 0,
+      "winsLossesDraws": {}
+    },
+    {
+      "history": "zero",
+      "seed": 624743999,
+      "failed": ["rearSearch"],
+      "fullRounds": 0,
+      "winsLossesDraws": {}
+    },
+    {
+      "history": "repeatFirstObservation",
+      "seed": 1544964449,
+      "failed": ["improved", "bothModes"],
+      "fullRounds": 72,
+      "winsLossesDraws": {
+        "baseline": [1, 22, 1],
+        "incumbent": [21, 13, 14]
+      }
+    },
+    {
+      "history": "repeatFirstObservation",
+      "seed": 175489177,
+      "failed": ["improved", "bothModes"],
+      "fullRounds": 72,
+      "winsLossesDraws": {
+        "baseline": [0, 24, 0],
+        "incumbent": [24, 5, 19]
+      }
+    },
+    {
+      "history": "repeatFirstObservation",
+      "seed": 624743999,
+      "failed": ["rearSearch"],
+      "fullRounds": 0,
+      "winsLossesDraws": {}
+    }
+  ],
+  "confirmation": {
+    "maps": ["frostcourt", "homeward", "blackflag", "orleans", "suntemple"],
+    "spawnRepeats": 12,
+    "seconds": 30,
+    "rearPairsPerMap": 4,
+    "rearLimitSeconds": 12,
+    "closePairs": 8,
+    "spawnFields": ["netForwardMetersPerSecond", "lowDisplacementFraction", "stationaryFound", "stationaryTrials"],
+    "rearFields": ["meanSecondsIncludingTimeout", "found", "trials"],
+    "closeFields": ["map", "targetMx", "trials", "candidateHalf", "incumbentHalf", "candidateTwo", "incumbentTwo"],
+    "rows": [
+      {
+        "seed": 446338763,
+        "name": "bundled",
+        "rear": [9.28, 17, 40],
+        "spawn": [1.70596, 0.17587, 3, 60],
+        "close": []
+      },
+      {
+        "seed": 446338763,
+        "name": "parent",
+        "rear": [5.6925, 29, 40],
+        "spawn": [2.50029, 0.09274, 10, 60],
+        "close": [
+          ["frostcourt", 0, 16, 11, 11, 15, 12],
+          ["frostcourt", -1, 16, 12, 12, 14, 12],
+          ["frostcourt", 1, 16, 7, 6, 10, 6],
+          ["homeward", 0, 16, 5, 6, 9, 7],
+          ["homeward", -1, 16, 4, 6, 7, 7],
+          ["homeward", 1, 16, 0, 0, 3, 2],
+          ["blackflag", 0, 16, 13, 10, 16, 14],
+          ["blackflag", -1, 16, 11, 10, 12, 13],
+          ["blackflag", 1, 16, 3, 2, 12, 7]
+        ]
+      },
+      {
+        "seed": 446338763,
+        "name": "fitted",
+        "rear": [5.1325, 30, 40],
+        "spawn": [2.37834, 0.09604, 8, 60],
+        "close": [
+          ["frostcourt", 0, 16, 11, 11, 15, 12],
+          ["frostcourt", -1, 16, 12, 12, 14, 12],
+          ["frostcourt", 1, 16, 7, 6, 10, 6],
+          ["homeward", 0, 16, 6, 6, 10, 7],
+          ["homeward", -1, 16, 4, 6, 6, 7],
+          ["homeward", 1, 16, 1, 0, 5, 2],
+          ["blackflag", 0, 16, 13, 10, 16, 14],
+          ["blackflag", -1, 16, 11, 10, 12, 13],
+          ["blackflag", 1, 16, 4, 2, 13, 7]
+        ]
+      },
+      {
+        "seed": 967094581,
+        "name": "bundled",
+        "rear": [9.09292, 23, 40],
+        "spawn": [1.48464, 0.20724, 2, 60],
+        "close": []
+      },
+      {
+        "seed": 967094581,
+        "name": "parent",
+        "rear": [5.37375, 31, 40],
+        "spawn": [2.62342, 0.06365, 8, 60],
+        "close": [
+          ["frostcourt", 0, 16, 6, 6, 13, 9],
+          ["frostcourt", -1, 16, 10, 10, 13, 12],
+          ["frostcourt", 1, 16, 2, 2, 8, 5],
+          ["homeward", 0, 16, 5, 4, 9, 7],
+          ["homeward", -1, 16, 9, 9, 12, 12],
+          ["homeward", 1, 16, 1, 0, 6, 1],
+          ["blackflag", 0, 16, 12, 8, 15, 12],
+          ["blackflag", -1, 16, 9, 7, 9, 8],
+          ["blackflag", 1, 16, 2, 0, 14, 3]
+        ]
+      },
+      {
+        "seed": 967094581,
+        "name": "fitted",
+        "rear": [5.165, 32, 40],
+        "spawn": [2.51539, 0.07822, 6, 60],
+        "close": [
+          ["frostcourt", 0, 16, 6, 6, 13, 9],
+          ["frostcourt", -1, 16, 10, 10, 13, 12],
+          ["frostcourt", 1, 16, 3, 2, 9, 5],
+          ["homeward", 0, 16, 6, 4, 8, 7],
+          ["homeward", -1, 16, 8, 9, 11, 12],
+          ["homeward", 1, 16, 1, 0, 5, 1],
+          ["blackflag", 0, 16, 12, 8, 15, 12],
+          ["blackflag", -1, 16, 10, 7, 10, 8],
+          ["blackflag", 1, 16, 2, 0, 13, 3]
+        ]
+      },
+      {
+        "seed": 1695771101,
+        "name": "bundled",
+        "rear": [9.99375, 18, 40],
+        "spawn": [1.7533, 0.17958, 2, 60],
+        "close": []
+      },
+      {
+        "seed": 1695771101,
+        "name": "parent",
+        "rear": [5.30042, 30, 40],
+        "spawn": [2.44041, 0.0847, 6, 60],
+        "close": [
+          ["frostcourt", 0, 16, 10, 9, 14, 12],
+          ["frostcourt", -1, 16, 5, 8, 6, 9],
+          ["frostcourt", 1, 16, 2, 0, 10, 5],
+          ["homeward", 0, 16, 7, 6, 11, 9],
+          ["homeward", -1, 16, 8, 4, 9, 6],
+          ["homeward", 1, 16, 3, 3, 9, 6],
+          ["blackflag", 0, 16, 9, 7, 14, 9],
+          ["blackflag", -1, 16, 10, 9, 12, 12],
+          ["blackflag", 1, 16, 4, 2, 9, 5]
+        ]
+      },
+      {
+        "seed": 1695771101,
+        "name": "fitted",
+        "rear": [4.82, 33, 40],
+        "spawn": [2.33196, 0.1087, 5, 60],
+        "close": [
+          ["frostcourt", 0, 16, 11, 9, 14, 12],
+          ["frostcourt", -1, 16, 5, 8, 6, 9],
+          ["frostcourt", 1, 16, 2, 0, 10, 5],
+          ["homeward", 0, 16, 7, 6, 10, 9],
+          ["homeward", -1, 16, 8, 4, 9, 6],
+          ["homeward", 1, 16, 3, 3, 9, 6],
+          ["blackflag", 0, 16, 9, 7, 13, 9],
+          ["blackflag", -1, 16, 10, 9, 12, 12],
+          ["blackflag", 1, 16, 4, 2, 10, 5]
+        ]
+      }
+    ]
+  },
+  "live": "No new consented holdout or public scores available from the training service. No promotion."
+}
