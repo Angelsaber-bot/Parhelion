@@ -14,7 +14,7 @@ import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolic
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { EXPLORATION_TICKS } from '../shared/exploration.ts';
 import { scoreSearchProgress } from './search-progress.ts';
-import { courseRival, rivalCourse, scoreContactDrill } from './self-play-contact.ts';
+import { courseRival, rivalCourse, scoreContactDrill, waitingApproach } from './self-play-contact.ts';
 import { opponentLeague } from './self-play-league.ts';
 import { seedVersion, trainingSeed } from './self-play-seeds.ts';
 
@@ -129,11 +129,19 @@ function encounterYaw(yaw: number, scenario: Scenario, focused: boolean, draw: n
 }
 
 // Start some episodes mid-round on walkable cells. Only the environment sees both positions.
-function placeEncounter(game: Match, scenario: Scenario, focused: boolean, rand: () => number): { scenario: Scenario; smoke?: Smoke; smokeTick?: number } {
+function placeEncounter(game: Match, scenario: Scenario, focused: boolean, rand: () => number): { scenario: Scenario; shortenedApproach?: boolean; smoke?: Smoke; smokeTick?: number } {
   if (scenario === 'spawn') return { scenario };
   if (scenario === 'waiting') {
-    // Keep remedial trials at the real spawns. Ordinary 1v1 practice also includes shorter searches.
-    // Position and path are used only to set up the exercise.
+    // Mix full-spawn failures with nearer opportunities to discover the same
+    // stationary rival. Keep the pilot's original heading in both cases.
+    if (focused && game.layout === '1v1' && rand() < .5) {
+      const pilot = game.player('pilot')!;
+      const node = waitingApproach(game.map, navFor(game), pilot, game.player('rival')!, rand);
+      if (node) {
+        Object.assign(pilot, { x: node.x, y: node.y, z: node.z });
+        return { scenario, shortenedApproach: true };
+      }
+    }
     if (!focused && game.layout === '1v1' && rand() < .65) {
       const nav = navFor(game), pilot = game.player('pilot')!, rival = game.player('rival')!;
       const origin = nav.nearest(pilot.x, pilot.y, pilot.z);
@@ -271,7 +279,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
       start.smokeTick! + SMOKE.life - SMOKE.clear + 3 * TICK_HZ, EXPLORATION_TICKS, smokeWindow);
   const trajectories = Object.fromEntries(seats.map(({ id, steps }) => [id, steps]));
   const opponentHash = opponent.mode === 'frozen' ? opponent.actor.hash : actor.hash;
-  return { map, layout, seed, team, scenario: start.scenario, opponent: opponentHash, opponentMode: opponent.mode,
+  return { map, layout, seed, team, scenario: start.scenario, shortenedApproach: start.shortenedApproach, opponent: opponentHash, opponentMode: opponent.mode,
     score: game.score, outcome, ticks: game.tick - firstTick, trajectories };
 }
 
@@ -342,6 +350,8 @@ function main() {
     if (scenario !== 'waiting' && !(scenario === 'encounter' && focused)) league.observe(rival, episode.outcome, layout);
     episodes.push({ ...episode, focused });
   }
+  const remedial = episodes.filter(e => e.layout === '1v1' && e.focused && e.scenario === 'waiting');
+  if (remedial.length) console.log('Shortened stationary approaches:', remedial.filter(e => e.shortenedApproach).length, '/', remedial.length);
   const payload = { version: 2, seedVersion: version, seed, rulesVersion: RULES_VERSION, actorHash: actor.hash, axisStd: AXIS_STD, focus, episodes };
   writeFileSync(values.output, JSON.stringify(payload), { mode: 0o600 });
   if (values.league) writeFileSync(values.league, JSON.stringify(league.payoffs), { mode: 0o600 });

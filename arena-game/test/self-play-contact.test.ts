@@ -1,8 +1,9 @@
 import { expect, it } from 'vitest';
-import { HUMAN_FEATURES } from '../shared/humanCombat.ts';
+import { HUMAN_FEATURES, humanObservation } from '../shared/humanCombat.ts';
 import { getMap } from '../shared/arenaMap.ts';
 import { navFor } from '../shared/botLocomotion.ts';
-import { escapeFor, rivalCourse, scoreContactDrill } from '../scripts/self-play-contact.ts';
+import { Match } from '../shared/match.ts';
+import { escapeFor, waitingApproach, rivalCourse, scoreContactDrill } from '../scripts/self-play-contact.ts';
 
 const steps = (contact: number[]) => contact.map((confidence, index) => ({ obs: [confidence], reset: index === 0, reward: 0 }));
 
@@ -59,4 +60,22 @@ it('ignores pre-smoke recovery and credits confirmed contact just after clearing
   expect(scoreContactDrill(late, 'smoke', 96, 12, { start: 3, end: 8 })).toBe(false);
   expect(scoreContactDrill(late, 'smoke', 144, 12, { start: 3, end: 8 })).toBe(true);
   expect(late.reduce((sum, action) => sum + action.reward, 0)).toBe(.05);
+});
+
+it('places remedial searches on hidden walkable approaches to the actual opposing spawn on both sides', () => {
+  for (const id of ['frostcourt', 'homeward', 'blackflag']) {
+    const game = new Match(getMap(id), '1v1'), nav = navFor(game);
+    for (const team of ['A', 'B'] as const) game.addPlayer(team, { team, name: team, char: 0, skins: [], bot: true });
+    game.phase = 'countdown'; game.phaseT = 1; game.step();
+    for (const side of ['A', 'B']) {
+      const pilot = game.player(side)!, rival = game.player(side === 'A' ? 'B' : 'A')!;
+      const node = waitingApproach(game.map, nav, pilot, rival, () => .5);
+      expect(node, id + side).toBeDefined();
+      const goal = nav.nearest(rival.x, rival.y, rival.z)!;
+      expect(nav.path(node!, goal)!.length).toBeLessThanOrEqual(40);
+      const pose = { ...pilot, x: node!.x, y: node!.y, z: node!.z, yaw: Math.atan2(node!.x - rival.x, node!.z - rival.z) };
+      expect(humanObservation(game.map, pose, [{ team: rival.team, feet: [rival.x, rival.y, rival.z], crouched: false }],
+        (a, b) => game.heroes.visible(a, b), [0, 0])[0]).toBe(0);
+    }
+  }
 });
