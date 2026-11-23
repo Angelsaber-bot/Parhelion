@@ -60,6 +60,13 @@ jobs:
                       status = json.load(response)
                   break
               except urllib.error.HTTPError as error:
+                  if error.code == 503:
+                      try:
+                          detail = json.loads(error.read(256))
+                      except (ValueError, OSError):
+                          detail = None
+                      if detail == {"error": "storage_limit"}:
+                          raise SystemExit("Arena storage limit reached. The next scheduled run will check the saved checkpoint again.")
                   if error.code not in (408, 429, 500, 502, 503, 504) or attempt == 4:
                       raise
                   print(f"Training status returned HTTP {error.code}", flush=True)
