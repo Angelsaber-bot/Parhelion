@@ -14,11 +14,11 @@ import { trialSeed } from '../self-play-seeds.ts';
 type Start = Pick<NavNode, 'x' | 'y' | 'z'>;
 // Completed public rules-43 1v1 rounds. These are equipment/score fixtures
 // from aggregate match telemetry, separate from the consented training corpus.
-interface MatchReference { map: string; at: number; bot: number; kit: Loadout; humanScore: number; botScore: number }
+interface MatchReference { map: string; at: number; bot: number; human: number; kit: Loadout; humanScore: number; botScore: number }
 const references: MatchReference[] = [
-  { map: 'frostcourt', at: 1795383845340, bot: 2, kit: ['firefly', 'halo', 'blade'], humanScore: 7, botScore: 1 },
-  { map: 'homeward', at: 1795382557118, bot: 3, kit: ['corona', 'longnight', 'polearm'], humanScore: 7, botScore: 2 },
-  { map: 'blackflag', at: 1795381709043, bot: 6, kit: ['corona', 'firefly', 'hammer'], humanScore: 7, botScore: 1 },
+  { map: 'frostcourt', at: 1795396594422, bot: 3, human: 5, kit: ['firefly', 'halo', 'hammer'], humanScore: 7, botScore: 0 },
+  { map: 'homeward', at: 1795382557118, bot: 3, human: 7, kit: ['corona', 'longnight', 'polearm'], humanScore: 7, botScore: 2 },
+  { map: 'blackflag', at: 1795381709043, bot: 6, human: 7, kit: ['corona', 'firefly', 'hammer'], humanScore: 7, botScore: 1 },
 ];
 interface Fixture {
   reference: MatchReference; a: Start; b: Start; angle: number; direction: number;
@@ -34,7 +34,7 @@ function encounter(f: Fixture, reverse: boolean, moving: boolean, model?: Neural
       mz: 0, buttons: 0, weapon: me.weaponSlot };
   } };
   game.addPlayer('pilot', { ...info, team: side, char: f.reference.bot, loadout: f.reference.kit }, model && learnedOpponent(model));
-  game.addPlayer('target', { ...info, team: other, char: 7, loadout: ['longnight', 'corona', 'polearm'], utility: 'smoke' }, targetDriver);
+  game.addPlayer('target', { ...info, team: other, char: f.reference.human, loadout: ['longnight', 'corona', 'polearm'], utility: 'smoke' }, targetDriver);
   const a = reverse ? f.b : f.a, b = reverse ? f.a : f.b;
   const yaw = Math.atan2(a.x - b.x, a.z - b.z);
   const pilot = game.player('pilot')!, target = game.player('target')!;
@@ -73,20 +73,23 @@ export function closeContact(candidate: NeuralPolicyModel, incumbent: NeuralPoli
     return [false, true].map(moving => {
       const score = (model: NeuralPolicyModel) => {
         let byHalfSecond = 0, byTwoSeconds = 0;
-        for (const f of starts) for (const reverse of [false, true]) {
+        const hitsByStart = starts.map(() => 0);
+        for (const [i, f] of starts.entries()) for (const reverse of [false, true]) {
           const { game, pilot, target } = encounter(f, reverse, moving, model);
           for (let tick = 1; tick <= 2 * TICK_HZ && pilot.alive && target.alive; tick++) {
             game.step();
             if (game.snapshot().events.some(e => e.t === 'hit' && e.shooter === 'pilot' && e.victim === 'target' && e.dmg > 0)) {
-              byTwoSeconds++;
+              byTwoSeconds++; hitsByStart[i]++;
               if (tick <= TICK_HZ / 2) byHalfSecond++;
               break;
             }
           }
         }
-        return { byHalfSecond, byTwoSeconds };
+        return { totals: { byHalfSecond, byTwoSeconds }, hitsByStart };
       };
-      return { map, reference, moving, trials: starts.length * 2, candidate: score(candidate), incumbent: score(incumbent) };
+      const pilot = score(candidate), rival = score(incumbent);
+      return { map, reference, moving, trials: starts.length * 2, candidate: pilot.totals, incumbent: rival.totals,
+        incumbentMargins: rival.hitsByStart.map((hits, i) => hits - pilot.hitsByStart[i]) };
     });
   });
 }

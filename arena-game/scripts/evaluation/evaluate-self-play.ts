@@ -502,6 +502,13 @@ function main() {
     opponent: assessSearch(incumbent.model, incumbent.model, searchTrials, 30),
   } : undefined;
   const near = spawnSearch && incumbent ? closeContact(candidate.model, incumbent.model, firstSeed) : undefined;
+  if (near) {
+    // One preselected outcome: first damage within two seconds against a moving
+    // target. Both seats share a start and contribute one sign-test observation.
+    const blocks = near.filter(row => row.moving).flatMap(row =>
+      row.incumbentMargins.map((margin, seed) => ({ map: row.map, seed, margin })));
+    gates.closeMovingDamage = score(blocks).oneSidedP > .05;
+  }
   if (spawnSearch) {
     const { candidate: pilot, opponent: rival } = spawnSearch;
     gates.spawnSearchProgress = passesSpawnSearch(pilot, rival);

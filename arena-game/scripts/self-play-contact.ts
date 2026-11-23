@@ -18,7 +18,7 @@ export function escapeFor(drill: ContactDrill, random: () => number): Escape {
 
 /** A reachable path for the training rival, in the rival's starting frame. Environment setup
  * may place either player; no itinerary, rival coordinate or scenario ID enters the learner. */
-export function rivalCourse(map: ArenaMap, nav: NavGrid, a: NavNode, b: NavNode, drill: ContactDrill,
+export function rivalCourse(map: ArenaMap, nav: NavGrid, a: NavNode, b: NavNode, drill: ContactDrill | 'encounter',
                             escape: Escape, random: () => number): RivalCourse | undefined {
   const wait = Math.round((.5 + random() * .7) * TICK_HZ);
   const duration = wait + Math.round((4 + random() * 3) * TICK_HZ);

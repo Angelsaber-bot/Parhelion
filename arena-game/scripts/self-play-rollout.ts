@@ -14,14 +14,14 @@ import { parseNeuralPolicy, type NeuralPolicyModel } from '../shared/neuralPolic
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { EXPLORATION_TICKS } from '../shared/exploration.ts';
 import { scoreSearchProgress } from './search-progress.ts';
-import { scoreContactDrill } from './self-play-contact.ts';
+import { courseRival, rivalCourse, scoreContactDrill } from './self-play-contact.ts';
 import { opponentLeague } from './self-play-league.ts';
 import { seedVersion, trainingSeed } from './self-play-seeds.ts';
 
 const AXIS_STD = .35;
 const scenarios = ['spawn', 'encounter', 'rear', 'smoke', 'wall', 'retreat', 'corner', 'waiting'] as const;
 type Scenario = typeof scenarios[number];
-type Focus = 'wall' | 'rear' | 'smoke' | 'waiting';
+type Focus = 'wall' | 'rear' | 'smoke' | 'waiting' | 'encounter';
 interface Step {
   obs: number[]; reset: boolean;
   axes: number[]; buttons: number[]; weapon: number;
@@ -165,6 +165,13 @@ function placeEncounter(game: Match, scenario: Scenario, focused: boolean, rand:
     const occupied = [...game.slots.values()].some(({ state: p }) => p.id !== 'pilot' && p.id !== 'rival' &&
       [pose, b].some(at => Math.abs(at.y - p.y) < game.map.height && Math.hypot(at.x - p.x, at.z - p.z) < 2 * game.map.radius));
     if (occupied) continue;
+    if (scenario === 'encounter' && focused) {
+      const course = rivalCourse(game.map, nav, a, b, scenario, rand() < .5 ? 'left' : 'right', rand);
+      if (!course) continue;
+      const slot = game.slots.get('rival')!;
+      slot.controller = courseRival(slot.controller!, { ...course, wait: 0, duration: 2 * TICK_HZ },
+        game.tick, slot.state.lifeId);
+    }
     Object.assign(game.player('pilot')!, pose);
     Object.assign(game.player('rival')!, { x: b.x, y: b.y, z: b.z, yaw: yaw + (scenario === 'retreat' ? 0 : Math.PI) + (rand() - .5) * 1.5 });
     for (const id of ['pilot', 'rival']) game.slots.get(id)!.spawnProtectedUntilTick = 0;
@@ -302,8 +309,8 @@ function main() {
   const version = seedVersion(values['seed-version']);
   const count = boundedInteger(values.episodes, 'episodes', 1, 256), seconds = boundedInteger(values.seconds, 'seconds', 1, 300);
   const focus = [...new Set(values.focus)].map(value => {
-    if (value === 'wall' || value === 'rear' || value === 'smoke' || value === 'waiting') return value;
-    throw Error('Each --focus must be wall, rear, smoke or waiting');
+    if (value === 'wall' || value === 'rear' || value === 'smoke' || value === 'waiting' || value === 'encounter') return value;
+    throw Error('Each --focus must be wall, rear, smoke, waiting or encounter');
   });
   const actor = readActor(values.model);
   if (actor.model.version !== 4 && actor.model.version !== 1) throw Error('Motor-assisted training is retired');
@@ -330,7 +337,7 @@ function main() {
     const rival = league.select(i, layout);
     appearances[layout][rival] = (appearances[layout][rival] ?? 0) + 1;
     const episode = play(actor, pool.get(rival)!, order[i % order.length].id, layout, team, scenario, focused, trainingSeed(random(), version), seconds);
-    if (scenario !== 'waiting') league.observe(rival, episode.outcome, layout);
+    if (scenario !== 'waiting' && !(scenario === 'encounter' && focused)) league.observe(rival, episode.outcome, layout);
     episodes.push({ ...episode, focused });
   }
   const payload = { version: 2, seedVersion: version, seed, rulesVersion: RULES_VERSION, actorHash: actor.hash, axisStd: AXIS_STD, focus, episodes };

@@ -13,6 +13,8 @@ it('counts actual damage and keeps identical fixtures for both actors and target
   expect(baseline).toHaveLength(6);
   for (const [i, row] of changed.entries()) {
     expect(row.trials).toBe(4);
+    expect(baseline[i].incumbentMargins).toEqual([0, 0]);
+    expect(row.incumbentMargins.reduce((a, b) => a + b, 0)).toBe(row.incumbent.byTwoSeconds - row.candidate.byTwoSeconds);
     expect(row.incumbent).toEqual(baseline[i].candidate);
     expect(row.candidate).toEqual({ byHalfSecond: 0, byTwoSeconds: 0 });
     expect(row.incumbent.byHalfSecond).toBeLessThanOrEqual(row.incumbent.byTwoSeconds);

@@ -55,6 +55,12 @@ describe('self-play search outcomes', () => {
     expect(backward).toBeGreaterThan(0);
     expect(trial(i => [i >= 7 ? 10 : 0, -Math.PI / 2, 0], 15, 7)).toBe(0);
   });
+  it('credits discovery across a completed movement window within one life', () => {
+    const approach = (i: number): [number, number, number] => [i * .7, 0, Number(i === 15)];
+    expect(trial(approach)).toBeCloseTo(trial(approach, 15) + .02);
+    expect(trial(approach, 16, 15)).toBeCloseTo(trial(approach, 15));
+    expect(trial(i => [i * .7, -Math.PI / 2, Number(i === 180)], 181)).toBeCloseTo(.14);
+  });
   it('reduces credit for repeatedly following the same unsuccessful path', () => {
     const lap = (i: number): [number, number, number] => [(i % 15) * .72, 0, 0];
     expect(trial(lap, 60)).toBeLessThan(trial(lap, 30));

@@ -264,7 +264,8 @@ def cycle(args, service, work, progress):
         last_eval = old.get("lastEvaluation") or {}
         previous_failures = set(last_eval.get("failedGates", []))
         curriculum = {"wall": {"wallStalls"}, "rear": {"rearSearch", "human_search", "candidateHasSearch"},
-                      "smoke": {"smokeContact", "smokeOffscreenTrigger"}, "waiting": {"spawnSearchProgress"}}
+                      "smoke": {"smokeContact", "smokeOffscreenTrigger"}, "waiting": {"spawnSearchProgress"},
+                      "encounter": {"closeMovingDamage"}}
         focus = [scenario for scenario, gates in curriculum.items() if gates & previous_failures]
         for scenario in focus:
             collect += ["--focus", scenario]

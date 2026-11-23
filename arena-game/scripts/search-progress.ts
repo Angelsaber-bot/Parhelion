@@ -8,26 +8,36 @@ const scene = HUMAN_FEATURES.length;
 
 export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds'], period: number, tickRate: number) {
   const horizon = Math.max(2, Math.round(3 * tickRate / period));
+  let unseenSteps = 0, unseenStartX = 0, unseenStartZ = 0, searchReach = 0;
   let count = 0, turn = 0, range = 0, startX = 0, startZ = 0, heading = 0;
   let minimumYaw = 0, maximumYaw = 0, previousSearchStalled = false;
   let forwardAttempts = 0, forwardMeters = 0, lastX = 0, lastZ = 0;
-  let positiveCredits = 0, negativeCredits = 0, newCells = 0;
+  let discoveries = 0, positiveCredits = 0, negativeCredits = 0, newCells = 0;
   const visited = new Set<string>();
   // A respawn starts a new segment but revisiting the same ground is still a revisit.
   const unsuccessful = new Map<string, number>();
   let route: string[] = [];
   for (let i = 0; i < steps.length; i++) {
     const { obs, reset } = steps[i];
-    if (reset) { count = 0; previousSearchStalled = false; }
+    if (reset) { count = unseenSteps = 0; previousSearchStalled = false; }
     const x = obs[scene] * (bounds.max[0] - bounds.min[0]) * .5;
     const z = obs[scene + 2] * (bounds.max[2] - bounds.min[2]) * .5;
     const yaw = Math.atan2(obs[scene + 3], obs[scene + 4]);
     const cell = Math.floor(x / 4) + ',' + Math.floor(z / 4);
     if (obs[0] > 0) {
       // A new approach that actually revealed a rival is more useful than distance alone.
-      if (!reset && count >= 2 && range >= 2 && positiveCredits <= 10) { steps[i - 1].reward += .02; positiveCredits += 2; }
-      count = 0; previousSearchStalled = false; visited.add(cell); continue;
+      if (unseenSteps >= 2 && discoveries < 3 && Math.max(searchReach, Math.hypot(x - unseenStartX, z - unseenStartZ)) >= 2) {
+        // Reserve sighting credit even when the approach used the entire movement budget.
+        steps[i - 1].reward += .02;
+        discoveries++;
+      }
+      count = unseenSteps = 0; previousSearchStalled = false; visited.add(cell); continue;
     }
+    // The sighting belongs to the full search, even when it falls at the
+    // beginning of the next three-second movement measurement.
+    if (!unseenSteps) { unseenStartX = x; unseenStartZ = z; searchReach = 0; }
+    unseenSteps++;
+    searchReach = Math.max(searchReach, Math.hypot(x - unseenStartX, z - unseenStartZ));
     if (!count) { forwardAttempts = forwardMeters = 0; startX = x; startZ = z; turn = minimumYaw = maximumYaw = 0; range = 0; newCells = 0; route = []; }
     else {
       // Only past actions could have produced the displacement observed now.
