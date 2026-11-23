@@ -39,5 +39,32 @@
     ]
   },
   "holdoutReplay": "Unavailable while training/status returned 503 storage_limit.",
-  "latestPreviouslyVerifiedHumanBotScores": {"frostcourt": [7, 1], "homeward": [7, 2], "blackflag": [7, 1]}
+  "latestPreviouslyVerifiedHumanBotScores": {"frostcourt": [7, 1], "homeward": [7, 2], "blackflag": [7, 1]},
+  "pairedStrafeFollowup": {
+    "sourceCommit": "be4e8a7f9c15f3554547c6355d9f77b854625e8a",
+    "candidateDelta": "Apply the candidate recipe above and restore only out.bias[0] from the baseline.",
+    "seeds": [1654423903, 1068777121, 861941329, 1547619359],
+    "method": "Use closeContact with 12 starts per map and seed. Keep a start only when clearStart passes for each side with target mx=-1 and +1. Play each retained start in both seats with target mx=-1, 0 and +1.",
+    "rowFields": ["map", "targetMx", "trials", "candidateHalfSecond", "baselineHalfSecond", "candidateTwoSeconds", "baselineTwoSeconds"],
+    "rows": [
+      ["frostcourt", -1, 96, 17, 53, 21, 71],
+      ["frostcourt", 0, 96, 63, 54, 72, 69],
+      ["frostcourt", 1, 96, 32, 13, 80, 36],
+      ["homeward", -1, 96, 15, 36, 23, 58],
+      ["homeward", 0, 96, 62, 40, 69, 53],
+      ["homeward", 1, 96, 26, 16, 62, 33],
+      ["blackflag", -1, 96, 9, 46, 9, 61],
+      ["blackflag", 0, 96, 65, 42, 68, 69],
+      ["blackflag", 1, 96, 33, 9, 81, 31]
+    ],
+    "spawnMaps": ["frostcourt", "homeward", "blackflag", "orleans", "suntemple"],
+    "spawnRepeatsPerMap": 8,
+    "spawnSeconds": 30,
+    "spawnOrder": ["candidate", "baseline"],
+    "forwardMetersPerSecondMeanAcrossSeeds": [2.126, 1.789],
+    "lowDisplacementWindows": [[331, 2719], [461, 2856]],
+    "stationaryAcquisitions": [[12, 160], [5, 160]],
+    "independentGateFailures": {"706472999": ["rearSearch", "smokeContact", "spawnSearchProgress"], "1714980137": ["improved", "bothModes"]},
+    "releaseDecision": "Retain incumbent. Target direction consistently reverses the relative two-second damage result on the three close-contact maps."
+  }
 }
