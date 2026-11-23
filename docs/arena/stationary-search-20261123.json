@@ -180,5 +180,96 @@
         "bothModes"
       ]
     }
+  },
+  "yawInterpolationScreen": {
+    "sourceCommit": "bbaf48d0",
+    "candidate": "Clone bundled. Copy strafe and forward weight and bias from newTeacherHead. Interpolate only yaw weight and bias from bundled to newTeacherHead by yawFraction. All other parameters are bundled.",
+    "evaluation": "evaluate-self-play.ts with --seeds 2 --incumbent-seeds 4 against shared/directPolicy.json",
+    "spawnFields": ["forwardMetersPerSecond", "lowDisplacementFraction", "stationaryFound", "stationaryTrials"],
+    "spawnOrder": ["candidate", "incumbent"],
+    "closeFields": ["map", "targetMx", "trials", "candidateHalf", "incumbentHalf", "candidateTwo", "incumbentTwo"],
+    "runs": [
+      {
+        "yawFraction": 0.125,
+        "seed": 1283139601,
+        "failedGates": ["candidateHasSearch", "rearSearch", "wallStalls", "spawnSearchProgress"],
+        "spawn": [
+          [1.4966, 0.1402, 1, 12],
+          [2.0255, 0.0991, 1, 12]
+        ],
+        "close": [
+          ["frostcourt", 0, 16, 12, 12, 13, 14],
+          ["frostcourt", -1, 16, 12, 11, 12, 15],
+          ["frostcourt", 1, 16, 7, 7, 8, 8],
+          ["homeward", 0, 16, 7, 6, 9, 8],
+          ["homeward", -1, 16, 4, 4, 7, 7],
+          ["homeward", 1, 16, 2, 1, 5, 2],
+          ["blackflag", 0, 16, 8, 5, 11, 13],
+          ["blackflag", -1, 16, 9, 10, 10, 11],
+          ["blackflag", 1, 16, 2, 2, 7, 5]
+        ]
+      },
+      {
+        "yawFraction": 0.125,
+        "seed": 414752333,
+        "failedGates": ["candidateHasSearch", "rearSearch", "smokeContact", "spawnSearchProgress"],
+        "spawn": [
+          [1.8044, 0.1923, 1, 12],
+          [2.588, 0.0611, 3, 12]
+        ],
+        "close": [
+          ["frostcourt", 0, 16, 9, 8, 13, 11],
+          ["frostcourt", -1, 16, 6, 6, 10, 10],
+          ["frostcourt", 1, 16, 4, 3, 6, 5],
+          ["homeward", 0, 16, 8, 9, 10, 10],
+          ["homeward", -1, 16, 6, 8, 9, 10],
+          ["homeward", 1, 16, 4, 4, 7, 6],
+          ["blackflag", 0, 16, 13, 12, 14, 12],
+          ["blackflag", -1, 16, 7, 10, 9, 11],
+          ["blackflag", 1, 16, 6, 6, 9, 9]
+        ]
+      },
+      {
+        "yawFraction": 0.375,
+        "seed": 1283139601,
+        "failedGates": ["rearSearch", "closeMovingDamage", "spawnSearchProgress"],
+        "spawn": [
+          [1.4349, 0.229, 2, 12],
+          [2.0255, 0.0991, 1, 12]
+        ],
+        "close": [
+          ["frostcourt", 0, 16, 14, 12, 15, 14],
+          ["frostcourt", -1, 16, 12, 11, 12, 15],
+          ["frostcourt", 1, 16, 9, 7, 13, 8],
+          ["homeward", 0, 16, 8, 6, 11, 8],
+          ["homeward", -1, 16, 3, 4, 6, 7],
+          ["homeward", 1, 16, 2, 1, 7, 2],
+          ["blackflag", 0, 16, 13, 5, 13, 13],
+          ["blackflag", -1, 16, 6, 10, 6, 11],
+          ["blackflag", 1, 16, 2, 2, 12, 5]
+        ]
+      },
+      {
+        "yawFraction": 0.375,
+        "seed": 414752333,
+        "failedGates": ["candidateHasSearch", "rearSearch", "smokeContact", "closeMovingDamage", "spawnSearchProgress"],
+        "spawn": [
+          [1.5532, 0.2989, 4, 12],
+          [2.588, 0.0611, 3, 12]
+        ],
+        "close": [
+          ["frostcourt", 0, 16, 8, 8, 11, 11],
+          ["frostcourt", -1, 16, 6, 6, 8, 10],
+          ["frostcourt", 1, 16, 5, 3, 9, 5],
+          ["homeward", 0, 16, 11, 9, 13, 10],
+          ["homeward", -1, 16, 4, 8, 4, 10],
+          ["homeward", 1, 16, 5, 4, 9, 6],
+          ["blackflag", 0, 16, 14, 12, 16, 12],
+          ["blackflag", -1, 16, 7, 10, 8, 11],
+          ["blackflag", 1, 16, 8, 6, 12, 9]
+        ]
+      }
+    ],
+    "decision": "Both candidates failed spawnSearchProgress and rearSearch on both independent seeds. Retain incumbent. Storage limitation precluded fresh human replay and scores."
   }
 }
