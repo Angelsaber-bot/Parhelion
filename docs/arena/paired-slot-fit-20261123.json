@@ -1,0 +1,355 @@
+{
+  "source": "1d4d4ba5df8eb9df53f7b2c7d23604bd331288e0",
+  "parent": "stationary (f2) from rear-search-evaluation-20261123.json",
+  "training": "On closeContact balanced starts (12 per map, seeds 125419463,717446017,1358045653), try both gun orders. With a frozen parent, execute separate slot-0 and slot-1 branches using the same actor inputs, seats, stationary and moving targets. Select the faster first positive hit within 2s, exclude tied branches. 687 informative comparisons; slot 1 won 234. Collect the winning trajectory through the hit. 2539 windows with normal zero padding.",
+  "fit": "Freeze encoder and all outputs except gun slots 0/1. Use the parent difference logit for slot1 minus slot0 and learn on equal weight per winning trajectory, BCE with one class per branch. Regularize by mean softplus(logit) weighted 0.15 on empty expired-memory windows from the preceding 80-match rollout and squared displacement from the parent with coefficient 0.0005. Adam lr 0.018, 260 steps. Split delta equally between the two rows with opposite signs. Fitted applies 100%, partial uses 75%.",
+  "switchCountFields": ["trials", "actualSlotChangesBeforeFirstHitOrTimeout", "ticksInSecondSlot", "evaluatedTicks"],
+  "switches": [
+    {
+      "name": "parent",
+      "swap": false,
+      "count": [432, 0, 0, 22503]
+    },
+    {
+      "name": "parent",
+      "swap": true,
+      "count": [432, 2, 12, 34981]
+    },
+    {
+      "name": "fit-0.75",
+      "swap": false,
+      "count": [432, 38, 360, 22536]
+    },
+    {
+      "name": "fit-0.75",
+      "swap": true,
+      "count": [432, 127, 1516, 34985]
+    },
+    {
+      "name": "fit-1",
+      "swap": false,
+      "count": [432, 457, 7763, 25667]
+    },
+    {
+      "name": "fit-1",
+      "swap": true,
+      "count": [432, 696, 12428, 37167]
+    }
+  ],
+  "screens": [
+    {
+      "actor": "fitted",
+      "seed": 1314048799,
+      "failed": ["rearSearch", "smokeContact", "spawnSearchProgress"],
+      "fullRounds": 0
+    },
+    {
+      "actor": "fitted",
+      "seed": 175750771,
+      "failed": ["smokeContact"],
+      "fullRounds": 0
+    },
+    {
+      "actor": "partial",
+      "seed": 1314048799,
+      "failed": ["rearSearch", "smokeContact", "spawnSearchProgress"],
+      "fullRounds": 0
+    },
+    {
+      "actor": "partial",
+      "seed": 175750771,
+      "failed": ["smokeContact"],
+      "fullRounds": 0
+    }
+  ],
+  "confirmation": {
+    "maps": ["frostcourt", "homeward", "blackflag", "orleans", "suntemple"],
+    "spawnRepeats": 12,
+    "seconds": 30,
+    "rearPairsPerMap": 4,
+    "rearLimitSeconds": 12,
+    "closePairs": 8,
+    "spawnFields": ["netForwardMetersPerSecond", "lowDisplacementFraction", "stationaryFound", "stationaryTrials"],
+    "rearFields": ["meanSecondsIncludingTimeout", "found", "trials"],
+    "closeAndSwappedFields": ["map", "targetMx", "trials", "candidateHalf", "incumbentHalf", "candidateTwo", "incumbentTwo"],
+    "rows": [
+      {
+        "seed": 541324357,
+        "name": "bundled",
+        "swapped": [],
+        "rear": [8.24375, 26, 40],
+        "spawn": [1.54315, 0.20233, 1, 60],
+        "close": []
+      },
+      {
+        "seed": 541324357,
+        "name": "parent",
+        "swapped": [
+          ["frostcourt", 0, 16, 4, 7, 4, 8],
+          ["frostcourt", -1, 16, 4, 2, 7, 3],
+          ["frostcourt", 1, 16, 2, 2, 6, 4],
+          ["homeward", 0, 16, 4, 2, 5, 2],
+          ["homeward", -1, 16, 6, 2, 6, 3],
+          ["homeward", 1, 16, 0, 1, 3, 3],
+          ["blackflag", 0, 16, 8, 12, 8, 13],
+          ["blackflag", -1, 16, 7, 4, 9, 8],
+          ["blackflag", 1, 16, 0, 0, 15, 7]
+        ],
+        "rear": [5.04083, 30, 40],
+        "spawn": [2.49222, 0.08219, 5, 60],
+        "close": [
+          ["frostcourt", 0, 16, 10, 9, 15, 12],
+          ["frostcourt", -1, 16, 12, 11, 16, 14],
+          ["frostcourt", 1, 16, 5, 4, 10, 6],
+          ["homeward", 0, 16, 5, 4, 12, 9],
+          ["homeward", -1, 16, 9, 7, 11, 8],
+          ["homeward", 1, 16, 1, 2, 8, 4],
+          ["blackflag", 0, 16, 11, 15, 15, 15],
+          ["blackflag", -1, 16, 12, 5, 13, 11],
+          ["blackflag", 1, 16, 3, 2, 16, 9]
+        ]
+      },
+      {
+        "seed": 541324357,
+        "name": "fitted",
+        "swapped": [
+          ["frostcourt", 0, 16, 4, 7, 4, 8],
+          ["frostcourt", -1, 16, 4, 2, 7, 3],
+          ["frostcourt", 1, 16, 2, 2, 5, 4],
+          ["homeward", 0, 16, 4, 2, 5, 2],
+          ["homeward", -1, 16, 3, 2, 4, 3],
+          ["homeward", 1, 16, 0, 1, 3, 3],
+          ["blackflag", 0, 16, 6, 12, 7, 13],
+          ["blackflag", -1, 16, 7, 4, 9, 8],
+          ["blackflag", 1, 16, 0, 0, 10, 7]
+        ],
+        "rear": [5.04667, 30, 40],
+        "spawn": [2.49859, 0.07953, 5, 60],
+        "close": [
+          ["frostcourt", 0, 16, 10, 9, 15, 12],
+          ["frostcourt", -1, 16, 12, 11, 15, 14],
+          ["frostcourt", 1, 16, 5, 4, 8, 6],
+          ["homeward", 0, 16, 5, 4, 12, 9],
+          ["homeward", -1, 16, 7, 7, 9, 8],
+          ["homeward", 1, 16, 1, 2, 4, 4],
+          ["blackflag", 0, 16, 11, 15, 15, 15],
+          ["blackflag", -1, 16, 11, 5, 13, 11],
+          ["blackflag", 1, 16, 3, 2, 8, 9]
+        ]
+      },
+      {
+        "seed": 541324357,
+        "name": "partial",
+        "swapped": [
+          ["frostcourt", 0, 16, 4, 7, 4, 8],
+          ["frostcourt", -1, 16, 4, 2, 7, 3],
+          ["frostcourt", 1, 16, 2, 2, 6, 4],
+          ["homeward", 0, 16, 4, 2, 5, 2],
+          ["homeward", -1, 16, 6, 2, 6, 3],
+          ["homeward", 1, 16, 0, 1, 3, 3],
+          ["blackflag", 0, 16, 8, 12, 8, 13],
+          ["blackflag", -1, 16, 7, 4, 9, 8],
+          ["blackflag", 1, 16, 0, 0, 15, 7]
+        ],
+        "rear": [5.04083, 30, 40],
+        "spawn": [2.49552, 0.08105, 5, 60],
+        "close": [
+          ["frostcourt", 0, 16, 10, 9, 15, 12],
+          ["frostcourt", -1, 16, 12, 11, 16, 14],
+          ["frostcourt", 1, 16, 5, 4, 10, 6],
+          ["homeward", 0, 16, 5, 4, 12, 9],
+          ["homeward", -1, 16, 9, 7, 11, 8],
+          ["homeward", 1, 16, 1, 2, 8, 4],
+          ["blackflag", 0, 16, 11, 15, 15, 15],
+          ["blackflag", -1, 16, 12, 5, 13, 11],
+          ["blackflag", 1, 16, 3, 2, 16, 9]
+        ]
+      },
+      {
+        "seed": 917568191,
+        "name": "bundled",
+        "swapped": [],
+        "rear": [9.71208, 17, 40],
+        "spawn": [1.55017, 0.1946, 1, 60],
+        "close": []
+      },
+      {
+        "seed": 917568191,
+        "name": "parent",
+        "swapped": [
+          ["frostcourt", 0, 16, 6, 11, 8, 11],
+          ["frostcourt", -1, 16, 6, 2, 8, 2],
+          ["frostcourt", 1, 16, 0, 0, 5, 3],
+          ["homeward", 0, 16, 6, 8, 7, 8],
+          ["homeward", -1, 16, 8, 3, 9, 3],
+          ["homeward", 1, 16, 3, 4, 8, 5],
+          ["blackflag", 0, 16, 5, 5, 10, 12],
+          ["blackflag", -1, 16, 4, 3, 4, 5],
+          ["blackflag", 1, 16, 0, 0, 11, 5]
+        ],
+        "rear": [6.82917, 25, 40],
+        "spawn": [2.52975, 0.05375, 7, 60],
+        "close": [
+          ["frostcourt", 0, 16, 9, 11, 14, 13],
+          ["frostcourt", -1, 16, 9, 5, 10, 9],
+          ["frostcourt", 1, 16, 1, 0, 10, 5],
+          ["homeward", 0, 16, 9, 10, 13, 12],
+          ["homeward", -1, 16, 13, 9, 14, 12],
+          ["homeward", 1, 16, 4, 5, 9, 7],
+          ["blackflag", 0, 16, 11, 9, 15, 13],
+          ["blackflag", -1, 16, 11, 7, 11, 8],
+          ["blackflag", 1, 16, 1, 0, 12, 3]
+        ]
+      },
+      {
+        "seed": 917568191,
+        "name": "fitted",
+        "swapped": [
+          ["frostcourt", 0, 16, 4, 11, 5, 11],
+          ["frostcourt", -1, 16, 6, 2, 7, 2],
+          ["frostcourt", 1, 16, 0, 0, 3, 3],
+          ["homeward", 0, 16, 5, 8, 6, 8],
+          ["homeward", -1, 16, 7, 3, 8, 3],
+          ["homeward", 1, 16, 3, 4, 5, 5],
+          ["blackflag", 0, 16, 5, 5, 9, 12],
+          ["blackflag", -1, 16, 4, 3, 4, 5],
+          ["blackflag", 1, 16, 0, 0, 10, 5]
+        ],
+        "rear": [6.82917, 25, 40],
+        "spawn": [2.5391, 0.05268, 7, 60],
+        "close": [
+          ["frostcourt", 0, 16, 7, 11, 12, 13],
+          ["frostcourt", -1, 16, 6, 5, 9, 9],
+          ["frostcourt", 1, 16, 1, 0, 8, 5],
+          ["homeward", 0, 16, 7, 10, 12, 12],
+          ["homeward", -1, 16, 12, 9, 13, 12],
+          ["homeward", 1, 16, 4, 5, 6, 7],
+          ["blackflag", 0, 16, 11, 9, 15, 13],
+          ["blackflag", -1, 16, 11, 7, 11, 8],
+          ["blackflag", 1, 16, 1, 0, 12, 3]
+        ]
+      },
+      {
+        "seed": 917568191,
+        "name": "partial",
+        "swapped": [
+          ["frostcourt", 0, 16, 6, 11, 8, 11],
+          ["frostcourt", -1, 16, 6, 2, 8, 2],
+          ["frostcourt", 1, 16, 0, 0, 6, 3],
+          ["homeward", 0, 16, 6, 8, 7, 8],
+          ["homeward", -1, 16, 8, 3, 9, 3],
+          ["homeward", 1, 16, 3, 4, 8, 5],
+          ["blackflag", 0, 16, 5, 5, 10, 12],
+          ["blackflag", -1, 16, 4, 3, 4, 5],
+          ["blackflag", 1, 16, 0, 0, 11, 5]
+        ],
+        "rear": [6.82917, 25, 40],
+        "spawn": [2.52711, 0.05386, 7, 60],
+        "close": [
+          ["frostcourt", 0, 16, 9, 11, 14, 13],
+          ["frostcourt", -1, 16, 9, 5, 10, 9],
+          ["frostcourt", 1, 16, 1, 0, 10, 5],
+          ["homeward", 0, 16, 9, 10, 13, 12],
+          ["homeward", -1, 16, 13, 9, 14, 12],
+          ["homeward", 1, 16, 4, 5, 9, 7],
+          ["blackflag", 0, 16, 11, 9, 15, 13],
+          ["blackflag", -1, 16, 11, 7, 11, 8],
+          ["blackflag", 1, 16, 1, 0, 12, 3]
+        ]
+      },
+      {
+        "seed": 1946284919,
+        "name": "bundled",
+        "swapped": [],
+        "rear": [8.48875, 21, 40],
+        "spawn": [1.78667, 0.1708, 3, 60],
+        "close": []
+      },
+      {
+        "seed": 1946284919,
+        "name": "parent",
+        "swapped": [
+          ["frostcourt", 0, 16, 2, 6, 3, 6],
+          ["frostcourt", -1, 16, 5, 1, 7, 3],
+          ["frostcourt", 1, 16, 1, 0, 6, 1],
+          ["homeward", 0, 16, 3, 4, 8, 7],
+          ["homeward", -1, 16, 4, 1, 5, 2],
+          ["homeward", 1, 16, 1, 0, 5, 3],
+          ["blackflag", 0, 16, 12, 9, 13, 13],
+          ["blackflag", -1, 16, 7, 8, 8, 11],
+          ["blackflag", 1, 16, 4, 6, 13, 9]
+        ],
+        "rear": [6.28458, 28, 40],
+        "spawn": [2.53354, 0.05675, 8, 60],
+        "close": [
+          ["frostcourt", 0, 16, 8, 6, 12, 8],
+          ["frostcourt", -1, 16, 10, 6, 12, 9],
+          ["frostcourt", 1, 16, 1, 0, 6, 2],
+          ["homeward", 0, 16, 6, 4, 12, 8],
+          ["homeward", -1, 16, 8, 12, 11, 13],
+          ["homeward", 1, 16, 1, 0, 8, 4],
+          ["blackflag", 0, 16, 13, 13, 15, 15],
+          ["blackflag", -1, 16, 13, 12, 13, 14],
+          ["blackflag", 1, 16, 8, 8, 14, 10]
+        ]
+      },
+      {
+        "seed": 1946284919,
+        "name": "fitted",
+        "swapped": [
+          ["frostcourt", 0, 16, 2, 6, 5, 6],
+          ["frostcourt", -1, 16, 5, 1, 7, 3],
+          ["frostcourt", 1, 16, 0, 0, 1, 1],
+          ["homeward", 0, 16, 3, 4, 8, 7],
+          ["homeward", -1, 16, 4, 1, 5, 2],
+          ["homeward", 1, 16, 0, 0, 3, 3],
+          ["blackflag", 0, 16, 10, 9, 12, 13],
+          ["blackflag", -1, 16, 5, 8, 8, 11],
+          ["blackflag", 1, 16, 4, 6, 11, 9]
+        ],
+        "rear": [6.55167, 27, 40],
+        "spawn": [2.542, 0.0572, 8, 60],
+        "close": [
+          ["frostcourt", 0, 16, 8, 6, 12, 8],
+          ["frostcourt", -1, 16, 10, 6, 13, 9],
+          ["frostcourt", 1, 16, 1, 0, 4, 2],
+          ["homeward", 0, 16, 4, 4, 9, 8],
+          ["homeward", -1, 16, 6, 12, 9, 13],
+          ["homeward", 1, 16, 1, 0, 6, 4],
+          ["blackflag", 0, 16, 10, 13, 13, 15],
+          ["blackflag", -1, 16, 11, 12, 13, 14],
+          ["blackflag", 1, 16, 8, 8, 13, 10]
+        ]
+      },
+      {
+        "seed": 1946284919,
+        "name": "partial",
+        "swapped": [
+          ["frostcourt", 0, 16, 2, 6, 4, 6],
+          ["frostcourt", -1, 16, 5, 1, 7, 3],
+          ["frostcourt", 1, 16, 1, 0, 6, 1],
+          ["homeward", 0, 16, 3, 4, 8, 7],
+          ["homeward", -1, 16, 4, 1, 5, 2],
+          ["homeward", 1, 16, 1, 0, 4, 3],
+          ["blackflag", 0, 16, 12, 9, 13, 13],
+          ["blackflag", -1, 16, 7, 8, 8, 11],
+          ["blackflag", 1, 16, 4, 6, 13, 9]
+        ],
+        "rear": [6.28458, 28, 40],
+        "spawn": [2.53139, 0.05686, 8, 60],
+        "close": [
+          ["frostcourt", 0, 16, 8, 6, 12, 8],
+          ["frostcourt", -1, 16, 10, 6, 12, 9],
+          ["frostcourt", 1, 16, 1, 0, 5, 2],
+          ["homeward", 0, 16, 6, 4, 11, 8],
+          ["homeward", -1, 16, 8, 12, 11, 13],
+          ["homeward", 1, 16, 1, 0, 7, 4],
+          ["blackflag", 0, 16, 13, 13, 15, 15],
+          ["blackflag", -1, 16, 13, 12, 13, 14],
+          ["blackflag", 1, 16, 8, 8, 14, 10]
+        ]
+      }
+    ]
+  },
+  "decision": "Retain incumbent. Greater slot switching did not improve opening damage. New consented holdout and actual match scores unavailable due to storage_limit."
+}
