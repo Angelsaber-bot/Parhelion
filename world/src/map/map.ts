@@ -1,6 +1,6 @@
 // Minimap + full map, baked from the terrain's own vertex colours so it always matches the GLB.
 import * as THREE from 'three';
-import { localizeText } from '../../../shared-client/i18n';
+import { bilingual } from '../../../shared-client/i18n';
 import type { Layout } from '../core/types';
 import type { WorldGrid } from './grid';
 import { GATES } from './regions';
@@ -122,7 +122,7 @@ export class WorldMap {
       const area = minimapArea(this.layout.areas, player.x, player.z);
       let labelBox: MapBox | undefined;
       if (area) {
-        const label = localizeText(area.name), y = W * 0.17;
+        const label = bilingual(area.name, area.nameEn), y = W * 0.17;
         ctx.font = '600 18px system-ui, sans-serif';
         const width = Math.min(W * 0.62, ctx.measureText?.(label).width ?? label.length * 18);
         const box: MapBox = [W / 2 - width / 2 - 6, y - 14, W / 2 + width / 2 + 6, y + 14];

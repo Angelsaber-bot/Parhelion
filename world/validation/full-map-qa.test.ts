@@ -44,6 +44,19 @@ const shapes = [{ size: 361, half: 360 },
   { size: 1081, sizeZ: 641, half: 1080, halfZ: 640, x0: -500, z0: -250 },
   { size: 321, sizeZ: 901, half: 320, halfZ: 900, x0: 130, z0: -740 }];
 const instance = (Class: typeof WorldMap, shape = shapes[0]) => Object.assign(Object.create(Class.prototype) as WorldMap, shape, { base: 'same terrain', layout });
+test('the minimap draws the authored residence name in the active language', () => {
+  const map = instance(WorldMap), previousLanguage = getLanguage();
+  const residence = { id: 'alpha_living_hub', name: '从者生活馆', nameEn: 'Companion Residence', c: [0, 0], tp: [0, 0], r: 15, color: '#fff' };
+  Object.assign(map, { layout: { ...layout, areas: [residence] } });
+  try {
+    for (const [language, expected] of [['zh', residence.name], ['en', residence.nameEn]] as const) {
+      setLanguage(language);
+      const drawn = recorder(380);
+      map.draw(drawn.ctx, new THREE.Vector3(0, 0, 0), 0, { full: false, done: new Set(), found: new Set() });
+      assert.ok(drawn.commands.some(([command, text]) => command === 'fillText' && text === expected));
+    }
+  } finally { setLanguage(previousLanguage); }
+});
 test('36 historical full-map projection cases and 36 published-minimap draw streams remain unchanged', t => {
   t.mock.method(performance, 'now', () => 123);
   const language = getLanguage();

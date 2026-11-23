@@ -222,6 +222,23 @@ test('manual flight vertical controls are absent; Space stays jump/glide and F o
   assert.doesNotMatch(source, /down\('(?:ascend|descend)'\)|\bup:\s/);
 });
 
+test('debug flight, collision and area travel need an explicit opt-in and preserve player remaps', () => {
+  for (const enabled of [false, true]) {
+    const s = setup(enabled); s.lock();
+    const teleports: string[] = [];
+    s.context.layout.areas = [{ id: 'test-area', region: 'alpha' }];
+    s.context.spawnAt = (id: string) => teleports.push(id);
+    for (const code of ['KeyV', 'KeyC', 'Digit1']) s.target.emit('keydown', { code });
+    assert.equal(s.context.player.flying, enabled);
+    assert.equal(s.context.debugCol.visible, enabled);
+    assert.deepEqual(teleports, enabled ? ['test-area'] : []);
+    assert.equal(s.context.state.settings.bind('fire', 'KeyC'), null);
+    s.target.emit('keydown', { code: 'KeyC' });
+    assert.equal(s.shots(), 1);
+    assert.equal(s.context.debugCol.visible, enabled);
+  }
+});
+
 test('World both Shift aliases stay active until both release, and defeat blocks gameplay actions', () => {
   const s = setup(); s.lock();
   s.target.emit('keydown', { code: 'ShiftLeft' }); s.target.emit('keydown', { code: 'ShiftRight' });

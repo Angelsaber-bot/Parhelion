@@ -296,16 +296,16 @@ addEventListener('pagehide', event => { if (!event.persisted) { worldExited = tr
 let disposeRenderer = () => {};
 const languageToggle = createLanguageToggle();
 let refreshWorldLocale = () => {};
-let loadingSource = '加载中…';
+let loadingSource: string | readonly [string, string] = '加载中…';
 const renderLoading = () => {
   $('loading').hidden=loadingSource==='点击进入（ESC 释放鼠标）'&&!bootFailed&&!graphicsRecovery?.blocked;
   $('loading').textContent = !bootFailed && graphicsRecovery?.state === 'lost'
     ? bilingual('图形上下文暂时不可用，世界已暂停。等待浏览器恢复；任务存档不会被清空。', 'Graphics context unavailable. World simulation is paused while the browser attempts recovery; quest saves are not cleared.')
     : !bootFailed && graphicsRecovery?.state === 'awaiting-resume'
       ? bilingual('浏览器已报告图形上下文恢复。点击重新进入；关闭其他窗口后再继续。', 'The browser reports graphics restoration. Close other panels, then click to resume.')
-      : localizeText(loadingSource);
+      : typeof loadingSource === 'string' ? localizeText(loadingSource) : bilingual(...loadingSource);
 };
-const setLoading = (source: string) => { loadingSource = source; renderLoading(); };
+const setLoading = (source: typeof loadingSource) => { loadingSource = source; renderLoading(); };
 localizeDom(document.body);
 onLanguageChange(() => {
   localizeDom(document.body);
@@ -1618,10 +1618,14 @@ function toast(text: string) {
 let areaTimer = 0;
 let currentArea = '';
 let areaAnnounced: AreaAnnounced | null = null;
+function renderAreaName(a: Layout['areas'][number]) {
+  const el = $('area');
+  (el.querySelector('.zh') as HTMLElement).textContent = bilingual(a.name, a.nameEn);
+  (el.querySelector('.en') as HTMLElement).textContent = bilingual(a.nameEn.toUpperCase(), 'PARHELION WORLD');
+}
 function showArea(a: Layout['areas'][number]) {
   const el = $('area');
-  (el.querySelector('.zh') as HTMLElement).textContent = localizeText(a.name);
-  (el.querySelector('.en') as HTMLElement).textContent = bilingual(a.nameEn.toUpperCase(), 'PARHELION WORLD');
+  renderAreaName(a);
   el.classList.add('show');
   clearTimeout(areaTimer);
   areaTimer = window.setTimeout(() => el.classList.remove('show'), 2400);
@@ -1698,7 +1702,7 @@ const spawnAt = (areaId?: string) => {
 spawnAt(params.get('spawn') ?? undefined);
 
 // explorer character + third-person shoulder camera
-setLoading('加载精修角色…');
+setLoading(['正在加载角色…', 'Loading your character…']);
 const rig = await loadSkinnedCharacter({ outlines: !params.has('noline') });
 if (worldExited || !(await graphicsRecovery.whenContextAvailable())) { rig.dispose(); return; }
 // Hide the parent before asynchronous weapon art attaches: neither loading nor a late model can
@@ -2665,7 +2669,7 @@ relayTrackButton.onclick=event=>{event.stopPropagation();if(worldExited||bootFai
 addEventListener('pagehide',event=>{if(!event.persisted){relayTrackButton.remove();unsubscribeRelayTrack();}});
 const moreJourney=document.createElement('details'),moreJourneyTitle=document.createElement('summary');moreJourney.id='world-more-journey';moreJourney.addEventListener('click',e=>e.stopPropagation());moreJourney.append(moreJourneyTitle,$('shot-mode'),arenaTrainingOpen,travelOpen,journalOpen,relayTrackButton);Object.assign(moreJourney.style,{textAlign:'center',maxHeight:'32vh',overflow:'auto',padding:'6px 12px',borderRadius:'8px',background:'#182b37cc'});moreJourney.querySelectorAll('button').forEach(button=>{button.style.display='block';button.style.margin='8px auto';});const renderMoreJourney=()=>{moreJourneyTitle.textContent=bilingual('更多旅途选项','More journey options');};renderMoreJourney();const unsubscribeMoreJourney=onLanguageChange(renderMoreJourney);start.append(moreJourney);addEventListener('pagehide',event=>{if(!event.persisted){moreJourney.remove();unsubscribeMoreJourney();}});
 addEventListener('pagehide',event=>{if(!event.persisted){questJournal?.dispose();questOpen.remove();unsubscribeQuestButton();}});
-const worldInterface=installWorldInterface({start,entryLabel:()=>done.has(JOURNEY.epilogue) ? bilingual('继续自由探索','Continue exploring') : done.size || found.size ? bilingual('继续旅程','Continue journey') : bilingual('开始旅程','Begin journey'),label:action=>settings.label(action),subscribe:listener=>{
+const worldInterface=installWorldInterface({start,entryLabel:()=>done.has(JOURNEY.epilogue) ? bilingual('继续自由探索','Continue exploring') : done.size || found.size ? bilingual('继续旅程','Continue journey') : bilingual('开始旅程','Start journey'),label:action=>settings.label(action),subscribe:listener=>{
   const settingsOff=settings.subscribe(listener), progressOff=worldProgress.subscribe(listener);
   return ()=>{settingsOff();progressOff();};
 }});
@@ -5286,7 +5290,7 @@ function frame(now: number) {
 refreshWorldLocale = () => {
   hudRevision++; applyWorldState(); renderControlHints(); if (typeof syncHelpClearance === 'function') syncHelpClearance(); renderContract();
   const area = layout.areas.find((a) => a.id === currentArea);
-  if (area) { $('area').querySelector('.zh')!.textContent = localizeText(area.name); $('area').querySelector('.en')!.textContent = bilingual(area.nameEn.toUpperCase(), 'PARHELION WORLD'); }
+  if (area) renderAreaName(area);
   // Transient combat/toast messages expire rather than retain a previous language.
   $('toast').classList.remove('show');
 };

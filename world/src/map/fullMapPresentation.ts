@@ -86,7 +86,7 @@ export function fullMapPresentation(
       position: [GATES[def.id].p[0], GATES[def.id].p[2]] as const, name: '', locked: !adventureTravelOpen(done) })),
     ...regions.flatMap(def => {
       const area = layout.areas.find(area => area.region === def.id && area.id === OVERVIEW[def.id].hub);
-      return area ? [{ id: `travel:${def.id}:${area.id}`, kind: 'travel' as const, position: area.tp, name: OVERVIEW[def.id].nameEn?bilingual(area.name,area.nameEn):localizeText(area.name), locked: false }] : [];
+      return area ? [{ id: `travel:${def.id}:${area.id}`, kind: 'travel' as const, position: area.tp, name: bilingual(area.name, area.nameEn), locked: false }] : [];
     }),
   ];
   for (const source of sources) {

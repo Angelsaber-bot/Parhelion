@@ -5,10 +5,33 @@ import {echoMarkerId} from '../src/story/echoDestinations';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
 
 test('the menu preserves a fresh prologue and each settlement points to its own Arena station', async () => {
-  const h=await bootWorldWithoutGpu({deterministic:true});
+  const messages = new Set<string>();
+  const h=await bootWorldWithoutGpu({deterministic:true, beforeBoot(window) {
+    const loading = window.document.getElementById('loading')!;
+    let switched = false;
+    new window.MutationObserver(() => {
+      const text = loading.textContent ?? '';
+      messages.add(text);
+      if (text === '正在加载角色…' && !switched) {
+        switched = true;
+        const locale = window.document.querySelector<HTMLSelectElement>('.parhelion-language select')!;
+        locale.value = 'en';
+        locale.dispatchEvent(new window.Event('change', { bubbles: true }));
+      }
+    }).observe(loading, { childList: true, subtree: true });
+  }});
   try {
     const w=h.world, doc=h.window.document;
-    assert.match(doc.getElementById('world-enter')!.textContent!,/开始旅程|Begin journey/);
+    assert.ok(messages.has('正在加载角色…'));
+    assert.ok(messages.has('Loading your character…'));
+    for (let i = 1; i <= 20; i++) h.frame(i * 1000 / 60);
+    assert.equal(doc.getElementById('world-enter')!.textContent!, 'Start journey');
+    assert.equal(doc.querySelector('#area .zh')!.textContent, 'Companion Residence');
+    const locale = doc.querySelector<HTMLSelectElement>('.parhelion-language select')!;
+    locale.value = 'zh';
+    locale.dispatchEvent(new h.window.Event('change', { bubbles: true }));
+    assert.equal(doc.getElementById('world-enter')!.textContent!, '开始旅程');
+    assert.equal(doc.querySelector('#area .zh')!.textContent, '从者生活馆');
     doc.getElementById('world-adventure-continue')!.click();
     assert.deepEqual([...w.done],[]);
     for (const stop of w.travelStops.filter((s:any)=>!s.requiredCompletionFlag)) {
