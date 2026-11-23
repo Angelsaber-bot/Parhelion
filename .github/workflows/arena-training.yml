@@ -51,11 +51,22 @@ jobs:
         id: work
         run: |
           python3 - <<'PYTHON'
-          import json, os, urllib.request
+          import json, os, time, urllib.error, urllib.request
           endpoint = 'https://parhelion-arena.lejiazhang-us.workers.dev/training/status'
           req = urllib.request.Request(endpoint, headers={'User-Agent': 'Parhelion-Arena-Training/1.0', 'Accept': 'application/json'})
-          with urllib.request.urlopen(req, timeout=25) as response:
-              status = json.load(response)
+          for attempt in range(5):
+              try:
+                  with urllib.request.urlopen(req, timeout=25) as response:
+                      status = json.load(response)
+                  break
+              except urllib.error.HTTPError as error:
+                  if error.code not in (408, 429, 500, 502, 503, 504) or attempt == 4:
+                      raise
+                  print(f"Training status returned HTTP {error.code}", flush=True)
+              except OSError:
+                  if attempt == 4:
+                      raise
+              time.sleep(min(60, 15 * 2 ** attempt))
           corpus = status['dataset']
           previous = (status.get('transformer') or {}).get('completedRevision', 0)
           ready = bool(status.get('neuralExportConfigured'))
