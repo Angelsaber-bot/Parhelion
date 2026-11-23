@@ -57,6 +57,27 @@ class ContactMemoryTest(unittest.TestCase):
         torch.testing.assert_close(losses[0], 2 * losses[1])
         torch.testing.assert_close(losses[1], losses[2])
 
+    def test_clear_path_retreat_loss_targets_only_the_forward_axis(self):
+        states = torch.zeros(5, 4, bc.FEATURES)
+        states[:, :, 5] = 1
+        states[:, :, bc.OBSERVATIONS + 7] = .5
+        states[1, -2, bc.OBSERVATIONS + 7] = 0  # just cleared a wall
+        states[2, -1, bc.OBSERVATIONS + 7] = -1  # smoke
+        states[3, -2, 5] = 0  # padded history
+        controls = torch.ones(5, 3)
+        controls[4, 2] = -.5  # teacher chose to retreat
+        logits = torch.zeros(5, bc.OUTPUTS, requires_grad=True)
+        with torch.no_grad():
+            logits[:, 3] = -.5
+        def gradient(inputs):
+            return torch.autograd.grad(rl.search_imitation_loss(logits, controls, inputs), logits)[0]
+        blocked = states.clone()
+        blocked[:, -1, bc.OBSERVATIONS + 7] = 0
+        difference = gradient(states) - gradient(blocked)
+        self.assertLess(difference[0, 3].item(), 0)
+        difference[0, 3] = 0
+        self.assertEqual(torch.count_nonzero(difference).item(), 0)
+
     def test_rollout_anchors_use_distinct_observable_states(self):
         source = Path(__file__).resolve().parents[1] / "shared/directPolicy.json"
         policy = json.loads(source.read_bytes())

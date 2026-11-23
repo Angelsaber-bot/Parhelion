@@ -81,7 +81,14 @@ def search_imitation_loss(logits, controls, states):
     positions = history[:, :, [bc.OBSERVATIONS, bc.OBSERVATIONS + 2]]
     excursion = (positions - positions[:, :1]).norm(dim=-1).amax(dim=1)
     stalled = (history[:, :, 5] > 0).all(dim=1) & (excursion < .01)
-    return (errors * (1 + stalled.float())).mean()
+    # In clear corridors a sustained retreat can cover ground while diverging
+    # from the forward action of the learned teacher. Correct that axis alone.
+    center_depth = history[:, -2:, bc.OBSERVATIONS + 7]
+    clear = (center_depth >= .25).all(dim=1) & (history[:, -2:, 5] > 0).all(dim=1)
+    teacher_advances = controls[:, 2] > .3
+    shortfall = (.25 - logits[:, 3].tanh()).clamp_min(0)
+    retreat_loss = F.smooth_l1_loss(shortfall, torch.zeros_like(shortfall), beta=.2, reduction="none")
+    return (errors * (1 + stalled.float()) + retreat_loss * clear * teacher_advances).mean()
 
 
 def load_practice(path):
