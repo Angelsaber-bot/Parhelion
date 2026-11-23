@@ -13,7 +13,7 @@ function measuredTrial(path: (i: number) => [number, number, number], length = 1
     return { obs, axes: [0, 0, 0, forward], reset: i === 0 || i === resetAt, reward: 0 };
   });
   const outcome = scoreSearchProgress(rows, bounds, 12, 60);
-  return { ...outcome, reward: rows.reduce((sum, s) => sum + s.reward, 0) };
+  return { ...outcome, rewards: rows.map(s => s.reward), reward: rows.reduce((sum, s) => sum + s.reward, 0) };
 }
 function trial(...args: Parameters<typeof measuredTrial>) {
   return measuredTrial(...args).reward;
@@ -73,6 +73,12 @@ describe('self-play search outcomes', () => {
     const escaped = measuredTrial(i => [Math.max(0, i - 14) * .5, path(i)[1], 0], 35);
     expect(escaped.recovered).toBe(1);
     expect(escaped.stayedBlocked).toBe(0);
+  });
+  it('attributes novel-ground escape reward to measured movement and skips blocked inputs', () => {
+    const result = measuredTrial(i => [3.5 + Math.max(0, i - 16) * .5, 0, 0], 21, -1, 1);
+    expect(result.recovered).toBe(1);
+    expect(result.rewards.slice(14, 16)).toEqual([0, 0]);
+    for (const r of result.rewards.slice(16, 20)) expect(r).toBeCloseTo(.005);
   });
   it('reduces credit for repeatedly following the same unsuccessful path', () => {
     const lap = (i: number): [number, number, number] => [(i % 15) * .72, 0, 0];

@@ -12,7 +12,7 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
   let count = 0, turn = 0, range = 0, startX = 0, startZ = 0, heading = 0;
   let minimumYaw = 0, maximumYaw = 0, previousSearchStalled = false;
   let forwardAttempts = 0, forwardMeters = 0, lastX = 0, lastZ = 0;
-  let recovery: { x: number; z: number; age: number; timedOut: boolean } | undefined;
+  let recovery: { x: number; z: number; start: number; newGround: boolean; timedOut: boolean } | undefined;
   let recovered = 0, stayedBlocked = 0;
   let discoveries = 0, positiveCredits = 0, negativeCredits = 0, newCells = 0;
   const visited = new Set<string>();
@@ -30,16 +30,34 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
     if (recovery) {
       // A scan or wall press is one event even if it lasts several windows.
       // End the observation on contact or respawn; a truncated wait is unscored.
+      recovery.newGround ||= !visited.has(cell);
       if (Math.hypot(x - recovery.x, z - recovery.z) >= 2) {
         if (!recovery.timedOut) {
           recovered++;
-          if (!visited.has(cell) && positiveCredits < 12) {
-            steps[i - 1].reward += .01;
-            positiveCredits++;
+          if (recovery.newGround && positiveCredits < 12) {
+            // Assign the bounded recovery reward to actions which actually moved
+            // the player toward the exit, including a useful sideways step.
+            const dx = x - recovery.x, dz = z - recovery.z;
+            let total = 0;
+            const gains = [];
+            for (let j = recovery.start; j < i; j++) {
+              const before = steps[j].obs, after = steps[j + 1].obs;
+              const advanceX = (after[scene] - before[scene]) * (bounds.max[0] - bounds.min[0]) * .5;
+              const advanceZ = (after[scene + 2] - before[scene + 2]) * (bounds.max[2] - bounds.min[2]) * .5;
+              const gain = Math.max(0, dx * advanceX + dz * advanceZ);
+              total += gain;
+              gains.push(gain);
+            }
+            const credits = Math.min(2, 12 - positiveCredits);
+            if (total > 0) {
+              for (const [offset, gain] of gains.entries())
+                steps[recovery.start + offset].reward += .01 * credits * gain / total;
+              positiveCredits += credits;
+            }
           }
         }
         recovery = undefined;
-      } else if (++recovery.age >= horizon && !recovery.timedOut) {
+      } else if (i - recovery.start >= horizon && !recovery.timedOut) {
         recovery.timedOut = true;
         stayedBlocked++;
         if (negativeCredits < 8) { steps[i - 1].reward -= .015; negativeCredits++; }
@@ -75,7 +93,7 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
     if (++count >= horizon) {
       const scanned = maximumYaw - minimumYaw > Math.PI * .65;
       const pushing = forwardAttempts >= .75 * (horizon - 1);
-      if (!recovery && range < 1.5 && (scanned || pushing)) recovery = { x, z, age: 0, timedOut: false };
+      if (!recovery && range < 1.5 && (scanned || pushing)) recovery = { x, z, start: i, newGround: false, timedOut: false };
       // Credit and debit remain small compared with a frag or the match outcome.
       if (newCells >= 2 && Math.hypot(x - startX, z - startZ) >= 4 && positiveCredits < 12) {
         // The same ground can be covered backing away from the camera. Reward
