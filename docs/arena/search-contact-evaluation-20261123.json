@@ -66,5 +66,55 @@
     "stationaryAcquisitions": [[12, 160], [5, 160]],
     "independentGateFailures": {"706472999": ["rearSearch", "smokeContact", "spawnSearchProgress"], "1714980137": ["improved", "bothModes"]},
     "releaseDecision": "Retain incumbent. Target direction consistently reverses the relative two-second damage result on the three close-contact maps."
+  },
+  "directionGateConfirmation": {
+    "candidate": "pairedStrafeFollowup candidate",
+    "pairsPerMap": 8,
+    "closeRowFields": ["map", "targetMx", "trials", "candidateHalfSecond", "baselineHalfSecond", "candidateTwoSeconds", "baselineTwoSeconds"],
+    "pValueOrder": ["pooled", "mx=-1", "mx=1"],
+    "spawnOrder": ["candidate", "baseline"],
+    "spawnFields": ["forwardMetersPerSecond", "lowDisplacementFraction", "stationaryAcquisitions", "stationaryTrials"],
+    "runs": [
+      {
+        "seed": 792579283,
+        "incumbentAdvantageOneSidedP": [0.5, 2e-05, 1.0],
+        "closeRows": [
+          ["frostcourt", 0, 16, 13, 5, 13, 9],
+          ["frostcourt", -1, 16, 3, 7, 3, 9],
+          ["frostcourt", 1, 16, 1, 0, 13, 4],
+          ["homeward", 0, 16, 7, 4, 9, 4],
+          ["homeward", -1, 16, 1, 8, 2, 14],
+          ["homeward", 1, 16, 3, 1, 9, 1],
+          ["blackflag", 0, 16, 6, 2, 7, 10],
+          ["blackflag", -1, 16, 3, 9, 3, 11],
+          ["blackflag", 1, 16, 7, 2, 15, 4]
+        ],
+        "spawn": [
+          [2.4998, 0.0758, 2, 12],
+          [1.8132, 0.1469, 0, 12]
+        ],
+        "failedGates": ["rearSearch", "smokeContact", "closeMovingDamage"]
+      },
+      {
+        "seed": 1639803607,
+        "incumbentAdvantageOneSidedP": [0.806152, 1.5e-05, 0.999996],
+        "closeRows": [
+          ["frostcourt", 0, 16, 13, 7, 13, 14],
+          ["frostcourt", -1, 16, 1, 8, 1, 12],
+          ["frostcourt", 1, 16, 3, 0, 15, 4],
+          ["homeward", 0, 16, 9, 8, 9, 10],
+          ["homeward", -1, 16, 4, 7, 4, 9],
+          ["homeward", 1, 16, 7, 5, 9, 6],
+          ["blackflag", 0, 16, 7, 9, 7, 13],
+          ["blackflag", -1, 16, 2, 6, 2, 9],
+          ["blackflag", 1, 16, 10, 2, 15, 3]
+        ],
+        "spawn": [
+          [2.2213, 0.0571, 2, 12],
+          [1.8291, 0.1218, 0, 12]
+        ],
+        "failedGates": ["closeMovingDamage"]
+      }
+    ]
   }
 }

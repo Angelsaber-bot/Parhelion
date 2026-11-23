@@ -426,6 +426,21 @@ export function score(legs: { seed: number; map: string; margin: number }[]) {
     meanScoreMargin: legs.reduce((sum, l) => sum + l.margin, 0) / Math.max(1, legs.length) };
 }
 
+type ContactComparison = Pick<ReturnType<typeof closeContact>[number], 'map' | 'moving' | 'incumbentMargins' | 'directions'>;
+
+export function passesCloseMovingDamage(rows: ContactComparison[]) {
+  const moving = rows.filter(row => row.moving);
+  const blocks = (map: string, margins: number[]) => margins.map((margin, seed) => ({ map, seed, margin }));
+  // Keep both seats together per start. Also test each direction so opposite regressions
+  // cannot cancel. Split the directional significance budget across those two comparisons.
+  const aggregate = moving.flatMap(row => blocks(row.map, row.incumbentMargins));
+  return score(aggregate).oneSidedP > .05 && [-1, 1].every(mx => {
+    const paired = moving.flatMap(row => row.directions.filter(d => d.mx === mx)
+      .flatMap(d => blocks(row.map, d.incumbentMargins)));
+    return paired.length === aggregate.length && score(paired).oneSidedP > .025;
+  });
+}
+
 function numberArg(v: string, min: number, max: number) {
   const n = Number(v);
   if (!v.trim() || !Number.isInteger(n) || n < min || n > max) throw Error('Invalid numeric evaluation argument: ' + v);
@@ -502,13 +517,7 @@ function main() {
     opponent: assessSearch(incumbent.model, incumbent.model, searchTrials, 30),
   } : undefined;
   const near = spawnSearch && incumbent ? closeContact(candidate.model, incumbent.model, firstSeed) : undefined;
-  if (near) {
-    // One preselected outcome: first damage within two seconds against a moving
-    // target. Both seats share a start and contribute one sign-test observation.
-    const blocks = near.filter(row => row.moving).flatMap(row =>
-      row.incumbentMargins.map((margin, seed) => ({ map: row.map, seed, margin })));
-    gates.closeMovingDamage = score(blocks).oneSidedP > .05;
-  }
+  if (near) gates.closeMovingDamage = passesCloseMovingDamage(near);
   if (spawnSearch) {
     const { candidate: pilot, opponent: rival } = spawnSearch;
     gates.spawnSearchProgress = passesSpawnSearch(pilot, rival);

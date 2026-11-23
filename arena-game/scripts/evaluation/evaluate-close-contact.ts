@@ -21,16 +21,16 @@ const references: MatchReference[] = [
   { map: 'blackflag', at: 1795381709043, bot: 6, human: 7, kit: ['corona', 'firefly', 'hammer'], humanScore: 7, botScore: 1 },
 ];
 interface Fixture {
-  reference: MatchReference; a: Start; b: Start; angle: number; direction: number;
+  reference: MatchReference; a: Start; b: Start; angle: number;
 }
 
-function encounter(f: Fixture, reverse: boolean, moving: boolean, model?: NeuralPolicyModel) {
+function encounter(f: Fixture, reverse: boolean, mx: number, model?: NeuralPolicyModel) {
   const side = reverse ? 'B' : 'A', other = reverse ? 'A' : 'B';
   const game = new Match(getMap(f.reference.map), '1v1');
   const info = { name: 'probe', skins: [], bot: true };
   const targetDriver: Controller = { think(match, id) {
     const me = match.player(id)!;
-    return { seq: match.tick, view: match.tick, yaw: me.yaw, pitch: 0, mx: moving ? f.direction : 0,
+    return { seq: match.tick, view: match.tick, yaw: me.yaw, pitch: 0, mx,
       mz: 0, buttons: 0, weapon: me.weaponSlot };
   } };
   game.addPlayer('pilot', { ...info, team: side, char: f.reference.bot, loadout: f.reference.kit }, model && learnedOpponent(model));
@@ -46,8 +46,8 @@ function encounter(f: Fixture, reverse: boolean, moving: boolean, model?: Neural
   return { game, pilot, target };
 }
 
-function clearStart(f: Fixture, reverse: boolean) {
-  const { game, pilot, target } = encounter(f, reverse, true);
+function clearStart(f: Fixture, reverse: boolean, mx: number) {
+  const { game, pilot, target } = encounter(f, reverse, mx);
   const seen = humanObservation(game.map, pilot, [{ team: target.team, crouched: false, feet: [target.x, target.y, target.z] }],
     (a, b) => game.heroes.visible(a, b), [0, 0]);
   if (seen[0] !== 1) return false;
@@ -66,16 +66,16 @@ export function closeContact(candidate: NeuralPolicyModel, incumbent: NeuralPoli
       const a = nodes[Math.floor(draw() * nodes.length)], b = nodes[Math.floor(draw() * nodes.length)];
       const d = Math.hypot(a.x - b.x, a.z - b.z);
       if (d < 3 || d > 12) continue;
-      const f = { reference, a, b, angle: (draw() - .5) * .7, direction: draw() < .5 ? -1 : 1 };
-      if (clearStart(f, false) && clearStart(f, true)) starts.push(f);
+      const f = { reference, a, b, angle: (draw() - .5) * .7 };
+      if ([-1, 1].every(mx => clearStart(f, false, mx) && clearStart(f, true, mx))) starts.push(f);
     }
     if (starts.length !== pairs) throw Error('Insufficient paired close-contact starts on ' + map);
-    return [false, true].map(moving => {
+    const byMotion = [-1, 0, 1].map(mx => {
       const score = (model: NeuralPolicyModel) => {
         let byHalfSecond = 0, byTwoSeconds = 0;
         const hitsByStart = starts.map(() => 0);
         for (const [i, f] of starts.entries()) for (const reverse of [false, true]) {
-          const { game, pilot, target } = encounter(f, reverse, moving, model);
+          const { game, pilot, target } = encounter(f, reverse, mx, model);
           for (let tick = 1; tick <= 2 * TICK_HZ && pilot.alive && target.alive; tick++) {
             game.step();
             if (game.snapshot().events.some(e => e.t === 'hit' && e.shooter === 'pilot' && e.victim === 'target' && e.dmg > 0)) {
@@ -88,8 +88,20 @@ export function closeContact(candidate: NeuralPolicyModel, incumbent: NeuralPoli
         return { totals: { byHalfSecond, byTwoSeconds }, hitsByStart };
       };
       const pilot = score(candidate), rival = score(incumbent);
-      return { map, reference, moving, trials: starts.length * 2, candidate: pilot.totals, incumbent: rival.totals,
+      return { mx, trials: starts.length * 2, candidate: pilot.totals, incumbent: rival.totals,
         incumbentMargins: rival.hitsByStart.map((hits, i) => hits - pilot.hitsByStart[i]) };
     });
+    const [left, still, right] = byMotion;
+    const movingTotals = (actor: 'candidate' | 'incumbent') => ({
+      byHalfSecond: left[actor].byHalfSecond + right[actor].byHalfSecond,
+      byTwoSeconds: left[actor].byTwoSeconds + right[actor].byTwoSeconds,
+    });
+    return [
+      { map, reference, moving: false, trials: still.trials, candidate: still.candidate,
+        incumbent: still.incumbent, incumbentMargins: still.incumbentMargins, directions: [] },
+      { map, reference, moving: true, trials: left.trials + right.trials, candidate: movingTotals('candidate'),
+        incumbent: movingTotals('incumbent'), directions: [left, right],
+        incumbentMargins: left.incumbentMargins.map((margin, i) => margin + right.incumbentMargins[i]) },
+    ];
   });
 }
