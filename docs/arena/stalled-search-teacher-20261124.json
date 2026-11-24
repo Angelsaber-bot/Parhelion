@@ -59,6 +59,17 @@
     "spawn": {
       "candidate": [1.0823, 586, 5716, 21, 336],
       "incumbent": [1.8653, 795, 5730, 30, 336]
+    },
+    "movingByTargetDirection": {
+      "columns": ["trials", "candidate damage by 0.5s", "incumbent damage by 0.5s", "candidate damage by 2s", "incumbent damage by 2s"],
+      "mapAndTargetStrafe": {
+        "frostcourt -1": [448, 63, 131, 210, 202],
+        "frostcourt 1": [448, 14, 23, 155, 132],
+        "homeward -1": [448, 110, 189, 215, 254],
+        "homeward 1": [448, 40, 68, 169, 145],
+        "blackflag -1": [448, 169, 256, 303, 331],
+        "blackflag 1": [448, 90, 97, 302, 159]
+      }
     }
   },
   "method": "Reuse the released encoder and existing spawn-search-head (ordinary teacher). Alternative yaw/strafe/forward rows are the learned movement variant of occluded-route-imitation-20261124.json, with the released fire and other outputs. All teacher switches below are simulated only for diagnosis or imitation labels. Empty-view experiments use the trainer eligibility mask across the full context, with the incumbent driving other states. Each 30s fixture runs both sides with the same model-independent characters, kit, heading and seed. Variation in policy changes its subsequent trajectory.",
@@ -349,5 +360,61 @@
       "230047621": [2.3069, 115, 1421, 20, 90],
       "1259207857": [2.4344, 95, 1424, 24, 90]
     }
+  },
+  "deployment": {
+    "sha": "40d4bf63ef320de97f063e5865d30e726560db3a",
+    "workflow": 45435030187,
+    "trainingRun": 45435323601,
+    "lastParentGeneration": 5145,
+    "observedGeneration": 5150,
+    "postChangeEvaluation": {
+      "generation": 5150,
+      "at": 1795537178520,
+      "reason": "evaluation_failed",
+      "failedGates": ["human_tracking", "human_quiet", "rearSearch", "spawnSearchProgress"],
+      "published": false,
+      "report": {
+        "rearSeconds": 7.85,
+        "referenceRearSeconds": 8.311111111111112,
+        "smokeBlindFire": 0,
+        "wallEscape": 1,
+        "roundSet": "diagnostic",
+        "opponent": "incumbent",
+        "duel": [1, 1, 0],
+        "team": [0, 2, 0],
+        "humanCamera": {
+          "captures": 1,
+          "windows": 367,
+          "turn": [0.1772021024123482, 0.17211871691372083],
+          "quiet": [0.04857260835504978, 0.04006158414288102]
+        }
+      }
+    },
+    "releaseDigest": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d"
+  },
+  "additionalCloseFixtures": {
+    "subject": "Unrestricted three-row candidate against frozen release. Same 12 starts per seed, both seats, fixed reference equipment for all target motions. Target strafe direction is from its viewpoint. A gunshot event and a damage event are counted separately. These are simulator results.",
+    "seeds": [1691272703, 648153029, 970147003, 1896004001],
+    "columns": ["actor", "map", "target strafe", "starts", "first damage by 0.5s", "first damage by 2s", "gunshot observed by 0.5s before or on first damage"],
+    "results": [
+      ["incumbent", "frostcourt", 0, 96, 39, 64, 61],
+      ["candidate", "frostcourt", 0, 96, 33, 57, 52],
+      ["incumbent", "frostcourt", -1, 96, 27, 36, 45],
+      ["candidate", "frostcourt", -1, 96, 35, 46, 65],
+      ["incumbent", "frostcourt", 1, 96, 9, 29, 17],
+      ["candidate", "frostcourt", 1, 96, 7, 45, 14],
+      ["incumbent", "homeward", 0, 96, 45, 67, 47],
+      ["candidate", "homeward", 0, 96, 48, 72, 50],
+      ["incumbent", "homeward", -1, 96, 47, 60, 52],
+      ["candidate", "homeward", -1, 96, 59, 65, 64],
+      ["incumbent", "homeward", 1, 96, 15, 30, 15],
+      ["candidate", "homeward", 1, 96, 15, 44, 16],
+      ["incumbent", "blackflag", 0, 96, 45, 71, 46],
+      ["candidate", "blackflag", 0, 96, 60, 87, 62],
+      ["incumbent", "blackflag", -1, 96, 58, 70, 63],
+      ["candidate", "blackflag", -1, 96, 59, 66, 62],
+      ["incumbent", "blackflag", 1, 96, 15, 34, 16],
+      ["candidate", "blackflag", 1, 96, 22, 60, 23]
+    ]
   }
 }
