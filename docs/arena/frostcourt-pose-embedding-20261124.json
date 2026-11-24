@@ -1,0 +1,706 @@
+{
+  "source": "1373b7d8c527cbdfeef3b741d0df6163386b6aaf",
+  "parent": "movement from occluded-route-imitation-20261124.json",
+  "incumbentCompactSha256": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+  "cloud": {
+    "completedRun": 45404243246,
+    "committed": [4755, 4794],
+    "games": 480,
+    "independentScreens": 8,
+    "failedSpawnSearch": 8,
+    "optimizerUpdates": 3819,
+    "activeRun": 45406472921,
+    "firstObservedCheckpoint": 4819,
+    "recentEvaluation": {
+      "generation": 4840,
+      "at": 1795528590715,
+      "reason": "evaluation_failed",
+      "failedGates": ["human_tracking", "human_search", "human_quiet", "rearSearch", "spawnSearchProgress"],
+      "published": false,
+      "report": {
+        "rearSeconds": 6.468055555555555,
+        "referenceRearSeconds": 8.377777777777778,
+        "smokeBlindFire": 0,
+        "wallEscape": 0.8333333333333334,
+        "roundSet": "diagnostic",
+        "opponent": "incumbent",
+        "duel": [2, 0, 0],
+        "team": [1, 0, 1],
+        "humanCamera": {
+          "captures": 1,
+          "windows": 367,
+          "turn": [0.1764024915902511, 0.1716724113277767],
+          "quiet": [0.05479389239694471, 0.0395541698576134]
+        }
+      }
+    },
+    "consentedData": {"batches": 645, "matches": 24, "revision": 645},
+    "closingCheckpoint": 4843
+  },
+  "referenceScoresHumanBot": {
+    "frostcourt": [7, 0],
+    "homeward": [7, 2],
+    "blackflag": [7, 1]
+  },
+  "method": {
+    "teacher": "Same successful 27 full-spawn routes (1879 decision windows, seed 714398567) as frostcourt-route-distillation-20261124.json. Preserve real eight-observation zero-padded contexts. Match raw teacher yaw/strafe/forward; preserve all other parent outputs.",
+    "anchors": "Replay the 72-game rollout of escape-readout-evaluation-20261124.json with life resets. NumPy default_rng(481670193), choose 768 empty then 768 visible states uniformly without replacement. Weights 0.6 and 2.0; route mass 1, equal sides, routes per side and windows per route.",
+    "fit": "Freeze all but the input projection columns 18 through 26 inclusive. These encode self position, camera heading/pitch and three depth samples. Optimize squared error in raw logits, weighted by example mass and multiplied by 0.5, plus 0.009 times squared parameter change. Exact backprop through the causal single-block transformer. SciPy L-BFGS-B, maxiter 70, ftol 1e-8. Full parent forward pass independently compared with logged TypeScript logits to tolerance 1e-7. Central difference checked one random direction at epsilon 1e-5.",
+    "fitLog": "decision windows, total states, finite difference, analytic derivative, initial/final loss, iterations",
+    "fitValues": [1879.0, 3415.0, 1.2432004742601865, 1.2432007063044204, 0.8563864940977666, 0.6937119848264415, 70.0],
+    "fullDeltaRows": [
+      [-0.011133852569621521, 0.007223784412592529, -0.005754696330510461, -0.0071987424182323075, 0.00034950106213741923, 0.00402858076446938, 0.0011408655086587419, -0.0009220737071102187, -0.0022779725157473863],
+      [0.004438762191030707, -0.000718440775968409, -0.005353109921108233, -0.004665804783440427, -0.002980358327238373, -0.008434319289070265, 0.0011220148008775238, -0.002788937996189772, 0.012251769965928937],
+      [-0.007984721001107597, -0.0003768364271590619, 0.002420642870461431, -0.011389267498557764, 0.005286475308152919, 0.0008779901710121671, 0.003228327919043957, 0.0037247930562730285, -0.006883246378042781],
+      [0.003046970673596658, -0.0028175998423864835, 0.0019898569616720505, 0.005936318726023872, 0.004221533635159873, -0.011258340829794877, -0.0020651150247854026, 0.0009287014669008232, -0.006567748581349218],
+      [-0.012220950881361445, 0.010798216832865417, -0.00017158275349239975, -0.0026635950327248458, 0.0034600717806578386, 0.03157312677228212, -0.008530226321062139, -0.0035299375962232287, -0.012193585876288928],
+      [-0.0013705138501683605, -0.0008110479383297288, 0.00476412188158048, 0.006420510047633606, -0.0012710829867905351, 0.006035062514663274, -0.00805804760046101, -0.003609815580979883, -0.003400555655230072],
+      [-0.006702342479417547, 0.005984968818944911, 0.006888255104425877, -0.0008539044855386261, 0.0009421001367880689, 0.03889816721604198, -0.012089367870964865, -0.004232957460487518, -0.010323346717212235],
+      [-0.01034334617457206, 0.0033473425394178855, 0.00549163025083545, -0.006383810003853897, 0.0029545532670469444, 0.021305282793035448, -0.004526194094698842, -0.0017546994206684668, -0.015311427354078385],
+      [0.001218258866204181, -0.0025850648923180872, -0.0003006345694535824, -0.007788229716002107, 0.0016079090344333264, 0.004491430489394553, -0.0007501683388485283, 0.005054879807625989, 0.004791432711954139],
+      [0.0017948045308332245, 0.009327459001115205, -0.0007630573127639828, 0.006547932938528041, -0.0025799902097977975, -0.020194230940619864, 0.004766677994030061, 0.004989502961483872, -0.0005460626313091129],
+      [-0.008682777728096053, 0.008009221441018267, 0.004514811352985061, 0.0035372358781961023, 0.001358633288793122, -0.0029069855589524303, 0.012064988316665099, -0.007015110222104918, -0.0059963548676069],
+      [0.017972085964544585, -0.005876138482964691, -0.008194483445930774, 0.013677820029052703, -0.00527004532374884, -0.015137028829566187, 0.013550484560280626, 0.0007197908048278423, 0.021805715749002537],
+      [0.01455557297756849, -0.009037744207438601, -0.005314141097022366, 0.005296833231566243, -0.0013443204813524943, -0.04131984693604588, 0.004245124245749671, 0.003016422741319249, 0.015965544886593058],
+      [-0.004111578164769693, -0.0013890500499605049, -0.005284544767333539, -0.0020413653228531174, -0.007255886915876436, -0.019005883086419966, 0.0041399007477471265, -0.0015284877133512921, 0.0019516992586338627],
+      [0.00752843958951641, 0.00010179473714326629, -0.0029937272405262273, 0.005835141206701847, -0.0010636511536205914, -0.010385628190671663, 0.007447990350048956, 0.0007192872604057295, 0.008018207050370598],
+      [0.00178188658686394, 0.0029436275883221413, 0.0022063202289461627, -0.006375637904058936, -0.0034094661893326263, -0.00916563298508339, 0.0032177378676853923, 0.008891152879127662, 0.00031228895115905243],
+      [-0.021958330635724787, 0.0064488088835963145, 0.0041491265198633455, -0.00271088131443134, 0.0011433796680224138, 0.021242802348201743, -0.021085741158311282, -0.006442054435714144, -0.011461622287459004],
+      [0.00937076054573897, 0.002251128702330252, -0.005982523010886934, -0.0005033096480572005, 0.0009168024083245479, -0.019686595934184536, 0.004865295931848894, 0.010332386794253792, 0.01672871630603068],
+      [0.014142493697470655, -0.007159800861038853, -0.0023852096389449383, 0.007364722682056766, 0.007646327423414468, 0.0022025794515977463, -0.002647363635434216, -0.0010066216657597157, 0.0004701942772830554],
+      [-0.007891703299479063, -0.006232192074276123, -0.0019446810441685546, -0.005002722220144872, 0.0030254233662756268, 0.028293158047345876, -0.0002697816185132803, -0.004000638087662935, -0.013471078419653996],
+      [0.011532496669272732, -0.014069339333968311, -0.0023120641318416855, 0.002601782292522892, -0.003089824352469076, -0.0002442712103706763, -0.0006750383520533789, -0.0006892869640270054, 0.0031397201723742875],
+      [0.006805731494638958, -0.0007065869920519613, 0.007656703978711147, -0.0004284495739455383, -0.004825021081090768, -0.020888294161987092, 0.007278902996736059, -0.0007992326903542234, 0.006602897528536305],
+      [0.001185060608581734, -0.005735597391737187, 0.002984149030510046, 0.0016851327033631453, 0.0066383999420373254, 0.01012446498680777, -0.005273925613808146, -0.0012311289260501603, -0.007815230631225243],
+      [-0.002973207611542394, 0.0010790863122511604, 0.0036888370839922367, -0.0008977098138030306, -0.006461463299927129, 0.009554412397915057, -0.0010973416104312617, 0.0011740646944655823, 0.004210045057334825]
+    ],
+    "positionFitDeltaRows": [
+      [-0.009804481338714543, 0.016827279999411946, -0.00786536838248071],
+      [0.0030846728539687535, -0.013009350671606612, -0.0028165164038722115],
+      [-0.012095097427841053, 0.005984112378250157, 0.0017890454151097306],
+      [0.0019277545841002103, 0.0052788115081102175, 0.0010034795183664423],
+      [-0.012821814242541259, 0.02208361540942305, -0.011135038395595499],
+      [0.0049590968373137674, 0.010277141094786182, 0.0037601185060260793],
+      [-0.005874054623485208, 0.017177477319780452, -0.0019150334513568562],
+      [-0.011695937517550232, 0.018025989828036083, -0.0003609583227199288],
+      [-0.0026159695902734214, -0.002034568122879187, 0.0007431198432426031],
+      [0.004549168286670394, -0.0015724141823560917, 0.00024212611429097374],
+      [-0.008397826114178476, 0.008252172130930333, -0.0008774905775240264],
+      [0.019380110903685924, -0.02342290959683324, 0.0033847074222095063],
+      [0.013749937373162411, -0.02025410304867669, 0.0019598976333522777],
+      [-0.0002628036727764062, -0.0070594252519198515, -0.0033619293418980785],
+      [0.008922907676093812, -0.01229852188441131, 0.0008293711269068675],
+      [0.0010031492026695706, -0.014768647053586784, 0.007958978439823895],
+      [-0.017671259186633398, 0.037723293428465074, -0.008015322907887106],
+      [0.004694099188323675, -0.016352451126610882, 0.0005034553195908936],
+      [0.01289496829825495, -0.01081771851445795, -0.0018669278799836766],
+      [-0.008546089845315172, 0.00993443870592726, -0.0029708356633592913],
+      [0.01013322488109239, -0.015899385149614195, 0.00040013627328475045],
+      [0.0057332441445910294, -0.01795861027473265, 0.011142366726827963],
+      [0.0009592300165296686, 0.004302437077928128, 0.002467668471427262],
+      [-0.002206230687147621, -0.00041866400336351933, 0.005000950516218247]
+    ],
+    "positionFit": "Repeat the same optimization from the parent on its three own-position columns alone, retaining camera heading and depth projections from the parent.",
+    "variants": "full applies delta; half interpolates at 0.5. Location or view retain the full delta only on columns 18..20 or 21..26. Joint starts from full, recomputes attention residual and normalized feed-forward inputs, then fits the final feed-forward up/down weights and biases against the same original targets and contexts using the solver of frostcourt-hidden-layer-evaluation-20261124.json.",
+    "jointFitCheck": "The joint fit includes output and normalization biases when evaluating raw target logits. Discarded preliminary joint screens from before this correction; final screens and closed-loop probes use fresh seeds."
+  },
+  "spawnColumns": ["map", "mean unseen net forward m/s", "low displacement windows", "unseen windows", "stationary acquisitions", "eligible waiting starts"],
+  "nearColumns": ["map", "moving", "trials", "candidate first damage counts", "incumbent first damage counts"],
+  "variants": {
+    "full": {
+      "sha256": "06bb5f2dcfc57bdf874f56a4525bdf5fbfe5ee80ca10de27ff706d01fccdcd1e",
+      "seeds": [678415033, 1098154027, 1538710417],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.60132, 96, 641, 0, 36],
+          ["homeward", 2.2958, 61, 705, 2, 36],
+          ["blackflag", 1.35776, 118, 608, 4, 36],
+          ["suntemple", 1.38098, 197, 672, 0, 36],
+          ["orleans", 1.76813, 147, 654, 4, 36]
+        ],
+        "parent": [
+          ["frostcourt", 2.59129, 20, 568, 0, 36],
+          ["homeward", 2.9582, 7, 675, 3, 36],
+          ["blackflag", 1.59981, 71, 544, 15, 36],
+          ["suntemple", 2.74033, 46, 621, 10, 36],
+          ["orleans", 2.59297, 50, 588, 7, 36]
+        ],
+        "full": [
+          ["frostcourt", 2.60126, 26, 608, 0, 36],
+          ["homeward", 3.17555, 9, 658, 0, 36],
+          ["blackflag", 1.7865, 105, 611, 1, 36],
+          ["suntemple", 3.00634, 13, 659, 2, 36],
+          ["orleans", 2.71158, 27, 571, 1, 36]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          48,
+          {"byHalfSecond": 18, "byTwoSeconds": 41},
+          {"byHalfSecond": 22, "byTwoSeconds": 37}
+        ],
+        [
+          "frostcourt",
+          true,
+          96,
+          {"byHalfSecond": 34, "byTwoSeconds": 59},
+          {"byHalfSecond": 17, "byTwoSeconds": 35}
+        ],
+        [
+          "homeward",
+          false,
+          48,
+          {"byHalfSecond": 16, "byTwoSeconds": 35},
+          {"byHalfSecond": 21, "byTwoSeconds": 32}
+        ],
+        [
+          "homeward",
+          true,
+          96,
+          {"byHalfSecond": 40, "byTwoSeconds": 55},
+          {"byHalfSecond": 26, "byTwoSeconds": 45}
+        ],
+        [
+          "blackflag",
+          false,
+          48,
+          {"byHalfSecond": 30, "byTwoSeconds": 41},
+          {"byHalfSecond": 30, "byTwoSeconds": 37}
+        ],
+        [
+          "blackflag",
+          true,
+          96,
+          {"byHalfSecond": 44, "byTwoSeconds": 66},
+          {"byHalfSecond": 30, "byTwoSeconds": 52}
+        ]
+      ],
+      "screens": [
+        {
+          "seed": 116608393,
+          "failed": ["improved", "bothModes"],
+          "legsWinDrawLoss": {
+            "baseline": [2, 0, 22],
+            "incumbent": [27, 15, 6]
+          }
+        },
+        {
+          "seed": 845761483,
+          "failed": ["spawnSearchProgress"],
+          "legsWinDrawLoss": {}
+        }
+      ]
+    },
+    "half": {
+      "sha256": "07b1a01c3479963094304362f07e178b677b662f6caa7a26f8fd38a00807e7de",
+      "seeds": [678415033, 1098154027, 1538710417],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.60132, 96, 641, 0, 36],
+          ["homeward", 2.2958, 61, 705, 2, 36],
+          ["blackflag", 1.35776, 118, 608, 4, 36],
+          ["suntemple", 1.38098, 197, 672, 0, 36],
+          ["orleans", 1.76813, 147, 654, 4, 36]
+        ],
+        "parent": [
+          ["frostcourt", 2.59129, 20, 568, 0, 36],
+          ["homeward", 2.9582, 7, 675, 3, 36],
+          ["blackflag", 1.59981, 71, 544, 15, 36],
+          ["suntemple", 2.74033, 46, 621, 10, 36],
+          ["orleans", 2.59297, 50, 588, 7, 36]
+        ],
+        "half": [
+          ["frostcourt", 2.64256, 8, 617, 0, 36],
+          ["homeward", 2.97516, 12, 679, 0, 36],
+          ["blackflag", 1.6886, 93, 565, 12, 36],
+          ["suntemple", 2.68461, 49, 661, 3, 36],
+          ["orleans", 2.43997, 34, 597, 5, 36]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          48,
+          {"byHalfSecond": 19, "byTwoSeconds": 42},
+          {"byHalfSecond": 22, "byTwoSeconds": 37}
+        ],
+        [
+          "frostcourt",
+          true,
+          96,
+          {"byHalfSecond": 35, "byTwoSeconds": 57},
+          {"byHalfSecond": 17, "byTwoSeconds": 35}
+        ],
+        [
+          "homeward",
+          false,
+          48,
+          {"byHalfSecond": 19, "byTwoSeconds": 37},
+          {"byHalfSecond": 21, "byTwoSeconds": 32}
+        ],
+        [
+          "homeward",
+          true,
+          96,
+          {"byHalfSecond": 38, "byTwoSeconds": 56},
+          {"byHalfSecond": 26, "byTwoSeconds": 45}
+        ],
+        [
+          "blackflag",
+          false,
+          48,
+          {"byHalfSecond": 30, "byTwoSeconds": 41},
+          {"byHalfSecond": 30, "byTwoSeconds": 37}
+        ],
+        [
+          "blackflag",
+          true,
+          96,
+          {"byHalfSecond": 46, "byTwoSeconds": 67},
+          {"byHalfSecond": 30, "byTwoSeconds": 52}
+        ]
+      ],
+      "screens": [
+        {
+          "seed": 116608393,
+          "failed": ["improved", "bothModes"],
+          "legsWinDrawLoss": {
+            "baseline": [0, 1, 23],
+            "incumbent": [28, 17, 3]
+          }
+        },
+        {
+          "seed": 845761483,
+          "failed": ["improved", "bothModes"],
+          "legsWinDrawLoss": {
+            "baseline": [1, 1, 22],
+            "incumbent": [16, 20, 12]
+          }
+        }
+      ]
+    },
+    "joint": {
+      "sha256": "aad0ed49943d6112d6b9437b230591eda6f39981ff46325dd225b0886f2f6f4e",
+      "seeds": [181139737, 1745073899],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.73902, 48, 427, 0, 24],
+          ["homeward", 2.26916, 17, 468, 1, 24],
+          ["blackflag", 1.50472, 76, 422, 0, 24],
+          ["suntemple", 1.26076, 155, 454, 0, 24],
+          ["orleans", 1.50707, 117, 415, 1, 24]
+        ],
+        "parent": [
+          ["frostcourt", 2.41444, 17, 402, 0, 24],
+          ["homeward", 2.78772, 8, 452, 3, 24],
+          ["blackflag", 1.72379, 46, 351, 8, 24],
+          ["suntemple", 2.62832, 29, 422, 4, 24],
+          ["orleans", 2.38804, 32, 394, 2, 24]
+        ],
+        "joint": [
+          ["frostcourt", 2.75655, 27, 392, 0, 24],
+          ["homeward", 2.96625, 4, 432, 4, 24],
+          ["blackflag", 1.75181, 90, 394, 7, 24],
+          ["suntemple", 2.86172, 15, 409, 6, 24],
+          ["orleans", 2.61763, 15, 387, 4, 24]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          32,
+          {"byHalfSecond": 11, "byTwoSeconds": 18},
+          {"byHalfSecond": 13, "byTwoSeconds": 22}
+        ],
+        [
+          "frostcourt",
+          true,
+          64,
+          {"byHalfSecond": 16, "byTwoSeconds": 34},
+          {"byHalfSecond": 10, "byTwoSeconds": 27}
+        ],
+        [
+          "homeward",
+          false,
+          32,
+          {"byHalfSecond": 17, "byTwoSeconds": 24},
+          {"byHalfSecond": 17, "byTwoSeconds": 19}
+        ],
+        [
+          "homeward",
+          true,
+          64,
+          {"byHalfSecond": 18, "byTwoSeconds": 37},
+          {"byHalfSecond": 14, "byTwoSeconds": 23}
+        ],
+        [
+          "blackflag",
+          false,
+          32,
+          {"byHalfSecond": 18, "byTwoSeconds": 24},
+          {"byHalfSecond": 15, "byTwoSeconds": 20}
+        ],
+        [
+          "blackflag",
+          true,
+          64,
+          {"byHalfSecond": 31, "byTwoSeconds": 41},
+          {"byHalfSecond": 23, "byTwoSeconds": 28}
+        ]
+      ],
+      "screens": [
+        {
+          "seed": 1123910551,
+          "failed": ["smokeContact", "spawnSearchProgress"],
+          "legsWinDrawLoss": {}
+        },
+        {
+          "seed": 298745161,
+          "failed": ["candidateHasSearch", "rearSearch"],
+          "legsWinDrawLoss": {}
+        }
+      ]
+    },
+    "location": {
+      "sha256": "e787ee744ca0e46e6ce7cc82b8db641792cb2a0ef1d7572de6fbd1949a5223f5",
+      "seeds": [809245631, 1781149537],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.66039, 65, 432, 0, 24],
+          ["homeward", 2.27721, 40, 463, 1, 24],
+          ["blackflag", 1.47754, 106, 414, 3, 24],
+          ["suntemple", 1.36337, 107, 431, 0, 24],
+          ["orleans", 1.60185, 106, 435, 3, 24]
+        ],
+        "parent": [
+          ["frostcourt", 2.58079, 6, 366, 0, 24],
+          ["homeward", 2.95154, 14, 457, 1, 24],
+          ["blackflag", 1.64893, 65, 361, 8, 24],
+          ["suntemple", 2.05497, 69, 410, 4, 24],
+          ["orleans", 2.61384, 22, 401, 3, 24]
+        ],
+        "location": [
+          ["frostcourt", 2.55424, 11, 387, 0, 24],
+          ["homeward", 2.94338, 20, 456, 0, 24],
+          ["blackflag", 1.80688, 60, 350, 10, 24],
+          ["suntemple", 2.11422, 51, 398, 4, 24],
+          ["orleans", 2.73402, 17, 410, 6, 24]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          32,
+          {"byHalfSecond": 14, "byTwoSeconds": 24},
+          {"byHalfSecond": 11, "byTwoSeconds": 21}
+        ],
+        [
+          "frostcourt",
+          true,
+          64,
+          {"byHalfSecond": 16, "byTwoSeconds": 32},
+          {"byHalfSecond": 8, "byTwoSeconds": 17}
+        ],
+        [
+          "homeward",
+          false,
+          32,
+          {"byHalfSecond": 16, "byTwoSeconds": 23},
+          {"byHalfSecond": 12, "byTwoSeconds": 17}
+        ],
+        [
+          "homeward",
+          true,
+          64,
+          {"byHalfSecond": 17, "byTwoSeconds": 35},
+          {"byHalfSecond": 17, "byTwoSeconds": 32}
+        ],
+        [
+          "blackflag",
+          false,
+          32,
+          {"byHalfSecond": 16, "byTwoSeconds": 27},
+          {"byHalfSecond": 13, "byTwoSeconds": 21}
+        ],
+        [
+          "blackflag",
+          true,
+          64,
+          {"byHalfSecond": 23, "byTwoSeconds": 40},
+          {"byHalfSecond": 10, "byTwoSeconds": 22}
+        ]
+      ],
+      "screens": [
+        {
+          "seed": 159873419,
+          "failed": ["improved", "bothModes"],
+          "legsWinDrawLoss": {
+            "baseline": [0, 0, 24],
+            "incumbent": [22, 14, 12]
+          }
+        },
+        {
+          "seed": 639514237,
+          "failed": ["improved", "bothModes"],
+          "legsWinDrawLoss": {
+            "baseline": [2, 1, 21],
+            "incumbent": [21, 21, 6]
+          }
+        }
+      ]
+    },
+    "view": {
+      "sha256": "5b05fdd3f2092e763edad888f55c46f93c0841a70bf5222aaf58b35d3bb1b206",
+      "seeds": [809245631, 1781149537],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.66039, 65, 432, 0, 24],
+          ["homeward", 2.27721, 40, 463, 1, 24],
+          ["blackflag", 1.47754, 106, 414, 3, 24],
+          ["suntemple", 1.36337, 107, 431, 0, 24],
+          ["orleans", 1.60185, 106, 435, 3, 24]
+        ],
+        "parent": [
+          ["frostcourt", 2.58079, 6, 366, 0, 24],
+          ["homeward", 2.95154, 14, 457, 1, 24],
+          ["blackflag", 1.64893, 65, 361, 8, 24],
+          ["suntemple", 2.05497, 69, 410, 4, 24],
+          ["orleans", 2.61384, 22, 401, 3, 24]
+        ],
+        "view": [
+          ["frostcourt", 2.62029, 12, 396, 0, 24],
+          ["homeward", 3.07382, 11, 432, 1, 24],
+          ["blackflag", 1.91415, 73, 412, 3, 24],
+          ["suntemple", 2.19509, 45, 434, 1, 24],
+          ["orleans", 2.60319, 32, 412, 0, 24]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          32,
+          {"byHalfSecond": 13, "byTwoSeconds": 25},
+          {"byHalfSecond": 11, "byTwoSeconds": 21}
+        ],
+        [
+          "frostcourt",
+          true,
+          64,
+          {"byHalfSecond": 15, "byTwoSeconds": 31},
+          {"byHalfSecond": 8, "byTwoSeconds": 17}
+        ],
+        [
+          "homeward",
+          false,
+          32,
+          {"byHalfSecond": 15, "byTwoSeconds": 24},
+          {"byHalfSecond": 12, "byTwoSeconds": 17}
+        ],
+        [
+          "homeward",
+          true,
+          64,
+          {"byHalfSecond": 18, "byTwoSeconds": 37},
+          {"byHalfSecond": 17, "byTwoSeconds": 32}
+        ],
+        [
+          "blackflag",
+          false,
+          32,
+          {"byHalfSecond": 18, "byTwoSeconds": 30},
+          {"byHalfSecond": 13, "byTwoSeconds": 21}
+        ],
+        [
+          "blackflag",
+          true,
+          64,
+          {"byHalfSecond": 22, "byTwoSeconds": 38},
+          {"byHalfSecond": 10, "byTwoSeconds": 22}
+        ]
+      ],
+      "screens": [
+        {
+          "seed": 159873419,
+          "failed": ["rearSearch", "smokeContact", "spawnSearchProgress"],
+          "legsWinDrawLoss": {}
+        },
+        {
+          "seed": 639514237,
+          "failed": ["improved", "bothModes"],
+          "legsWinDrawLoss": {
+            "baseline": [1, 1, 22],
+            "incumbent": [19, 18, 11]
+          }
+        }
+      ]
+    },
+    "positionfit": {
+      "sha256": "0f19876baad57e382fdd9748ba52140bb2dc9f47c948721b7cc6648b7a8a8249",
+      "seeds": [515637731, 1413516521],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.66483, 57, 440, 0, 24],
+          ["homeward", 2.18082, 38, 458, 1, 24],
+          ["blackflag", 1.46046, 84, 405, 4, 24],
+          ["suntemple", 1.2558, 121, 423, 0, 24],
+          ["orleans", 1.50299, 110, 436, 0, 24]
+        ],
+        "parent": [
+          ["frostcourt", 2.5382, 6, 395, 0, 24],
+          ["homeward", 2.84654, 9, 456, 1, 24],
+          ["blackflag", 1.42855, 83, 382, 10, 24],
+          ["suntemple", 2.46047, 40, 411, 5, 24],
+          ["orleans", 2.14257, 57, 382, 0, 24]
+        ],
+        "positionfit": [
+          ["frostcourt", 2.43108, 11, 403, 0, 24],
+          ["homeward", 2.83364, 12, 462, 0, 24],
+          ["blackflag", 1.75178, 49, 399, 6, 24],
+          ["suntemple", 2.59931, 43, 430, 1, 24],
+          ["orleans", 2.2711, 55, 375, 0, 24]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          32,
+          {"byHalfSecond": 14, "byTwoSeconds": 24},
+          {"byHalfSecond": 12, "byTwoSeconds": 24}
+        ],
+        [
+          "frostcourt",
+          true,
+          64,
+          {"byHalfSecond": 18, "byTwoSeconds": 37},
+          {"byHalfSecond": 17, "byTwoSeconds": 25}
+        ],
+        [
+          "homeward",
+          false,
+          32,
+          {"byHalfSecond": 15, "byTwoSeconds": 24},
+          {"byHalfSecond": 21, "byTwoSeconds": 26}
+        ],
+        [
+          "homeward",
+          true,
+          64,
+          {"byHalfSecond": 26, "byTwoSeconds": 40},
+          {"byHalfSecond": 18, "byTwoSeconds": 26}
+        ],
+        [
+          "blackflag",
+          false,
+          32,
+          {"byHalfSecond": 21, "byTwoSeconds": 30},
+          {"byHalfSecond": 17, "byTwoSeconds": 27}
+        ],
+        [
+          "blackflag",
+          true,
+          64,
+          {"byHalfSecond": 27, "byTwoSeconds": 46},
+          {"byHalfSecond": 20, "byTwoSeconds": 33}
+        ]
+      ],
+      "screens": [
+        {
+          "seed": 114738469,
+          "failed": ["wallStalls"],
+          "legsWinDrawLoss": {}
+        },
+        {
+          "seed": 941187323,
+          "failed": ["rearSearch", "wallStalls", "spawnSearchProgress"],
+          "legsWinDrawLoss": {}
+        }
+      ]
+    }
+  },
+  "scope": "Cloud candidate evaluated on the private holdout. No local variant has new player match or private holdout results.",
+  "heldoutTeacher": {
+    "seed": 179067113,
+    "seatPairs": 32,
+    "seconds": 30,
+    "metric": "RMSE of raw yaw/strafe/forward on successful previously unseen teacher demonstrations only, equally weighted by trajectory within seat. Values are route count and RMSE per axis.",
+    "results": {
+      "parent": {
+        "A": [
+          3,
+          [0.5990111158705359, 0.8583865944535518, 0.8266995660860589]
+        ],
+        "B": [
+          14,
+          [0.41567737630874313, 1.0390295133563783, 0.8289549024173232]
+        ]
+      },
+      "full": {
+        "A": [
+          3,
+          [0.6044315177251585, 0.7270029483695452, 0.7279647780331288]
+        ],
+        "B": [
+          14,
+          [0.40945161379565725, 0.7960542141265766, 0.6607288426624043]
+        ]
+      },
+      "half": {
+        "A": [
+          3,
+          [0.6017751169814025, 0.7874788181978344, 0.7736921743626746]
+        ],
+        "B": [
+          14,
+          [0.4112736493166148, 0.9121981505910131, 0.7397688158393748]
+        ]
+      },
+      "location": {
+        "A": [
+          3,
+          [0.6013928517470692, 0.8781504427966597, 0.8247520978104302]
+        ],
+        "B": [
+          14,
+          [0.4137387686264556, 1.039928594789327, 0.7923534775456246]
+        ]
+      },
+      "view": {
+        "A": [
+          3,
+          [0.6015619021485247, 0.7137905389287388, 0.7282075459449611]
+        ],
+        "B": [
+          14,
+          [0.4096621665978102, 0.7955284429074253, 0.6942532055978434]
+        ]
+      },
+      "joint": {
+        "A": [
+          3,
+          [0.5726437819767245, 0.5615531233931593, 0.5746607285163197]
+        ],
+        "B": [
+          14,
+          [0.4161654419498263, 0.4589660430206885, 0.47925992067774453]
+        ]
+      },
+      "positionfit": {
+        "A": [
+          3,
+          [0.6011818205246732, 0.7493607294710799, 0.7526985468067364]
+        ],
+        "B": [
+          14,
+          [0.4118767077505854, 0.8545975299971674, 0.6989533150958176]
+        ]
+      }
+    }
+  }
+}
