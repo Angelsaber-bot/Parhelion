@@ -1,0 +1,203 @@
+{
+  "source": "dfc5432335f371ae00786ba3182563108e37da7d",
+  "actionRun": 45293216741,
+  "checkpointBefore": 2364,
+  "verifiedCommitted": {
+    "generation": 2366,
+    "parent": 2365,
+    "humanRevision": 645,
+    "published": false
+  },
+  "publicDigest": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+  "humanReference": {
+    "revision": 645,
+    "state": "ready",
+    "at": 1795482873612,
+    "completedRevision": 645,
+    "trainWindows": 2062,
+    "holdoutWindows": 367,
+    "published": false
+  },
+  "officialIndependentEvaluation": {
+    "generation": 2365,
+    "at": 1795482945483,
+    "reason": "evaluation_failed",
+    "failedGates": ["human_tracking", "candidateHasSearch", "rearSearch", "smokeContact", "spawnSearchProgress"],
+    "published": false,
+    "report": {
+      "rearSeconds": 9.480555555555556,
+      "referenceRearSeconds": 10.275,
+      "smokeBlindFire": 0,
+      "wallEscape": 1,
+      "roundSet": "diagnostic",
+      "opponent": "incumbent",
+      "duel": [0, 2, 0],
+      "team": [1, 0, 1],
+      "humanCamera": {
+        "captures": 1,
+        "windows": 367,
+        "turn": [0.17767790763274485, 0.1715456687885782],
+        "quiet": [0.030876001409281078, 0.03990390835521378]
+      }
+    }
+  },
+  "gameFixtures": [
+    {
+      "map": "frostcourt",
+      "at": 1795479452903,
+      "bot": 6,
+      "human": 3,
+      "kit": ["firefly", "longnight", "hammer"],
+      "targetKit": ["corona", "longnight", "hammer"],
+      "targetUtility": "frag",
+      "pilotUtility": null,
+      "humanScore": 7,
+      "botScore": 0
+    },
+    {
+      "map": "homeward",
+      "at": 1795382557118,
+      "bot": 3,
+      "human": 7,
+      "kit": ["corona", "longnight", "polearm"],
+      "targetKit": ["longnight", "corona", "polearm"],
+      "targetUtility": "smoke",
+      "pilotUtility": null,
+      "humanScore": 7,
+      "botScore": 2
+    },
+    {
+      "map": "blackflag",
+      "at": 1795381709043,
+      "bot": 6,
+      "human": 7,
+      "kit": ["corona", "firefly", "hammer"],
+      "targetKit": ["longnight", "corona", "polearm"],
+      "targetUtility": "smoke",
+      "pilotUtility": null,
+      "humanScore": 7,
+      "botScore": 1
+    }
+  ],
+  "fixtureSource": "Latest completed public 1v1 in the stats response since 1795381709042 for each named map, one human and one bot. Scores are human then bot. Unknown pilot utility uses Match default. Aggregate metadata only; actual player inputs are not used as synthetic targets.",
+  "localCandidate": "stationary (f2) reconstructed from the archived rear-search and conditional-contact readouts. This offline comparison is separate from the resumed cloud generations.",
+  "method": "Five-map spawned 30s assessment with 12 repeats per map. Both seats. Three-map near test uses matched starts with eight pairs per map and the actual heroes and gun loadouts from gameFixtures. Static, left and right targets use scripted motions. Frostcourt confirmation compares the old and latest fixture bundles on fresh starts, 12 pairs per map; cannot isolate an individual weapon or hero effect.",
+  "spawnMaps": ["frostcourt", "homeward", "blackflag", "orleans", "suntemple"],
+  "spawnOrder": ["localCandidate", "bundled"],
+  "spawnFields": ["netForwardMetersPerSecond", "lowDisplacementFraction", "stationaryFound", "stationaryTrials"],
+  "nearFields": ["map", "targetMx", "trials", "candidateHalf", "incumbentHalf", "candidateTwo", "incumbentTwo"],
+  "rows": [
+    {
+      "seed": 382941017,
+      "spawn": [
+        [2.43583, 0.10613, 9, 60],
+        [1.77739, 0.17225, 6, 60]
+      ],
+      "near": [
+        ["frostcourt", 0, 16, 5, 6, 11, 10],
+        ["frostcourt", -1, 16, 5, 5, 7, 8],
+        ["frostcourt", 1, 16, 0, 2, 5, 4],
+        ["homeward", 0, 16, 6, 9, 13, 14],
+        ["homeward", -1, 16, 8, 9, 11, 11],
+        ["homeward", 1, 16, 3, 2, 6, 4],
+        ["blackflag", 0, 16, 11, 6, 13, 10],
+        ["blackflag", -1, 16, 8, 7, 10, 12],
+        ["blackflag", 1, 16, 3, 3, 12, 5]
+      ]
+    },
+    {
+      "seed": 1094256847,
+      "spawn": [
+        [2.5076, 0.08515, 10, 60],
+        [1.70193, 0.1615, 2, 60]
+      ],
+      "near": [
+        ["frostcourt", 0, 16, 3, 4, 12, 9],
+        ["frostcourt", -1, 16, 10, 4, 11, 6],
+        ["frostcourt", 1, 16, 0, 0, 4, 3],
+        ["homeward", 0, 16, 9, 9, 12, 10],
+        ["homeward", -1, 16, 8, 5, 8, 8],
+        ["homeward", 1, 16, 2, 3, 9, 7],
+        ["blackflag", 0, 16, 11, 8, 14, 9],
+        ["blackflag", -1, 16, 12, 10, 12, 12],
+        ["blackflag", 1, 16, 4, 2, 9, 4]
+      ]
+    },
+    {
+      "seed": 1900570019,
+      "spawn": [
+        [2.57117, 0.08713, 8, 60],
+        [1.80536, 0.18664, 3, 60]
+      ],
+      "near": [
+        ["frostcourt", 0, 16, 6, 7, 12, 12],
+        ["frostcourt", -1, 16, 5, 2, 5, 6],
+        ["frostcourt", 1, 16, 0, 0, 7, 7],
+        ["homeward", 0, 16, 6, 11, 14, 12],
+        ["homeward", -1, 16, 8, 8, 9, 9],
+        ["homeward", 1, 16, 3, 2, 10, 4],
+        ["blackflag", 0, 16, 12, 9, 15, 14],
+        ["blackflag", -1, 16, 12, 10, 12, 11],
+        ["blackflag", 1, 16, 3, 2, 12, 5]
+      ]
+    }
+  ],
+  "frostConfirmationFields": ["targetMx", "trials", "candidateHalf", "incumbentHalf", "candidateTwo", "incumbentTwo"],
+  "frostConfirmation": [
+    {
+      "seed": 122695133,
+      "fixture": "archived",
+      "results": [
+        [0, 24, 12, 10, 22, 16],
+        [-1, 24, 15, 16, 17, 18],
+        [1, 24, 4, 3, 15, 7]
+      ]
+    },
+    {
+      "seed": 122695133,
+      "fixture": "latest",
+      "results": [
+        [0, 24, 13, 8, 16, 16],
+        [-1, 24, 8, 9, 8, 11],
+        [1, 24, 1, 0, 12, 8]
+      ]
+    },
+    {
+      "seed": 778690873,
+      "fixture": "archived",
+      "results": [
+        [0, 24, 18, 18, 21, 21],
+        [-1, 24, 16, 13, 20, 17],
+        [1, 24, 9, 10, 19, 16]
+      ]
+    },
+    {
+      "seed": 778690873,
+      "fixture": "latest",
+      "results": [
+        [0, 24, 16, 20, 18, 21],
+        [-1, 24, 10, 11, 15, 14],
+        [1, 24, 9, 10, 19, 17]
+      ]
+    },
+    {
+      "seed": 1659574189,
+      "fixture": "archived",
+      "results": [
+        [0, 24, 12, 15, 18, 19],
+        [-1, 24, 13, 9, 16, 12],
+        [1, 24, 6, 4, 15, 5]
+      ]
+    },
+    {
+      "seed": 1659574189,
+      "fixture": "latest",
+      "results": [
+        [0, 24, 11, 14, 12, 16],
+        [-1, 24, 6, 8, 7, 9],
+        [1, 24, 4, 3, 15, 5]
+      ]
+    }
+  ],
+  "decision": "Existing queue resumed from saved checkpoint. Keep current released enemy."
+}
