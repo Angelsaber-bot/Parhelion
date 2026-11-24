@@ -1,0 +1,333 @@
+{
+  "base": "a5d3cc680fe73206f5e5670a0d0b2298a3187e4d",
+  "queue": {
+    "lastRun": 45442854825,
+    "confirmed": 5316,
+    "independentScreen": 5315,
+    "latestAttempt": 5317,
+    "status": "HTTP 503 storage_limit; neural and scoreboard HTTP 500. Existing workflow active. Scheduled runs exist, and the queue remains serialized. No extra dispatch or fresh human holdout.",
+    "humanHoldout": {
+      "generation": 5315,
+      "captures": 1,
+      "windows": 367,
+      "holdout": {
+        "unseenTurn": {
+          "windows": 46,
+          "yawMaeRad": 0.17787459518598475,
+          "pitchMaeRad": 0.03584811188604521,
+          "moveMae": 0.26718253933865094,
+          "stillYawMaeRad": 0.19085652413575546
+        },
+        "unseenQuiet": {
+          "windows": 214,
+          "yawMaeRad": 0.04242938311300545,
+          "pitchMaeRad": 0.013207134130959199,
+          "moveMae": 0.27971443506044763,
+          "stillYawMaeRad": 0.0036429906977671327
+        },
+        "visibleContact": {
+          "windows": 107,
+          "yawMaeRad": 0.05915097700101193,
+          "pitchMaeRad": 0.018446713463168278,
+          "moveMae": 0.16188025251727237,
+          "stillYawMaeRad": 0.018137382625419404
+        }
+      },
+      "referenceHoldout": {
+        "unseenTurn": {
+          "windows": 46,
+          "yawMaeRad": 0.1716724113277767,
+          "pitchMaeRad": 0.03317957060492557,
+          "moveMae": 0.2766221230444701,
+          "stillYawMaeRad": 0.19085652413575546
+        },
+        "unseenQuiet": {
+          "windows": 214,
+          "yawMaeRad": 0.0395541698576134,
+          "pitchMaeRad": 0.009847030739917934,
+          "moveMae": 0.27032359069752915,
+          "stillYawMaeRad": 0.0036429906977671327
+        },
+        "visibleContact": {
+          "windows": 107,
+          "yawMaeRad": 0.06274922406562021,
+          "pitchMaeRad": 0.011973896706215691,
+          "moveMae": 0.16115118187164593,
+          "stillYawMaeRad": 0.018137382625419404
+        }
+      }
+    },
+    "humanScoreThenBot": {
+      "frostcourt": [7, 0],
+      "homeward": [7, 2],
+      "blackflag": [7, 1]
+    },
+    "scoreSource": "Previous completed public fixtures, not new games."
+  },
+  "production": "Public and local client index-S5wIc99Z.js match; rules 43 version 4. Last known deployed enemy digest 091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d. No candidate published.",
+  "methods": {
+    "parent": "local360 from search-teacher-distillation-20261124.json",
+    "collection": "Run Frostcourt ordinary lobby starts, 32 training seeds in both seats with stationary opponent. Use torso sightlines and first three nav path nodes for offline labels. Keep full eight-observation history, label yaw and two movement axes. Depending on seed modulo three, execute the student, alternate student and teacher in six-decision segments, or execute the teacher. Collect first unobserved life only. Training seeds masked into lower half of uint32; first campaign 159522739, second 365671303. Collection 2 uses r1-800.",
+    "fit": "Fine-tune native actor from parent; round 2 starts from parent with both datasets. Equal per-trajectory weight, double for successful demonstrations. Smooth L1 (beta .2) on tanh outputs, plus .3 MSE on other outputs and .8 MSE on all outputs of 3354 previously collected anchor histories. AdamW .00035, no decay, batch 96 route, 128 anchor, seed 1721781. Evaluate after 200/800 steps. Successful-only version keeps only trajectories with positive clearTick, LR .00065, anchor weight .18, snapshots 600/1600.",
+    "selection": "Four epochs of 24 variants, three elites. Initial models parent, r2-200 and success-1600. Gaussian perturbation of yaw/pitch/strafe/forward head rows and biases with stddev [.10,.035,.085,.065]. Four paired TRAIN-range seeds per epoch. Objective per seat averages 8*clearSighting - .08*minimumHorizontalDistance - 2*stallFraction (empty windows contribute zero stall fraction). Rank by .6*worstSeat + .4*seatMean. Retain final elite; no heuristic controls in evaluated models."
+  },
+  "spawnColumns": ["mean net forward m/s", "low displacement windows", "unseen windows", "acquired static target", "eligible static starts"],
+  "closeColumns": ["map", "moving", "trials", "candidate by .5s", "incumbent by .5s", "candidate by 2s", "incumbent by 2s"],
+  "spawnCampaigns": [743100881, 1977416609, 183354671],
+  "multiMap": {
+    "elite-3": {
+      "spawn": {
+        "all": [2.3317, 138, 4592, 3, 270],
+        "frostcourt": [2.2339, 0, 509, 0, 30],
+        "homeward": [2.2133, 0, 581, 0, 30],
+        "blackflag": [2.0755, 138, 517, 0, 30],
+        "suntemple": [2.5932, 0, 501, 1, 30],
+        "orleans": [2.3091, 0, 472, 0, 30],
+        "aster": [2.3324, 0, 523, 0, 30],
+        "sakura": [2.6794, 0, 424, 0, 30],
+        "lishan": [2.1889, 0, 498, 2, 30],
+        "camlann": [2.3594, 0, 567, 0, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 1, 23, 5, 36],
+        ["frostcourt", true, 96, 2, 15, 3, 32],
+        ["homeward", false, 48, 5, 26, 9, 36],
+        ["homeward", true, 96, 10, 26, 14, 48],
+        ["blackflag", false, 48, 8, 33, 15, 41],
+        ["blackflag", true, 96, 17, 33, 19, 48]
+      ]
+    },
+    "incumbent": {
+      "spawn": {
+        "all": [1.9509, 648, 4614, 27, 270],
+        "frostcourt": [1.7309, 63, 545, 0, 30],
+        "homeward": [2.3284, 50, 572, 4, 30],
+        "blackflag": [1.5016, 98, 497, 3, 30],
+        "suntemple": [1.4712, 142, 524, 0, 30],
+        "orleans": [1.4616, 161, 553, 2, 30],
+        "aster": [2.6024, 8, 539, 4, 30],
+        "sakura": [2.3927, 35, 404, 10, 30],
+        "lishan": [1.6839, 74, 457, 0, 30],
+        "camlann": [2.3853, 17, 523, 4, 30]
+      },
+      "close": []
+    },
+    "parent": {
+      "spawn": {
+        "all": [2.4007, 261, 4362, 56, 270],
+        "frostcourt": [2.2079, 1, 508, 0, 30],
+        "homeward": [2.6407, 21, 575, 0, 30],
+        "blackflag": [1.3438, 103, 464, 10, 30],
+        "suntemple": [2.5673, 25, 519, 5, 30],
+        "orleans": [2.1831, 42, 539, 1, 30],
+        "aster": [2.9585, 11, 425, 15, 30],
+        "sakura": [2.9338, 7, 411, 10, 30],
+        "lishan": [2.2221, 38, 379, 14, 30],
+        "camlann": [2.5486, 13, 542, 1, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 17, 23, 23, 36],
+        ["frostcourt", true, 96, 19, 15, 37, 32],
+        ["homeward", false, 48, 30, 26, 39, 36],
+        ["homeward", true, 96, 38, 26, 61, 48],
+        ["blackflag", false, 48, 31, 33, 40, 41],
+        ["blackflag", true, 96, 45, 33, 61, 48]
+      ]
+    },
+    "r1-800": {
+      "spawn": {
+        "all": [2.7002, 697, 4274, 69, 270],
+        "frostcourt": [2.4138, 94, 516, 0, 30],
+        "homeward": [2.9174, 70, 568, 5, 30],
+        "blackflag": [1.9736, 143, 480, 5, 30],
+        "suntemple": [2.8107, 52, 398, 15, 30],
+        "orleans": [2.4392, 75, 502, 3, 30],
+        "aster": [3.6861, 28, 468, 14, 30],
+        "sakura": [3.3814, 46, 377, 12, 30],
+        "lishan": [2.3196, 37, 430, 9, 30],
+        "camlann": [2.3603, 152, 535, 6, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 8, 23, 11, 36],
+        ["frostcourt", true, 96, 12, 15, 21, 32],
+        ["homeward", false, 48, 13, 26, 24, 36],
+        ["homeward", true, 96, 22, 26, 35, 48],
+        ["blackflag", false, 48, 27, 33, 31, 41],
+        ["blackflag", true, 96, 41, 33, 54, 48]
+      ]
+    },
+    "r2-800": {
+      "spawn": {
+        "all": [2.5547, 361, 4193, 48, 270],
+        "frostcourt": [2.3436, 11, 529, 0, 30],
+        "homeward": [2.7913, 4, 581, 1, 30],
+        "blackflag": [1.054, 216, 521, 0, 30],
+        "suntemple": [2.9395, 9, 390, 14, 30],
+        "orleans": [2.7874, 16, 488, 5, 30],
+        "aster": [3.3704, 4, 413, 8, 30],
+        "sakura": [3.1671, 14, 403, 4, 30],
+        "lishan": [1.9977, 51, 330, 15, 30],
+        "camlann": [2.5412, 36, 538, 1, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 6, 23, 8, 36],
+        ["frostcourt", true, 96, 13, 15, 19, 32],
+        ["homeward", false, 48, 16, 26, 21, 36],
+        ["homeward", true, 96, 19, 26, 36, 48],
+        ["blackflag", false, 48, 22, 33, 26, 41],
+        ["blackflag", true, 96, 38, 33, 45, 48]
+      ]
+    },
+    "success-1600": {
+      "spawn": {
+        "all": [2.5326, 683, 4333, 48, 270],
+        "frostcourt": [1.5583, 161, 539, 1, 30],
+        "homeward": [2.3904, 49, 536, 3, 30],
+        "blackflag": [3.0547, 44, 484, 1, 30],
+        "suntemple": [2.5068, 106, 472, 4, 30],
+        "orleans": [2.7081, 43, 498, 14, 30],
+        "aster": [3.2447, 8, 475, 10, 30],
+        "sakura": [2.9638, 50, 395, 7, 30],
+        "lishan": [2.1054, 102, 437, 2, 30],
+        "camlann": [2.2617, 120, 497, 6, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 5, 23, 23, 36],
+        ["frostcourt", true, 96, 9, 15, 38, 32],
+        ["homeward", false, 48, 17, 26, 29, 36],
+        ["homeward", true, 96, 25, 26, 50, 48],
+        ["blackflag", false, 48, 19, 33, 26, 41],
+        ["blackflag", true, 96, 33, 33, 47, 48]
+      ]
+    }
+  },
+  "stationaryFrost": {
+    "elite-3": [
+      [16780117, "A", 2.6305140654987547, 0, 160, 0, 16],
+      [16780117, "B", 2.425476911268494, 1, 160, 0, 16],
+      [910572181, "A", 2.664471907329089, 0, 160, 0, 16],
+      [910572181, "B", 2.226684859958149, 0, 160, 0, 16],
+      [143673739, "A", 2.820030079497746, 0, 160, 0, 16],
+      [143673739, "B", 2.445307463709557, 0, 160, 0, 16]
+    ],
+    "inc": [
+      [16780117, "A", 2.1656938711896774, 20, 160, 0, 16],
+      [16780117, "B", 1.3789434791797852, 49, 160, 0, 16],
+      [910572181, "A", 2.045279018958059, 8, 160, 0, 16],
+      [910572181, "B", 1.668373598446655, 27, 160, 0, 16],
+      [143673739, "A", 1.6791694896322316, 21, 160, 0, 16],
+      [143673739, "B", 1.5330347688698063, 32, 160, 0, 16]
+    ],
+    "parent": [
+      [16780117, "A", 2.280077308816044, 0, 160, 0, 16],
+      [16780117, "B", 2.5936717479912215, 6, 160, 0, 16],
+      [910572181, "A", 2.378304824679149, 0, 160, 0, 16],
+      [910572181, "B", 2.6310803869790957, 0, 160, 0, 16],
+      [143673739, "A", 2.5005577338366325, 0, 160, 0, 16],
+      [143673739, "B", 2.6745911743543243, 4, 160, 0, 16]
+    ],
+    "r1-200": [
+      [16780117, "A", 3.0062144769273216, 0, 160, 0, 16],
+      [16780117, "B", 3.220917038914411, 2, 160, 0, 16],
+      [910572181, "A", 3.3087912909641033, 0, 160, 0, 16],
+      [910572181, "B", 3.293409353554745, 3, 160, 0, 16],
+      [143673739, "A", 3.1844139493121677, 0, 160, 0, 16],
+      [143673739, "B", 3.130436746218226, 2, 160, 0, 16]
+    ],
+    "r1-800": [
+      [16780117, "A", 2.3637347427675888, 34, 160, 0, 16],
+      [16780117, "B", 2.272965057958974, 30, 160, 0, 16],
+      [910572181, "A", 2.9522813264447807, 7, 160, 0, 16],
+      [910572181, "B", 2.1201873755070397, 36, 160, 0, 16],
+      [143673739, "A", 2.4933907327283533, 29, 160, 0, 16],
+      [143673739, "B", 1.9049930250910245, 50, 158, 1, 16]
+    ],
+    "r2-200": [
+      [16780117, "A", 1.8186449120305215, 5, 160, 0, 16],
+      [16780117, "B", 2.912678638851348, 0, 160, 0, 16],
+      [910572181, "A", 1.8775348118391897, 1, 160, 0, 16],
+      [910572181, "B", 3.019691024305398, 0, 160, 0, 16],
+      [143673739, "A", 2.0891298883465432, 1, 160, 0, 16],
+      [143673739, "B", 3.068952118000502, 0, 160, 0, 16]
+    ],
+    "r2-800": [
+      [16780117, "A", 2.617641329410119, 2, 160, 0, 16],
+      [16780117, "B", 2.7300428163647252, 6, 160, 0, 16],
+      [910572181, "A", 2.4087762808282798, 5, 160, 0, 16],
+      [910572181, "B", 2.7881727813882793, 0, 160, 0, 16],
+      [143673739, "A", 2.7593161572849283, 2, 160, 0, 16],
+      [143673739, "B", 2.947318368055312, 6, 160, 0, 16]
+    ],
+    "success-1600": [
+      [16780117, "A", 2.392595106667803, 17, 160, 0, 16],
+      [16780117, "B", 1.463649020455811, 59, 159, 1, 16],
+      [910572181, "A", 2.150084029042941, 26, 160, 0, 16],
+      [910572181, "B", 1.6249660576876932, 49, 159, 1, 16],
+      [143673739, "A", 2.093141011810945, 18, 160, 0, 16],
+      [143673739, "B", 1.4459732375191303, 59, 158, 2, 16]
+    ],
+    "success-600": [
+      [16780117, "A", 2.4176346260250416, 4, 160, 0, 16],
+      [16780117, "B", 1.6301456528241118, 57, 160, 0, 16],
+      [910572181, "A", 2.5534028469212826, 1, 160, 0, 16],
+      [910572181, "B", 2.2716679385810985, 35, 160, 0, 16],
+      [143673739, "A", 2.362516972824387, 3, 160, 0, 16],
+      [143673739, "B", 1.998459775974847, 37, 160, 0, 16]
+    ]
+  },
+  "independentScreens": {
+    "elite-3-1340265781": ["closeMovingDamage", "spawnSearchProgress"],
+    "elite-3-1977523121": ["closeMovingDamage", "spawnSearchProgress"],
+    "r1-800-1340265781": ["wallStalls", "reappearanceTracking", "closeMovingDamage", "spawnSearchProgress"],
+    "r1-800-1977523121": ["rearSearch"],
+    "r2-800-1340265781": ["rearSearch", "reappearanceTracking", "closeMovingDamage"],
+    "r2-800-1977523121": ["rearSearch", "closeMovingDamage"],
+    "success-1600-1340265781": ["rearSearch", "smokeContact", "spawnSearchProgress"],
+    "success-1600-1977523121": ["candidateHasSearch", "rearSearch", "smokeContact", "spawnSearchProgress"]
+  },
+  "geometry": {
+    "elite": {
+      "A": {
+        "30": [0, 0, 0],
+        "90": [0, 0, 0]
+      },
+      "B": {
+        "30": [0, 0, 0],
+        "90": [0, 0, 0]
+      }
+    },
+    "incumbent": {
+      "A": {
+        "30": [0, 0, 0],
+        "90": [0, 0, 0]
+      },
+      "B": {
+        "30": [0, 0, 0],
+        "90": [0, 0, 0]
+      }
+    },
+    "parent": {
+      "A": {
+        "30": [0, 0, 0],
+        "90": [0, 0, 0]
+      },
+      "B": {
+        "30": [0, 0, 0],
+        "90": [0, 0, 0]
+      }
+    },
+    "success": {
+      "A": {
+        "30": [0, 0, 0],
+        "90": [0, 0, 0]
+      },
+      "B": {
+        "30": [3, 1, 1],
+        "90": [5, 1, 1]
+      }
+    }
+  },
+  "stationaryFrostColumns": ["campaign", "seat", "net forward m/s", "low displacement windows", "unseen windows", "stationary acquired", "eligible"],
+  "geometryMethod": "Independent campaigns 391598273,965027519,1827681901; 36 initially hidden starts per seat, stationary target. Count first opening-life decision with clear eye-to-head or eye-to-chest ray, clear ray inside horizontal camera field, and actual clear policy observation, respectively. Death censors first-life tracking. Time from initial countdown step. The diagnostic world-visibility measurements are excluded from policy inputs and actions.",
+  "result": "The incumbent and parent never reached a clear ray on any of 72 Frostcourt trials even by 90s. The successful-route fit sometimes reaches a sightline on seat B but does not reliably acquire the stationary opponent. Global movement/arena gates do not justify promotion."
+}
