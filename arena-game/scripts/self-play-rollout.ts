@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
+import { pathToFileURL } from 'node:url';
 import { getMap, MAPS } from '../shared/arenaMap.ts';
 import { navFor } from '../shared/botLocomotion.ts';
 import { directPolicy, learnedOpponent } from '../shared/learnedOpponent.ts';
@@ -304,7 +305,11 @@ function boundedInteger(s: string, name: string, min: number, max: number) {
   return n;
 }
 
-function curriculum(count: number, focus: Focus[], rand: () => number) {
+function layoutAt(index: number): '1v1' | '2v2' {
+  return index % 4 === 1 || index % 4 === 2 ? '2v2' : '1v1';
+}
+
+export function curriculum(count: number, focus: Focus[], rand: () => number) {
   const schedule: { scenario: Scenario; focused: boolean }[] = [];
   const budget = Math.min(Math.floor(count / 2), Math.max(0, count - scenarios.length));
   const ordinary = focus.length && count >= scenarios.length ? count - budget : count;
@@ -318,6 +323,26 @@ function curriculum(count: number, focus: Focus[], rand: () => number) {
   for (let i = schedule.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     [schedule[i], schedule[j]] = [schedule[j], schedule[i]];
+  }
+  // These drills award their opening/contact credit only in a duel. Reserve one
+  // existing duel per scheduled focus; repeated drills can still train team play.
+  const reserved = new Set<number>();
+  const covered = new Set<Scenario>();
+  for (const scenario of focus) {
+    if (scenario === 'wall') continue;
+    const duel = schedule.findIndex((entry, i) => entry.focused && entry.scenario === scenario && layoutAt(i) === '1v1');
+    if (duel >= 0) { reserved.add(duel); covered.add(scenario); }
+  }
+  for (const scenario of focus) {
+    if (scenario === 'wall' || covered.has(scenario)) continue;
+    const source = schedule.findIndex(entry => entry.focused && entry.scenario === scenario);
+    if (source < 0) continue;
+    const available = schedule.map((_, i) => i).filter(i => layoutAt(i) === '1v1' && !reserved.has(i));
+    if (!available.length) break;
+    const dest = available[Math.floor(rand() * available.length)];
+    [schedule[source], schedule[dest]] = [schedule[dest], schedule[source]];
+    reserved.add(dest);
+    covered.add(scenario);
   }
   return schedule;
 }
@@ -356,7 +381,7 @@ function main() {
   const previous = values.league ? JSON.parse(readFileSync(values.league, 'utf8')) : {};
   const league = opponentLeague([...pool.keys()], count, previous, random);
   for (let i = 0; i < count; i++) {
-    const layout = i % 4 === 1 || i % 4 === 2 ? '2v2' : '1v1';
+    const layout = layoutAt(i);
     const team = i % 2 ? 'B' : 'A';
     const { scenario, focused } = schedule[i];
     const rival = league.select(i, layout);
@@ -375,7 +400,9 @@ function main() {
   console.log(`Simulated ${count} matches, collected ${decisions} policy decisions.`);
 }
 
-try { main(); } catch (e) {
-  console.error(e instanceof Error ? e.message : String(e));
-  process.exitCode = 1;
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try { main(); } catch (e) {
+    console.error(e instanceof Error ? e.message : String(e));
+    process.exitCode = 1;
+  }
 }
