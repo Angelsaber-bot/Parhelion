@@ -286,9 +286,10 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
     creditWaitingSearch(seats[0].steps.slice(0, waitingDecisionCount), game.map.data.bounds);
   }
   const outcome = Math.sign(game.score[team] - game.score[enemy]);
+  let clearRetreatWindows = 0;
   for (const seat of seats) {
     if (!seat.steps.length) throw Error(`No live decisions for ${seat.id} in the simulated match`);
-    scoreSearchProgress(seat.steps, game.map.data.bounds, EXPLORATION_TICKS, TICK_HZ);
+    clearRetreatWindows += scoreSearchProgress(seat.steps, game.map.data.bounds, EXPLORATION_TICKS, TICK_HZ).clearRetreatWindows;
     seat.steps[seat.steps.length - 1].reward += outcome;
   }
   // Reward observed reacquisition in the actual smoke window. Both actors
@@ -301,7 +302,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   const trajectories = Object.fromEntries(seats.map(({ id, steps }) => [id, steps]));
   const opponentHash = opponent.mode === 'frozen' ? opponent.actor.hash : actor.hash;
   return { map, layout, seed, team, scenario: start.scenario, shortenedApproach: start.shortenedApproach, opponent: opponentHash, opponentMode: opponent.mode,
-    score: game.score, outcome, ticks: game.tick - firstTick, trajectories };
+    score: game.score, outcome, clearRetreatWindows, ticks: game.tick - firstTick, trajectories };
 }
 
 function boundedInteger(s: string, name: string, min: number, max: number) {
@@ -397,6 +398,7 @@ function main() {
   }
   const remedial = episodes.filter(e => e.layout === '1v1' && e.focused && e.scenario === 'waiting');
   if (remedial.length) console.log('Shortened stationary approaches:', remedial.filter(e => e.shortenedApproach).length, '/', remedial.length);
+  console.log('Clear retreat windows excluded from novelty credit:', episodes.reduce((n, e) => n + e.clearRetreatWindows, 0));
   const payload = { version: 2, seedVersion: version, seed, rulesVersion: RULES_VERSION, actorHash: actor.hash, axisStd: AXIS_STD, focus, episodes };
   writeFileSync(values.output, JSON.stringify(payload), { mode: 0o600 });
   if (values.league) writeFileSync(values.league, JSON.stringify(league.payoffs), { mode: 0o600 });

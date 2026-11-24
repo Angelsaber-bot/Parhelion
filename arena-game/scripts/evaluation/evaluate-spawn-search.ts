@@ -95,8 +95,8 @@ function play(model: NeuralPolicyModel, opponent: NeuralPolicyModel, trial: Tria
       frames = 0;
     }
   }
-  const { recovered, stayedBlocked } = scoreSearchProgress(decisions, game.map.data.bounds, EXPLORATION_TICKS, TICK_HZ);
-  return { recovered, stayedBlocked, openingRoute, cells: cells.size, reach: bestReach, spins, stalled, windows, acquired: Number(acquired),
+  const { recovered, stayedBlocked, clearRetreatWindows } = scoreSearchProgress(decisions, game.map.data.bounds, EXPLORATION_TICKS, TICK_HZ);
+  return { recovered, stayedBlocked, clearRetreatWindows, openingRoute, cells: cells.size, reach: bestReach, spins, stalled, windows, acquired: Number(acquired),
     contacts, damage, received, travel, forwardTravel, backwardTravel, lateralTravel, forwardRequests, unseenTicks, initiallyVisible: Number(firstSight) };
 }
 
@@ -109,6 +109,7 @@ export function assess(model: NeuralPolicyModel, opponent: NeuralPolicyModel, tr
     acquired: mean('acquired'), contacts: mean('contacts'), damage: mean('damage'), received: mean('received'), travel: mean('travel'),
     recoveryTrials: rows.reduce((n, r) => n + r.recovered + r.stayedBlocked, 0),
     recoveries: rows.reduce((n, r) => n + r.recovered, 0),
+    clearRetreatWindows: rows.reduce((n, r) => n + r.clearRetreatWindows, 0),
     waitingTrials: waiting.length,
     waitingAcquired: waiting.reduce((n, r) => n + r.acquired, 0) / Math.max(1, waiting.length),
     forwardMetersPerSecond: TICK_HZ * mean('forwardTravel') / Math.max(1, mean('unseenTicks')),

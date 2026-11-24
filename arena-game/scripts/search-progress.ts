@@ -53,7 +53,7 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
   let minimumYaw = 0, maximumYaw = 0, previousSearchStalled = false;
   let forwardAttempts = 0, forwardMeters = 0, lastX = 0, lastZ = 0;
   let recovery: { x: number; z: number; start: number; newGround: boolean; timedOut: boolean } | undefined;
-  let recovered = 0, stayedBlocked = 0;
+  let recovered = 0, stayedBlocked = 0, clearRetreatWindows = 0;
   let discoveries = 0, positiveCredits = 0, negativeCredits = 0, newCells = 0;
   const visited = new Set<string>();
   // A respawn starts a new segment but revisiting the same ground is still a revisit.
@@ -134,7 +134,8 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
         // sighting, retreat can be the useful way out.
         const clearRetreat = forwardMeters <= -4 && steps.slice(start, i).every(({ obs: view }) =>
           view[scene + 6] >= 0 && view[scene + 7] >= .25 && view[scene + 8] >= 0 && view[scene + 9] === 0);
-        if (!clearRetreat) {
+        if (clearRetreat) clearRetreatWindows++;
+        else {
           creditProgress(steps, bounds, start, i, .01, false);
           positiveCredits++;
         }
@@ -171,5 +172,5 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
     }
     visited.add(cell);
   }
-  return { recovered, stayedBlocked };
+  return { recovered, stayedBlocked, clearRetreatWindows };
 }
