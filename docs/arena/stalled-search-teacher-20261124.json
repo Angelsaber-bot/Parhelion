@@ -1,0 +1,353 @@
+{
+  "base": "e0da92256cac4499adde0ba79dee84cc28a57e5b",
+  "publishedPolicy": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+  "consentedRevision": 645,
+  "humanScoreThenBot": {
+    "frostcourt": [7, 0],
+    "homeward": [7, 2],
+    "blackflag": [7, 1]
+  },
+  "spawnColumns": ["mean of per-map/seed unseen net forward m/s", "low displacement windows", "unseen windows", "stationary rivals acquired", "eligible stationary starts"],
+  "nearColumns": ["map", "moving", "trials", "candidate 0.5s", "incumbent 0.5s", "candidate 2s", "incumbent 2s"],
+  "queue": {
+    "runs": [45425544662, 45427977598, 45430430457],
+    "generations": [4969, 5107],
+    "evaluations": 28,
+    "failed": {
+      "human_tracking": 14,
+      "rearSearch": 26,
+      "wallStalls": 7,
+      "spawnSearchProgress": 28,
+      "human_quiet": 19,
+      "human_search": 14,
+      "closeMovingDamage": 10,
+      "candidateHasSearch": 2,
+      "smokeContact": 8
+    },
+    "speedGateFailures": 28,
+    "humanHoldout": {
+      "generation": 5105,
+      "at": 1795536227764,
+      "reason": "evaluation_failed",
+      "failedGates": ["human_tracking", "human_search", "human_quiet", "rearSearch", "smokeContact", "spawnSearchProgress"],
+      "published": false,
+      "report": {
+        "rearSeconds": 7.793055555555555,
+        "referenceRearSeconds": 8.5,
+        "smokeBlindFire": 0,
+        "wallEscape": 1,
+        "roundSet": "diagnostic",
+        "opponent": "incumbent",
+        "duel": [0, 2, 0],
+        "team": [1, 1, 0],
+        "humanCamera": {
+          "captures": 1,
+          "windows": 367,
+          "turn": [0.18228358237639716, 0.17211871458136518],
+          "quiet": [0.06323484126652512, 0.040061583641533546]
+        }
+      }
+    },
+    "near": [
+      ["frostcourt", false, 448, 181, 172, 324, 280],
+      ["frostcourt", true, 896, 77, 154, 365, 334],
+      ["homeward", false, 448, 197, 190, 249, 269],
+      ["homeward", true, 896, 150, 257, 384, 399],
+      ["blackflag", false, 448, 328, 259, 400, 339],
+      ["blackflag", true, 896, 259, 353, 605, 490]
+    ],
+    "spawn": {
+      "candidate": [1.0823, 586, 5716, 21, 336],
+      "incumbent": [1.8653, 795, 5730, 30, 336]
+    }
+  },
+  "method": "Reuse the released encoder and existing spawn-search-head (ordinary teacher). Alternative yaw/strafe/forward rows are the learned movement variant of occluded-route-imitation-20261124.json, with the released fire and other outputs. All teacher switches below are simulated only for diagnosis or imitation labels. Empty-view experiments use the trainer eligibility mask across the full context, with the incumbent driving other states. Each 30s fixture runs both sides with the same model-independent characters, kit, heading and seed. Variation in policy changes its subsequent trajectory.",
+  "localScreens": [
+    {
+      "seed": 1372050211,
+      "failed": ["improved", "bothModes"],
+      "incumbentTournament": {
+        "blocks": 12,
+        "wins": 6,
+        "losses": 4,
+        "tied": 2,
+        "winFractionWithDraws": 0.5729166666666666,
+        "oneSidedP": 0.3769531250000001,
+        "legs": 48,
+        "legWins": 18,
+        "legLosses": 11,
+        "legDraws": 19,
+        "meanScoreMargin": 0.6875
+      }
+    },
+    {
+      "seed": 513996871,
+      "failed": ["smokeContact"],
+      "incumbentTournament": null
+    }
+  ],
+  "localNear": [
+    ["frostcourt", false, 32, 8, 6, 22, 15],
+    ["frostcourt", true, 64, 13, 11, 29, 24],
+    ["homeward", false, 32, 12, 15, 23, 20],
+    ["homeward", true, 64, 16, 18, 30, 25],
+    ["blackflag", false, 32, 22, 13, 30, 21],
+    ["blackflag", true, 64, 35, 27, 47, 36]
+  ],
+  "experiments": {
+    "confirm-alternate": {
+      "seeds": [945719183, 1459768741, 1706195419],
+      "maps": {
+        "all": [2.5076, 255, 4279, 50, 270],
+        "aster": [3.1997, 1, 455, 12, 30],
+        "blackflag": [1.5028, 65, 457, 11, 30],
+        "camlann": [2.5292, 27, 536, 0, 30],
+        "frostcourt": [2.4368, 17, 470, 0, 30],
+        "homeward": [2.7823, 17, 569, 2, 30],
+        "lishan": [2.252, 29, 436, 6, 30],
+        "orleans": [2.6155, 16, 472, 4, 30],
+        "sakura": [2.9608, 14, 411, 9, 30],
+        "suntemple": [2.2897, 69, 473, 6, 30]
+      }
+    },
+    "confirm-incumbent": {
+      "seeds": [945719183, 1459768741, 1706195419],
+      "maps": {
+        "all": [1.8768, 698, 4672, 18, 270],
+        "aster": [2.6573, 16, 550, 2, 30],
+        "blackflag": [1.5916, 83, 538, 2, 30],
+        "camlann": [2.0676, 57, 543, 3, 30],
+        "frostcourt": [1.701, 56, 538, 0, 30],
+        "homeward": [2.2676, 34, 575, 1, 30],
+        "lishan": [1.5654, 94, 428, 0, 30],
+        "orleans": [1.4626, 153, 542, 2, 30],
+        "sakura": [2.3091, 52, 412, 8, 30],
+        "suntemple": [1.2689, 153, 546, 0, 30]
+      }
+    },
+    "confirm-old": {
+      "seeds": [945719183, 1459768741, 1706195419],
+      "maps": {
+        "all": [2.2859, 474, 4208, 55, 270],
+        "aster": [2.955, 0, 413, 15, 30],
+        "blackflag": [1.2897, 242, 488, 9, 30],
+        "camlann": [2.3737, 25, 541, 0, 30],
+        "frostcourt": [2.3547, 9, 500, 1, 30],
+        "homeward": [2.5515, 13, 576, 0, 30],
+        "lishan": [2.088, 38, 387, 13, 30],
+        "orleans": [2.3255, 10, 472, 0, 30],
+        "sakura": [2.8381, 1, 357, 15, 30],
+        "suntemple": [1.797, 136, 474, 2, 30]
+      }
+    },
+    "maskedconfirm-alternate": {
+      "seeds": [945719183, 1459768741, 1706195419],
+      "maps": {
+        "all": [2.5249, 246, 4364, 50, 270],
+        "aster": [3.1438, 1, 478, 12, 30],
+        "blackflag": [1.6304, 65, 498, 11, 30],
+        "camlann": [2.5092, 26, 530, 0, 30],
+        "frostcourt": [2.4568, 18, 479, 0, 30],
+        "homeward": [2.7757, 14, 575, 2, 30],
+        "lishan": [2.322, 22, 431, 6, 30],
+        "orleans": [2.6058, 19, 470, 4, 30],
+        "sakura": [2.9933, 14, 422, 9, 30],
+        "suntemple": [2.2874, 67, 481, 6, 30]
+      }
+    },
+    "maskedconfirm-old": {
+      "seeds": [945719183, 1459768741, 1706195419],
+      "maps": {
+        "all": [2.3025, 456, 4239, 55, 270],
+        "aster": [2.9384, 0, 425, 15, 30],
+        "blackflag": [1.3201, 241, 504, 9, 30],
+        "camlann": [2.4028, 22, 550, 0, 30],
+        "frostcourt": [2.3332, 13, 491, 1, 30],
+        "homeward": [2.5565, 13, 583, 0, 30],
+        "lishan": [2.1378, 36, 351, 13, 30],
+        "orleans": [2.2806, 10, 484, 0, 30],
+        "sakura": [2.9, 1, 367, 15, 30],
+        "suntemple": [1.8528, 120, 484, 2, 30]
+      }
+    },
+    "maskedhold-old": {
+      "seeds": [1960771769, 376178453, 909272347, 1632835217],
+      "maps": {
+        "all": [2.3151, 609, 5765, 79, 360],
+        "aster": [2.7936, 3, 588, 19, 40],
+        "blackflag": [1.3691, 304, 648, 11, 40],
+        "camlann": [2.4615, 42, 738, 0, 40],
+        "frostcourt": [2.4465, 19, 674, 0, 40],
+        "homeward": [2.6423, 14, 769, 2, 40],
+        "lishan": [2.1767, 48, 490, 18, 40],
+        "orleans": [2.2158, 56, 688, 1, 40],
+        "sakura": [2.6192, 0, 486, 19, 40],
+        "suntemple": [2.1109, 123, 684, 9, 40]
+      }
+    },
+    "maskedlocked-old": {
+      "seeds": [1618300991, 785667503, 230047621, 1259207857],
+      "maps": {
+        "all": [2.26, 701, 5724, 77, 360],
+        "aster": [2.8142, 4, 582, 20, 40],
+        "blackflag": [1.4588, 311, 647, 12, 40],
+        "camlann": [2.5756, 27, 731, 0, 40],
+        "frostcourt": [2.2879, 21, 659, 0, 40],
+        "homeward": [2.7682, 4, 770, 0, 40],
+        "lishan": [1.702, 102, 519, 16, 40],
+        "orleans": [2.2423, 48, 671, 1, 40],
+        "sakura": [2.7431, 2, 485, 20, 40],
+        "suntemple": [1.7482, 182, 660, 8, 40]
+      }
+    },
+    "motionconfirm-alternate": {
+      "seeds": [945719183, 1459768741, 1706195419],
+      "maps": {
+        "all": [2.3798, 525, 4270, 60, 270],
+        "aster": [3.0607, 25, 440, 15, 30],
+        "blackflag": [1.2641, 200, 509, 8, 30],
+        "camlann": [2.5101, 30, 550, 0, 30],
+        "frostcourt": [2.446, 30, 501, 0, 30],
+        "homeward": [2.6652, 40, 555, 5, 30],
+        "lishan": [1.8587, 94, 417, 7, 30],
+        "orleans": [2.5005, 8, 462, 4, 30],
+        "sakura": [2.9874, 9, 359, 13, 30],
+        "suntemple": [2.1258, 89, 477, 8, 30]
+      }
+    },
+    "persistentconfirm-alternate": {
+      "seeds": [945719183, 1459768741, 1706195419],
+      "maps": {
+        "all": [2.3603, 332, 4242, 62, 270],
+        "aster": [2.9406, 0, 425, 15, 30],
+        "blackflag": [1.3406, 196, 507, 9, 30],
+        "camlann": [2.4969, 9, 551, 0, 30],
+        "frostcourt": [2.3651, 8, 494, 1, 30],
+        "homeward": [2.6347, 14, 584, 0, 30],
+        "lishan": [2.2126, 29, 365, 13, 30],
+        "orleans": [2.2764, 9, 477, 2, 30],
+        "sakura": [2.8875, 1, 367, 15, 30],
+        "suntemple": [2.0882, 66, 472, 7, 30]
+      }
+    },
+    "persistentlocked-alternate": {
+      "seeds": [1618300991, 785667503, 230047621, 1259207857],
+      "maps": {
+        "all": [2.3146, 486, 5699, 86, 360],
+        "aster": [2.8202, 0, 582, 20, 40],
+        "blackflag": [1.4535, 250, 652, 11, 40],
+        "camlann": [2.6326, 13, 739, 0, 40],
+        "frostcourt": [2.3231, 8, 663, 0, 40],
+        "homeward": [2.7633, 9, 768, 0, 40],
+        "lishan": [1.7408, 86, 514, 16, 40],
+        "orleans": [2.263, 48, 668, 5, 40],
+        "sakura": [2.7302, 1, 482, 20, 40],
+        "suntemple": [2.1043, 71, 631, 14, 40]
+      }
+    },
+    "stallconfirm-alternate": {
+      "seeds": [945719183, 1459768741, 1706195419],
+      "maps": {
+        "all": [2.3601, 361, 4262, 67, 270],
+        "aster": [2.9311, 0, 442, 15, 30],
+        "blackflag": [1.3359, 196, 508, 9, 30],
+        "camlann": [2.4135, 19, 539, 0, 30],
+        "frostcourt": [2.3972, 1, 498, 0, 30],
+        "homeward": [2.6069, 9, 580, 1, 30],
+        "lishan": [2.2406, 38, 378, 15, 30],
+        "orleans": [2.363, 9, 478, 4, 30],
+        "sakura": [2.859, 23, 375, 15, 30],
+        "suntemple": [2.0933, 66, 464, 8, 30]
+      }
+    },
+    "stallhold-alternate": {
+      "seeds": [1960771769, 376178453, 909272347, 1632835217],
+      "maps": {
+        "all": [2.3534, 486, 5690, 90, 360],
+        "aster": [2.7437, 18, 592, 19, 40],
+        "blackflag": [1.4324, 254, 638, 12, 40],
+        "camlann": [2.5506, 21, 727, 0, 40],
+        "frostcourt": [2.4706, 2, 665, 0, 40],
+        "homeward": [2.6469, 11, 769, 1, 40],
+        "lishan": [2.1742, 42, 500, 18, 40],
+        "orleans": [2.2697, 50, 676, 7, 40],
+        "sakura": [2.5693, 59, 475, 20, 40],
+        "suntemple": [2.3229, 29, 648, 13, 40]
+      }
+    },
+    "test-alternate": {
+      "seeds": [850032971, 1070306819],
+      "maps": {
+        "all": [2.2923, 116, 1352, 15, 80],
+        "blackflag": [1.8175, 24, 251, 7, 16],
+        "frostcourt": [2.2801, 11, 259, 0, 16],
+        "homeward": [2.6763, 9, 302, 1, 16],
+        "orleans": [2.1713, 48, 271, 3, 16],
+        "suntemple": [2.5161, 24, 269, 4, 16]
+      }
+    },
+    "test-incumbent": {
+      "seeds": [850032971, 1070306819],
+      "maps": {
+        "all": [1.6198, 293, 1416, 4, 80],
+        "blackflag": [1.3838, 52, 259, 2, 16],
+        "frostcourt": [1.5426, 63, 286, 0, 16],
+        "homeward": [2.3183, 30, 309, 1, 16],
+        "orleans": [1.4393, 81, 289, 1, 16],
+        "suntemple": [1.415, 67, 273, 0, 16]
+      }
+    },
+    "test-old": {
+      "seeds": [850032971, 1070306819],
+      "maps": {
+        "all": [2.0982, 200, 1330, 11, 80],
+        "blackflag": [1.5473, 107, 245, 6, 16],
+        "frostcourt": [2.1514, 14, 255, 0, 16],
+        "homeward": [2.6917, 4, 308, 0, 16],
+        "orleans": [2.1099, 35, 277, 0, 16],
+        "suntemple": [1.9907, 40, 245, 5, 16]
+      }
+    },
+    "wallstallconfirm-alternate": {
+      "seeds": [945719183, 1459768741, 1706195419],
+      "maps": {
+        "all": [2.3096, 454, 4247, 61, 270],
+        "aster": [2.9321, 0, 434, 15, 30],
+        "blackflag": [1.3278, 241, 507, 9, 30],
+        "camlann": [2.4043, 32, 534, 4, 30],
+        "frostcourt": [2.3728, 3, 499, 0, 30],
+        "homeward": [2.5521, 16, 578, 1, 30],
+        "lishan": [2.1028, 39, 363, 14, 30],
+        "orleans": [2.3418, 10, 480, 0, 30],
+        "sakura": [2.8796, 1, 370, 15, 30],
+        "suntemple": [1.8731, 112, 482, 3, 30]
+      }
+    }
+  },
+  "decision": {
+    "change": "Update only PPO imitation labels for an eligible empty view whose entire eight-decision history is alive and has under 0.01 normalized horizontal excursion from its first position. Use the three trained alternative rows for this condition. Continue the existing optimizer, replay split, data and release gates.",
+    "conditions": "Masked variants use the released actor for other outputs and ineligible states. masked uses each teacher on all eligible histories. motion retains old yaw and substitutes movement. stall uses a four-decision stall. wallstall additionally requires two recent central depth values below .25. persistent requires all eight decisions. test and confirm without a prefix use the respective complete frozen actor directly.",
+    "selection": "A global replacement lost stationary acquisitions in the nine-map confirmation. Four-decision switching increased low-displacement windows on Sakura. Select persistent on the development campaigns, then compare the locked version with the old teacher on four fresh campaigns at normal spawns, both seats. Each improved net forward speed, reduced low-displacement share and found more stationary targets over the nine maps.",
+    "release": "The exported three-row candidate failed the full tournament on one seed and smoke contact on another. These results do not qualify enemy weights for release. The conditional teacher is training only. Frostcourt and Homeward stationary acquisitions remained zero on both teachers in the locked check. Current player outcomes and human holdout belong to release and cloud checkpoint respectively."
+  },
+  "labelParity": {
+    "alternate": [15, 0.0],
+    "old": [4161, 0.0],
+    "unlabeled": 1154,
+    "rolloutSeed": 105986437
+  },
+  "lockedBySeed": {
+    "ordinary": {
+      "1618300991": [2.2541, 168, 1440, 20, 90],
+      "785667503": [2.1531, 212, 1436, 19, 90],
+      "230047621": [2.2555, 168, 1417, 17, 90],
+      "1259207857": [2.3775, 153, 1431, 21, 90]
+    },
+    "stalled": {
+      "1618300991": [2.3095, 130, 1426, 21, 90],
+      "785667503": [2.2074, 146, 1428, 21, 90],
+      "230047621": [2.3069, 115, 1421, 20, 90],
+      "1259207857": [2.4344, 95, 1424, 24, 90]
+    }
+  }
+}

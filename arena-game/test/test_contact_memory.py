@@ -37,6 +37,25 @@ class ContactMemoryTest(unittest.TestCase):
             self.assertIsNone(result)
         self.assertIsNone(rl.search_demonstrations(states, base["rulesVersion"] + 1))
 
+    def test_escape_teacher_only_labels_stalled_empty_histories(self):
+        root = Path(__file__).resolve().parents[1]
+        base = json.loads((root / "shared/directPolicy.json").read_bytes())
+        heads = json.loads((root / "tools/challengers/spawn-search-head.json").read_bytes())
+        states = torch.zeros(4, base["context"], bc.FEATURES)
+        states[:, :, 5] = 1
+        states[1, -6, bc.OBSERVATIONS] = .05  # moved, then returned
+        states[2, 0, 5] = 0  # incomplete history after a respawn
+        states[3, -2, 0] = 1  # recent clear sighting
+        mask, labels = rl.search_demonstrations(states, base["rulesVersion"])
+        self.assertEqual(mask.tolist(), [True, True, True, False])
+        for head, indices in [(heads["stalled"], [0]), (heads, [1, 2])]:
+            for j, axis in enumerate(rl.SEARCH_AXES):
+                for field in ("weight", "bias"):
+                    base["out"][field][axis] = head[field][j]
+            actor = importlib.import_module("fit-match-movement").actor_from_json(base)
+            torch.testing.assert_close(labels[indices], actor(states[indices])[:, rl.SEARCH_AXES])
+        self.assertTrue((labels[3] == 0).all())
+
     def test_replay_balances_clear_close_contacts_with_other_sightings(self):
         examples = []
         for distance in [6, 18, 20, 25]:

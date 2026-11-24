@@ -38,10 +38,13 @@ def search_demonstrations(states, rules):
     if (hashlib.sha256(base_bytes).hexdigest() != readout["baseSha256"] or
             base["context"] != states.shape[1] or base["rulesVersion"] != rules):
         return None
-    for i, axis in enumerate(SEARCH_AXES):
-        base["out"]["weight"][axis] = readout["weight"][i]
-        base["out"]["bias"][axis] = readout["bias"][i]
     teacher = import_module("fit-match-movement").actor_from_json(base)
+
+    def head(source):
+        return states.new_tensor(source["weight"]), states.new_tensor(source["bias"])
+
+    ordinary = head(readout)
+    escape = head(readout["stalled"])
     # The last three scene features are the recency and bearing of an actual
     # sighting. Preserve the human imitation objective throughout contact loss.
     # This search specialist was fitted on clear approaches. Smoke at the rim
@@ -52,7 +55,11 @@ def search_demonstrations(states, rules):
     labels = states.new_zeros(len(states), len(SEARCH_AXES))
     for indices in eligible.nonzero().flatten().split(256):
         if len(indices):
-            labels[indices] = teacher(states[indices])[:, SEARCH_AXES]
+            history = states[indices]
+            encoded = teacher.encode(history)
+            # Wait for a full stalled context before switching movement and yaw labels.
+            labels[indices] = torch.where(stalled_search(history)[:, None],
+                                          F.linear(encoded, *escape), F.linear(encoded, *ordinary))
     return eligible, labels
 
 
@@ -77,14 +84,18 @@ def anchor_rollout_controls(prior_logits, states, search_examples, incumbent):
     return int(close.sum())
 
 
+def stalled_search(history):
+    positions = history[:, :, [bc.OBSERVATIONS, bc.OBSERVATIONS + 2]]
+    excursion = (positions - positions[:, :1]).norm(dim=-1).amax(dim=1)
+    return (history[:, :, 5] > 0).all(dim=1) & (excursion < .01)
+
+
 def search_imitation_loss(logits, controls, states):
     # The caller supplies only empty views with expired contact memory. Give
     # extra weight to the movement teacher when recent positions barely changed.
     errors = F.smooth_l1_loss(logits[:, SEARCH_AXES].tanh(), controls, beta=.2, reduction="none").mean(dim=1)
     history = states[:, -4:]
-    positions = history[:, :, [bc.OBSERVATIONS, bc.OBSERVATIONS + 2]]
-    excursion = (positions - positions[:, :1]).norm(dim=-1).amax(dim=1)
-    stalled = (history[:, :, 5] > 0).all(dim=1) & (excursion < .01)
+    stalled = stalled_search(history)
     # In clear corridors a sustained retreat can cover ground while diverging
     # from the forward action of the learned teacher. Correct that axis alone.
     center_depth = history[:, -2:, bc.OBSERVATIONS + 7]
