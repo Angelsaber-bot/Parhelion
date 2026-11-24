@@ -1,0 +1,314 @@
+{
+  "source": "6afc6d21b264670c295b3e4099fe3e5eaa4b4bb3",
+  "release": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+  "queue": {
+    "lastCompletedRun": 45410992981,
+    "generations": [4882, 4921],
+    "screens": 8,
+    "spawnFailures": 8,
+    "failedRun": 45413297683,
+    "failedGeneration": 4922,
+    "failure": "Truncated JSON during read of private replay corpus page. Confirmed pre-fix regression and after-fix mock pagination and retry-limit tests.",
+    "recoveryRun": 45422178070,
+    "resumedCheckpoint": 4923,
+    "consentedRevision": 645,
+    "lastIndependentEvaluation": {
+      "generation": 4920,
+      "at": 1795530104100,
+      "reason": "evaluation_failed",
+      "failedGates": ["human_tracking", "rearSearch", "wallStalls", "closeMovingDamage", "spawnSearchProgress"],
+      "published": false,
+      "report": {
+        "rearSeconds": 8.855555555555556,
+        "referenceRearSeconds": 8.991666666666667,
+        "smokeBlindFire": 0,
+        "wallEscape": 0.8333333333333334,
+        "roundSet": "diagnostic",
+        "opponent": "incumbent",
+        "duel": [1, 0, 1],
+        "team": [0, 1, 1],
+        "humanCamera": {
+          "captures": 1,
+          "windows": 367,
+          "turn": [0.17449279142462687, 0.1716724183248437],
+          "quiet": [0.04105556518117959, 0.03955416935626592]
+        }
+      }
+    }
+  },
+  "candidate": "Start from the location-only input projection in frostcourt-pose-embedding-20261124.json. Apply 50% or 100% of the demonstrated feed-forward up/down parameter update from frostcourt-hidden-layer-evaluation-20261124.json, leaving all other outputs and weights as inherited.",
+  "referenceScoresHumanBot": {
+    "frostcourt": [7, 0],
+    "homeward": [7, 2],
+    "blackflag": [7, 1]
+  },
+  "spawnColumns": ["map", "mean unseen forward m/s", "low displacement windows", "unseen windows", "stationary acquisitions", "eligible starts"],
+  "nearColumns": ["map", "moving", "trials", "candidate hit by deadline", "incumbent hit by deadline"],
+  "variants": {
+    "full": {
+      "sha256": "8c2f70d2ffb8c89f06e4f04df46808d37b020126e1654d59e543bf8b59a9982d",
+      "seeds": [62789701, 807501739, 1746150319],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.7256, 93, 637, 0, 36],
+          ["homeward", 2.3466, 41, 701, 0, 36],
+          ["blackflag", 1.6472, 106, 630, 3, 36],
+          ["suntemple", 1.2935, 198, 642, 0, 36],
+          ["orleans", 1.5907, 173, 655, 2, 36]
+        ],
+        "parent": [
+          ["frostcourt", 2.5534, 7, 584, 0, 36],
+          ["homeward", 2.8529, 29, 683, 0, 36],
+          ["blackflag", 1.765, 66, 537, 14, 36],
+          ["suntemple", 2.4493, 47, 586, 5, 36],
+          ["orleans", 2.706, 26, 597, 3, 36]
+        ],
+        "full": [
+          ["frostcourt", 2.8391, 16, 598, 2, 36],
+          ["homeward", 2.9545, 17, 642, 8, 36],
+          ["blackflag", 1.7235, 149, 585, 9, 36],
+          ["suntemple", 2.568, 32, 604, 10, 36],
+          ["orleans", 2.7892, 16, 604, 3, 36]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          48,
+          {"byHalfSecond": 22, "byTwoSeconds": 30},
+          {"byHalfSecond": 21, "byTwoSeconds": 28}
+        ],
+        [
+          "frostcourt",
+          true,
+          96,
+          {"byHalfSecond": 27, "byTwoSeconds": 48},
+          {"byHalfSecond": 17, "byTwoSeconds": 35}
+        ],
+        [
+          "homeward",
+          false,
+          48,
+          {"byHalfSecond": 29, "byTwoSeconds": 37},
+          {"byHalfSecond": 33, "byTwoSeconds": 35}
+        ],
+        [
+          "homeward",
+          true,
+          96,
+          {"byHalfSecond": 45, "byTwoSeconds": 71},
+          {"byHalfSecond": 37, "byTwoSeconds": 57}
+        ],
+        [
+          "blackflag",
+          false,
+          48,
+          {"byHalfSecond": 31, "byTwoSeconds": 48},
+          {"byHalfSecond": 21, "byTwoSeconds": 33}
+        ],
+        [
+          "blackflag",
+          true,
+          96,
+          {"byHalfSecond": 41, "byTwoSeconds": 68},
+          {"byHalfSecond": 33, "byTwoSeconds": 45}
+        ]
+      ],
+      "screens": [
+        [
+          1065902389,
+          ["smokeContact"]
+        ],
+        [
+          513945107,
+          ["rearSearch", "smokeContact"]
+        ]
+      ]
+    },
+    "half": {
+      "sha256": "3bbcf4be8d870a1d128891f83533ab16a33757cc8563b4d053959a8abd6e110a",
+      "seeds": [62789701, 807501739, 1746150319],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.7256, 93, 637, 0, 36],
+          ["homeward", 2.3466, 41, 701, 0, 36],
+          ["blackflag", 1.6472, 106, 630, 3, 36],
+          ["suntemple", 1.2935, 198, 642, 0, 36],
+          ["orleans", 1.5907, 173, 655, 2, 36]
+        ],
+        "parent": [
+          ["frostcourt", 2.5534, 7, 584, 0, 36],
+          ["homeward", 2.8529, 29, 683, 0, 36],
+          ["blackflag", 1.765, 66, 537, 14, 36],
+          ["suntemple", 2.4493, 47, 586, 5, 36],
+          ["orleans", 2.706, 26, 597, 3, 36]
+        ],
+        "half": [
+          ["frostcourt", 2.5969, 15, 614, 0, 36],
+          ["homeward", 3.0286, 25, 678, 5, 36],
+          ["blackflag", 1.7007, 109, 538, 15, 36],
+          ["suntemple", 2.3444, 67, 584, 2, 36],
+          ["orleans", 2.7871, 18, 585, 4, 36]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          48,
+          {"byHalfSecond": 23, "byTwoSeconds": 31},
+          {"byHalfSecond": 21, "byTwoSeconds": 28}
+        ],
+        [
+          "frostcourt",
+          true,
+          96,
+          {"byHalfSecond": 27, "byTwoSeconds": 49},
+          {"byHalfSecond": 17, "byTwoSeconds": 35}
+        ],
+        [
+          "homeward",
+          false,
+          48,
+          {"byHalfSecond": 28, "byTwoSeconds": 38},
+          {"byHalfSecond": 33, "byTwoSeconds": 35}
+        ],
+        [
+          "homeward",
+          true,
+          96,
+          {"byHalfSecond": 47, "byTwoSeconds": 70},
+          {"byHalfSecond": 37, "byTwoSeconds": 57}
+        ],
+        [
+          "blackflag",
+          false,
+          48,
+          {"byHalfSecond": 31, "byTwoSeconds": 48},
+          {"byHalfSecond": 21, "byTwoSeconds": 33}
+        ],
+        [
+          "blackflag",
+          true,
+          96,
+          {"byHalfSecond": 42, "byTwoSeconds": 68},
+          {"byHalfSecond": 33, "byTwoSeconds": 45}
+        ]
+      ],
+      "screens": [
+        [
+          1065902389,
+          ["spawnSearchProgress"]
+        ],
+        [
+          513945107,
+          ["smokeContact"]
+        ]
+      ]
+    }
+  },
+  "curriculum": "Only on the existing shortened 1v1 stationary search drill, choose the sightline-edge variant half the time. Sample an occluded walkable route node at least four metres from the stationary rival, with a non-occluded node among the next three route nodes. When unavailable, use the existing shortened sampler. Full-spawn, other scenarios, action inputs and tournament gates are unchanged.",
+  "verification": "Ordinary lobby starts, existing shortened sampler and edge sampler compared under same map, seed, seat, gear and heading randomization. Only the training initializer changes the starting position. Count first clear sensed contact within 30s on initially unobserved targets. The production sampler confirmation uses two seeds not used in the prototype. Each seat has ten starts per seed and method. Incumbent and candidate use production and full variant respectively.",
+  "productionSampler": [
+    {"seed": 1387504001, "id": "incumbent", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 1387504001, "id": "incumbent", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 1387504001, "id": "incumbent", "mode": "spawn", "map": "blackflag", "side": "A", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 1387504001, "id": "incumbent", "mode": "spawn", "map": "blackflag", "side": "B", "placed": 0, "eligible": 10, "found": 3},
+    {"seed": 1387504001, "id": "incumbent", "mode": "spawn", "map": "homeward", "side": "A", "placed": 0, "eligible": 10, "found": 1},
+    {"seed": 1387504001, "id": "incumbent", "mode": "spawn", "map": "homeward", "side": "B", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 1387504001, "id": "incumbent", "mode": "existing", "map": "frostcourt", "side": "A", "placed": 10, "eligible": 10, "found": 0},
+    {"seed": 1387504001, "id": "incumbent", "mode": "existing", "map": "frostcourt", "side": "B", "placed": 10, "eligible": 10, "found": 1},
+    {"seed": 1387504001, "id": "incumbent", "mode": "existing", "map": "blackflag", "side": "A", "placed": 10, "eligible": 10, "found": 1},
+    {"seed": 1387504001, "id": "incumbent", "mode": "existing", "map": "blackflag", "side": "B", "placed": 10, "eligible": 10, "found": 4},
+    {"seed": 1387504001, "id": "incumbent", "mode": "existing", "map": "homeward", "side": "A", "placed": 10, "eligible": 10, "found": 7},
+    {"seed": 1387504001, "id": "incumbent", "mode": "existing", "map": "homeward", "side": "B", "placed": 10, "eligible": 10, "found": 7},
+    {"seed": 1387504001, "id": "incumbent", "mode": "edge", "map": "frostcourt", "side": "A", "placed": 10, "eligible": 10, "found": 0},
+    {"seed": 1387504001, "id": "incumbent", "mode": "edge", "map": "frostcourt", "side": "B", "placed": 10, "eligible": 10, "found": 3},
+    {"seed": 1387504001, "id": "incumbent", "mode": "edge", "map": "blackflag", "side": "A", "placed": 10, "eligible": 10, "found": 5},
+    {"seed": 1387504001, "id": "incumbent", "mode": "edge", "map": "blackflag", "side": "B", "placed": 10, "eligible": 10, "found": 9},
+    {"seed": 1387504001, "id": "incumbent", "mode": "edge", "map": "homeward", "side": "A", "placed": 10, "eligible": 10, "found": 9},
+    {"seed": 1387504001, "id": "incumbent", "mode": "edge", "map": "homeward", "side": "B", "placed": 10, "eligible": 10, "found": 10},
+    {"seed": 1387504001, "id": "candidate", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 1387504001, "id": "candidate", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 1387504001, "id": "candidate", "mode": "spawn", "map": "blackflag", "side": "A", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 1387504001, "id": "candidate", "mode": "spawn", "map": "blackflag", "side": "B", "placed": 0, "eligible": 10, "found": 7},
+    {"seed": 1387504001, "id": "candidate", "mode": "spawn", "map": "homeward", "side": "A", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 1387504001, "id": "candidate", "mode": "spawn", "map": "homeward", "side": "B", "placed": 0, "eligible": 10, "found": 4},
+    {"seed": 1387504001, "id": "candidate", "mode": "existing", "map": "frostcourt", "side": "A", "placed": 10, "eligible": 10, "found": 0},
+    {"seed": 1387504001, "id": "candidate", "mode": "existing", "map": "frostcourt", "side": "B", "placed": 10, "eligible": 10, "found": 4},
+    {"seed": 1387504001, "id": "candidate", "mode": "existing", "map": "blackflag", "side": "A", "placed": 10, "eligible": 10, "found": 1},
+    {"seed": 1387504001, "id": "candidate", "mode": "existing", "map": "blackflag", "side": "B", "placed": 10, "eligible": 10, "found": 4},
+    {"seed": 1387504001, "id": "candidate", "mode": "existing", "map": "homeward", "side": "A", "placed": 10, "eligible": 10, "found": 1},
+    {"seed": 1387504001, "id": "candidate", "mode": "existing", "map": "homeward", "side": "B", "placed": 10, "eligible": 10, "found": 6},
+    {"seed": 1387504001, "id": "candidate", "mode": "edge", "map": "frostcourt", "side": "A", "placed": 10, "eligible": 10, "found": 0},
+    {"seed": 1387504001, "id": "candidate", "mode": "edge", "map": "frostcourt", "side": "B", "placed": 10, "eligible": 10, "found": 8},
+    {"seed": 1387504001, "id": "candidate", "mode": "edge", "map": "blackflag", "side": "A", "placed": 10, "eligible": 10, "found": 4},
+    {"seed": 1387504001, "id": "candidate", "mode": "edge", "map": "blackflag", "side": "B", "placed": 10, "eligible": 10, "found": 8},
+    {"seed": 1387504001, "id": "candidate", "mode": "edge", "map": "homeward", "side": "A", "placed": 10, "eligible": 10, "found": 4},
+    {"seed": 1387504001, "id": "candidate", "mode": "edge", "map": "homeward", "side": "B", "placed": 10, "eligible": 10, "found": 8},
+    {"seed": 789516199, "id": "incumbent", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 789516199, "id": "incumbent", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 789516199, "id": "incumbent", "mode": "spawn", "map": "blackflag", "side": "A", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 789516199, "id": "incumbent", "mode": "spawn", "map": "blackflag", "side": "B", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 789516199, "id": "incumbent", "mode": "spawn", "map": "homeward", "side": "A", "placed": 0, "eligible": 10, "found": 2},
+    {"seed": 789516199, "id": "incumbent", "mode": "spawn", "map": "homeward", "side": "B", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 789516199, "id": "incumbent", "mode": "existing", "map": "frostcourt", "side": "A", "placed": 10, "eligible": 10, "found": 0},
+    {"seed": 789516199, "id": "incumbent", "mode": "existing", "map": "frostcourt", "side": "B", "placed": 10, "eligible": 10, "found": 1},
+    {"seed": 789516199, "id": "incumbent", "mode": "existing", "map": "blackflag", "side": "A", "placed": 10, "eligible": 10, "found": 1},
+    {"seed": 789516199, "id": "incumbent", "mode": "existing", "map": "blackflag", "side": "B", "placed": 10, "eligible": 10, "found": 5},
+    {"seed": 789516199, "id": "incumbent", "mode": "existing", "map": "homeward", "side": "A", "placed": 10, "eligible": 10, "found": 7},
+    {"seed": 789516199, "id": "incumbent", "mode": "existing", "map": "homeward", "side": "B", "placed": 10, "eligible": 10, "found": 7},
+    {"seed": 789516199, "id": "incumbent", "mode": "edge", "map": "frostcourt", "side": "A", "placed": 10, "eligible": 10, "found": 1},
+    {"seed": 789516199, "id": "incumbent", "mode": "edge", "map": "frostcourt", "side": "B", "placed": 10, "eligible": 10, "found": 3},
+    {"seed": 789516199, "id": "incumbent", "mode": "edge", "map": "blackflag", "side": "A", "placed": 10, "eligible": 10, "found": 4},
+    {"seed": 789516199, "id": "incumbent", "mode": "edge", "map": "blackflag", "side": "B", "placed": 10, "eligible": 10, "found": 9},
+    {"seed": 789516199, "id": "incumbent", "mode": "edge", "map": "homeward", "side": "A", "placed": 10, "eligible": 10, "found": 9},
+    {"seed": 789516199, "id": "incumbent", "mode": "edge", "map": "homeward", "side": "B", "placed": 10, "eligible": 10, "found": 10},
+    {"seed": 789516199, "id": "candidate", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 789516199, "id": "candidate", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 789516199, "id": "candidate", "mode": "spawn", "map": "blackflag", "side": "A", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 789516199, "id": "candidate", "mode": "spawn", "map": "blackflag", "side": "B", "placed": 0, "eligible": 10, "found": 4},
+    {"seed": 789516199, "id": "candidate", "mode": "spawn", "map": "homeward", "side": "A", "placed": 0, "eligible": 10, "found": 0},
+    {"seed": 789516199, "id": "candidate", "mode": "spawn", "map": "homeward", "side": "B", "placed": 0, "eligible": 10, "found": 7},
+    {"seed": 789516199, "id": "candidate", "mode": "existing", "map": "frostcourt", "side": "A", "placed": 10, "eligible": 10, "found": 1},
+    {"seed": 789516199, "id": "candidate", "mode": "existing", "map": "frostcourt", "side": "B", "placed": 10, "eligible": 10, "found": 4},
+    {"seed": 789516199, "id": "candidate", "mode": "existing", "map": "blackflag", "side": "A", "placed": 10, "eligible": 10, "found": 1},
+    {"seed": 789516199, "id": "candidate", "mode": "existing", "map": "blackflag", "side": "B", "placed": 10, "eligible": 10, "found": 6},
+    {"seed": 789516199, "id": "candidate", "mode": "existing", "map": "homeward", "side": "A", "placed": 10, "eligible": 10, "found": 5},
+    {"seed": 789516199, "id": "candidate", "mode": "existing", "map": "homeward", "side": "B", "placed": 10, "eligible": 10, "found": 9},
+    {"seed": 789516199, "id": "candidate", "mode": "edge", "map": "frostcourt", "side": "A", "placed": 10, "eligible": 10, "found": 0},
+    {"seed": 789516199, "id": "candidate", "mode": "edge", "map": "frostcourt", "side": "B", "placed": 10, "eligible": 10, "found": 3},
+    {"seed": 789516199, "id": "candidate", "mode": "edge", "map": "blackflag", "side": "A", "placed": 10, "eligible": 10, "found": 1},
+    {"seed": 789516199, "id": "candidate", "mode": "edge", "map": "blackflag", "side": "B", "placed": 10, "eligible": 10, "found": 8},
+    {"seed": 789516199, "id": "candidate", "mode": "edge", "map": "homeward", "side": "A", "placed": 10, "eligible": 10, "found": 3},
+    {"seed": 789516199, "id": "candidate", "mode": "edge", "map": "homeward", "side": "B", "placed": 10, "eligible": 10, "found": 7}
+  ],
+  "fullSpawnConfirmation": [
+    {"seed": 461842391, "id": "incumbent", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 461842391, "id": "incumbent", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 461842391, "id": "candidate", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 461842391, "id": "candidate", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 461842391, "id": "parent", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 461842391, "id": "parent", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 24, "found": 1},
+    {"seed": 129046259, "id": "incumbent", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 129046259, "id": "incumbent", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 129046259, "id": "candidate", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 129046259, "id": "candidate", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 129046259, "id": "parent", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 129046259, "id": "parent", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 951713407, "id": "incumbent", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 951713407, "id": "incumbent", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 951713407, "id": "candidate", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 951713407, "id": "candidate", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 951713407, "id": "parent", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 951713407, "id": "parent", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 1743589001, "id": "incumbent", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 1743589001, "id": "incumbent", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 1743589001, "id": "candidate", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 1743589001, "id": "candidate", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 1743589001, "id": "parent", "mode": "spawn", "map": "frostcourt", "side": "A", "placed": 0, "eligible": 24, "found": 0},
+    {"seed": 1743589001, "id": "parent", "mode": "spawn", "map": "frostcourt", "side": "B", "placed": 0, "eligible": 24, "found": 0}
+  ],
+  "decision": "Enable more opportunities for successful training approaches. Full-spawn Frostcourt confirmation was 0/192 for full and incumbent; do not promote either new candidate."
+}

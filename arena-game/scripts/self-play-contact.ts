@@ -14,17 +14,26 @@ export interface RivalCourse { escape: Escape; route: NavNode[]; wait: number; d
 // Sample a shorter, still occluded approach along the real route between the two
 // spawns. Only the rollout initializer sees this route.
 export function waitingApproach(map: ArenaMap, nav: NavGrid, pilot: Pick<NavNode, 'x' | 'y' | 'z'>,
-                                rival: Pick<NavNode, 'x' | 'y' | 'z'>, random: () => number) {
+                                rival: Pick<NavNode, 'x' | 'y' | 'z'>, random: () => number,
+                                nearSightline = false) {
   const start = nav.nearest(pilot.x, pilot.y, pilot.z), goal = nav.nearest(rival.x, rival.y, rival.z);
   if (!start || !goal) return;
   const path = nav.path(start, goal);
   if (!path) return;
-  const candidates = path.slice(-40, -8).filter(node => {
-    if (Math.hypot(node.x - rival.x, node.z - rival.z) < 4) return false;
+  const hidden = (node: NavNode) => {
     const eye: Vec3 = [node.x, node.y + map.eye, node.z];
     return !lineOfSight(map, eye, [rival.x, rival.y + 1.1, rival.z]) &&
       !lineOfSight(map, eye, [rival.x, rival.y + playerHitbox(false).headY, rival.z]);
-  });
+  };
+  const separated = (node: NavNode) => Math.hypot(node.x - rival.x, node.z - rival.z) >= 4;
+  if (nearSightline) {
+    // A short, still-hidden approach can provide a first sighting to learn from.
+    const occluded = path.map(hidden);
+    const openings = path.filter((node, i) => occluded[i] && separated(node) &&
+      occluded.slice(i + 1, i + 4).includes(false));
+    if (openings.length) return openings[Math.floor(random() * openings.length)];
+  }
+  const candidates = path.slice(-40, -8).filter(node => separated(node) && hidden(node));
   return candidates[Math.floor(random() * candidates.length)];
 }
 

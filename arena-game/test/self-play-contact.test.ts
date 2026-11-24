@@ -69,13 +69,21 @@ it('places remedial searches on hidden walkable approaches to the actual opposin
     game.phase = 'countdown'; game.phaseT = 1; game.step();
     for (const side of ['A', 'B']) {
       const pilot = game.player(side)!, rival = game.player(side === 'A' ? 'B' : 'A')!;
-      const node = waitingApproach(game.map, nav, pilot, rival, () => .5);
-      expect(node, id + side).toBeDefined();
-      const goal = nav.nearest(rival.x, rival.y, rival.z)!;
-      expect(nav.path(node!, goal)!.length).toBeLessThanOrEqual(40);
-      const pose = { ...pilot, x: node!.x, y: node!.y, z: node!.z, yaw: Math.atan2(node!.x - rival.x, node!.z - rival.z) };
-      expect(humanObservation(game.map, pose, [{ team: rival.team, feet: [rival.x, rival.y, rival.z], crouched: false }],
-        (a, b) => game.heroes.visible(a, b), [0, 0])[0]).toBe(0);
+      const path = nav.path(nav.nearest(pilot.x, pilot.y, pilot.z)!, nav.nearest(rival.x, rival.y, rival.z)!)!;
+      const confidenceAt = (node: typeof path[number]) => {
+        const pose = { ...pilot, x: node.x, y: node.y, z: node.z, yaw: Math.atan2(node.x - rival.x, node.z - rival.z) };
+        return humanObservation(game.map, pose, [{ team: rival.team, feet: [rival.x, rival.y, rival.z], crouched: false }],
+          (a, b) => game.heroes.visible(a, b), [0, 0])[0];
+      };
+      for (const nearSightline of [false, true]) {
+        const node = waitingApproach(game.map, nav, pilot, rival, () => .5, nearSightline)!;
+        expect(node, id + side).toBeDefined();
+        expect(confidenceAt(node)).toBe(0);
+        const index = path.indexOf(node);
+        expect(index).toBeGreaterThanOrEqual(0);
+        if (nearSightline) expect(path.slice(index + 1, index + 4).some(n => confidenceAt(n) > 0)).toBe(true);
+        else expect(path.length - index - 1).toBeLessThanOrEqual(40);
+      }
     }
   }
 });

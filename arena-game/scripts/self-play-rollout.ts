@@ -138,7 +138,7 @@ export function placeEncounter(game: Match, scenario: Scenario, focused: boolean
     // stationary rival. Shortened approaches keep the original map heading.
     if (focused && game.layout === '1v1' && rand() < .5) {
       const pilot = game.player('pilot')!;
-      const node = waitingApproach(game.map, navFor(game), pilot, game.player('rival')!, rand);
+      const node = waitingApproach(game.map, navFor(game), pilot, game.player('rival')!, rand, rand() < .5);
       if (node) {
         Object.assign(pilot, { x: node.x, y: node.y, z: node.z });
         return { scenario, shortenedApproach: true };
