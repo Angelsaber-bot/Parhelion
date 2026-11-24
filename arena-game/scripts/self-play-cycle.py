@@ -3,6 +3,7 @@ import argparse
 import base64
 import gzip
 import hashlib
+import http.client
 import json
 import os
 import random
@@ -52,11 +53,20 @@ class Service:
                     body = result.read(LIMIT + 1)
                 if len(body) > LIMIT:
                     raise ValueError("Oversized Arena response")
-                return body if raw else (json.loads(body) if body else None)
+                if raw:
+                    return body
+                if not body and data is not None:
+                    return None
+                return json.loads(body)
             except urllib.error.HTTPError as exc:
                 if optional and exc.code == 404:
                     return None
                 if exc.code not in (408, 429, 500, 502, 503, 504) or attempt + 1 == attempts:
+                    raise
+            except (json.JSONDecodeError, UnicodeDecodeError, http.client.IncompleteRead):
+                # A corpus page can end mid-record. Replay the same read before
+                # the caller advances its cursor; never replay a write here.
+                if data is not None or attempt + 1 == attempts:
                     raise
             except OSError:
                 if attempt + 1 == attempts:
