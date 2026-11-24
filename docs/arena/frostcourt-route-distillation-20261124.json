@@ -1,0 +1,601 @@
+{
+  "source": "1aa822794bd39e7ebb826e57cd72c967e55c75b2",
+  "parentSha256": "79fcfa66f1ad9119b7efb9569a8afe53f3db4ef41a9c6888b2896f3276764330",
+  "production": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+  "queue": {
+    "completedRun": 45381542530,
+    "generations": [4390, 4434],
+    "games": 540,
+    "optimizerUpdates": 4245,
+    "independentScreens": 9,
+    "failedSpawnSearch": 8,
+    "followingRun": 45383550186,
+    "checkpointAtStart": 4440,
+    "holdout": {
+      "generation": 4440,
+      "at": 1795519567868,
+      "reason": "evaluation_failed",
+      "failedGates": ["human_search", "human_quiet", "rearSearch", "spawnSearchProgress"],
+      "published": false,
+      "report": {
+        "rearSeconds": 7.3,
+        "referenceRearSeconds": 9.20138888888889,
+        "smokeBlindFire": 0,
+        "wallEscape": 1,
+        "roundSet": "diagnostic",
+        "opponent": "incumbent",
+        "duel": [1, 1, 0],
+        "team": [1, 0, 1],
+        "humanCamera": {
+          "captures": 1,
+          "windows": 367,
+          "turn": [0.17294822153837783, 0.1716724113277767],
+          "quiet": [0.05190708046761629, 0.0395541698576134]
+        }
+      }
+    },
+    "consentedData": {
+      "batches": 645,
+      "matches": 24,
+      "revision": 645
+    }
+  },
+  "recentHumanBotScores": {
+    "frostcourt": [7, 0],
+    "homeward": [7, 2],
+    "blackflag": [7, 1]
+  },
+  "teacher": "Offline diagnostic teacher drives the parent on full Frostcourt starts with an idle rival. While the rival is unseen, use A* to its nearest node and aim up to three nodes ahead, stopping at the first waypoint with a clear chest ray. When the ray is already clear, aim toward the rival. Cache the waypoint by the nearest pilot nav node for the trial. For relative heading h, target raw yaw clip(h/0.9,-1.5,1.5), strafe -1.4 sin(h), forward 1.4 cos(h). Apply 85% for odd seeds or 100% for even seeds. Other outputs are the parent. Privileged geometry is used only to collect demonstrations and to score calibration.",
+  "fit": {
+    "seed": 714398567,
+    "pairs": 48,
+    "seconds": 30,
+    "successfulRoutesBySeat": {
+      "B": 21,
+      "A": 6
+    },
+    "decisionWindows": 1879,
+    "method": "Use successful initially unobserved single-life approaches only. Fit raw-logit residuals on the final encoder activation plus bias. Equal mass per side, per route within side and per decision within route. Ridge 0.04 on all parameters, 2.0 zero-residual anchor mass on contact/recent states and 0.25 on other states from escape-readout-evaluation-20261124.json. Full blends all three corrections at 0.65; motion blends strafe and forward at 0.35."
+  },
+  "teacherConfirmation": [
+    {
+      "seed": 113746971,
+      "actor": "teacher",
+      "side": "A",
+      "eligible": 24,
+      "clearSight": 2
+    },
+    {
+      "seed": 113746971,
+      "actor": "teacher",
+      "side": "B",
+      "eligible": 24,
+      "clearSight": 13
+    },
+    {
+      "seed": 113746971,
+      "actor": "parent",
+      "side": "A",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 113746971,
+      "actor": "parent",
+      "side": "B",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 113746971,
+      "actor": "incumbent",
+      "side": "A",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 113746971,
+      "actor": "incumbent",
+      "side": "B",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 113746971,
+      "actor": "full",
+      "side": "A",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 113746971,
+      "actor": "full",
+      "side": "B",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 113746971,
+      "actor": "motion",
+      "side": "A",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 113746971,
+      "actor": "motion",
+      "side": "B",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 619345789,
+      "actor": "teacher",
+      "side": "A",
+      "eligible": 24,
+      "clearSight": 6
+    },
+    {
+      "seed": 619345789,
+      "actor": "teacher",
+      "side": "B",
+      "eligible": 24,
+      "clearSight": 10
+    },
+    {
+      "seed": 619345789,
+      "actor": "parent",
+      "side": "A",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 619345789,
+      "actor": "parent",
+      "side": "B",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 619345789,
+      "actor": "incumbent",
+      "side": "A",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 619345789,
+      "actor": "incumbent",
+      "side": "B",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 619345789,
+      "actor": "full",
+      "side": "A",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 619345789,
+      "actor": "full",
+      "side": "B",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 619345789,
+      "actor": "motion",
+      "side": "A",
+      "eligible": 24,
+      "clearSight": 0
+    },
+    {
+      "seed": 619345789,
+      "actor": "motion",
+      "side": "B",
+      "eligible": 24,
+      "clearSight": 0
+    }
+  ],
+  "selection": {
+    "parameterSeed": 613670431,
+    "trainingSeed": 160291457,
+    "seatPairs": 6,
+    "variants": 32,
+    "description": "From the parent, independently scale each of the full variant yaw/strafe/forward corrections, then add one raw bias per axis. Uniform scales [-0.6,2.2], biases [-0.225,0.225]. First arm is parent. Select largest 3*min(side hit counts)+both hit counts-0.015*(sum of per-side mean closest distance to rival); the selected model observes only ordinary game inputs.",
+    "best": {
+      "k": 14,
+      "scales": [1.6390958595555274, 1.4960744154173877, 0.3267703787889331],
+      "biases": [-0.0441640607372392, -0.07705526453792118, 0.04193840529187583],
+      "bySide": [
+        [0, 25.17948797457271],
+        [0, 20.208998479356868]
+      ],
+      "score": -0.6808272968089436
+    }
+  },
+  "spawnColumns": ["map", "mean unseen net forward m/s", "low-displacement windows", "unseen windows", "waiting acquisitions", "eligible waiting starts"],
+  "nearColumns": ["map", "moving", "N per policy", "candidate counts", "incumbent counts"],
+  "variants": {
+    "full": {
+      "sha256": "ad0c76a091ddf3948772af2d3b02754e64cd5072a7b69c69ccb6d2ebb558bbc3",
+      "rowsWithBias": {
+        "0": [0.09873181124480511, -0.10139975491631778, 0.0882524165304123, 0.24520118265346907, 0.0100951639736492, -0.11416057756073425, -0.15067127384217713, 0.25641064769315913, 0.12840352796994348, 0.005111995715819401, -0.013620322815296827, 0.14100750592653674, -0.09773640476484496, 0.1285618423939821, -0.04458849824435086, 0.042110003033025714, -0.027249094016522066, 0.009374623151299957, 0.14149077989635306, -0.014977858631885752, 0.06585292850627213, 0.14130213750967416, -0.1418249187818376, 0.010359596475189336, 0.10041963580334072],
+        "2": [0.11266690199453142, -0.1648913932916788, -0.17926385098264158, -0.13218370408345942, 0.03822707762980497, -0.11076254631593518, -0.3368552318665306, -0.09589454973331989, 0.08602816047882128, 0.11005681906435869, 0.1195535939469857, 0.1650810926678163, 0.08902725058468816, 0.19055587598804452, -0.09142834246566714, -0.19929813045394135, -0.055207016888505, -0.12460995933252118, 0.43553647585604816, -0.15666298276788765, -0.39155419073000564, 0.23998888814235467, -0.12304835250278454, 0.3157068648502985, -0.44309300875975155],
+        "3": [0.3022211152996488, -0.24008080772611037, -0.13491527870791806, 0.3172898355949537, 0.15434107091780064, -0.21604507956491417, -0.24477215716432207, 0.10435837362205388, 0.11014413184448174, -0.04196708622199695, 0.17983599999388672, 0.06882726372817814, -0.17245717519327555, 0.10708355299131919, 0.24383636637109724, 0.04600838806114355, 0.19104405353442314, -0.058905457077448146, -0.39039081001675385, 0.08001384314090577, 0.19302507331080435, 0.055891451837540566, 0.03477757393800873, -0.13933460234725575, 0.1657850598490842]
+      },
+      "seeds": [172353979, 1536783191],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.5528, 62, 447, 0, 24],
+          ["homeward", 2.4123, 22, 461, 2, 24],
+          ["blackflag", 1.6927, 69, 408, 4, 24],
+          ["suntemple", 1.3023, 157, 442, 0, 24],
+          ["orleans", 1.6464, 103, 423, 1, 24]
+        ],
+        "parent": [
+          ["frostcourt", 2.6469, 5, 392, 0, 24],
+          ["homeward", 2.6998, 18, 458, 1, 24],
+          ["blackflag", 1.6544, 59, 379, 10, 24],
+          ["suntemple", 2.5794, 36, 405, 5, 24],
+          ["orleans", 2.3852, 33, 393, 2, 24]
+        ],
+        "full": [
+          ["frostcourt", 2.5476, 10, 391, 0, 24],
+          ["homeward", 2.7765, 26, 453, 2, 24],
+          ["blackflag", 1.6347, 105, 452, 0, 24],
+          ["suntemple", 2.5666, 27, 400, 6, 24],
+          ["orleans", 2.3158, 16, 356, 7, 24]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          32,
+          {
+            "byHalfSecond": 12,
+            "byTwoSeconds": 22
+          },
+          {
+            "byHalfSecond": 12,
+            "byTwoSeconds": 18
+          }
+        ],
+        [
+          "frostcourt",
+          true,
+          64,
+          {
+            "byHalfSecond": 13,
+            "byTwoSeconds": 28
+          },
+          {
+            "byHalfSecond": 17,
+            "byTwoSeconds": 31
+          }
+        ],
+        [
+          "homeward",
+          false,
+          32,
+          {
+            "byHalfSecond": 15,
+            "byTwoSeconds": 24
+          },
+          {
+            "byHalfSecond": 14,
+            "byTwoSeconds": 18
+          }
+        ],
+        [
+          "homeward",
+          true,
+          64,
+          {
+            "byHalfSecond": 32,
+            "byTwoSeconds": 38
+          },
+          {
+            "byHalfSecond": 29,
+            "byTwoSeconds": 37
+          }
+        ],
+        [
+          "blackflag",
+          false,
+          32,
+          {
+            "byHalfSecond": 18,
+            "byTwoSeconds": 30
+          },
+          {
+            "byHalfSecond": 16,
+            "byTwoSeconds": 19
+          }
+        ],
+        [
+          "blackflag",
+          true,
+          64,
+          {
+            "byHalfSecond": 32,
+            "byTwoSeconds": 42
+          },
+          {
+            "byHalfSecond": 29,
+            "byTwoSeconds": 34
+          }
+        ]
+      ],
+      "screens": [
+        {
+          "seed": 1289325917,
+          "failedGates": ["improved", "bothModes"],
+          "legs": {
+            "baseline": [1, 0, 23],
+            "incumbent": [18, 19, 11]
+          }
+        },
+        {
+          "seed": 348697921,
+          "failedGates": ["rearSearch", "spawnSearchProgress"],
+          "legs": {}
+        }
+      ]
+    },
+    "motion": {
+      "sha256": "16ee57aa2907deacbcb2a35d5271b36756aea129103e03384539051fb25f5fe3",
+      "rowsWithBias": {
+        "2": [0.130724000357065, -0.18379784090026458, -0.12997613874320726, -0.14014340332287112, -0.01620019511478761, -0.12825043319140486, -0.3551098752074108, -0.1399468062783315, 0.05800346909188825, 0.11886936661954996, 0.11631498269317116, 0.16405055148886008, 0.11978553214754051, 0.22173761923324684, -0.07287315547563833, -0.20085208195845003, -0.06230708172415092, -0.13847142467457213, 0.44434091001165893, -0.16604867595404987, -0.39949205559905043, 0.24367797671496372, -0.07808065137330208, 0.34394450841668167, -0.38781972394017683],
+        "3": [0.31224761956455954, -0.2375702852209987, -0.18840018419212984, 0.31982544055915585, 0.2043034628206305, -0.21199100965008566, -0.24738701207044056, 0.1298658335423421, 0.1294641529216517, -0.05925008737893504, 0.19941501414992893, 0.07051582827909622, -0.18159738219712102, 0.09216515315538275, 0.23427330667673768, 0.04787555637662201, 0.18348150593081763, -0.06331667152305295, -0.38888025121717584, 0.08787203894179164, 0.19466460050560044, 0.04607735137631841, 0.01888033102634236, -0.15130188441609033, 0.14469838678770802]
+      },
+      "seeds": [172353979, 1536783191],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.5528, 62, 447, 0, 24],
+          ["homeward", 2.4123, 22, 461, 2, 24],
+          ["blackflag", 1.6927, 69, 408, 4, 24],
+          ["suntemple", 1.3023, 157, 442, 0, 24],
+          ["orleans", 1.6464, 103, 423, 1, 24]
+        ],
+        "parent": [
+          ["frostcourt", 2.6469, 5, 392, 0, 24],
+          ["homeward", 2.6998, 18, 458, 1, 24],
+          ["blackflag", 1.6544, 59, 379, 10, 24],
+          ["suntemple", 2.5794, 36, 405, 5, 24],
+          ["orleans", 2.3852, 33, 393, 2, 24]
+        ],
+        "motion": [
+          ["frostcourt", 2.6403, 13, 392, 0, 24],
+          ["homeward", 2.7951, 14, 461, 1, 24],
+          ["blackflag", 1.3817, 93, 402, 10, 24],
+          ["suntemple", 2.7314, 26, 394, 9, 24],
+          ["orleans", 2.3475, 35, 387, 2, 24]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          32,
+          {
+            "byHalfSecond": 13,
+            "byTwoSeconds": 22
+          },
+          {
+            "byHalfSecond": 12,
+            "byTwoSeconds": 18
+          }
+        ],
+        [
+          "frostcourt",
+          true,
+          64,
+          {
+            "byHalfSecond": 19,
+            "byTwoSeconds": 34
+          },
+          {
+            "byHalfSecond": 17,
+            "byTwoSeconds": 31
+          }
+        ],
+        [
+          "homeward",
+          false,
+          32,
+          {
+            "byHalfSecond": 16,
+            "byTwoSeconds": 23
+          },
+          {
+            "byHalfSecond": 14,
+            "byTwoSeconds": 18
+          }
+        ],
+        [
+          "homeward",
+          true,
+          64,
+          {
+            "byHalfSecond": 30,
+            "byTwoSeconds": 40
+          },
+          {
+            "byHalfSecond": 29,
+            "byTwoSeconds": 37
+          }
+        ],
+        [
+          "blackflag",
+          false,
+          32,
+          {
+            "byHalfSecond": 17,
+            "byTwoSeconds": 30
+          },
+          {
+            "byHalfSecond": 16,
+            "byTwoSeconds": 19
+          }
+        ],
+        [
+          "blackflag",
+          true,
+          64,
+          {
+            "byHalfSecond": 33,
+            "byTwoSeconds": 47
+          },
+          {
+            "byHalfSecond": 29,
+            "byTwoSeconds": 34
+          }
+        ]
+      ],
+      "screens": [
+        {
+          "seed": 1289325917,
+          "failedGates": ["improved", "bothModes"],
+          "legs": {
+            "baseline": [1, 0, 23],
+            "incumbent": [16, 18, 14]
+          }
+        },
+        {
+          "seed": 348697921,
+          "failedGates": ["rearSearch"],
+          "legs": {}
+        }
+      ]
+    },
+    "selected": {
+      "sha256": "7796a353cefdffe752e952588c53e31161af41341bacd1ca5373ad5de1f043fa",
+      "rowsWithBias": {
+        "0": [0.11969858234007578, -0.1080522072096663, 0.07221607742098583, 0.24232834295233568, 0.02800702113951166, -0.11440625529481338, -0.1573505314607841, 0.23562793814835073, 0.12259053385174613, 0.012984050124846123, 0.00011355600527111764, 0.13550634677815113, -0.08139843353767329, 0.12402224587920603, -0.03176585179502291, 0.041548628767634, -0.02489275388632354, -0.013184982895278773, 0.1407452148624644, -0.025106273436417765, 0.07274865416543608, 0.14120704927165578, -0.13108113900237295, 0.012499758831949922, 0.0517959569462973],
+        "2": [0.09325862888015382, -0.14457021591074, -0.23223965922825685, -0.12362839726476575, 0.09672702890046733, -0.0919660775888948, -0.3172346318979071, -0.048545955337655766, 0.11614988067237653, 0.10058484708133657, 0.12303454368006951, 0.16618874707913048, 0.05596739140269481, 0.15704086837525041, -0.11137197513358467, -0.1976279000215381, -0.047575669110839706, -0.10971126964701752, 0.4260732243812596, -0.14657497786989415, -0.3830223521017628, 0.23602375281868132, -0.17138089227880682, 0.28535625771288925, -0.5795575419503228],
+        "3": [0.31684641791437895, -0.236418798476601, -0.21293179447048355, 0.3209884317290669, 0.22721942229813952, -0.21013155299981395, -0.2485863523499195, 0.14156519171247012, 0.13832555453288983, -0.06717718092026131, 0.20839520660912997, 0.07129031235302233, -0.1857896677410864, 0.08532261753830328, 0.2298870737505168, 0.048731959599638434, 0.18001283624086348, -0.06533993757642131, -0.38818741200509715, 0.09147631186951015, 0.19541659290082627, 0.04157597504279601, 0.011588835153278881, -0.15679084802453197, 0.17696509048591758]
+      },
+      "seeds": [177046781, 1280425133, 812976443],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.6989, 100, 632, 0, 36],
+          ["homeward", 2.3682, 35, 693, 2, 36],
+          ["blackflag", 1.5956, 128, 632, 3, 36],
+          ["suntemple", 1.3267, 189, 640, 0, 36],
+          ["orleans", 1.6403, 156, 639, 5, 36]
+        ],
+        "parent": [
+          ["frostcourt", 2.342, 41, 595, 0, 36],
+          ["homeward", 2.7161, 23, 674, 5, 36],
+          ["blackflag", 1.7835, 70, 526, 14, 36],
+          ["suntemple", 2.5127, 62, 579, 6, 36],
+          ["orleans", 2.5096, 64, 609, 5, 36]
+        ],
+        "selected": [
+          ["frostcourt", 2.9887, 10, 611, 0, 36],
+          ["homeward", 3.1386, 10, 691, 0, 36],
+          ["blackflag", 2.2068, 83, 676, 0, 36],
+          ["suntemple", 2.7805, 8, 620, 0, 36],
+          ["orleans", 2.8384, 28, 598, 1, 36]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          48,
+          {
+            "byHalfSecond": 12,
+            "byTwoSeconds": 32
+          },
+          {
+            "byHalfSecond": 17,
+            "byTwoSeconds": 31
+          }
+        ],
+        [
+          "frostcourt",
+          true,
+          96,
+          {
+            "byHalfSecond": 20,
+            "byTwoSeconds": 43
+          },
+          {
+            "byHalfSecond": 19,
+            "byTwoSeconds": 36
+          }
+        ],
+        [
+          "homeward",
+          false,
+          48,
+          {
+            "byHalfSecond": 26,
+            "byTwoSeconds": 34
+          },
+          {
+            "byHalfSecond": 25,
+            "byTwoSeconds": 31
+          }
+        ],
+        [
+          "homeward",
+          true,
+          96,
+          {
+            "byHalfSecond": 38,
+            "byTwoSeconds": 49
+          },
+          {
+            "byHalfSecond": 35,
+            "byTwoSeconds": 45
+          }
+        ],
+        [
+          "blackflag",
+          false,
+          48,
+          {
+            "byHalfSecond": 17,
+            "byTwoSeconds": 36
+          },
+          {
+            "byHalfSecond": 18,
+            "byTwoSeconds": 24
+          }
+        ],
+        [
+          "blackflag",
+          true,
+          96,
+          {
+            "byHalfSecond": 31,
+            "byTwoSeconds": 49
+          },
+          {
+            "byHalfSecond": 35,
+            "byTwoSeconds": 53
+          }
+        ]
+      ],
+      "screens": [
+        {
+          "seed": 188156179,
+          "failedGates": ["wallStalls", "spawnSearchProgress"],
+          "legs": {}
+        },
+        {
+          "seed": 206201723,
+          "failedGates": ["rearSearch", "wallStalls", "spawnSearchProgress"],
+          "legs": {}
+        }
+      ]
+    }
+  },
+  "scope": "Human holdout is for the cloud candidate. Recorded player scores refer to production. Offline candidates use the same controls and loadouts for both seats and both target motions."
+}
