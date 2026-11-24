@@ -2,7 +2,7 @@
 // Only the test target is scripted. The pilot keeps its normal sensors and controls.
 import { getMap } from '../../shared/arenaMap.ts';
 import { navFor } from '../../shared/botLocomotion.ts';
-import { TICK_HZ, type Loadout } from '../../shared/content.ts';
+import { TICK_HZ, type Loadout, type UtilityId } from '../../shared/content.ts';
 import { humanObservation } from '../../shared/humanCombat.ts';
 import { learnedOpponent } from '../../shared/learnedOpponent.ts';
 import { Match, type Controller } from '../../shared/match.ts';
@@ -14,11 +14,17 @@ import { trialSeed } from '../self-play-seeds.ts';
 type Start = Pick<NavNode, 'x' | 'y' | 'z'>;
 // Completed public rules-43 1v1 rounds. These are equipment/score fixtures
 // from aggregate match telemetry, separate from the consented training corpus.
-interface MatchReference { map: string; at: number; bot: number; human: number; kit: Loadout; humanScore: number; botScore: number }
+interface MatchReference {
+  map: string; at: number; bot: number; human: number;
+  kit: Loadout; targetKit: Loadout; targetUtility: UtilityId; humanScore: number; botScore: number;
+}
 const references: MatchReference[] = [
-  { map: 'frostcourt', at: 1795404024343, bot: 2, human: 5, kit: ['corona', 'longnight', 'hammer'], humanScore: 7, botScore: 1 },
-  { map: 'homeward', at: 1795382557118, bot: 3, human: 7, kit: ['corona', 'longnight', 'polearm'], humanScore: 7, botScore: 2 },
-  { map: 'blackflag', at: 1795381709043, bot: 6, human: 7, kit: ['corona', 'firefly', 'hammer'], humanScore: 7, botScore: 1 },
+  { map: 'frostcourt', at: 1795479452903, bot: 6, human: 3, kit: ['firefly', 'longnight', 'hammer'],
+    targetKit: ['corona', 'longnight', 'hammer'], targetUtility: 'frag', humanScore: 7, botScore: 0 },
+  { map: 'homeward', at: 1795382557118, bot: 3, human: 7, kit: ['corona', 'longnight', 'polearm'],
+    targetKit: ['longnight', 'corona', 'polearm'], targetUtility: 'smoke', humanScore: 7, botScore: 2 },
+  { map: 'blackflag', at: 1795381709043, bot: 6, human: 7, kit: ['corona', 'firefly', 'hammer'],
+    targetKit: ['longnight', 'corona', 'polearm'], targetUtility: 'smoke', humanScore: 7, botScore: 1 },
 ];
 interface Fixture {
   reference: MatchReference; a: Start; b: Start; angle: number;
@@ -34,7 +40,8 @@ function encounter(f: Fixture, reverse: boolean, mx: number, model?: NeuralPolic
       mz: 0, buttons: 0, weapon: me.weaponSlot };
   } };
   game.addPlayer('pilot', { ...info, team: side, char: f.reference.bot, loadout: f.reference.kit }, model && learnedOpponent(model));
-  game.addPlayer('target', { ...info, team: other, char: f.reference.human, loadout: ['longnight', 'corona', 'polearm'], utility: 'smoke' }, targetDriver);
+  game.addPlayer('target', { ...info, team: other, char: f.reference.human, loadout: f.reference.targetKit,
+    utility: f.reference.targetUtility }, targetDriver);
   const a = reverse ? f.b : f.a, b = reverse ? f.a : f.b;
   const yaw = Math.atan2(a.x - b.x, a.z - b.z);
   const pilot = game.player('pilot')!, target = game.player('target')!;

@@ -1,0 +1,275 @@
+{
+  "base": "b3224a21fbe71b25ac97f92457d880fef05a8759",
+  "publicDigest": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+  "queue": [
+    {
+      "run": 45311234460,
+      "generations": [
+        2600,
+        2605,
+        2610,
+        2615,
+        2620,
+        2625,
+        2630,
+        2635,
+        2640
+      ],
+      "spawnFailures": 9,
+      "spawn": [
+        [
+          1.2209,
+          0.1489,
+          5,
+          108
+        ],
+        [
+          2.1124,
+          0.1112,
+          10,
+          108
+        ]
+      ]
+    },
+    {
+      "run": 45309678862,
+      "generations": [
+        2560,
+        2565,
+        2570,
+        2575,
+        2580,
+        2585,
+        2590,
+        2595
+      ],
+      "spawnFailures": 8,
+      "spawn": [
+        [
+          1.2804,
+          0.1636,
+          2,
+          96
+        ],
+        [
+          1.8002,
+          0.1538,
+          6,
+          96
+        ]
+      ]
+    },
+    {
+      "run": 45308176131,
+      "generations": [
+        2510,
+        2515,
+        2520,
+        2525,
+        2530,
+        2535,
+        2540,
+        2545,
+        2550,
+        2555
+      ],
+      "spawnFailures": 10,
+      "spawn": [
+        [
+          1.0233,
+          0.1338,
+          10,
+          120
+        ],
+        [
+          1.9815,
+          0.1417,
+          5,
+          120
+        ]
+      ]
+    }
+  ],
+  "rewardAudit": {
+    "method": "Score the same 24 bundled-policy matches twice, with the previous and corrected search reward. Use self-play-rollout with seed below, 30 seconds, focus wall and waiting. Counts refer to observed transitions at 0.5 m/s, the existing low-motion threshold. No optimizer ran locally.",
+    "seed": 893217603,
+    "episodes": 24,
+    "streams": 36,
+    "decisions": 5315,
+    "changed": 78,
+    "relievedMoves": 8,
+    "newDebtOnIdle": 28,
+    "sumMaxError": 1.3877787807814457e-17
+  },
+  "spawnFields": [
+    "mean net forward m/s",
+    "mean low displacement fraction",
+    "stationary found",
+    "stationary trials"
+  ],
+  "spawnOrder": [
+    "candidate",
+    "incumbent"
+  ],
+  "offlineCandidate": "Previously fitted stationary (f2) actor used in training-resumption-20261123.json. These are fresh measurements of that actor, independent of the reward fix and the current cloud generation.",
+  "spawnProtocol": "Normal spawn, both seats, 30 seconds, eight repeats on frostcourt, homeward, blackflag, orleans and suntemple per seed.",
+  "nearProtocol": "Updated close-contact fixtures. Eight pairs per map, two seats, with stationary and both lateral directions. Unknown pilot utility uses the match default.",
+  "nearFields": [
+    "map",
+    "moving",
+    "trials",
+    "candidate by 0.5s",
+    "incumbent by 0.5s",
+    "candidate by 2s",
+    "incumbent by 2s"
+  ],
+  "confirmation": [
+    {
+      "seed": 1273146911,
+      "spawn": [
+        [
+          2.4795004738222395,
+          0.08959537572254335,
+          5,
+          40
+        ],
+        [
+          1.7160979856217808,
+          0.2070365358592693,
+          2,
+          40
+        ]
+      ],
+      "near": [
+        [
+          "frostcourt",
+          false,
+          16,
+          6,
+          4,
+          8,
+          11
+        ],
+        [
+          "frostcourt",
+          true,
+          32,
+          6,
+          3,
+          13,
+          11
+        ],
+        [
+          "homeward",
+          false,
+          16,
+          8,
+          8,
+          12,
+          11
+        ],
+        [
+          "homeward",
+          true,
+          32,
+          17,
+          16,
+          22,
+          18
+        ],
+        [
+          "blackflag",
+          false,
+          16,
+          10,
+          5,
+          16,
+          12
+        ],
+        [
+          "blackflag",
+          true,
+          32,
+          13,
+          12,
+          23,
+          15
+        ]
+      ]
+    },
+    {
+      "seed": 678314097,
+      "spawn": [
+        [
+          2.4197872757957186,
+          0.059451219512195126,
+          6,
+          40
+        ],
+        [
+          1.5734282823367385,
+          0.22482758620689655,
+          2,
+          40
+        ]
+      ],
+      "near": [
+        [
+          "frostcourt",
+          false,
+          16,
+          5,
+          5,
+          9,
+          10
+        ],
+        [
+          "frostcourt",
+          true,
+          32,
+          4,
+          2,
+          13,
+          7
+        ],
+        [
+          "homeward",
+          false,
+          16,
+          6,
+          5,
+          11,
+          9
+        ],
+        [
+          "homeward",
+          true,
+          32,
+          12,
+          12,
+          17,
+          16
+        ],
+        [
+          "blackflag",
+          false,
+          16,
+          11,
+          8,
+          16,
+          14
+        ],
+        [
+          "blackflag",
+          true,
+          32,
+          12,
+          11,
+          21,
+          18
+        ]
+      ]
+    }
+  ],
+  "decision": "Keep incumbent. Existing queue applies the reward fix to future checkpoint updates. The archived actor still trails in the Frostcourt stationary two-second test on both seeds and has no passing release evaluation."
+}

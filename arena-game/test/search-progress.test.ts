@@ -77,6 +77,13 @@ describe('self-play search outcomes', () => {
     expect(backward).toBeGreaterThan(0);
     expect(trial(i => [i >= 7 ? 10 : 0, -Math.PI / 2, 0], 15, 7)).toBe(0);
   });
+  it('keeps the scan penalty on idle decisions when the last step starts an escape', () => {
+    const scan = (i: number) => Math.min(i, 12) * .23;
+    const trace = measuredTrial(i => [i === 14 ? .8 : 0, scan(i), 0], 15);
+    expect(trace.reward).toBeCloseTo(-.015);
+    expect(trace.rewards[13]).toBe(0);
+    for (const reward of trace.rewards.slice(0, 13)) expect(reward).toBeCloseTo(-.015 / 13);
+  });
   it('shares route and forward credit across the actions that produced each gain', () => {
     // The route ends with a backward step and a blocked forward input.
     const x = [0, 4, 12, 10, 10];

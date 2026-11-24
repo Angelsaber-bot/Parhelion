@@ -24,21 +24,25 @@ function creditProgress(steps: Decision[], bounds: MapData['bounds'], start: num
   if (total > 0) for (const [offset, gain] of gains.entries()) steps[start + offset].reward += reward * gain / total;
 }
 
-// A stalled search can end with a useful sidestep. Attribute the wall-press
-// penalty to forward requests followed by little actual movement.
+// A stalled search can end with a useful escape. Prefer blocked forward
+// requests, then low-motion decisions. A continuously moving loop is scored
+// over its whole window because no individual step was stationary.
 function penalizeStall(steps: Decision[], bounds: MapData['bounds'], start: number, end: number, secondsPerDecision: number) {
   const blocked: number[] = [];
+  const lowMotion: number[] = [];
   for (let j = start; j < end; j++) {
-    if (Math.tanh(steps[j].axes[3]) <= .3) continue;
     const before = steps[j].obs, after = steps[j + 1].obs;
     const dx = (after[scene] - before[scene]) * (bounds.max[0] - bounds.min[0]) / 2;
     const dz = (after[scene + 2] - before[scene + 2]) * (bounds.max[2] - bounds.min[2]) / 2;
-    if (Math.hypot(dx, dz) < .5 * secondsPerDecision) blocked.push(j);
+    if (Math.hypot(dx, dz) >= .5 * secondsPerDecision) continue;
+    lowMotion.push(j);
+    if (Math.tanh(steps[j].axes[3]) > .3) blocked.push(j);
   }
-  if (blocked.length) {
-    for (const j of blocked) steps[j].reward -= .015 / blocked.length;
+  const responsible = blocked.length ? blocked : lowMotion;
+  if (responsible.length) {
+    for (const j of responsible) steps[j].reward -= .015 / responsible.length;
   } else {
-    steps[end - 1].reward -= .015;
+    for (let j = start; j < end; j++) steps[j].reward -= .015 / (end - start);
   }
 }
 
@@ -134,8 +138,7 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
         (range < 2.5 && (scanned || previousSearchStalled)) ||
         (range < 1.5 && pushing)
       )) {
-        if (range < 1.5 && pushing) penalizeStall(steps, bounds, i + 1 - count, i, period / tickRate);
-        else steps[i - 1].reward -= .015;
+        penalizeStall(steps, bounds, i + 1 - count, i, period / tickRate);
         negativeCredits++;
       }
       if (route.length >= 3) {
