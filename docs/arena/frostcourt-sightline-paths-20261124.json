@@ -1,0 +1,542 @@
+{
+  "source": "096e21b625586d7a776efdeaba094c6e42a35cef",
+  "queue": {
+    "lastRun": 45442854825,
+    "lastConfirmedGeneration": 5316,
+    "failedWrite": 5317,
+    "latestIndependentGeneration": 5315,
+    "humanHoldout": {
+      "generation": 5315,
+      "captures": 1,
+      "windows": 367,
+      "holdout": {
+        "unseenTurn": {
+          "windows": 46,
+          "yawMaeRad": 0.17787459518598475,
+          "pitchMaeRad": 0.03584811188604521,
+          "moveMae": 0.26718253933865094,
+          "stillYawMaeRad": 0.19085652413575546
+        },
+        "unseenQuiet": {
+          "windows": 214,
+          "yawMaeRad": 0.04242938311300545,
+          "pitchMaeRad": 0.013207134130959199,
+          "moveMae": 0.27971443506044763,
+          "stillYawMaeRad": 0.0036429906977671327
+        },
+        "visibleContact": {
+          "windows": 107,
+          "yawMaeRad": 0.05915097700101193,
+          "pitchMaeRad": 0.018446713463168278,
+          "moveMae": 0.16188025251727237,
+          "stillYawMaeRad": 0.018137382625419404
+        }
+      },
+      "referenceHoldout": {
+        "unseenTurn": {
+          "windows": 46,
+          "yawMaeRad": 0.1716724113277767,
+          "pitchMaeRad": 0.03317957060492557,
+          "moveMae": 0.2766221230444701,
+          "stillYawMaeRad": 0.19085652413575546
+        },
+        "unseenQuiet": {
+          "windows": 214,
+          "yawMaeRad": 0.0395541698576134,
+          "pitchMaeRad": 0.009847030739917934,
+          "moveMae": 0.27032359069752915,
+          "stillYawMaeRad": 0.0036429906977671327
+        },
+        "visibleContact": {
+          "windows": 107,
+          "yawMaeRad": 0.06274922406562021,
+          "pitchMaeRad": 0.011973896706215691,
+          "moveMae": 0.16115118187164593,
+          "stillYawMaeRad": 0.018137382625419404
+        }
+      }
+    },
+    "worker": "503 storage_limit on status; neural and scoreboard HTTP 500; no concurrent dispatch. G5317 commit still unconfirmed."
+  },
+  "production": {
+    "pageBundleSHA256": "10e5dddf89d2462ded2bdeaa603f71bda03d614af4d0ab58d125e2d9f188b14d",
+    "lastVerifiedPolicy": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+    "recentAvailableHumanBotScores": {
+      "frostcourt": [7, 0],
+      "homeward": [7, 2],
+      "blackflag": [7, 1]
+    }
+  },
+  "method": {
+    "parent": "local360 from search-teacher-distillation-20261124.json. Frozen single-difficulty simulator and release for all matches.",
+    "control": "Prior route towards rival via A*, up to third waypoint, correcting yaw and movement.",
+    "collect": "Reverse BFS along the navigable directed graph, initialized at all nodes with a clear standing eye-to-chest ray. Choose up to four hops towards the nearest sightline. At a clear ray face the target. Correct pitch to neutral while hidden and target pitch while clear, and reduce waypoint dead zone to 0.15m. Training labels only.",
+    "target4": "Same control and pitch labels/dead zone as collect, but follow the original A* route.",
+    "robust": "Choose a wide visible goal with clear rays from center and four 0.6m offsets, reverse Dijkstra favoring navigable clearance, and collision-checked lookahead.",
+    "sampling": "Match parent on first campaign 726213697. Execute student alone, alternating six-decision segments or teacher alone according to simulation seed modulo three. Only fully observed successful first-life trajectories used in fitting. Second collect campaign 561621167 matches first fitted variant.",
+    "fit": "Each rN model starts from parent. Fit on successful nearest-sightline trajectories, using full state history; N=2 pools both rounds. Smooth L1 on all four tanh control axes and MSE anchors on other outputs and prior replayed simulated histories. Match success variant optimization from frostcourt-student-route-evaluation-20261124.json, seed 1721781.",
+    "layer": "Add an identity-initialized second transformer block; freeze the complete native parent and fit the added block on successful control and robust trajectories, balancing both seats. Adam .0015, 64 examples per side and 128 anchors per update; MSE coefficients .35/.3. Control pitch label zero when the original three-axis teacher has no pitch target. Experimental local model only.",
+    "elite": "Six epochs of 32 three-elite perturbations of trained head rows. Eight TRAIN-range full-spawn trials per epoch. Per-seat score 12*sighting + .08*(initial-minimum graph hops) + .02*(initial-final hops) - 2*stalled fraction. Select by .6*worst seat and .4*mean. No target coordinates or graph fields enter the autonomous policies.",
+    "teacherAblations": "On the original A* route, pitch changes only the pitch training label and retains the original 1m waypoint cutoff. deadzone alone reduces the cutoff to 0.15m while retaining the original pitch. skip12 and skip14 use pitch guidance plus 1.2m and 1.4m cutoff respectively. Within cutoff, all controls come from the unmodified parent. Pure teacher probes always use the selected labels when applicable, with parent deciding all other controls.",
+    "selectedTeacher": "Lock skip12 after the two exploratory campaigns. Independently compare it with original control on three new campaigns, 32 stationary spawns per side, excluding any sighting after a respawn. These rates measure the guided training demonstration, not autonomous policy performance.",
+    "selectedStudent": "Train skip12-600/1600 from parent on successful pure teacher runs on campaign 726213697. Same optimizer and anchoring as r1. complete-600/1600 additionally record unchanged parent outputs at nearby waypoints to supervise the entire precontact decision history. All validation candidates use only standard policy observations."
+  },
+  "mixedTrainingCampaign": {
+    "control": {
+      "A": [14, 32],
+      "B": [23, 32]
+    },
+    "first": {
+      "A": [0, 32],
+      "B": [10, 32]
+    },
+    "second": {
+      "A": [0, 32],
+      "B": [5, 32]
+    },
+    "wide": {
+      "A": [6, 32],
+      "B": [19, 32]
+    }
+  },
+  "pureTeacher": {
+    "collect-1581034897": {
+      "A": [0, 32],
+      "B": [0, 32]
+    },
+    "collect-913742021": {
+      "A": [1, 32],
+      "B": [1, 32]
+    },
+    "control-1581034897": {
+      "A": [4, 32],
+      "B": [26, 32]
+    },
+    "control-913742021": {
+      "A": [7, 32],
+      "B": [23, 32]
+    },
+    "deadzone-1581034897": {
+      "A": [1, 32],
+      "B": [0, 32]
+    },
+    "deadzone-913742021": {
+      "A": [0, 32],
+      "B": [0, 32]
+    },
+    "pitch-1581034897": {
+      "A": [4, 32],
+      "B": [30, 32]
+    },
+    "pitch-913742021": {
+      "A": [7, 32],
+      "B": [28, 32]
+    },
+    "robust-1581034897": {
+      "A": [0, 32],
+      "B": [4, 32]
+    },
+    "robust-913742021": {
+      "A": [0, 32],
+      "B": [9, 32]
+    },
+    "skip12-1581034897": {
+      "A": [20, 32],
+      "B": [27, 32]
+    },
+    "skip12-913742021": {
+      "A": [22, 32],
+      "B": [27, 32]
+    },
+    "skip14-1581034897": {
+      "A": [1, 32],
+      "B": [31, 32]
+    },
+    "skip14-913742021": {
+      "A": [4, 32],
+      "B": [31, 32]
+    },
+    "target4-1581034897": {
+      "A": [4, 32],
+      "B": [0, 32]
+    },
+    "target4-913742021": {
+      "A": [7, 32],
+      "B": [0, 32]
+    }
+  },
+  "frostColumns": ["campaign", "side", "net forward m/s", "low-displacement windows", "unseen windows", "acquisitions", "eligible starts"],
+  "frost": {
+    "complete-1600": [
+      [119197187, "A", 1.6017218016442536, 10, 160, 0, 16],
+      [119197187, "B", 2.0765720651777118, 46, 160, 0, 16],
+      [674915831, "A", 1.6507876244519495, 16, 160, 0, 16],
+      [674915831, "B", 1.779111524430735, 39, 160, 0, 16],
+      [1207852961, "A", 1.7894347213774702, 26, 160, 0, 16],
+      [1207852961, "B", 2.7432081433984905, 16, 156, 1, 16]
+    ],
+    "complete-600": [
+      [119197187, "A", 2.1136973086005395, 2, 160, 0, 16],
+      [119197187, "B", 1.9894960571786962, 46, 160, 0, 16],
+      [674915831, "A", 2.182422520657507, 1, 160, 0, 16],
+      [674915831, "B", 2.1073959858305202, 21, 160, 0, 16],
+      [1207852961, "A", 2.4183751781773473, 4, 160, 0, 16],
+      [1207852961, "B", 2.3841821555724096, 25, 160, 0, 16]
+    ],
+    "elite-5": [
+      [119197187, "A", 1.4139938147209343, 30, 160, 0, 16],
+      [119197187, "B", 2.0123336221396992, 44, 160, 0, 16],
+      [674915831, "A", 1.1786250790272421, 54, 160, 0, 16],
+      [674915831, "B", 2.7709971835395475, 23, 160, 0, 16],
+      [1207852961, "A", 1.4766788463671274, 26, 160, 0, 16],
+      [1207852961, "B", 2.2037847836150264, 37, 160, 0, 16]
+    ],
+    "inc": [
+      [119197187, "A", 1.7663092519070123, 16, 160, 0, 16],
+      [119197187, "B", 1.8104778197148677, 25, 160, 0, 16],
+      [674915831, "A", 1.9386155268433818, 19, 160, 0, 16],
+      [674915831, "B", 1.5747945422725687, 35, 160, 0, 16],
+      [1207852961, "A", 2.167274506524759, 10, 160, 0, 16],
+      [1207852961, "B", 1.449130579987906, 28, 160, 0, 16]
+    ],
+    "layer-3200": [
+      [119197187, "A", 1.1929725147876962, 5, 160, 0, 16],
+      [119197187, "B", 0.9986957793177944, 11, 160, 0, 16],
+      [674915831, "A", 1.417964464453311, 9, 160, 0, 16],
+      [674915831, "B", 0.7580669702381849, 6, 160, 0, 16],
+      [1207852961, "A", 0.7747571914699405, 11, 160, 0, 16],
+      [1207852961, "B", 1.227778972898571, 4, 160, 0, 16]
+    ],
+    "layer-800": [
+      [119197187, "A", -0.2227323677903752, 12, 160, 0, 16],
+      [119197187, "B", 0.20245616035521727, 70, 160, 0, 16],
+      [674915831, "A", -0.008306791040143832, 9, 160, 0, 16],
+      [674915831, "B", 0.18099374003490326, 80, 160, 0, 16],
+      [1207852961, "A", -0.5534078373391189, 17, 160, 0, 16],
+      [1207852961, "B", 0.2755490592113791, 63, 160, 0, 16]
+    ],
+    "parent": [
+      [119197187, "A", 2.242201395043886, 4, 160, 0, 16],
+      [119197187, "B", 2.6401062739523264, 1, 160, 0, 16],
+      [674915831, "A", 2.4170521577736714, 2, 160, 0, 16],
+      [674915831, "B", 2.6134870830079198, 1, 160, 0, 16],
+      [1207852961, "A", 2.696646716345014, 0, 160, 0, 16],
+      [1207852961, "B", 2.7096750107742946, 0, 160, 0, 16]
+    ],
+    "r1-1600": [
+      [119197187, "A", 1.8547853432891235, 29, 160, 0, 16],
+      [119197187, "B", 1.5128411036879172, 7, 160, 0, 16],
+      [674915831, "A", 1.7973687889641208, 34, 160, 0, 16],
+      [674915831, "B", 1.2911031653336327, 2, 160, 0, 16],
+      [1207852961, "A", 2.027795840869538, 17, 160, 0, 16],
+      [1207852961, "B", 1.3287731250691155, 2, 160, 0, 16]
+    ],
+    "r1-600": [
+      [119197187, "A", 1.0132251346720522, 68, 160, 0, 16],
+      [119197187, "B", 2.232122651279585, 32, 160, 0, 16],
+      [674915831, "A", 1.3698258785979744, 64, 160, 0, 16],
+      [674915831, "B", 2.543846443431449, 0, 160, 0, 16],
+      [1207852961, "A", 1.7213123225109648, 35, 160, 0, 16],
+      [1207852961, "B", 2.6767527381437963, 1, 160, 0, 16]
+    ],
+    "r2-1600": [
+      [119197187, "A", 0.6200588594245396, 67, 160, 0, 16],
+      [119197187, "B", 0.5977418304766036, 38, 160, 0, 16],
+      [674915831, "A", 0.7072899126570198, 55, 160, 0, 16],
+      [674915831, "B", 0.5015005457216776, 50, 160, 0, 16],
+      [1207852961, "A", 0.578543071369417, 86, 160, 0, 16],
+      [1207852961, "B", 1.113398740819203, 55, 160, 0, 16]
+    ],
+    "r2-600": [
+      [119197187, "A", 1.0873487828754402, 68, 160, 0, 16],
+      [119197187, "B", 1.7624997304919063, 28, 160, 0, 16],
+      [674915831, "A", 1.3128638868621014, 67, 160, 0, 16],
+      [674915831, "B", 1.511018691167535, 34, 160, 0, 16],
+      [1207852961, "A", 1.2079196193683481, 78, 160, 0, 16],
+      [1207852961, "B", 1.5761307589571933, 32, 160, 0, 16]
+    ],
+    "skip12-1600": [
+      [119197187, "A", 2.274487420342609, 7, 160, 0, 16],
+      [119197187, "B", 1.9896100838492967, 13, 157, 1, 16],
+      [674915831, "A", 2.3131976197415844, 10, 160, 0, 16],
+      [674915831, "B", 1.6835980878521422, 15, 159, 1, 16],
+      [1207852961, "A", 2.309555467307554, 12, 160, 0, 16],
+      [1207852961, "B", 1.8656614011501607, 24, 160, 0, 16]
+    ],
+    "skip12-600": [
+      [119197187, "A", 1.8243358691101836, 2, 160, 0, 16],
+      [119197187, "B", 2.4339354949055783, 5, 160, 0, 16],
+      [674915831, "A", 1.8064739054059042, 1, 160, 0, 16],
+      [674915831, "B", 2.538388013740684, 1, 159, 1, 16],
+      [1207852961, "A", 2.0756573072574223, 0, 160, 0, 16],
+      [1207852961, "B", 2.319943403784991, 4, 160, 0, 16]
+    ]
+  },
+  "graph": {
+    "elite-5": {
+      "A": [118.0, 104.5, 110.5],
+      "B": [119.0, 48.5, 76.0]
+    },
+    "incumbent": {
+      "A": [118.0, 78.0, 93.5],
+      "B": [119.0, 65.0, 79.0]
+    },
+    "layer-3200": {
+      "A": [118.0, 98.5, 111.0],
+      "B": [119.0, 87.0, 109.0]
+    },
+    "layer-800": {
+      "A": [118.0, 52.0, 57.5],
+      "B": [119.0, 107.0, 119.0]
+    },
+    "parent": {
+      "A": [118.0, 101.0, 110.5],
+      "B": [119.0, 36.0, 59.5]
+    }
+  },
+  "spawnColumns": ["mean net forward m/s", "low displacement windows", "unseen windows", "acquired static target", "eligible static starts"],
+  "closeColumns": ["map", "moving", "trials", "candidate by .5s", "incumbent by .5s", "candidate by 2s", "incumbent by 2s"],
+  "nineMap": {
+    "complete-1600": {
+      "spawn": {
+        "all": [2.0809, 620, 4713, 22, 270],
+        "frostcourt": [1.9852, 87, 549, 0, 30],
+        "homeward": [2.0359, 51, 574, 1, 30],
+        "blackflag": [1.7625, 140, 535, 2, 30],
+        "suntemple": [1.8737, 146, 577, 0, 30],
+        "orleans": [2.2496, 54, 500, 0, 30],
+        "aster": [2.5083, 46, 473, 8, 30],
+        "sakura": [2.3781, 21, 507, 3, 30],
+        "lishan": [1.2596, 72, 488, 1, 30],
+        "camlann": [2.6752, 3, 510, 7, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 14, 30, 30, 34],
+        ["frostcourt", true, 96, 12, 19, 39, 27],
+        ["homeward", false, 48, 16, 24, 37, 33],
+        ["homeward", true, 96, 27, 23, 57, 45],
+        ["blackflag", false, 48, 22, 35, 34, 43],
+        ["blackflag", true, 96, 48, 41, 73, 62]
+      ]
+    },
+    "elite-5": {
+      "spawn": {
+        "all": [2.76, 530, 4486, 62, 270],
+        "frostcourt": [1.8265, 126, 553, 0, 30],
+        "homeward": [2.8254, 47, 562, 2, 30],
+        "blackflag": [3.1112, 43, 468, 8, 30],
+        "suntemple": [2.862, 61, 525, 0, 30],
+        "orleans": [2.6798, 97, 492, 12, 30],
+        "aster": [3.2204, 21, 483, 15, 30],
+        "sakura": [3.0892, 42, 421, 13, 30],
+        "lishan": [2.3991, 53, 480, 5, 30],
+        "camlann": [2.8261, 40, 502, 7, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 3, 30, 4, 34],
+        ["frostcourt", true, 96, 5, 19, 5, 27],
+        ["homeward", false, 48, 4, 24, 5, 33],
+        ["homeward", true, 96, 8, 23, 9, 45],
+        ["blackflag", false, 48, 15, 35, 15, 43],
+        ["blackflag", true, 96, 20, 41, 23, 62]
+      ]
+    },
+    "incumbent": {
+      "spawn": {
+        "all": [1.9189, 663, 4656, 20, 270],
+        "frostcourt": [1.6883, 87, 533, 0, 30],
+        "homeward": [2.3555, 27, 584, 2, 30],
+        "blackflag": [1.7754, 79, 527, 4, 30],
+        "suntemple": [1.2876, 177, 550, 0, 30],
+        "orleans": [1.4138, 148, 548, 0, 30],
+        "aster": [2.5152, 8, 514, 3, 30],
+        "sakura": [2.225, 37, 407, 9, 30],
+        "lishan": [1.7845, 56, 445, 0, 30],
+        "camlann": [2.2249, 44, 548, 2, 30]
+      },
+      "close": []
+    },
+    "layer-3200": {
+      "spawn": {
+        "all": [1.6071, 216, 4563, 22, 270],
+        "frostcourt": [0.8243, 32, 554, 0, 30],
+        "homeward": [1.8483, 7, 564, 2, 30],
+        "blackflag": [1.75, 39, 496, 1, 30],
+        "suntemple": [1.6127, 55, 507, 3, 30],
+        "orleans": [1.5076, 36, 495, 3, 30],
+        "aster": [2.1861, 9, 497, 6, 30],
+        "sakura": [1.9041, 7, 436, 5, 30],
+        "lishan": [1.4285, 18, 481, 1, 30],
+        "camlann": [1.4021, 13, 533, 1, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 8, 30, 16, 34],
+        ["frostcourt", true, 96, 7, 19, 29, 27],
+        ["homeward", false, 48, 14, 24, 25, 33],
+        ["homeward", true, 96, 19, 23, 38, 45],
+        ["blackflag", false, 48, 26, 35, 29, 43],
+        ["blackflag", true, 96, 34, 41, 50, 62]
+      ]
+    },
+    "parent": {
+      "spawn": {
+        "all": [2.3724, 302, 4373, 58, 270],
+        "frostcourt": [2.4683, 0, 487, 0, 30],
+        "homeward": [2.5565, 29, 582, 0, 30],
+        "blackflag": [1.4954, 142, 526, 10, 30],
+        "suntemple": [2.5996, 21, 543, 5, 30],
+        "orleans": [2.2357, 36, 508, 1, 30],
+        "aster": [2.7127, 17, 433, 13, 30],
+        "sakura": [2.7002, 17, 384, 14, 30],
+        "lishan": [1.9441, 39, 370, 15, 30],
+        "camlann": [2.6394, 1, 540, 0, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 13, 30, 24, 34],
+        ["frostcourt", true, 96, 26, 19, 46, 27],
+        ["homeward", false, 48, 28, 24, 38, 33],
+        ["homeward", true, 96, 28, 23, 58, 45],
+        ["blackflag", false, 48, 27, 35, 33, 43],
+        ["blackflag", true, 96, 49, 41, 66, 62]
+      ]
+    },
+    "r1-1600": {
+      "spawn": {
+        "all": [2.0937, 1116, 4723, 55, 270],
+        "frostcourt": [1.7775, 40, 536, 0, 30],
+        "homeward": [2.075, 93, 544, 9, 30],
+        "blackflag": [1.4065, 289, 510, 7, 30],
+        "suntemple": [2.1537, 134, 574, 0, 30],
+        "orleans": [2.2366, 141, 521, 13, 30],
+        "aster": [2.3007, 133, 505, 12, 30],
+        "sakura": [2.7686, 77, 471, 12, 30],
+        "lishan": [1.7914, 130, 518, 1, 30],
+        "camlann": [2.333, 79, 544, 1, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 1, 30, 1, 34],
+        ["frostcourt", true, 96, 3, 19, 3, 27],
+        ["homeward", false, 48, 6, 24, 8, 33],
+        ["homeward", true, 96, 11, 23, 12, 45],
+        ["blackflag", false, 48, 11, 35, 11, 43],
+        ["blackflag", true, 96, 24, 41, 25, 62]
+      ]
+    },
+    "r2-1600": {
+      "spawn": {
+        "all": [1.2143, 1190, 4598, 30, 270],
+        "frostcourt": [0.8812, 178, 543, 0, 30],
+        "homeward": [0.7541, 129, 581, 3, 30],
+        "blackflag": [1.3771, 257, 515, 4, 30],
+        "suntemple": [1.5438, 71, 492, 3, 30],
+        "orleans": [1.391, 122, 515, 2, 30],
+        "aster": [1.5362, 148, 527, 6, 30],
+        "sakura": [1.7333, 90, 413, 12, 30],
+        "lishan": [0.8784, 116, 467, 0, 30],
+        "camlann": [0.8333, 79, 545, 0, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 2, 30, 9, 34],
+        ["frostcourt", true, 96, 5, 19, 13, 27],
+        ["homeward", false, 48, 9, 24, 24, 33],
+        ["homeward", true, 96, 19, 23, 39, 45],
+        ["blackflag", false, 48, 18, 35, 34, 43],
+        ["blackflag", true, 96, 28, 41, 45, 62]
+      ]
+    },
+    "skip12-1600": {
+      "spawn": {
+        "all": [2.0545, 736, 4696, 19, 270],
+        "frostcourt": [2.2064, 46, 502, 1, 30],
+        "homeward": [2.6335, 34, 569, 1, 30],
+        "blackflag": [1.984, 93, 514, 3, 30],
+        "suntemple": [1.9628, 80, 545, 2, 30],
+        "orleans": [1.4497, 110, 548, 1, 30],
+        "aster": [2.3257, 84, 521, 7, 30],
+        "sakura": [1.8271, 119, 505, 3, 30],
+        "lishan": [1.8091, 76, 471, 0, 30],
+        "camlann": [2.2921, 94, 521, 1, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 8, 30, 13, 34],
+        ["frostcourt", true, 96, 16, 19, 31, 27],
+        ["homeward", false, 48, 12, 24, 23, 33],
+        ["homeward", true, 96, 25, 23, 38, 45],
+        ["blackflag", false, 48, 15, 35, 20, 43],
+        ["blackflag", true, 96, 30, 41, 46, 62]
+      ]
+    }
+  },
+  "screens": {
+    "complete-1600-1715830633": ["smokeContact", "wallStalls"],
+    "complete-1600-533816319": ["improved", "bothModes"],
+    "elite-5-1715830633": ["rearSearch", "smokeContact", "wallStalls", "closeMovingDamage"],
+    "elite-5-533816319": ["smokeContact", "reappearanceTracking", "closeMovingDamage", "spawnSearchProgress"],
+    "layer-3200-1715830633": ["smokeContact", "closeMovingDamage"],
+    "layer-3200-533816319": ["rearSearch", "smokeContact", "wallStalls", "closeMovingDamage", "spawnSearchProgress"],
+    "r1-1600-1715830633": ["smokeContact", "closeMovingDamage"],
+    "r1-1600-533816319": ["rearSearch", "smokeContact", "closeMovingDamage", "spawnSearchProgress"],
+    "r2-1600-1715830633": ["wallStalls", "closeMovingDamage", "spawnSearchProgress"],
+    "r2-1600-533816319": ["candidateHasSearch", "rearSearch", "spawnSearchProgress"],
+    "skip12-1600-1715830633": ["smokeContact", "wallStalls", "closeMovingDamage"],
+    "skip12-1600-533816319": ["candidateHasSearch", "rearSearch", "smokeContact", "wallStalls"]
+  },
+  "graphMethod": "30 stationary starts per seat across campaigns 716373499,365313823,1245357817. Report median initial, minimum and last reachable grid edge count to any standing eye-to-target chest sightline before first clear contact or end of initial life, over 30 seconds. Cells are 0.5m, edges may be diagonal or change elevation. Does not measure camera direction.",
+  "evaluation": "Nine-map campaigns 275237117,741618173,1904162429, ten paired full-spawn starts per map/seed, 30s. Matched close-contact kit, stationary and strafing across three priority maps. Separate Frostcourt cohorts treat all targets as stationary.",
+  "decision": "Keep the released weights. Shortest route to a clear ray did not transfer reliably to autonomous full-spawn discovery. No fresh private holdout or live scores during storage limit.",
+  "matchedFirstLifeTeacher": {
+    "control-1882371047": {
+      "A": [5, 32],
+      "B": [22, 32]
+    },
+    "control-193041191": {
+      "A": [5, 32],
+      "B": [29, 32]
+    },
+    "control-574212379": {
+      "A": [5, 32],
+      "B": [20, 32]
+    },
+    "skip12-1882371047": {
+      "A": [17, 32],
+      "B": [30, 32]
+    },
+    "skip12-193041191": {
+      "A": [19, 32],
+      "B": [28, 32]
+    },
+    "skip12-574212379": {
+      "A": [22, 32],
+      "B": [25, 32]
+    }
+  },
+  "verifiedExampleGenerator": {
+    "map": "frostcourt",
+    "durationSeconds": 30,
+    "campaign": 726213697,
+    "fixturesPerSeat": 32,
+    "history": "Zero-pad to eight observations and discard any trajectory with a visible target initially. Freeze source policy local360 from search-teacher-distillation-20261124.json. No synthetic reward or path feature enters the observation.",
+    "procedure": ["For each still-hidden pilot nav node, cache a waypoint. If a ray from pilot eye to rival chest is clear, cache rival horizontal position. Otherwise pathfind from current node to the rival nearest node. Use the first visible node among the first three path nodes, or the third node, or the last node on shorter routes.", "If horizontal distance from the pilot to this waypoint is at most 1.2 meters, execute the source policy. Otherwise compute u = wrapped bearing error from pilot yaw to waypoint. Raw axes are clamp(u/.9,-1.5,1.5), clamp((pitchGoal-currentPitch)/.55,-1.2,1.2), -1.4*sin(u), 1.4*cos(u). pitchGoal is zero while occluded and atan2(rival chest height - standing eye height,horizontal rival distance) with clear chest ray. Preserve source policy buttons and weapon logits.", "Count a first clear policy observation before either participant respawns. Compare with original 1m yaw/strafe/forward guide that preserves parent pitch. Use identical map, seed, gear, seat, target behavior and initial orientation for both training guides."],
+    "checkpoint": "arena-game/tools/checkpoints/frostcourt-search-parent.json.gz",
+    "sourcePolicyUncompressedSHA256": "0a0c12c194324e0e78998f5d4b241fca2c9b5172f046c022a129338c87cb7c04",
+    "sampleCommandFromArenaGame": "node --import tsx scripts/sample-search-routes.ts tools/checkpoints/frostcourt-search-parent.json.gz 726213697 skip12 examples.ndjson",
+    "confirmation": "Run with each confirmation campaign and guide (control or skip12), omitting the examples path. Checked all 384 seat/seed/guide records against the experimental harness, including the exact first clear tick.",
+    "matchedOutcomesColumns": ["both found", "only skip12 found", "only control found", "neither found"],
+    "matchedOutcomes": {
+      "1882371047": {
+        "A": [5, 12, 0, 15],
+        "B": [20, 10, 2, 0]
+      },
+      "193041191": {
+        "A": [5, 14, 0, 13],
+        "B": [25, 3, 4, 0]
+      },
+      "574212379": {
+        "A": [4, 18, 1, 9],
+        "B": [14, 11, 6, 1]
+      }
+    },
+    "trainingCampaignSuccessfulJourneys": 51,
+    "trainingCampaignLabeledDecisions": 3914
+  }
+}
