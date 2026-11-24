@@ -1,0 +1,65 @@
+{
+  "base": "7e66a389e047030f0d711438b8ffce198a724403",
+  "deployedPolicySha256": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+  "protocol": "Three consecutive completed training jobs; pair each changing checkpoint with the same incumbent on unseen maps/seeds and swapped seats. Distances are means across evaluations. Low displacement is pooled over unseen windows. Close-contact counts use the actual equipment fixtures and matched starts. Cohort results cannot isolate a training intervention.",
+  "runFields": ["run", "first evaluated generation", "last evaluated generation", "number evaluated"],
+  "spawnFields": ["net forward m/s", "backward m/s", "low displacement fraction", "initially unseen stationary opponents found", "stationary trials"],
+  "nearFields": ["map", "moving", "trials", "candidate by 0.5s", "incumbent by 0.5s", "candidate by 2s", "incumbent by 2s"],
+  "runs": [
+    [45337688386, 3495, 3535, 9],
+    [45336308151, 3460, 3490, 7],
+    [45334856943, 3400, 3455, 12]
+  ],
+  "failed": {
+    "human_tracking": 12,
+    "rearSearch": 26,
+    "spawnSearchProgress": 28,
+    "human_search": 17,
+    "human_quiet": 24,
+    "candidateHasSearch": 7,
+    "smokeContact": 14,
+    "wallStalls": 6,
+    "closeMovingDamage": 4
+  },
+  "spawn": {
+    "candidate": [1.2860666831465077, 0.5646079988967515, 0.11911841875109329, 11, 336],
+    "opponent": [1.928427589660637, 0.12258581735740016, 0.14128187456926256, 32, 336]
+  },
+  "near": [
+    ["frostcourt", false, 448, 171, 175, 311, 278],
+    ["frostcourt", true, 896, 147, 184, 423, 324],
+    ["homeward", false, 448, 217, 221, 273, 298],
+    ["homeward", true, 896, 236, 281, 428, 419],
+    ["blackflag", false, 448, 296, 229, 389, 314],
+    ["blackflag", true, 896, 230, 308, 570, 450]
+  ],
+  "latestRealScoresHumanThenBot": {
+    "frostcourt": [7, 0],
+    "homeward": [7, 2],
+    "blackflag": [7, 1]
+  },
+  "intervention": "Skip the 0.01 new-cell reward when a whole unseen search window backs at least 4 m net, its center ray is clear for at least 4 m, its flanking rays see no smoke, and its sighting memory has expired. Leave escape, discovery and combat rewards intact.",
+  "rewardAudit": "Run self-play-rollout.ts with seed 1754309821, 48 episodes, 45 seconds, --focus waiting --focus wall and the bundled opponent. Score each stored trace under the original and revised reward, with initial rewards zeroed. The engineered positive control subtracts 1 from the bundled actor's raw forward bias only. It tests the scorer; it is not a trained candidate. Opponent league sampling may differ between actors. Compare the scorers within each actor's identical trajectories.",
+  "audit": [
+    {
+      "file": "directPolicy.json.rollouts",
+      "seed": 1754309821,
+      "matches": 48,
+      "streams": 72,
+      "changedStreams": 0,
+      "changedDecisions": 0,
+      "oldPositiveReward": 8.849999999999957,
+      "newPositiveReward": 8.849999999999957
+    },
+    {
+      "file": "retreat-probe.json.rollouts",
+      "seed": 1754309821,
+      "matches": 48,
+      "streams": 72,
+      "changedStreams": 18,
+      "changedDecisions": 389,
+      "oldPositiveReward": 6.319999999999986,
+      "newPositiveReward": 6.059999999999988
+    }
+  ]
+}

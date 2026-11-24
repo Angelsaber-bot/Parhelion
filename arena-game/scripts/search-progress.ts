@@ -128,8 +128,16 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
         // The same ground can be covered backing away from the camera. Reward
         // additional forward progress only on a genuinely new, displaced route.
         const start = i + 1 - count;
-        creditProgress(steps, bounds, start, i, .01, false);
-        positiveCredits++;
+        // Crossing new cells while backing down an empty, unobstructed lane
+        // spends the exploration budget without looking into the new cells.
+        // Use the views preceding those actions. Near walls, smoke or a recent
+        // sighting, retreat can be the useful way out.
+        const clearRetreat = forwardMeters <= -4 && steps.slice(start, i).every(({ obs: view }) =>
+          view[scene + 6] >= 0 && view[scene + 7] >= .25 && view[scene + 8] >= 0 && view[scene + 9] === 0);
+        if (!clearRetreat) {
+          creditProgress(steps, bounds, start, i, .01, false);
+          positiveCredits++;
+        }
         if (forwardMeters >= 4 && positiveCredits < 12) {
           creditProgress(steps, bounds, start, i, .01, true);
           positiveCredits++;

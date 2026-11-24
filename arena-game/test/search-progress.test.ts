@@ -77,6 +77,26 @@ describe('self-play search outcomes', () => {
     expect(backward).toBeGreaterThan(0);
     expect(trial(i => [i >= 7 ? 10 : 0, -Math.PI / 2, 0], 15, 7)).toBe(0);
   });
+  it('withholds novelty for a sustained retreat on an empty clear lane and preserves escape and sighting credit', () => {
+    function route(yaw: number, depth = 1, recent = 0, rim = 1, seesRival = false) {
+      const rows = Array.from({ length: seesRival ? 16 : 15 }, (_, i) => {
+        const obs = Array(HUMAN_FEATURES.length + 12).fill(0);
+        obs[0] = Number(i === 15);
+        obs.splice(HUMAN_FEATURES.length, 10, i * .6 / 20, 0, 0, Math.sin(yaw), Math.cos(yaw), 0, rim, depth, 1, recent);
+        return { obs, axes: [0, 0, 0, -1], reset: i === 0, reward: 0 };
+      });
+      scoreSearchProgress(rows, bounds, 12, 60);
+      return rows.reduce((sum, row) => sum + row.reward, 0);
+    }
+    const backing = Math.PI / 2;
+    expect(route(backing)).toBe(0);
+    expect(route(backing, .1)).toBeCloseTo(.01);
+    expect(route(backing, 1, .2)).toBeCloseTo(.01);
+    expect(route(backing, 1, 0, -.25)).toBeCloseTo(.01);
+    expect(route(0)).toBeCloseTo(.01);
+    expect(route(-backing)).toBeCloseTo(.02);
+    expect(route(backing, 1, 0, 1, true)).toBeCloseTo(.02);
+  });
   it('keeps the scan penalty on idle decisions when the last step starts an escape', () => {
     const scan = (i: number) => Math.min(i, 12) * .23;
     const trace = measuredTrial(i => [i === 14 ? .8 : 0, scan(i), 0], 15);
