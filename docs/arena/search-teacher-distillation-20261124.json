@@ -1,0 +1,409 @@
+{
+  "source": "5a9e5149fa2809b4dd596de49bf5b184920b2d29",
+  "runIds": [45435323601, 45437776805, 45440443218, 45442854825],
+  "confirmedCheckpoint": 5316,
+  "lastEvaluation": 5315,
+  "worker": "Status HTTP 503 storage_limit. G5317 completed local optimization but its commit response was HTTP 500. No authoritative readback. Single scheduled queue retained; no duplicate dispatch.",
+  "human": "Reference revision 663. G5317 runner logged 96 updates including train-split replay windows from frostcourt (2137) and blackflag (1474); latest Sakura capture was unassigned and excluded. Previous completed public fixture scores human:bot frostcourt 7:0, homeward 7:2, blackflag 7:1. Current aggregate scoreboard returned Worker error 1101.",
+  "production": "Pages JS SHA256 10e5dddf89d2462ded2bdeaa603f71bda03d614af4d0ab58d125e2d9f188b14d matches local build. Runtime rules 43, neural 4. Last verified release digest 091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d; live neural endpoint returned HTTP 500.",
+  "spawnColumns": ["mean net forward m/s", "low displacement windows", "unseen windows", "acquired static target", "eligible static starts"],
+  "closeColumns": ["map", "moving", "trials", "candidate by .5s", "incumbent by .5s", "candidate by 2s", "incumbent by 2s"],
+  "cloudSpawnOrder": ["candidate", "incumbent"],
+  "cloudNearValueOrder": ["trials","candidate .5s","incumbent .5s","candidate 2s","incumbent 2s"],
+  "cloud": {
+    "n": 34,
+    "stats": {
+      "human_tracking": 17,
+      "human_quiet": 20,
+      "rearSearch": 27,
+      "spawnSearchProgress": 33,
+      "candidateHasSearch": 5,
+      "smokeContact": 12,
+      "closeMovingDamage": 10,
+      "wallStalls": 4,
+      "human_search": 6
+    },
+    "sums": [
+      [1.2128, 554, 6801, 22, 408],
+      [1.8418, 1098, 6891, 34, 408]
+    ],
+    "near": {
+      "frostcourt false": [544, 304, 225, 456, 373],
+      "frostcourt true": [1088, 73, 193, 508, 397],
+      "homeward false": [544, 296, 231, 369, 336],
+      "homeward true": [1088, 210, 337, 520, 489],
+      "blackflag false": [544, 448, 283, 511, 398],
+      "blackflag true": [1088, 254, 355, 781, 561]
+    },
+    "last": ["human_tracking", "candidateHasSearch", "rearSearch", "smokeContact", "closeMovingDamage", "spawnSearchProgress"]
+  },
+  "fit": "Collect eight-observation histories from the previous confirmed persistent teacher driving the normal two-seat fixtures on all nine maps. Seed 315661997, 16 repeats, 30s, simulation seeds mapped to training half of uint32. Save every stalled eligible decision and every 19th other decision with full history. Counts ordinary/stalled/other = 1558/1409/387. Train full out and first block down projection. Torch seed 468931, Adam .001, per-group 96/48/48 samples per step. Smooth L1(beta=.3) on yaw, strafe, forward plus .8 MSE on other 11 outputs relative to the starting actor plus .01 parameter mean-square drift. candidate* initializes with official actor and targets all masked teacher decisions; local* initializes with previous ordinary search teacher and targets only stalled decisions, preserving ordinary labels on other frames. Checkpoints at 120/360 updates. This is offline distillation with simulated states. Private human holdout scores pertain only to queue actors.",
+  "seeds": [159172643, 934621787, 1955216017],
+  "counts": "Each seed uses 10 spawn pairs per map, and 8 close-contact pairs on each priority map with fixed reference equipment, both seats and both target strafe directions.",
+  "actors": {
+    "incumbent": {
+      "spawn": {
+        "all": [1.8645, 711, 4632, 25, 270],
+        "frostcourt": [1.6508, 72, 553, 0, 30],
+        "homeward": [2.3608, 31, 574, 1, 30],
+        "blackflag": [1.4462, 109, 501, 2, 30],
+        "suntemple": [1.4446, 172, 538, 0, 30],
+        "orleans": [1.4863, 129, 555, 1, 30],
+        "aster": [2.2887, 12, 514, 6, 30],
+        "sakura": [2.1592, 25, 372, 14, 30],
+        "lishan": [1.7027, 93, 456, 0, 30],
+        "camlann": [2.2416, 68, 569, 1, 30]
+      },
+      "close": []
+    },
+    "candidate120": {
+      "spawn": {
+        "all": [2.5535, 244, 4613, 9, 270],
+        "frostcourt": [2.2917, 27, 523, 0, 30],
+        "homeward": [2.6576, 26, 574, 0, 30],
+        "blackflag": [2.7067, 40, 491, 0, 30],
+        "suntemple": [2.4508, 48, 566, 0, 30],
+        "orleans": [2.2637, 50, 527, 1, 30],
+        "aster": [2.6782, 10, 512, 1, 30],
+        "sakura": [2.6708, 9, 439, 2, 30],
+        "lishan": [2.3638, 27, 431, 5, 30],
+        "camlann": [2.8977, 7, 550, 0, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 19, 17, 30, 33],
+        ["frostcourt", true, 96, 11, 19, 27, 36],
+        ["homeward", false, 48, 17, 15, 28, 29],
+        ["homeward", true, 96, 21, 25, 38, 38],
+        ["blackflag", false, 48, 32, 32, 39, 37],
+        ["blackflag", true, 96, 29, 34, 45, 48]
+      ],
+      "sha256": "438a997c87298748f74c1977d81fdf82d556673a4068f830c68c6854d538ede5",
+      "independentScreens": [
+        [
+          1275115999,
+          ["closeMovingDamage", "spawnSearchProgress"]
+        ],
+        [
+          197417797,
+          ["rearSearch", "closeMovingDamage", "spawnSearchProgress"]
+        ]
+      ]
+    },
+    "candidate360": {
+      "spawn": {
+        "all": [2.4759, 210, 4573, 12, 270],
+        "frostcourt": [2.2788, 16, 521, 0, 30],
+        "homeward": [2.7613, 23, 554, 0, 30],
+        "blackflag": [1.8005, 22, 505, 2, 30],
+        "suntemple": [2.5604, 26, 549, 0, 30],
+        "orleans": [2.3817, 8, 510, 3, 30],
+        "aster": [2.8593, 0, 522, 0, 30],
+        "sakura": [2.7079, 24, 426, 5, 30],
+        "lishan": [2.1227, 83, 426, 2, 30],
+        "camlann": [2.8102, 8, 560, 0, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 20, 17, 31, 33],
+        ["frostcourt", true, 96, 14, 19, 27, 36],
+        ["homeward", false, 48, 18, 15, 31, 29],
+        ["homeward", true, 96, 19, 25, 38, 38],
+        ["blackflag", false, 48, 34, 32, 38, 37],
+        ["blackflag", true, 96, 30, 34, 48, 48]
+      ],
+      "sha256": "6d624218270d32e4094101ceb53ee0f9c8a429e748f15e356ab5fc7cff751c30",
+      "independentScreens": [
+        [
+          1275115999,
+          ["spawnSearchProgress"]
+        ],
+        [
+          197417797,
+          ["closeMovingDamage"]
+        ]
+      ]
+    },
+    "local120": {
+      "spawn": {
+        "all": [2.3758, 418, 4394, 48, 270],
+        "frostcourt": [2.165, 32, 519, 0, 30],
+        "homeward": [2.8134, 13, 587, 0, 30],
+        "blackflag": [1.3022, 182, 483, 8, 30],
+        "suntemple": [2.4859, 28, 513, 7, 30],
+        "orleans": [2.2289, 57, 512, 1, 30],
+        "aster": [2.5341, 57, 429, 14, 30],
+        "sakura": [2.5901, 25, 393, 5, 30],
+        "lishan": [2.469, 22, 396, 13, 30],
+        "camlann": [2.7934, 2, 562, 0, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 18, 17, 29, 33],
+        ["frostcourt", true, 96, 21, 19, 42, 36],
+        ["homeward", false, 48, 25, 15, 33, 29],
+        ["homeward", true, 96, 25, 25, 45, 38],
+        ["blackflag", false, 48, 32, 32, 42, 37],
+        ["blackflag", true, 96, 39, 34, 65, 48]
+      ],
+      "sha256": "9f798983212ee3046bae2c3751b3045e0ddb1ebcb49891705ab996b89789e048",
+      "independentScreens": [
+        [
+          1833245113,
+          ["rearSearch", "closeMovingDamage", "spawnSearchProgress"]
+        ],
+        [
+          198248431,
+          ["improved", "bothModes"]
+        ]
+      ]
+    },
+    "local360": {
+      "spawn": {
+        "all": [2.3629, 291, 4322, 52, 270],
+        "frostcourt": [2.3735, 1, 505, 0, 30],
+        "homeward": [2.7367, 5, 577, 0, 30],
+        "blackflag": [1.2759, 147, 455, 10, 30],
+        "suntemple": [2.4188, 49, 503, 7, 30],
+        "orleans": [2.1713, 56, 517, 1, 30],
+        "aster": [2.5593, 0, 433, 14, 30],
+        "sakura": [2.4698, 24, 393, 8, 30],
+        "lishan": [2.4866, 9, 382, 12, 30],
+        "camlann": [2.7746, 0, 557, 0, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 14, 17, 28, 33],
+        ["frostcourt", true, 96, 20, 19, 41, 36],
+        ["homeward", false, 48, 23, 15, 33, 29],
+        ["homeward", true, 96, 24, 25, 45, 38],
+        ["blackflag", false, 48, 31, 32, 41, 37],
+        ["blackflag", true, 96, 36, 34, 60, 48]
+      ],
+      "sha256": "0a0c12c194324e0e78998f5d4b241fca2c9b5172f046c022a129338c87cb7c04",
+      "independentScreens": [
+        [
+          1833245113,
+          ["rearSearch", "closeMovingDamage", "spawnSearchProgress"]
+        ],
+        [
+          198248431,
+          ["improved", "bothModes"]
+        ]
+      ]
+    }
+  },
+  "holdout": {
+    "generation": 5315,
+    "captures": 1,
+    "windows": 367,
+    "holdout": {
+      "unseenTurn": {
+        "windows": 46,
+        "yawMaeRad": 0.17787459518598475,
+        "pitchMaeRad": 0.03584811188604521,
+        "moveMae": 0.26718253933865094,
+        "stillYawMaeRad": 0.19085652413575546
+      },
+      "unseenQuiet": {
+        "windows": 214,
+        "yawMaeRad": 0.04242938311300545,
+        "pitchMaeRad": 0.013207134130959199,
+        "moveMae": 0.27971443506044763,
+        "stillYawMaeRad": 0.0036429906977671327
+      },
+      "visibleContact": {
+        "windows": 107,
+        "yawMaeRad": 0.05915097700101193,
+        "pitchMaeRad": 0.018446713463168278,
+        "moveMae": 0.16188025251727237,
+        "stillYawMaeRad": 0.018137382625419404
+      }
+    },
+    "referenceHoldout": {
+      "unseenTurn": {
+        "windows": 46,
+        "yawMaeRad": 0.1716724113277767,
+        "pitchMaeRad": 0.03317957060492557,
+        "moveMae": 0.2766221230444701,
+        "stillYawMaeRad": 0.19085652413575546
+      },
+      "unseenQuiet": {
+        "windows": 214,
+        "yawMaeRad": 0.0395541698576134,
+        "pitchMaeRad": 0.009847030739917934,
+        "moveMae": 0.27032359069752915,
+        "stillYawMaeRad": 0.0036429906977671327
+      },
+      "visibleContact": {
+        "windows": 107,
+        "yawMaeRad": 0.06274922406562021,
+        "pitchMaeRad": 0.011973896706215691,
+        "moveMae": 0.16115118187164593,
+        "stillYawMaeRad": 0.018137382625419404
+      }
+    }
+  },
+  "confirmation": {
+    "incumbent": {
+      "bySeed": {
+        "195385733": [1.8571, 253, 1560, 6, 90],
+        "801973027": [1.7952, 259, 1552, 6, 90],
+        "1379636899": [1.9333, 223, 1515, 12, 90],
+        "1704602611": [1.8624, 238, 1522, 6, 90]
+      },
+      "spawn": {
+        "all": [1.862, 973, 6149, 30, 360],
+        "frostcourt": [1.6907, 130, 724, 0, 40],
+        "homeward": [2.2736, 49, 771, 1, 40],
+        "blackflag": [1.292, 161, 703, 2, 40],
+        "suntemple": [1.3734, 222, 744, 0, 40],
+        "orleans": [1.5451, 179, 735, 3, 40],
+        "aster": [2.5749, 20, 696, 6, 40],
+        "sakura": [2.2526, 31, 509, 15, 40],
+        "lishan": [1.6358, 83, 560, 0, 40],
+        "camlann": [2.12, 98, 707, 3, 40]
+      },
+      "close": []
+    },
+    "old": {
+      "bySeed": {
+        "195385733": [2.2704, 177, 1428, 17, 90],
+        "801973027": [2.2553, 181, 1408, 17, 90],
+        "1379636899": [2.417, 168, 1402, 19, 90],
+        "1704602611": [2.2463, 170, 1409, 17, 90]
+      },
+      "spawn": {
+        "all": [2.2972, 696, 5647, 70, 360],
+        "frostcourt": [2.3312, 8, 649, 0, 40],
+        "homeward": [2.639, 12, 767, 2, 40],
+        "blackflag": [1.0774, 369, 667, 9, 40],
+        "suntemple": [2.0414, 126, 654, 7, 40],
+        "orleans": [2.1585, 67, 681, 1, 40],
+        "aster": [2.9955, 0, 538, 20, 40],
+        "sakura": [2.7254, 11, 455, 19, 40],
+        "lishan": [2.0268, 82, 517, 12, 40],
+        "camlann": [2.6798, 21, 719, 0, 40]
+      },
+      "close": [
+        ["frostcourt", false, 64, 22, 25, 30, 43],
+        ["frostcourt", true, 128, 28, 28, 55, 50],
+        ["homeward", false, 64, 38, 31, 48, 44],
+        ["homeward", true, 128, 36, 28, 71, 56],
+        ["blackflag", false, 64, 45, 27, 50, 46],
+        ["blackflag", true, 128, 55, 42, 81, 64]
+      ]
+    },
+    "local120": {
+      "bySeed": {
+        "195385733": [2.3496, 143, 1444, 16, 90],
+        "801973027": [2.4003, 123, 1488, 13, 90],
+        "1379636899": [2.5094, 113, 1453, 16, 90],
+        "1704602611": [2.3236, 153, 1452, 16, 90]
+      },
+      "spawn": {
+        "all": [2.3957, 532, 5837, 61, 360],
+        "frostcourt": [2.2818, 27, 697, 0, 40],
+        "homeward": [2.7125, 19, 756, 1, 40],
+        "blackflag": [1.1773, 256, 657, 8, 40],
+        "suntemple": [2.4875, 40, 660, 5, 40],
+        "orleans": [2.3297, 60, 688, 2, 40],
+        "aster": [2.9762, 30, 569, 19, 40],
+        "sakura": [2.6563, 21, 551, 9, 40],
+        "lishan": [2.2052, 63, 542, 17, 40],
+        "camlann": [2.7349, 16, 717, 0, 40]
+      },
+      "close": [
+        ["frostcourt", false, 64, 26, 25, 41, 43],
+        ["frostcourt", true, 128, 29, 28, 54, 50],
+        ["homeward", false, 64, 37, 31, 51, 44],
+        ["homeward", true, 128, 43, 28, 75, 56],
+        ["blackflag", false, 64, 44, 27, 58, 46],
+        ["blackflag", true, 128, 62, 42, 85, 64]
+      ]
+    },
+    "local360": {
+      "bySeed": {
+        "195385733": [2.3313, 115, 1449, 13, 90],
+        "801973027": [2.3713, 118, 1466, 14, 90],
+        "1379636899": [2.4587, 104, 1431, 16, 90],
+        "1704602611": [2.3162, 121, 1455, 15, 90]
+      },
+      "spawn": {
+        "all": [2.3694, 458, 5801, 58, 360],
+        "frostcourt": [2.4033, 11, 677, 0, 40],
+        "homeward": [2.6441, 37, 773, 0, 40],
+        "blackflag": [1.1542, 210, 661, 9, 40],
+        "suntemple": [2.4567, 47, 679, 4, 40],
+        "orleans": [2.1597, 66, 693, 1, 40],
+        "aster": [2.9502, 19, 567, 18, 40],
+        "sakura": [2.6249, 15, 533, 11, 40],
+        "lishan": [2.2162, 45, 510, 15, 40],
+        "camlann": [2.7153, 8, 708, 0, 40]
+      },
+      "close": [
+        ["frostcourt", false, 64, 25, 25, 40, 43],
+        ["frostcourt", true, 128, 31, 28, 53, 50],
+        ["homeward", false, 64, 38, 31, 53, 44],
+        ["homeward", true, 128, 41, 28, 76, 56],
+        ["blackflag", false, 64, 46, 27, 58, 46],
+        ["blackflag", true, 128, 62, 42, 84, 64]
+      ]
+    }
+  },
+  "tournament": {
+    "screen-local360-198248431": {
+      "baseline": {
+        "blocks": 6,
+        "wins": 0,
+        "losses": 6,
+        "tied": 0,
+        "winFractionWithDraws": 0.0625,
+        "oneSidedP": 1,
+        "legs": 24,
+        "legWins": 1,
+        "legLosses": 22,
+        "legDraws": 1,
+        "meanScoreMargin": -5.666666666666667
+      },
+      "incumbent": {
+        "blocks": 12,
+        "wins": 9,
+        "losses": 1,
+        "tied": 2,
+        "winFractionWithDraws": 0.625,
+        "oneSidedP": 0.010742187500000002,
+        "legs": 48,
+        "legWins": 19,
+        "legLosses": 7,
+        "legDraws": 22,
+        "meanScoreMargin": 0.75
+      }
+    },
+    "screen-local120-198248431": {
+      "baseline": {
+        "blocks": 6,
+        "wins": 0,
+        "losses": 6,
+        "tied": 0,
+        "winFractionWithDraws": 0.08333333333333333,
+        "oneSidedP": 1,
+        "legs": 24,
+        "legWins": 2,
+        "legLosses": 22,
+        "legDraws": 0,
+        "meanScoreMargin": -5.666666666666667
+      },
+      "incumbent": {
+        "blocks": 12,
+        "wins": 9,
+        "losses": 3,
+        "tied": 0,
+        "winFractionWithDraws": 0.59375,
+        "oneSidedP": 0.07299804687500003,
+        "legs": 48,
+        "legWins": 18,
+        "legLosses": 9,
+        "legDraws": 21,
+        "meanScoreMargin": 0.625
+      }
+    }
+  },
+  "releaseDecision": "Keep the released enemy. Candidate simulation gates, live score access and candidate-specific human holdout do not establish release readiness. Verify authoritative parent before the next generation after service recovery."
+}
