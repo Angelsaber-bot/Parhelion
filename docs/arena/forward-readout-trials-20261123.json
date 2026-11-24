@@ -1,0 +1,341 @@
+{
+  "source": "aae3ad927b126cbe901ba1064dd201713aeb8fbd",
+  "decision": "Retain released weights. Neither new readout passed the complete simulation gates. PPO continues from the existing service checkpoint, using the same single training queue. Holdout metrics below refer only to its cloud actor, not the offline variants.",
+  "publicDigest": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+  "method": "Use archived stationary actor (f2) from training-resumption-20261123.json. The public actor exactly matches the decoded bundled policy. Verified that the archived actor uses the same encoder as the bundled policy and that the learned search teacher matches its base hash. Forward variant replaces output row 3 and bias with the midpoint of archived row 3 and spawn-search-head.json row 2. Camera variant additionally mixes 25% of teacher row 0 and bias into archived yaw. Other controls and all encoder parameters unchanged. Weights here use compact Python JSON plus LF.",
+  "runMethod": "Probes: normal 30 s spawns on frostcourt, homeward, blackflag, orleans, suntemple; 12 repeats and both seats, near test on the three public equipment fixtures. Screens: evaluate-self-play.ts --seeds 2 --incumbent-seeds 4 --seed <seed> --incumbent shared/directPolicy.json. Separate repeat tournaments use evaluationMaps(seed).tournament and tournamentLegs(seed,maps,4,2) for the frozen forward candidate and parent against incumbent; these diagnostics cannot approve promotion.",
+  "probeNearFields": ["map", "moving", "trials", "byHalfSecond", "byTwoSeconds"],
+  "cloudNearFields": ["map", "moving", "trials", "candidateHalf", "incumbentHalf", "candidateTwo", "incumbentTwo"],
+  "matchReferenceHumanThenBot": {
+    "frostcourt": [7, 0],
+    "homeward": [7, 2],
+    "blackflag": [7, 1]
+  },
+  "cloudRunFields": ["run", "first evaluated generation", "last evaluated generation", "evaluations"],
+  "pairScoreFields": ["legWins", "legDraws", "legLosses", "blockWins", "blockTies", "blockLosses", "oneSidedP"],
+  "repeatFields": ["actor", "seed", "maps", "overall", "1v1", "2v2"],
+  "officialSeries": {
+    "runs": [
+      [45326015508, 3110, 3145, 8],
+      [45324536710, 3050, 3105, 12],
+      [45323071718, 2990, 3045, 12]
+    ],
+    "failed": {
+      "human_search": 15,
+      "human_quiet": 22,
+      "rearSearch": 28,
+      "smokeContact": 9,
+      "spawnSearchProgress": 31,
+      "human_tracking": 16,
+      "closeMovingDamage": 8,
+      "candidateHasSearch": 5,
+      "wallStalls": 8
+    },
+    "spawn": {
+      "candidate": {
+        "forward": 1.0996886748670829,
+        "backward": 0.6347089932077953,
+        "low": 0.11999393203883495,
+        "found": 20,
+        "trials": 384
+      },
+      "opponent": {
+        "forward": 1.9104334051457434,
+        "backward": 0.12184071157755738,
+        "low": 0.1480798771121352,
+        "found": 31,
+        "trials": 384
+      }
+    },
+    "near": [
+      ["frostcourt", false, 512, 269, 216, 371, 333],
+      ["frostcourt", true, 1024, 98, 171, 436, 360],
+      ["homeward", false, 512, 200, 243, 257, 321],
+      ["homeward", true, 1024, 160, 299, 347, 480],
+      ["blackflag", false, 512, 380, 290, 448, 377],
+      ["blackflag", true, 1024, 219, 322, 620, 507]
+    ]
+  },
+  "digest": {
+    "archived": "15c79ed81f3b6fec137e890ccd5ff51577125b1af4024e1a2558aa747b58c5fe",
+    "candidate": "8e643563f3f778df30114c0d1b2aa61562d08a725bb88512549558c75ffbab83",
+    "camera": "14ffe617ea35e4f67375dc241f00478f2319d9cd11511acb572422b70a9303b5"
+  },
+  "probes": [
+    {
+      "seed": 1665037141,
+      "name": "incumbent",
+      "forward": 1.6103463669199545,
+      "back": 0.12013981597335054,
+      "low": 0.20304114490161002,
+      "found": 2,
+      "waiting": 60,
+      "near": [
+        ["frostcourt", false, 16, 4, 10],
+        ["frostcourt", true, 32, 5, 14],
+        ["homeward", false, 16, 4, 7],
+        ["homeward", true, 32, 8, 10],
+        ["blackflag", false, 16, 9, 14],
+        ["blackflag", true, 32, 12, 18]
+      ]
+    },
+    {
+      "seed": 1665037141,
+      "name": "parent",
+      "forward": 2.4429902453056753,
+      "back": 0.08841429789869255,
+      "low": 0.09428284854563691,
+      "found": 6,
+      "waiting": 60,
+      "near": [
+        ["frostcourt", false, 16, 6, 9],
+        ["frostcourt", true, 32, 3, 14],
+        ["homeward", false, 16, 7, 8],
+        ["homeward", true, 32, 10, 14],
+        ["blackflag", false, 16, 10, 16],
+        ["blackflag", true, 32, 17, 25]
+      ]
+    },
+    {
+      "seed": 1665037141,
+      "name": "candidate",
+      "forward": 2.474666507495591,
+      "back": 0.0893691016982606,
+      "low": 0.09523809523809523,
+      "found": 10,
+      "waiting": 60,
+      "near": [
+        ["frostcourt", false, 16, 6, 9],
+        ["frostcourt", true, 32, 3, 13],
+        ["homeward", false, 16, 7, 8],
+        ["homeward", true, 32, 10, 15],
+        ["blackflag", false, 16, 10, 16],
+        ["blackflag", true, 32, 17, 25]
+      ]
+    },
+    {
+      "seed": 931760537,
+      "name": "incumbent",
+      "forward": 1.6029924803563225,
+      "back": 0.1250644471149642,
+      "low": 0.1793478260869565,
+      "found": 0,
+      "waiting": 60,
+      "near": [
+        ["frostcourt", false, 16, 5, 12],
+        ["frostcourt", true, 32, 6, 15],
+        ["homeward", false, 16, 9, 11],
+        ["homeward", true, 32, 9, 16],
+        ["blackflag", false, 16, 8, 10],
+        ["blackflag", true, 32, 10, 16]
+      ]
+    },
+    {
+      "seed": 931760537,
+      "name": "parent",
+      "forward": 2.5060275160678764,
+      "back": 0.08186659050415798,
+      "low": 0.07947686116700202,
+      "found": 13,
+      "waiting": 60,
+      "near": [
+        ["frostcourt", false, 16, 4, 13],
+        ["frostcourt", true, 32, 11, 18],
+        ["homeward", false, 16, 9, 13],
+        ["homeward", true, 32, 11, 21],
+        ["blackflag", false, 16, 10, 16],
+        ["blackflag", true, 32, 12, 20]
+      ]
+    },
+    {
+      "seed": 931760537,
+      "name": "candidate",
+      "forward": 2.502050511995329,
+      "back": 0.08257144281205489,
+      "low": 0.07283464566929135,
+      "found": 10,
+      "waiting": 60,
+      "near": [
+        ["frostcourt", false, 16, 4, 13],
+        ["frostcourt", true, 32, 11, 18],
+        ["homeward", false, 16, 9, 13],
+        ["homeward", true, 32, 11, 21],
+        ["blackflag", false, 16, 10, 15],
+        ["blackflag", true, 32, 12, 20]
+      ]
+    },
+    {
+      "seed": 1402336709,
+      "name": "incumbent",
+      "forward": 1.6674669921976097,
+      "back": 0.10897639612171352,
+      "low": 0.1956717763751127,
+      "found": 4,
+      "waiting": 60,
+      "near": [
+        ["frostcourt", false, 16, 11, 14],
+        ["frostcourt", true, 32, 10, 16],
+        ["homeward", false, 16, 8, 10],
+        ["homeward", true, 32, 5, 10],
+        ["blackflag", false, 16, 10, 13],
+        ["blackflag", true, 32, 6, 17]
+      ]
+    },
+    {
+      "seed": 1402336709,
+      "name": "parent",
+      "forward": 2.4539397815613,
+      "back": 0.08158254666947433,
+      "low": 0.08754863813229573,
+      "found": 10,
+      "waiting": 60,
+      "near": [
+        ["frostcourt", false, 16, 9, 12],
+        ["frostcourt", true, 32, 12, 19],
+        ["homeward", false, 16, 7, 11],
+        ["homeward", true, 32, 8, 17],
+        ["blackflag", false, 16, 11, 15],
+        ["blackflag", true, 32, 14, 24]
+      ]
+    },
+    {
+      "seed": 1402336709,
+      "name": "candidate",
+      "forward": 2.4396603470015177,
+      "back": 0.09759233793357275,
+      "low": 0.08919722497522299,
+      "found": 11,
+      "waiting": 60,
+      "near": [
+        ["frostcourt", false, 16, 10, 13],
+        ["frostcourt", true, 32, 12, 18],
+        ["homeward", false, 16, 7, 11],
+        ["homeward", true, 32, 8, 17],
+        ["blackflag", false, 16, 10, 15],
+        ["blackflag", true, 32, 14, 24]
+      ]
+    }
+  ],
+  "screens": [
+    [
+      "camera-1203415193",
+      1203415193,
+      ["improved", "bothModes"],
+      {
+        "baseline": [0, 1, 23, 0, 0, 6, 1],
+        "incumbent": [15, 19, 14, 8, 1, 3, 0.11328125000000004]
+      }
+    ],
+    [
+      "camera-1746420937",
+      1746420937,
+      ["rearSearch"],
+      {}
+    ],
+    [
+      "camera-947236721",
+      947236721,
+      ["improved", "bothModes"],
+      {
+        "baseline": [2, 2, 20, 0, 0, 6, 1],
+        "incumbent": [16, 24, 8, 6, 4, 2, 0.14453125]
+      }
+    ],
+    [
+      "parent-1457321097",
+      1457321097,
+      ["rearSearch"],
+      {}
+    ],
+    [
+      "parent-1531972003",
+      1531972003,
+      ["smokeContact", "spawnSearchProgress"],
+      {}
+    ],
+    [
+      "parent-873450221",
+      873450221,
+      ["smokeContact"],
+      {}
+    ],
+    [
+      "screen-1457321097",
+      1457321097,
+      ["rearSearch", "wallStalls"],
+      {}
+    ],
+    [
+      "screen-1531972003",
+      1531972003,
+      ["improved", "bothModes"],
+      {
+        "baseline": [0, 1, 23, 0, 0, 6, 1],
+        "incumbent": [24, 15, 9, 10, 1, 1, 0.005859375]
+      }
+    ],
+    [
+      "screen-873450221",
+      873450221,
+      ["smokeContact"],
+      {}
+    ]
+  ],
+  "repeats": [
+    [
+      "candidate",
+      1096435109,
+      ["frostcourt", "homeward", "lishan"],
+      [17, 19, 12, 5, 4, 3, 0.36328125],
+      [5, 13, 6, 3, 6, 3, 0.6562500000000002],
+      [12, 6, 6, 5, 6, 1, 0.10937500000000003]
+    ],
+    [
+      "parent",
+      1096435109,
+      ["frostcourt", "homeward", "lishan"],
+      [14, 21, 13, 4, 4, 4, 0.63671875],
+      [3, 15, 6, 3, 4, 5, 0.85546875],
+      [11, 6, 7, 5, 6, 1, 0.10937500000000003]
+    ],
+    [
+      "candidate",
+      1835901037,
+      ["sakura", "orleans", "suntemple"],
+      [28, 12, 8, 10, 2, 0, 0.0009765625],
+      [13, 10, 1, 7, 5, 0, 0.007812500000000002],
+      [15, 2, 7, 5, 7, 0, 0.031249999999999986]
+    ],
+    [
+      "parent",
+      1835901037,
+      ["sakura", "orleans", "suntemple"],
+      [26, 11, 11, 9, 1, 2, 0.03271484375],
+      [12, 9, 3, 7, 3, 2, 0.08984374999999997],
+      [14, 2, 8, 5, 5, 2, 0.22656250000000008]
+    ]
+  ],
+  "cloud": {
+    "generation": 3195,
+    "at": 1795495834786,
+    "reason": "evaluation_failed",
+    "failedGates": ["human_tracking", "human_quiet", "rearSearch", "smokeContact", "closeMovingDamage", "spawnSearchProgress"],
+    "published": false,
+    "report": {
+      "rearSeconds": 8.933333333333334,
+      "referenceRearSeconds": 7.363888888888889,
+      "smokeBlindFire": 0,
+      "wallEscape": 1,
+      "roundSet": "diagnostic",
+      "opponent": "incumbent",
+      "duel": [1, 1, 0],
+      "team": [1, 1, 0],
+      "humanCamera": {
+        "captures": 1,
+        "windows": 367,
+        "turn": [0.17585824106050574, 0.17154566645622255],
+        "quiet": [0.047494039468676134, 0.03990391286734109]
+      }
+    }
+  }
+}
