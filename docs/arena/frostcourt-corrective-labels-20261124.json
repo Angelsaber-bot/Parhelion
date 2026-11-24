@@ -1,0 +1,310 @@
+{
+  "source": "bca90af1d61ede62935c4ae7c5c4072db7d1ce46",
+  "production": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+  "cloud": {
+    "completedRun": 45395829846,
+    "generations": [4710, 4754],
+    "games": 540,
+    "optimizerUpdates": 4290,
+    "spawnFailures": 9,
+    "independentScreens": 9,
+    "originalContinuation": 138458161243,
+    "continuationAttempt2": 138480463286,
+    "nextRun": 45404243246,
+    "observedCheckpointAfterRetry": 4756,
+    "mostRecentIndependentEvaluation": {
+      "generation": 4755,
+      "at": 1795527217333,
+      "reason": "evaluation_failed",
+      "failedGates": ["human_tracking", "rearSearch", "spawnSearchProgress"],
+      "published": false,
+      "report": {
+        "rearSeconds": 6.518055555555555,
+        "referenceRearSeconds": 8.652777777777777,
+        "smokeBlindFire": 0,
+        "wallEscape": 0.8333333333333334,
+        "roundSet": "diagnostic",
+        "opponent": "incumbent",
+        "duel": [1, 1, 0],
+        "team": [0, 1, 1],
+        "humanCamera": {
+          "captures": 1,
+          "windows": 367,
+          "turn": [0.17470961187196818, 0.1716724183248437],
+          "quiet": [0.04470877045782927, 0.03955416935626592]
+        }
+      }
+    },
+    "humanDataset": {"batches": 645, "matches": 24, "revision": 645}
+  },
+  "referenceScoresHumanBot": {
+    "frostcourt": [7, 0],
+    "homeward": [7, 2],
+    "blackflag": [7, 1]
+  },
+  "training": {
+    "method": "Aggregate offline corrective labels with the successful demonstrations of frostcourt-hidden-layer-evaluation-20261124.json. The previous full learner drives with normal sensors while a separate teacher labels its action targets using the previous route teacher and original parent logits. Ignore positions after the first sighting or respawn. Targets and network optimization use the same residual representation, ridge, logit anchors, seed and 120-iteration fit as the prior evaluation. All evaluated policies ran with normal game observations and without the teacher.",
+    "visited": {"seed": 1763492711, "pairs": 32, "seconds": 18, "trajectories": 64, "windows": 5693},
+    "postHandoff": {"seed": 191738439, "pairs": 32, "seconds": 24, "teacherPrefixSeconds": 6, "trajectories": 64, "windows": 5626},
+    "full": "50% successful demonstrations plus 50% correction on states reached by learner from spawn; equal mass per side and per trajectory.",
+    "half": "Interpolate full feed-forward parameter changes at 50% relative to the parent.",
+    "mixed": "40% successful demonstrations, 30% student from spawn, 30% student states after six seconds teacher prefix; 100% of the fitted parameter change."
+  },
+  "variants": {
+    "full": {
+      "sha256": "d7c07f744df5a0c0fa8df2a97da0757c7202baa5986c5808081696785ced3dd0",
+      "seeds": [207491833, 724593163, 1390385699],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.73877, 71, 666, 0, 36],
+          ["homeward", 2.33166, 28, 699, 1, 36],
+          ["blackflag", 1.56044, 100, 628, 2, 36],
+          ["suntemple", 1.41294, 182, 654, 1, 36],
+          ["orleans", 1.52624, 163, 653, 0, 36]
+        ],
+        "parent": [
+          ["frostcourt", 2.57832, 9, 574, 0, 36],
+          ["homeward", 2.73181, 17, 677, 1, 36],
+          ["blackflag", 1.60146, 85, 526, 13, 36],
+          ["suntemple", 2.51382, 54, 593, 6, 36],
+          ["orleans", 2.41024, 52, 601, 0, 36]
+        ],
+        "full": [
+          ["frostcourt", 1.85188, 31, 610, 0, 36],
+          ["homeward", 1.7471, 9, 678, 0, 36],
+          ["blackflag", 1.66992, 246, 656, 0, 36],
+          ["suntemple", 2.50574, 10, 537, 11, 36],
+          ["orleans", 2.56471, 5, 579, 0, 36]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          48,
+          {"byHalfSecond": 24, "byTwoSeconds": 36},
+          {"byHalfSecond": 19, "byTwoSeconds": 31}
+        ],
+        [
+          "frostcourt",
+          true,
+          96,
+          {"byHalfSecond": 13, "byTwoSeconds": 38},
+          {"byHalfSecond": 19, "byTwoSeconds": 36}
+        ],
+        [
+          "homeward",
+          false,
+          48,
+          {"byHalfSecond": 29, "byTwoSeconds": 34},
+          {"byHalfSecond": 25, "byTwoSeconds": 34}
+        ],
+        [
+          "homeward",
+          true,
+          96,
+          {"byHalfSecond": 39, "byTwoSeconds": 59},
+          {"byHalfSecond": 29, "byTwoSeconds": 50}
+        ],
+        [
+          "blackflag",
+          false,
+          48,
+          {"byHalfSecond": 34, "byTwoSeconds": 47},
+          {"byHalfSecond": 31, "byTwoSeconds": 37}
+        ],
+        [
+          "blackflag",
+          true,
+          96,
+          {"byHalfSecond": 52, "byTwoSeconds": 77},
+          {"byHalfSecond": 43, "byTwoSeconds": 60}
+        ]
+      ],
+      "screens": [
+        {
+          "seed": 1553908121,
+          "failed": ["rearSearch", "smokeContact"],
+          "legsWinDrawLoss": {}
+        },
+        {
+          "seed": 941275337,
+          "failed": ["spawnSearchProgress"],
+          "legsWinDrawLoss": {}
+        }
+      ]
+    },
+    "half": {
+      "sha256": "9c0f18492b5c63a55cbd6bc19ff29a687cd492a2ff264e4277750d8e3a46c86e",
+      "seeds": [207491833, 724593163, 1390385699],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.73877, 71, 666, 0, 36],
+          ["homeward", 2.33166, 28, 699, 1, 36],
+          ["blackflag", 1.56044, 100, 628, 2, 36],
+          ["suntemple", 1.41294, 182, 654, 1, 36],
+          ["orleans", 1.52624, 163, 653, 0, 36]
+        ],
+        "parent": [
+          ["frostcourt", 2.57832, 9, 574, 0, 36],
+          ["homeward", 2.73181, 17, 677, 1, 36],
+          ["blackflag", 1.60146, 85, 526, 13, 36],
+          ["suntemple", 2.51382, 54, 593, 6, 36],
+          ["orleans", 2.41024, 52, 601, 0, 36]
+        ],
+        "half": [
+          ["frostcourt", 2.67075, 15, 621, 0, 36],
+          ["homeward", 2.94663, 5, 678, 0, 36],
+          ["blackflag", 1.47902, 226, 660, 1, 36],
+          ["suntemple", 2.56459, 32, 575, 3, 36],
+          ["orleans", 2.54494, 18, 573, 0, 36]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          48,
+          {"byHalfSecond": 21, "byTwoSeconds": 30},
+          {"byHalfSecond": 19, "byTwoSeconds": 31}
+        ],
+        [
+          "frostcourt",
+          true,
+          96,
+          {"byHalfSecond": 16, "byTwoSeconds": 43},
+          {"byHalfSecond": 19, "byTwoSeconds": 36}
+        ],
+        [
+          "homeward",
+          false,
+          48,
+          {"byHalfSecond": 27, "byTwoSeconds": 35},
+          {"byHalfSecond": 25, "byTwoSeconds": 34}
+        ],
+        [
+          "homeward",
+          true,
+          96,
+          {"byHalfSecond": 38, "byTwoSeconds": 57},
+          {"byHalfSecond": 29, "byTwoSeconds": 50}
+        ],
+        [
+          "blackflag",
+          false,
+          48,
+          {"byHalfSecond": 31, "byTwoSeconds": 44},
+          {"byHalfSecond": 31, "byTwoSeconds": 37}
+        ],
+        [
+          "blackflag",
+          true,
+          96,
+          {"byHalfSecond": 54, "byTwoSeconds": 76},
+          {"byHalfSecond": 43, "byTwoSeconds": 60}
+        ]
+      ],
+      "screens": [
+        {
+          "seed": 1553908121,
+          "failed": ["rearSearch", "smokeContact"],
+          "legsWinDrawLoss": {}
+        },
+        {
+          "seed": 941275337,
+          "failed": ["improved", "bothModes"],
+          "legsWinDrawLoss": {
+            "baseline": [0, 0, 24],
+            "incumbent": [18, 23, 7]
+          }
+        }
+      ]
+    },
+    "mixed": {
+      "sha256": "8ae31e47fa52de57985459697bbbff6db8bd574a531e5633ddf4fe96ccd5cfce",
+      "seeds": [517031377, 1801362251],
+      "spawn": {
+        "incumbent": [
+          ["frostcourt", 1.64046, 73, 441, 0, 24],
+          ["homeward", 2.34726, 37, 457, 3, 24],
+          ["blackflag", 1.74301, 69, 422, 2, 24],
+          ["suntemple", 1.29107, 106, 425, 0, 24],
+          ["orleans", 1.62625, 110, 441, 1, 24]
+        ],
+        "parent": [
+          ["frostcourt", 2.65036, 20, 404, 0, 24],
+          ["homeward", 2.69416, 19, 453, 1, 24],
+          ["blackflag", 1.53946, 84, 365, 8, 24],
+          ["suntemple", 2.64215, 22, 399, 7, 24],
+          ["orleans", 2.30622, 37, 385, 2, 24]
+        ],
+        "mixed": [
+          ["frostcourt", 1.9892, 1, 426, 0, 24],
+          ["homeward", 1.76126, 22, 457, 0, 24],
+          ["blackflag", 1.99215, 123, 413, 0, 24],
+          ["suntemple", 2.6624, 2, 362, 6, 24],
+          ["orleans", 2.45254, 13, 396, 1, 24]
+        ]
+      },
+      "near": [
+        [
+          "frostcourt",
+          false,
+          32,
+          {"byHalfSecond": 14, "byTwoSeconds": 18},
+          {"byHalfSecond": 13, "byTwoSeconds": 19}
+        ],
+        [
+          "frostcourt",
+          true,
+          64,
+          {"byHalfSecond": 11, "byTwoSeconds": 27},
+          {"byHalfSecond": 11, "byTwoSeconds": 21}
+        ],
+        [
+          "homeward",
+          false,
+          32,
+          {"byHalfSecond": 13, "byTwoSeconds": 21},
+          {"byHalfSecond": 13, "byTwoSeconds": 17}
+        ],
+        [
+          "homeward",
+          true,
+          64,
+          {"byHalfSecond": 28, "byTwoSeconds": 36},
+          {"byHalfSecond": 24, "byTwoSeconds": 34}
+        ],
+        [
+          "blackflag",
+          false,
+          32,
+          {"byHalfSecond": 20, "byTwoSeconds": 29},
+          {"byHalfSecond": 20, "byTwoSeconds": 25}
+        ],
+        [
+          "blackflag",
+          true,
+          64,
+          {"byHalfSecond": 26, "byTwoSeconds": 44},
+          {"byHalfSecond": 24, "byTwoSeconds": 34}
+        ]
+      ],
+      "screens": [
+        {
+          "seed": 264791893,
+          "failed": ["smokeContact", "spawnSearchProgress"],
+          "legsWinDrawLoss": {}
+        },
+        {
+          "seed": 984047351,
+          "failed": ["rearSearch"],
+          "legsWinDrawLoss": {}
+        }
+      ]
+    }
+  },
+  "spawnColumns": ["map", "mean unseen net forward m/s", "low displacement windows", "unseen windows", "stationary acquisitions", "eligible waiting starts"],
+  "nearColumns": ["map", "moving", "trials", "candidate counts", "incumbent counts"],
+  "decision": "Retain incumbent. Local policies have no new live-player results or private replay holdout. The cloud holdout is reported separately."
+}
