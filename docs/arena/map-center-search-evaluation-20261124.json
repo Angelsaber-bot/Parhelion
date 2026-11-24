@@ -1,0 +1,65 @@
+{
+  "source": "a9551239aef0dd8d0d1bb5dbb56bcf5a11fd9af9",
+  "production": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+  "parent": "forward-readout-trials-20261123.json (forward candidate)",
+  "training": "On 12 paired starts on each of five maps, seed 81745923, sample parent observations until contact or 12 seconds. Navigation teacher labels empty views with the yaw toward the third node (or last if shorter) on a walkable route to map bounds center at pilot height. Fit clipped relative angle / 0.9 minus current yaw logit on the frozen final encoder activation. Equal map mass, ridge 0.04 including bias, zero-residual anchors from escape-readout-evaluation-20261124.json (recent/contact mass 3, other states 0.5). Blend 0.35. Routing is used only during fitting.",
+  "trainingWindows": 6979,
+  "candidateSha256": "d1c2b108b02677b51b1aac0d5859ee02ba75991a413d35fadd49965f32e78158",
+  "yawWeightsWithBias": [0.09315452059309817,-0.10332877337801527,0.13912366409873467,0.25124484727618124,-0.010322442337006322,-0.09817041576162135,-0.12979476845846802,0.2695390529160567,0.1063498466064582,0.0029296436696670206,-0.02214650984601895,0.16341913015394932,-0.11033182475809847,0.09885665808291635,-0.06635393276870512,0.04204161110702167,-0.033863282556045246,0.029539094817734493,0.12522044191593912,-0.010763309693626716,0.09928225567474336,0.11922705114269956,-0.17052941222341716,0.001418108870078853,0.13761629383788093],
+  "pairedSeeds": [1698124173,318502643],
+  "byMapColumns": ["map","mean net forward m/s","fraction low displacement","stationary acquisitions","eligible starts"],
+  "byMap": {
+    "candidate": [
+      ["frostcourt",2.9649,0.0,0,24],
+      ["homeward",3.4086,0.0,0,24],
+      ["blackflag",2.914,0.09045,1,24],
+      ["suntemple",3.0032,0.0,1,24],
+      ["orleans",2.8698,0.00269,0,24]
+    ],
+    "parent": [
+      ["frostcourt",2.5993,0.04423,0,24],
+      ["homeward",3.0131,0.03311,4,24],
+      ["blackflag",1.5726,0.23967,7,24],
+      ["suntemple",2.6018,0.0112,10,24],
+      ["orleans",2.5013,0.0458,0,24]
+    ],
+    "incumbent": [
+      ["frostcourt",1.6103,0.17209,0,24],
+      ["homeward",2.389,0.05447,1,24],
+      ["blackflag",1.7758,0.14074,2,24],
+      ["suntemple",1.2928,0.27865,0,24],
+      ["orleans",1.4337,0.27617,0,24]
+    ]
+  },
+  "closeColumns": ["map","moving","trials per model","candidate hit by 0.5s","candidate hit by 2s","incumbent hit by 0.5s","incumbent hit by 2s"],
+  "close": [
+    ["frostcourt",false,32,13,19,12,19],
+    ["frostcourt",true,64,16,33,11,24],
+    ["homeward",false,32,12,21,18,20],
+    ["homeward",true,64,25,41,16,26],
+    ["blackflag",false,32,22,27,22,26],
+    ["blackflag",true,64,22,40,10,24]
+  ],
+  "releaseScreens": [
+    [
+      1087630127,
+      ["spawnSearchProgress"]
+    ],
+    [
+      148931725,
+      ["wallStalls"]
+    ]
+  ],
+  "queue": {
+    "run": 45354881551,
+    "generations": [3980,4034],
+    "independentScreens": 11,
+    "spawnFailures": 10,
+    "lastHumanEvaluation": 4030,
+    "consentedReplayRevision": 645
+  },
+  "decision": "Reject candidate. The two fresh campaigns failed spawn search and wall stalls respectively. Local probes have no new human holdout or actual human match for this candidate."
+,
+  "bySeed": [{"id":"incumbent","seed":1698124173,"spawn":[["frostcourt",1.6296794127694287,1.4583333333333333,8.958333333333334,0,12],["homeward",2.2309224804545686,0.7083333333333334,9.708333333333334,1,12],["blackflag",1.7453054969378448,1.1666666666666667,8.458333333333334,0,12],["suntemple",1.3274875367683443,2.7083333333333335,9.583333333333334,0,12],["orleans",1.387226046115944,2.5833333333333335,9.291666666666666,0,12]]},{"id":"parent","seed":1698124173,"spawn":[["frostcourt",2.753119497582846,0.25,8.125,0,12],["homeward",3.015774335338985,0.3333333333333333,9.5,0,12],["blackflag",1.4536559137630054,2.0416666666666665,7.291666666666667,3,12],["suntemple",2.46613013735481,0.125,8,5,12],["orleans",2.3071423742951986,0.7083333333333334,8,0,12]]},{"id":"candidate","seed":1698124173,"spawn":[["frostcourt",2.9799764886917193,0,8.375,0,12],["homeward",3.2845397269385517,0,9.791666666666666,0,12],["blackflag",2.9099117716627827,0.7083333333333334,8.208333333333334,1,12],["suntemple",2.9715114064020134,0,9.208333333333334,1,12],["orleans",2.753268478675274,0.041666666666666664,7.833333333333333,0,12]]},{"seed":1698124173,"near":[["frostcourt",false,16,{"byHalfSecond":6,"byTwoSeconds":10},{"byHalfSecond":9,"byTwoSeconds":12}],["frostcourt",true,32,{"byHalfSecond":11,"byTwoSeconds":21},{"byHalfSecond":8,"byTwoSeconds":13}],["homeward",false,16,{"byHalfSecond":7,"byTwoSeconds":10},{"byHalfSecond":9,"byTwoSeconds":10}],["homeward",true,32,{"byHalfSecond":15,"byTwoSeconds":22},{"byHalfSecond":12,"byTwoSeconds":17}],["blackflag",false,16,{"byHalfSecond":10,"byTwoSeconds":14},{"byHalfSecond":12,"byTwoSeconds":14}],["blackflag",true,32,{"byHalfSecond":9,"byTwoSeconds":19},{"byHalfSecond":4,"byTwoSeconds":14}]]},{"id":"incumbent","seed":318502643,"spawn":[["frostcourt",1.5909583977606963,1.625,8.958333333333334,0,12],["homeward",2.5471643182953905,0.3333333333333333,9.416666666666666,0,12],["blackflag",1.806370513580805,1.2083333333333333,8.416666666666666,2,12],["suntemple",1.2580503095318967,2.4583333333333335,8.958333333333334,0,12],["orleans",1.4802591897909108,2.5833333333333335,9.416666666666666,0,12]]},{"id":"parent","seed":318502643,"spawn":[["frostcourt",2.4454924019314475,0.5,8.833333333333334,0,12],["homeward",3.0104625751560445,0.2916666666666667,9.375,4,12],["blackflag",1.6915570084333247,1.5833333333333333,7.833333333333333,4,12],["suntemple",2.7374086474207013,0.041666666666666664,6.875,5,12],["orleans",2.695545834906537,0.041666666666666664,8.375,0,12]]},{"id":"candidate","seed":318502643,"spawn":[["frostcourt",2.949888225720113,0,8.208333333333334,0,12],["homeward",3.532742010547967,0,9.375,0,12],["blackflag",2.918128708975863,0.7916666666666666,8.375,0,12],["suntemple",3.0348219929361324,0,7.666666666666667,0,12],["orleans",2.986411212249334,0,7.666666666666667,0,12]]},{"seed":318502643,"near":[["frostcourt",false,16,{"byHalfSecond":7,"byTwoSeconds":9},{"byHalfSecond":3,"byTwoSeconds":7}],["frostcourt",true,32,{"byHalfSecond":5,"byTwoSeconds":12},{"byHalfSecond":3,"byTwoSeconds":11}],["homeward",false,16,{"byHalfSecond":5,"byTwoSeconds":11},{"byHalfSecond":9,"byTwoSeconds":10}],["homeward",true,32,{"byHalfSecond":10,"byTwoSeconds":19},{"byHalfSecond":4,"byTwoSeconds":9}],["blackflag",false,16,{"byHalfSecond":12,"byTwoSeconds":13},{"byHalfSecond":10,"byTwoSeconds":12}],["blackflag",true,32,{"byHalfSecond":13,"byTwoSeconds":21},{"byHalfSecond":6,"byTwoSeconds":10}]]}],
+  "recentReferenceScoresHumanBot": {"frostcourt": [7, 0], "homeward": [7, 2], "blackflag": [7, 1]}
+}
