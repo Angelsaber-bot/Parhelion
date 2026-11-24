@@ -1,0 +1,921 @@
+{
+  "source": "8e97c5505c85e19edf9932c81d1ef1b633ccda17",
+  "production": {
+    "pageBundleSHA256": "10e5dddf89d2462ded2bdeaa603f71bda03d614af4d0ab58d125e2d9f188b14d",
+    "lastVerifiedPolicy": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+    "recentAvailableHumanBotScores": {
+      "frostcourt": [7, 0],
+      "homeward": [7, 2],
+      "blackflag": [7, 1]
+    }
+  },
+  "queue": {
+    "run": 45480147252,
+    "result": "Failed selecting training work. Workflow enabled; no duplicate dispatch. Public training/status HTTP 503 storage_limit; neural and stats HTTP 500. Last confirmed generation 5316; 5317 write unconfirmed. Latest independent private evaluation G5315, one consented recording, 367 windows. No new human scores or holdout."
+  },
+  "parent": "docs/arena/checkpoints/frostcourt-recovery-round2-20261124.json.gz",
+  "checkpointFiles": {
+    "rows2": ["docs/arena/checkpoints/frostcourt-paired-readout-20261124.json.gz", "81ecbf1e1f4dc16bf18d3e7fbdb3ca8cb7beec934ccb5b3bf4ae89807bd2530c"],
+    "kit7": ["docs/arena/checkpoints/frostcourt-loadout-search-20261124.json.gz", "456d6b4a300c5f04b712f0fcbf2321c4e2a2560c2b8d865e8fa813480b8f2e10"]
+  },
+  "fitting": {
+    "supervised": "Four 64-start training campaigns (315644101,131664001,1147055331,215668375), with skip12 guiding four/two/one/zero of each four five-decision blocks. Label all 14 outputs with the original guide and source actor, including near waypoints. Extend 48 feed-forward units to 96 with zero initial outgoing weights. Fit balanced map-cell and heading bins; all three snapshots missed both seats. Separate successful-route experiments target five decisions of displacement or reflect horizontal trajectories. Their snapshots also missed the selection cohort.",
+    "readoutBasis": "Encode learner histories from the zero-guidance campaign and simulated close-contact histories using the saved round-2 parent. Ridge 0.5, affine readout to 15 spatial/heading/wall-depth basis targets, zero on contact anchors. Mutate only yaw, strafe and forward readout rows. All route coordinates/clear rays are used offline as labels or fitness; no runtime rule or extra observation.",
+    "elite0": "Three random basis updates per proposal, 24 proposals, shared four training-range starts per seat, seed 13672313. Score pairs on signed displacement away from spawn toward the other seat and observed acquisitions. First epoch produced an A-side improvement concentrated on Lumen with the default heading.",
+    "gear100": "Gear sensitivity ablation on elite0 folds the learned automatic/range embedding columns into health at their full-health Lumen values. Calibrated fractions 0.5,0.85,1; all preserve the controller format. Ablating ammunition features or lowering the fire bias lost the route. Matched Lumen/Firefly first-life traces at seed 3041912910 agreed in logits before a blind trigger request on tick 578, then differed in ammunition and recoil. This observation alone does not explain all failures.",
+    "kit7": "Start from gear100, perturb native movement readouts. Eight epochs of 18 proposals, two paired training starts with all five primary guns per epoch. Fitness includes direct acquisitions, geometric progress and number of guns with any success. Seed 3940911.",
+    "side3": "Separate continuation from gear100; keep parent among candidates, pair one canonical and one randomized-heading training start per epoch for each primary gun. Weight A-side acquisition breadth more heavily. Seed 81367409.",
+    "rows2": "On the two selection campaigns 1139411843 and 147378347, recombine native yaw/strafe/forward rows from side3 and kit7. rows2 takes only the strafe weights and bias from kit7; all remaining weights come from side3. No seat/weapon-dependent actor switching. The locked campaigns used neither for training nor selection are 748006211,1958371793,357179861."
+  },
+  "firstLifeProtocol": "30s on Frostcourt. Same deterministic lobby spawns, initial facing perturbation on odd seeds, kits and utility in both seats. Stop at first clear policy observation before either initial life ends. Unassisted normal actor. Use fixture.seed in the released range; training used fixture.seed modulo 2^31.",
+  "firstLifeColumns": ["A found", "A starts", "B found", "B starts"],
+  "firstLife": {
+    "life": {
+      "ahead2400-879315551": [0, 32, 0, 32],
+      "ahead800-879315551": [0, 32, 0, 32],
+      "ammo-1524357079": [0, 32, 0, 32],
+      "ammo1-1524357079": [0, 32, 0, 32],
+      "auto-1524357079": [7, 32, 7, 32],
+      "auto-193723371": [3, 32, 3, 32],
+      "clear0-1638767071": [0, 32, 0, 32],
+      "clear0-879315551": [0, 32, 0, 32],
+      "clear3-1638767071": [0, 32, 0, 32],
+      "clear3-879315551": [0, 32, 1, 32],
+      "clear6-1638767071": [2, 32, 0, 32],
+      "clear6-879315551": [4, 32, 0, 32],
+      "clear9-1638767071": [0, 32, 2, 32],
+      "clear9-879315551": [0, 32, 3, 32],
+      "dagger2-1377050101": [0, 32, 4, 32],
+      "dagger2-1638767071": [0, 32, 3, 32],
+      "dagger2-171062101": [0, 32, 4, 32],
+      "dagger2-879315551": [0, 32, 8, 32],
+      "dagger2-967487977": [0, 32, 5, 32],
+      "elite0-1377050101": [4, 32, 4, 32],
+      "elite0-1638767071": [1, 32, 1, 32],
+      "elite0-171062101": [3, 32, 4, 32],
+      "elite0-879315551": [4, 32, 4, 32],
+      "elite0-967487977": [6, 32, 6, 32],
+      "elite11-1638767071": [0, 32, 0, 32],
+      "elite11-879315551": [0, 32, 0, 32],
+      "elite3-1638767071": [1, 32, 1, 32],
+      "elite3-879315551": [4, 32, 4, 32],
+      "elite7-1638767071": [0, 32, 0, 32],
+      "elite7-879315551": [0, 32, 0, 32],
+      "gear100-1524357079": [7, 32, 7, 32],
+      "gear100-193723371": [3, 32, 3, 32],
+      "gear50-1524357079": [7, 32, 7, 32],
+      "gear50-193723371": [3, 32, 3, 32],
+      "gear85-1524357079": [7, 32, 7, 32],
+      "gear85-193723371": [3, 32, 3, 32],
+      "incumbent-1377050101": [0, 32, 0, 32],
+      "incumbent-1638767071": [0, 32, 0, 32],
+      "incumbent-171062101": [0, 32, 0, 32],
+      "incumbent-879315551": [0, 32, 0, 32],
+      "incumbent-967487977": [0, 32, 0, 32],
+      "mirror2400-879315551": [0, 32, 0, 32],
+      "mirror800-879315551": [0, 32, 0, 32],
+      "range-1524357079": [7, 32, 7, 32],
+      "range-193723371": [3, 32, 3, 32],
+      "raw2400-879315551": [0, 32, 0, 32],
+      "raw800-879315551": [0, 32, 0, 32],
+      "trig05-1524357079": [0, 32, 0, 32],
+      "trig1-1524357079": [0, 32, 0, 32],
+      "trig2-1524357079": [0, 32, 0, 32],
+      "trig4-1524357079": [0, 32, 0, 32],
+      "wide1800-1638767071": [0, 32, 0, 32],
+      "wide1800-879315551": [0, 32, 0, 32],
+      "wide3600-1638767071": [0, 32, 0, 32],
+      "wide3600-879315551": [0, 32, 0, 32],
+      "wide600-1638767071": [0, 32, 0, 32],
+      "wide600-879315551": [0, 32, 0, 32]
+    },
+    "select": {
+      "blend25-1139411843": [0, 32, 0, 32],
+      "blend25-147378347": [0, 32, 2, 32],
+      "blend50-1139411843": [0, 32, 2, 32],
+      "blend50-147378347": [0, 32, 2, 32],
+      "blend75-1139411843": [0, 32, 10, 32],
+      "blend75-147378347": [0, 32, 4, 32],
+      "late2-1139411843": [1, 32, 0, 32],
+      "late2-147378347": [0, 32, 1, 32],
+      "late4-1139411843": [13, 32, 0, 32],
+      "late4-147378347": [16, 32, 0, 32],
+      "late6-1139411843": [0, 32, 0, 32],
+      "late6-147378347": [0, 32, 1, 32],
+      "rows1-1139411843": [0, 32, 5, 32],
+      "rows1-147378347": [0, 32, 6, 32],
+      "rows2-1139411843": [15, 32, 3, 32],
+      "rows2-147378347": [18, 32, 6, 32],
+      "rows3-1139411843": [0, 32, 9, 32],
+      "rows3-147378347": [0, 32, 4, 32],
+      "rows4-1139411843": [2, 32, 2, 32],
+      "rows4-147378347": [3, 32, 0, 32],
+      "rows5-1139411843": [0, 32, 1, 32],
+      "rows5-147378347": [0, 32, 1, 32],
+      "rows6-1139411843": [11, 32, 1, 32],
+      "rows6-147378347": [5, 32, 0, 32],
+      "side0-1139411843": [5, 32, 0, 32],
+      "side0-147378347": [3, 32, 0, 32],
+      "side3-1139411843": [10, 32, 1, 32],
+      "side3-147378347": [7, 32, 0, 32],
+      "side5-1139411843": [10, 32, 1, 32],
+      "side5-147378347": [7, 32, 0, 32],
+      "side8-1139411843": [17, 32, 0, 32],
+      "side8-147378347": [13, 32, 0, 32],
+      "union100-1139411843": [0, 32, 1, 32],
+      "union100-147378347": [0, 32, 3, 32],
+      "union200-1139411843": [0, 32, 0, 32],
+      "union200-147378347": [0, 32, 2, 32],
+      "union50-1139411843": [0, 32, 0, 32],
+      "union50-147378347": [1, 32, 0, 32]
+    },
+    "confirm": {
+      "contact1000-1372877551": [5, 32, 5, 32],
+      "contact1000-316395127": [4, 32, 4, 32],
+      "contact1000-892808271": [3, 32, 3, 32],
+      "contact250-1372877551": [5, 32, 5, 32],
+      "contact250-316395127": [4, 32, 4, 32],
+      "contact250-892808271": [3, 32, 3, 32],
+      "dagger2-1372877551": [0, 32, 5, 32],
+      "dagger2-316395127": [0, 32, 4, 32],
+      "dagger2-892808271": [0, 32, 3, 32],
+      "elite0-1372877551": [5, 32, 5, 32],
+      "elite0-316395127": [4, 32, 4, 32],
+      "elite0-892808271": [3, 32, 4, 32],
+      "gear100-1372877551": [5, 32, 5, 32],
+      "gear100-316395127": [4, 32, 4, 32],
+      "gear100-892808271": [3, 32, 3, 32],
+      "incumbent-1372877551": [0, 32, 0, 32],
+      "incumbent-316395127": [0, 32, 0, 32],
+      "incumbent-892808271": [0, 32, 0, 32],
+      "kit3-1372877551": [0, 32, 4, 32],
+      "kit3-316395127": [0, 32, 16, 32],
+      "kit3-892808271": [0, 32, 8, 32],
+      "kit7-1372877551": [0, 32, 11, 32],
+      "kit7-316395127": [0, 32, 22, 32],
+      "kit7-892808271": [0, 32, 16, 32]
+    },
+    "final": {
+      "dagger2-1944973921": [0, 32, 7, 32],
+      "dagger2-276672029": [0, 32, 7, 32],
+      "dagger2-773107239": [0, 32, 3, 32],
+      "gear100-1944973921": [3, 32, 3, 32],
+      "gear100-276672029": [4, 32, 4, 32],
+      "gear100-773107239": [2, 32, 2, 32],
+      "incumbent-1944973921": [0, 32, 0, 32],
+      "incumbent-276672029": [0, 32, 0, 32],
+      "incumbent-773107239": [0, 32, 0, 32],
+      "kit7-1944973921": [0, 32, 22, 32],
+      "kit7-276672029": [0, 32, 15, 32],
+      "kit7-773107239": [0, 32, 17, 32],
+      "rows2-1944973921": [21, 32, 4, 32],
+      "rows2-276672029": [17, 32, 4, 32],
+      "rows2-773107239": [23, 32, 2, 32],
+      "side3-1944973921": [10, 32, 0, 32],
+      "side3-276672029": [13, 32, 0, 32],
+      "side3-773107239": [4, 32, 0, 32],
+      "side8-1944973921": [21, 32, 0, 32],
+      "side8-276672029": [18, 32, 0, 32],
+      "side8-773107239": [14, 32, 0, 32]
+    },
+    "locked": {
+      "dagger2-1958371793": [0, 32, 5, 32],
+      "dagger2-357179861": [0, 32, 5, 32],
+      "dagger2-748006211": [0, 32, 2, 32],
+      "incumbent-1958371793": [0, 32, 0, 32],
+      "incumbent-357179861": [0, 32, 0, 32],
+      "incumbent-748006211": [0, 32, 0, 32],
+      "rows2-1958371793": [12, 32, 0, 32],
+      "rows2-357179861": [15, 32, 3, 32],
+      "rows2-748006211": [18, 32, 3, 32]
+    }
+  },
+  "fixedKitProtocol": "12 paired starts per campaign, two campaigns, same pilot and stationary target state except pilot primary. Secondary fixed to halo, melee and utility retained; same initial heading.",
+  "fixedKit": {
+    "elite0-125132953-firefly": [0, 12, 0, 12],
+    "elite0-125132953-lumen": [5, 12, 5, 12],
+    "elite0-1980324181-firefly": [0, 12, 0, 12],
+    "elite0-1980324181-lumen": [8, 12, 8, 12],
+    "gear100-125132953-firefly": [0, 12, 1, 12],
+    "gear100-125132953-lumen": [5, 12, 5, 12],
+    "gear100-1980324181-firefly": [0, 12, 0, 12],
+    "gear100-1980324181-lumen": [8, 12, 8, 12],
+    "incumbent-125132953-corona": [0, 12, 0, 12],
+    "incumbent-125132953-firefly": [0, 12, 0, 12],
+    "incumbent-125132953-longnight": [0, 12, 0, 12],
+    "incumbent-125132953-lumen": [0, 12, 0, 12],
+    "incumbent-1980324181-corona": [0, 12, 0, 12],
+    "incumbent-1980324181-firefly": [0, 12, 0, 12],
+    "incumbent-1980324181-longnight": [0, 12, 0, 12],
+    "incumbent-1980324181-lumen": [0, 12, 0, 12],
+    "kit7-125132953-corona": [0, 12, 5, 12],
+    "kit7-125132953-firefly": [0, 12, 1, 12],
+    "kit7-125132953-longnight": [0, 12, 7, 12],
+    "kit7-125132953-lumen": [0, 12, 6, 12],
+    "kit7-1980324181-corona": [0, 12, 9, 12],
+    "kit7-1980324181-firefly": [0, 12, 2, 12],
+    "kit7-1980324181-longnight": [0, 12, 9, 12],
+    "kit7-1980324181-lumen": [0, 12, 9, 12],
+    "rows2-125132953-corona": [7, 12, 0, 12],
+    "rows2-125132953-firefly": [6, 12, 5, 12],
+    "rows2-125132953-longnight": [7, 12, 0, 12],
+    "rows2-125132953-lumen": [8, 12, 0, 12],
+    "rows2-1980324181-corona": [8, 12, 0, 12],
+    "rows2-1980324181-firefly": [8, 12, 8, 12],
+    "rows2-1980324181-longnight": [8, 12, 0, 12],
+    "rows2-1980324181-lumen": [1, 12, 0, 12]
+  },
+  "headingProtocol": "Counts on final random-kit cohort (276672029,1944973921,773107239) for kit7.",
+  "heading": {
+    "canonical": [0, 58, 49, 58],
+    "randomized": [0, 38, 5, 38]
+  },
+  "spawnColumns": ["mean net forward m/s", "low displacement windows", "unseen windows", "acquired static target", "eligible static starts"],
+  "closeColumns": ["map", "moving", "trials", "candidate by .5s", "incumbent by .5s", "candidate by 2s", "incumbent by 2s"],
+  "nineMap": {
+    "eval-dagger2": {
+      "campaigns": [789562021, 1331524117, 311506391],
+      "spawn": {
+        "all": [2.4591, 526, 4243, 71, 270],
+        "frostcourt": [1.4983, 76, 502, 1, 30],
+        "homeward": [1.8218, 46, 569, 0, 30],
+        "blackflag": [2.9942, 70, 453, 17, 30],
+        "suntemple": [2.6527, 94, 444, 9, 30],
+        "orleans": [2.231, 46, 507, 4, 30],
+        "aster": [3.8006, 1, 438, 18, 30],
+        "sakura": [3.2271, 20, 404, 12, 30],
+        "lishan": [1.6267, 75, 396, 2, 30],
+        "camlann": [2.2796, 98, 530, 8, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 11, 16, 27, 28],
+        ["frostcourt", true, 96, 14, 16, 37, 26],
+        ["homeward", false, 48, 12, 23, 28, 32],
+        ["homeward", true, 96, 30, 25, 49, 44],
+        ["blackflag", false, 48, 17, 22, 31, 32],
+        ["blackflag", true, 96, 36, 37, 50, 45]
+      ]
+    },
+    "eval-elite0": {
+      "campaigns": [789562021, 1331524117, 311506391],
+      "spawn": {
+        "all": [3.2908, 702, 4178, 76, 270],
+        "frostcourt": [3.0272, 70, 490, 8, 30],
+        "homeward": [3.5677, 43, 546, 7, 30],
+        "blackflag": [3.3395, 73, 487, 0, 30],
+        "suntemple": [3.4856, 38, 387, 12, 30],
+        "orleans": [1.8739, 211, 540, 1, 30],
+        "aster": [4.6079, 0, 433, 20, 30],
+        "sakura": [4.2043, 11, 371, 20, 30],
+        "lishan": [1.9274, 202, 418, 0, 30],
+        "camlann": [3.5832, 54, 506, 8, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 9, 16, 27, 28],
+        ["frostcourt", true, 96, 16, 16, 38, 26],
+        ["homeward", false, 48, 9, 23, 26, 32],
+        ["homeward", true, 96, 31, 25, 53, 44],
+        ["blackflag", false, 48, 21, 22, 32, 32],
+        ["blackflag", true, 96, 35, 37, 52, 45]
+      ]
+    },
+    "eval-gear100": {
+      "campaigns": [789562021, 1331524117, 311506391],
+      "spawn": {
+        "all": [3.2886, 755, 4142, 96, 270],
+        "frostcourt": [3.356, 64, 457, 8, 30],
+        "homeward": [3.2964, 55, 543, 5, 30],
+        "blackflag": [3.6042, 32, 488, 0, 30],
+        "suntemple": [3.062, 70, 400, 13, 30],
+        "orleans": [1.7797, 255, 550, 3, 30],
+        "aster": [4.6477, 0, 398, 21, 30],
+        "sakura": [4.3346, 1, 390, 25, 30],
+        "lishan": [1.6901, 235, 437, 0, 30],
+        "camlann": [3.827, 43, 479, 21, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 10, 16, 24, 28],
+        ["frostcourt", true, 96, 16, 16, 41, 26],
+        ["homeward", false, 48, 18, 23, 37, 32],
+        ["homeward", true, 96, 28, 25, 59, 44],
+        ["blackflag", false, 48, 27, 22, 38, 32],
+        ["blackflag", true, 96, 34, 37, 63, 45]
+      ]
+    },
+    "eval-incumbent": {
+      "campaigns": [789562021, 1331524117, 311506391],
+      "spawn": {
+        "all": [1.8802, 697, 4602, 25, 270],
+        "frostcourt": [1.7272, 89, 538, 0, 30],
+        "homeward": [2.3223, 31, 578, 1, 30],
+        "blackflag": [1.344, 125, 529, 3, 30],
+        "suntemple": [1.3771, 165, 537, 0, 30],
+        "orleans": [1.5943, 136, 551, 3, 30],
+        "aster": [2.5466, 10, 535, 2, 30],
+        "sakura": [2.1544, 31, 390, 12, 30],
+        "lishan": [1.6083, 63, 421, 0, 30],
+        "camlann": [2.2475, 47, 523, 4, 30]
+      },
+      "close": []
+    },
+    "eval-mix25": {
+      "campaigns": [789562021, 1331524117, 311506391],
+      "spawn": {
+        "all": [2.3765, 353, 4257, 68, 270],
+        "frostcourt": [2.28, 10, 513, 0, 30],
+        "homeward": [2.623, 14, 549, 4, 30],
+        "blackflag": [1.3494, 166, 456, 11, 30],
+        "suntemple": [2.4272, 22, 450, 11, 30],
+        "orleans": [2.2393, 52, 539, 1, 30],
+        "aster": [2.9457, 2, 452, 14, 30],
+        "sakura": [2.6609, 19, 348, 14, 30],
+        "lishan": [2.2345, 51, 408, 13, 30],
+        "camlann": [2.6286, 17, 542, 0, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 12, 16, 21, 28],
+        ["frostcourt", true, 96, 10, 16, 42, 26],
+        ["homeward", false, 48, 30, 23, 40, 32],
+        ["homeward", true, 96, 33, 25, 57, 44],
+        ["blackflag", false, 48, 30, 22, 41, 32],
+        ["blackflag", true, 96, 32, 37, 58, 45]
+      ]
+    },
+    "eval-wide600": {
+      "campaigns": [789562021, 1331524117, 311506391],
+      "spawn": {
+        "all": [1.2134, 1205, 4864, 17, 270],
+        "frostcourt": [0.4783, 193, 588, 0, 30],
+        "homeward": [1.4989, 103, 560, 1, 30],
+        "blackflag": [1.2677, 270, 550, 0, 30],
+        "suntemple": [0.8811, 194, 581, 0, 30],
+        "orleans": [1.3759, 42, 538, 8, 30],
+        "aster": [1.2228, 85, 542, 0, 30],
+        "sakura": [1.2579, 149, 511, 1, 30],
+        "lishan": [1.3503, 144, 490, 0, 30],
+        "camlann": [1.5878, 25, 504, 7, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 4, 16, 18, 28],
+        ["frostcourt", true, 96, 15, 16, 37, 26],
+        ["homeward", false, 48, 19, 23, 25, 32],
+        ["homeward", true, 96, 35, 25, 56, 44],
+        ["blackflag", false, 48, 20, 22, 33, 32],
+        ["blackflag", true, 96, 32, 37, 57, 45]
+      ]
+    },
+    "validation-elite0": {
+      "campaigns": [199467581, 1217539919, 349256689],
+      "spawn": {
+        "all": [3.198, 706, 4159, 69, 270],
+        "frostcourt": [3.2611, 57, 483, 4, 30],
+        "homeward": [3.255, 65, 529, 8, 30],
+        "blackflag": [3.1679, 59, 497, 1, 30],
+        "suntemple": [3.3538, 50, 398, 11, 30],
+        "orleans": [1.7055, 217, 555, 1, 30],
+        "aster": [4.6195, 0, 421, 18, 30],
+        "sakura": [4.1857, 1, 355, 19, 30],
+        "lishan": [1.4874, 224, 412, 0, 30],
+        "camlann": [3.7456, 33, 509, 7, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 14, 19, 21, 29],
+        ["frostcourt", true, 96, 23, 24, 48, 41],
+        ["homeward", false, 48, 11, 20, 20, 33],
+        ["homeward", true, 96, 24, 30, 49, 51],
+        ["blackflag", false, 48, 14, 23, 26, 34],
+        ["blackflag", true, 96, 34, 26, 54, 48]
+      ]
+    },
+    "validation-gear100": {
+      "campaigns": [199467581, 1217539919, 349256689],
+      "spawn": {
+        "all": [3.2424, 774, 4104, 84, 270],
+        "frostcourt": [3.1099, 73, 466, 4, 30],
+        "homeward": [3.1882, 69, 529, 6, 30],
+        "blackflag": [3.5626, 39, 484, 1, 30],
+        "suntemple": [3.2958, 50, 398, 13, 30],
+        "orleans": [1.7159, 254, 550, 1, 30],
+        "aster": [4.6519, 0, 421, 21, 30],
+        "sakura": [4.1827, 15, 369, 22, 30],
+        "lishan": [1.5572, 247, 421, 0, 30],
+        "camlann": [3.9173, 27, 466, 16, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 18, 19, 23, 29],
+        ["frostcourt", true, 96, 23, 24, 52, 41],
+        ["homeward", false, 48, 16, 20, 29, 33],
+        ["homeward", true, 96, 30, 30, 60, 51],
+        ["blackflag", false, 48, 26, 23, 36, 34],
+        ["blackflag", true, 96, 29, 26, 63, 48]
+      ]
+    },
+    "validation-incumbent": {
+      "campaigns": [199467581, 1217539919, 349256689],
+      "spawn": {
+        "all": [1.8852, 758, 4660, 19, 270],
+        "frostcourt": [1.5769, 96, 548, 0, 30],
+        "homeward": [2.3056, 44, 582, 2, 30],
+        "blackflag": [1.6247, 106, 535, 0, 30],
+        "suntemple": [1.2683, 171, 555, 0, 30],
+        "orleans": [1.4873, 152, 549, 2, 30],
+        "aster": [2.6582, 0, 533, 3, 30],
+        "sakura": [2.3649, 40, 397, 10, 30],
+        "lishan": [1.4284, 102, 418, 0, 30],
+        "camlann": [2.2529, 47, 543, 2, 30]
+      },
+      "close": []
+    },
+    "validation-kit7": {
+      "campaigns": [199467581, 1217539919, 349256689],
+      "spawn": {
+        "all": [3.0983, 882, 4275, 79, 270],
+        "frostcourt": [2.9186, 65, 495, 6, 30],
+        "homeward": [3.1181, 107, 546, 3, 30],
+        "blackflag": [2.5563, 168, 489, 10, 30],
+        "suntemple": [3.1823, 105, 410, 14, 30],
+        "orleans": [2.0907, 136, 521, 8, 30],
+        "aster": [4.7225, 3, 464, 14, 30],
+        "sakura": [3.6384, 66, 362, 14, 30],
+        "lishan": [2.2859, 143, 450, 7, 30],
+        "camlann": [3.3723, 89, 538, 3, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 19, 19, 31, 29],
+        ["frostcourt", true, 96, 30, 24, 50, 41],
+        ["homeward", false, 48, 12, 20, 31, 33],
+        ["homeward", true, 96, 26, 30, 56, 51],
+        ["blackflag", false, 48, 22, 23, 35, 34],
+        ["blackflag", true, 96, 30, 26, 66, 48]
+      ]
+    },
+    "validation-rows2": {
+      "campaigns": [199467581, 1217539919, 349256689],
+      "spawn": {
+        "all": [3.1022, 944, 4404, 79, 270],
+        "frostcourt": [2.9641, 98, 490, 8, 30],
+        "homeward": [3.3162, 47, 565, 11, 30],
+        "blackflag": [2.7104, 137, 494, 0, 30],
+        "suntemple": [2.541, 189, 521, 4, 30],
+        "orleans": [1.8913, 225, 510, 13, 30],
+        "aster": [4.6388, 5, 456, 14, 30],
+        "sakura": [4.1277, 7, 387, 24, 30],
+        "lishan": [2.3659, 157, 450, 4, 30],
+        "camlann": [3.3646, 79, 531, 1, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 15, 19, 26, 29],
+        ["frostcourt", true, 96, 22, 24, 41, 41],
+        ["homeward", false, 48, 18, 20, 33, 33],
+        ["homeward", true, 96, 26, 30, 66, 51],
+        ["blackflag", false, 48, 19, 23, 30, 34],
+        ["blackflag", true, 96, 33, 26, 62, 48]
+      ]
+    },
+    "validation-side3": {
+      "campaigns": [199467581, 1217539919, 349256689],
+      "spawn": {
+        "all": [3.0367, 837, 4393, 57, 270],
+        "frostcourt": [2.7363, 130, 500, 3, 30],
+        "homeward": [3.9062, 9, 542, 8, 30],
+        "blackflag": [2.5567, 38, 538, 0, 30],
+        "suntemple": [2.5537, 171, 502, 3, 30],
+        "orleans": [1.4884, 257, 534, 3, 30],
+        "aster": [4.3347, 7, 442, 16, 30],
+        "sakura": [3.6544, 38, 378, 14, 30],
+        "lishan": [2.298, 166, 438, 3, 30],
+        "camlann": [3.8016, 21, 519, 7, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 15, 19, 26, 29],
+        ["frostcourt", true, 96, 21, 24, 39, 41],
+        ["homeward", false, 48, 19, 20, 30, 33],
+        ["homeward", true, 96, 28, 30, 63, 51],
+        ["blackflag", false, 48, 18, 23, 28, 34],
+        ["blackflag", true, 96, 37, 26, 64, 48]
+      ]
+    },
+    "lockedmap-incumbent": {
+      "campaigns": [1292751979, 973158187, 697057109],
+      "spawn": {
+        "all": [1.885, 661, 4713, 16, 270],
+        "frostcourt": [1.7656, 61, 560, 0, 30],
+        "homeward": [2.3036, 24, 583, 0, 30],
+        "blackflag": [1.5125, 101, 510, 3, 30],
+        "suntemple": [1.1915, 183, 555, 0, 30],
+        "orleans": [1.4836, 131, 549, 0, 30],
+        "aster": [2.6578, 12, 526, 2, 30],
+        "sakura": [2.254, 27, 428, 10, 30],
+        "lishan": [1.6582, 75, 456, 0, 30],
+        "camlann": [2.1385, 47, 546, 1, 30]
+      },
+      "close": []
+    },
+    "lockedmap-rows2": {
+      "campaigns": [1292751979, 973158187, 697057109],
+      "spawn": {
+        "all": [3.0595, 1051, 4474, 73, 270],
+        "frostcourt": [2.7418, 119, 507, 10, 30],
+        "homeward": [3.4778, 44, 564, 13, 30],
+        "blackflag": [2.7996, 141, 487, 0, 30],
+        "suntemple": [2.309, 211, 528, 1, 30],
+        "orleans": [1.8073, 232, 516, 9, 30],
+        "aster": [4.7264, 1, 469, 16, 30],
+        "sakura": [4.0254, 23, 402, 23, 30],
+        "lishan": [2.4719, 169, 469, 0, 30],
+        "camlann": [3.1766, 111, 532, 1, 30]
+      },
+      "close": [
+        ["frostcourt", false, 48, 10, 22, 26, 31],
+        ["frostcourt", true, 96, 23, 21, 54, 43],
+        ["homeward", false, 48, 14, 18, 34, 27],
+        ["homeward", true, 96, 21, 28, 48, 37],
+        ["blackflag", false, 48, 27, 32, 38, 37],
+        ["blackflag", true, 96, 46, 43, 73, 64]
+      ]
+    }
+  },
+  "tournaments": {
+    "elite0-1272703103": {
+      "failed": ["rearSearch", "smokeContact"],
+      "fullRounds": 0,
+      "comparisons": {},
+      "diagnostic": {
+        "map": "homeward",
+        "seed": 2244475757,
+        "opponent": "incumbent",
+        "modes": {
+          "1v1": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 0,
+            "tied": 1,
+            "winFractionWithDraws": 0.5,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 0,
+            "legLosses": 0,
+            "legDraws": 2,
+            "meanScoreMargin": 0
+          },
+          "2v2": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 0,
+            "tied": 1,
+            "winFractionWithDraws": 0.5,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 0,
+            "legLosses": 0,
+            "legDraws": 2,
+            "meanScoreMargin": 0
+          }
+        }
+      }
+    },
+    "elite0-934910017": {
+      "failed": ["candidateHasSearch", "rearSearch"],
+      "fullRounds": 0,
+      "comparisons": {},
+      "diagnostic": {
+        "map": "aster",
+        "seed": 2638686861,
+        "opponent": "incumbent",
+        "modes": {
+          "1v1": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 0,
+            "tied": 1,
+            "winFractionWithDraws": 0.5,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 1,
+            "legLosses": 1,
+            "legDraws": 0,
+            "meanScoreMargin": 0
+          },
+          "2v2": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 0,
+            "tied": 1,
+            "winFractionWithDraws": 0.5,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 1,
+            "legLosses": 1,
+            "legDraws": 0,
+            "meanScoreMargin": -3
+          }
+        }
+      }
+    },
+    "gear100-1245971317": {
+      "failed": ["candidateHasSearch", "rearSearch", "spawnSearchProgress"],
+      "fullRounds": 0,
+      "comparisons": {},
+      "diagnostic": {
+        "map": "frostcourt",
+        "seed": 2582166729,
+        "opponent": "incumbent",
+        "modes": {
+          "1v1": {
+            "blocks": 1,
+            "wins": 1,
+            "losses": 0,
+            "tied": 0,
+            "winFractionWithDraws": 1,
+            "oneSidedP": 0.5,
+            "legs": 2,
+            "legWins": 2,
+            "legLosses": 0,
+            "legDraws": 0,
+            "meanScoreMargin": 1
+          },
+          "2v2": {
+            "blocks": 1,
+            "wins": 1,
+            "losses": 0,
+            "tied": 0,
+            "winFractionWithDraws": 1,
+            "oneSidedP": 0.5,
+            "legs": 2,
+            "legWins": 2,
+            "legLosses": 0,
+            "legDraws": 0,
+            "meanScoreMargin": 1.5
+          }
+        }
+      }
+    },
+    "gear100-845535763": {
+      "failed": ["candidateHasSearch", "rearSearch", "smokeContact"],
+      "fullRounds": 0,
+      "comparisons": {},
+      "diagnostic": {
+        "map": "camlann",
+        "seed": 2724214946,
+        "opponent": "incumbent",
+        "modes": {
+          "1v1": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 1,
+            "tied": 0,
+            "winFractionWithDraws": 0.25,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 0,
+            "legLosses": 1,
+            "legDraws": 1,
+            "meanScoreMargin": -1
+          },
+          "2v2": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 0,
+            "tied": 1,
+            "winFractionWithDraws": 0.5,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 1,
+            "legLosses": 1,
+            "legDraws": 0,
+            "meanScoreMargin": 0
+          }
+        }
+      }
+    },
+    "kit7-1613044957": {
+      "failed": ["rearSearch", "smokeContact"],
+      "fullRounds": 0,
+      "comparisons": {},
+      "diagnostic": {
+        "map": "frostcourt",
+        "seed": 2979986336,
+        "opponent": "incumbent",
+        "modes": {
+          "1v1": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 0,
+            "tied": 1,
+            "winFractionWithDraws": 0.5,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 0,
+            "legLosses": 0,
+            "legDraws": 2,
+            "meanScoreMargin": 0
+          },
+          "2v2": {
+            "blocks": 1,
+            "wins": 1,
+            "losses": 0,
+            "tied": 0,
+            "winFractionWithDraws": 0.75,
+            "oneSidedP": 0.5,
+            "legs": 2,
+            "legWins": 1,
+            "legLosses": 0,
+            "legDraws": 1,
+            "meanScoreMargin": 3.5
+          }
+        }
+      }
+    },
+    "kit7-437913989": {
+      "failed": ["rearSearch", "wallStalls"],
+      "fullRounds": 0,
+      "comparisons": {},
+      "diagnostic": {
+        "map": "blackflag",
+        "seed": 2168675917,
+        "opponent": "incumbent",
+        "modes": {
+          "1v1": {
+            "blocks": 1,
+            "wins": 1,
+            "losses": 0,
+            "tied": 0,
+            "winFractionWithDraws": 0.75,
+            "oneSidedP": 0.5,
+            "legs": 2,
+            "legWins": 1,
+            "legLosses": 0,
+            "legDraws": 1,
+            "meanScoreMargin": 1.5
+          },
+          "2v2": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 1,
+            "tied": 0,
+            "winFractionWithDraws": 0.25,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 0,
+            "legLosses": 1,
+            "legDraws": 1,
+            "meanScoreMargin": -4
+          }
+        }
+      }
+    },
+    "rows2-1791311083": {
+      "failed": ["candidateHasSearch", "rearSearch", "spawnSearchProgress"],
+      "fullRounds": 0,
+      "comparisons": {},
+      "diagnostic": {
+        "map": "suntemple",
+        "seed": 2174016035,
+        "opponent": "incumbent",
+        "modes": {
+          "1v1": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 1,
+            "tied": 0,
+            "winFractionWithDraws": 0.25,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 0,
+            "legLosses": 1,
+            "legDraws": 1,
+            "meanScoreMargin": -1
+          },
+          "2v2": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 0,
+            "tied": 1,
+            "winFractionWithDraws": 0.5,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 1,
+            "legLosses": 1,
+            "legDraws": 0,
+            "meanScoreMargin": 1
+          }
+        }
+      }
+    },
+    "rows2-429000793": {
+      "failed": ["rearSearch", "spawnSearchProgress"],
+      "fullRounds": 0,
+      "comparisons": {},
+      "diagnostic": {
+        "map": "blackflag",
+        "seed": 2612779286,
+        "opponent": "incumbent",
+        "modes": {
+          "1v1": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 0,
+            "tied": 1,
+            "winFractionWithDraws": 0.5,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 1,
+            "legLosses": 1,
+            "legDraws": 0,
+            "meanScoreMargin": 0
+          },
+          "2v2": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 0,
+            "tied": 1,
+            "winFractionWithDraws": 0.5,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 1,
+            "legLosses": 1,
+            "legDraws": 0,
+            "meanScoreMargin": -0.5
+          }
+        }
+      }
+    },
+    "side3-1559728147": {
+      "failed": ["candidateHasSearch", "rearSearch"],
+      "fullRounds": 0,
+      "comparisons": {},
+      "diagnostic": {
+        "map": "frostcourt",
+        "seed": 2432464145,
+        "opponent": "incumbent",
+        "modes": {
+          "1v1": {
+            "blocks": 1,
+            "wins": 1,
+            "losses": 0,
+            "tied": 0,
+            "winFractionWithDraws": 0.75,
+            "oneSidedP": 0.5,
+            "legs": 2,
+            "legWins": 1,
+            "legLosses": 0,
+            "legDraws": 1,
+            "meanScoreMargin": 0.5
+          },
+          "2v2": {
+            "blocks": 1,
+            "wins": 1,
+            "losses": 0,
+            "tied": 0,
+            "winFractionWithDraws": 0.75,
+            "oneSidedP": 0.5,
+            "legs": 2,
+            "legWins": 1,
+            "legLosses": 0,
+            "legDraws": 1,
+            "meanScoreMargin": 4.5
+          }
+        }
+      }
+    },
+    "side3-763232171": {
+      "failed": ["rearSearch"],
+      "fullRounds": 0,
+      "comparisons": {},
+      "diagnostic": {
+        "map": "aster",
+        "seed": 2960418929,
+        "opponent": "incumbent",
+        "modes": {
+          "1v1": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 1,
+            "tied": 0,
+            "winFractionWithDraws": 0.25,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 0,
+            "legLosses": 1,
+            "legDraws": 1,
+            "meanScoreMargin": -0.5
+          },
+          "2v2": {
+            "blocks": 1,
+            "wins": 0,
+            "losses": 0,
+            "tied": 1,
+            "winFractionWithDraws": 0.5,
+            "oneSidedP": 1,
+            "legs": 2,
+            "legWins": 1,
+            "legLosses": 1,
+            "legDraws": 0,
+            "meanScoreMargin": 1
+          }
+        }
+      }
+    }
+  },
+  "decision": "Save both offline checkpoints. Discovery from A and B improved in separate controlled experiments. Keep the production weights; independent combat/search gates remain unsatisfied, and the new policies lack a fresh private human replay evaluation."
+}
