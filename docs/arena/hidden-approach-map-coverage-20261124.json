@@ -1,0 +1,155 @@
+{
+  "source": "b1ff2069e77e712c2351748074f2b2895bc57615",
+  "experiment": "Same frozen policies and hidden-approach samplers as hidden-approach-curriculum-20261124.json, now using unchanged lobby headings. Same characters, equipment, side, geometry and match seed within each comparison. Candidate is full. Trials are initially unobserved stationary targets, both seats, 30 seconds, clear camera contact. No optimizer update in these fixture comparisons.",
+  "columns": ["clear sightings", "eligible starts", "shortened placements"],
+  "priorityMaps": {
+    "seeds": [418905731, 1908473131],
+    "maps": {
+      "blackflag": {
+        "incumbent": {
+          "spawn": [7, 40, 0],
+          "existing": [8, 40, 40],
+          "edge": [22, 40, 40]
+        },
+        "candidate": {
+          "spawn": [14, 40, 0],
+          "existing": [11, 40, 40],
+          "edge": [18, 40, 40]
+        }
+      },
+      "frostcourt": {
+        "incumbent": {
+          "spawn": [0, 40, 0],
+          "existing": [0, 40, 40],
+          "edge": [2, 40, 40]
+        },
+        "candidate": {
+          "spawn": [0, 40, 0],
+          "existing": [9, 40, 40],
+          "edge": [11, 40, 40]
+        }
+      },
+      "homeward": {
+        "incumbent": {
+          "spawn": [3, 40, 0],
+          "existing": [34, 40, 40],
+          "edge": [40, 40, 40]
+        },
+        "candidate": {
+          "spawn": [13, 40, 0],
+          "existing": [16, 40, 40],
+          "edge": [22, 40, 40]
+        }
+      }
+    }
+  },
+  "otherMaps": {
+    "seeds": [835917031, 1409816191],
+    "maps": {
+      "aster": {
+        "incumbent": {
+          "existing": [13, 32, 32],
+          "edge": [1, 32, 32]
+        },
+        "candidate": {
+          "existing": [19, 32, 32],
+          "edge": [16, 32, 32]
+        }
+      },
+      "camlann": {
+        "incumbent": {
+          "existing": [18, 32, 32],
+          "edge": [30, 32, 32]
+        },
+        "candidate": {
+          "existing": [11, 32, 32],
+          "edge": [29, 32, 32]
+        }
+      },
+      "lishan": {
+        "incumbent": {
+          "existing": [12, 32, 32],
+          "edge": [27, 32, 32]
+        },
+        "candidate": {
+          "existing": [10, 32, 32],
+          "edge": [22, 32, 32]
+        }
+      },
+      "orleans": {
+        "incumbent": {
+          "existing": [25, 32, 32],
+          "edge": [27, 32, 32]
+        },
+        "candidate": {
+          "existing": [5, 32, 32],
+          "edge": [17, 32, 32]
+        }
+      },
+      "sakura": {
+        "incumbent": {
+          "existing": [21, 32, 32],
+          "edge": [25, 32, 32]
+        },
+        "candidate": {
+          "existing": [11, 32, 32],
+          "edge": [15, 32, 32]
+        }
+      },
+      "suntemple": {
+        "incumbent": {
+          "existing": [19, 32, 32],
+          "edge": [32, 32, 32]
+        },
+        "candidate": {
+          "existing": [11, 32, 32],
+          "edge": [17, 32, 32]
+        }
+      }
+    }
+  },
+  "asterConfirmation": {
+    "seeds": [558617953, 1029399149, 2111863597],
+    "maps": {
+      "aster": {
+        "incumbent": {
+          "existing": [18, 48, 48],
+          "edge": [1, 48, 48]
+        },
+        "candidate": {
+          "existing": [22, 48, 48],
+          "edge": [20, 48, 48]
+        }
+      }
+    }
+  },
+  "online": {
+    "runtime": "b1ff2069e77e712c2351748074f2b2895bc57615",
+    "productionPolicy": "091e3994667018f4587831074809120460314266cec81895342381e9b6d0314d",
+    "checkpoint": 4970,
+    "evaluation": {
+      "generation": 4970,
+      "at": 1795534157084,
+      "reason": "evaluation_failed",
+      "failedGates": ["human_tracking", "rearSearch", "wallStalls", "spawnSearchProgress"],
+      "published": false,
+      "report": {
+        "rearSeconds": 7.027777777777778,
+        "referenceRearSeconds": 8.07638888888889,
+        "smokeBlindFire": 0,
+        "wallEscape": 1,
+        "roundSet": "diagnostic",
+        "opponent": "incumbent",
+        "duel": [0, 1, 1],
+        "team": [1, 0, 1],
+        "humanCamera": {
+          "captures": 1,
+          "windows": 367,
+          "turn": [0.1731786396192468, 0.17211871691372083],
+          "quiet": [0.043952681305252504, 0.04006158414288102]
+        }
+      }
+    },
+    "dataRevision": 645
+  }
+}
