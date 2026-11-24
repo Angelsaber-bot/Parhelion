@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {WORLD_PROGRESS_KEY} from '../src/core/progress';
 import {echoMarkerId} from '../src/story/echoDestinations';
+import {ADVENTURE} from '../src/story/openWorldCampaign';
+import {JOURNEY} from '../src/story/worldJourney';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
 
 test('the menu preserves a fresh prologue and each settlement points to its own Arena station', async () => {
@@ -69,4 +71,36 @@ test('an earned Egypt checkpoint saves on foot and starts the next streamed sess
     assert.ok(Math.abs(w.player.pos.y-stop.position[1])<1.2);
     assert.ok(w.done.has('armory_rack')); assert.deepEqual(resumed.errors,[]);
   } finally {await resumed.close();}
+});
+
+test('the live guide follows the Western Desert Road past the regional border and hands off at the market', async () => {
+  const seed = JSON.stringify({
+    done: ['armory_rack', 'summon_circle', 'adventure_v2', ADVENTURE.ending, JOURNEY.cutoff, JOURNEY.egyptRead, JOURNEY.egyptWeir, JOURNEY.egyptDone],
+    found: [],
+  });
+  const h = await bootWorldWithoutGpu({ deterministic: true, initialStorage: {
+    [WORLD_PROGRESS_KEY]: seed, 'parhelion-language-v1': 'en',
+  } });
+  try {
+    const { world, window } = h;
+    const doc = window.document, guide = doc.getElementById('guide')!;
+    doc.getElementById('world-enter')!.click();
+    await Promise.resolve();
+    let now = 0;
+    const stand = (x: number, z: number) => {
+      world.player.teleport(x, world.grid.sampleHeight(x, z) + .15, z);
+      for (let i = 0; i < 8; i++) h.frame(now += 1000 / 60);
+    };
+    stand(-200, -1520);
+    assert.ok(guide.classList.contains('on') && guide.classList.contains('travel'));
+    assert.equal(guide.querySelector('.label')?.textContent, 'Via Western Desert Road to Orleans');
+    stand(-470, -1240);
+    assert.ok(guide.classList.contains('travel'), 'the marker still follows the road around its next bend');
+    assert.match(guide.querySelector('.dist')?.textContent ?? '', /^3[0-9] m$/);
+    stand(-800, -1350);
+    assert.ok(guide.classList.contains('on'));
+    assert.ok(!guide.classList.contains('travel'));
+    assert.match(guide.querySelector('.label')?.textContent ?? '', /meet the defenders/i);
+    assert.deepEqual(h.errors, []);
+  } finally { await h.close(); }
 });

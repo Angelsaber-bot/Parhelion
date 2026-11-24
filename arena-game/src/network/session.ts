@@ -24,6 +24,8 @@ export interface Session {
   readonly mapId?: string;
   /** Private room code, shown in the HUD so friends can join. */
   readonly roomCode?: string;
+  /** Terminal peer failure, including one received before the game attaches its listener. */
+  readonly closeReason?: string;
   send(inputs: Input[]): void;
   onSnapshot: (s: Snapshot) => void;
   onClose: (reason: string) => void;
@@ -58,7 +60,7 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
   // ArenaRoom removes disconnected players and has no allowReconnection path.
   // Do not let the SDK silently retry a session that the server cannot restore.
   room.reconnection.enabled = false;
-  let closed = false;
+  let closed = false, closeReason: string | undefined;
   const closeRoom = () => {
     if (closed) return;
     closed = true; room.reconnection.enabled = false;
@@ -70,6 +72,7 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
     map: getMap(opts.map),
     mapId: mapIdOf(opts.map),
     roomCode: opts.room,
+    get closeReason() { return closeReason; },
     send: (inputs) => { if (!closed) room.send('input', inputs); },
     onSnapshot: () => {},
     onClose: () => {},
@@ -80,7 +83,7 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
   room.onMessage('snap', (snap: Snapshot) => {
     if (closed) return;
     try { assertRulesVersion(snap.rulesVersion); }
-    catch (error) { closeRoom(); s.onClose((error as Error).message); return; }
+    catch (error) { closeReason = (error as Error).message; closeRoom(); s.onClose(closeReason); return; }
     s.onSnapshot(snap);
   });
   // Old servers accept unknown join fields but advertise no current rules version: fail before starting prediction.
@@ -96,7 +99,10 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
     });
     room.onLeave(() => { clearTimeout(timeout); reject(new Error('服务器在版本确认前断开连接')); });
   });
-  room.onLeave((code: number) => { if (closed) return; closed = true; s.onClose(`disconnected (${code})`); });
+  room.onLeave((code: number) => {
+    if (closed) return;
+    closed = true; closeReason = `disconnected (${code})`; s.onClose(closeReason);
+  });
   return s;
 }
 
@@ -113,25 +119,31 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
     outbox = [];
   };
   return new Promise((resolve, reject) => {
-    let s: Session | null = null, joinFailed = false;
-    const failJoin = (error: unknown) => {
-      if (s || joinFailed) return;
-      joinFailed = true; clearTimeout(timeout); clearQueued();
-      // The caller no longer owns this socket after rejection. A delayed peer
-      // close or welcome must not create an unreachable live Session.
+    let s: Session | null = null, terminal = false, closeReason: string | undefined;
+    const endSocket = (notify?: string, closeCode?: number) => {
+      if (terminal) return;
+      terminal = true; closeReason = notify;
+      clearTimeout(timeout); clearQueued();
       ws.onmessage = null; ws.onerror = null; ws.onclose = null;
-      try { if (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN) ws.close(); } catch { /* rejected join remains terminal */ }
+      try {
+        if (closeCode !== undefined && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) ws.close(closeCode);
+      } catch { /* terminal ownership has already ended */ }
+      if (notify) s?.onClose(notify);
+    };
+    const failJoin = (error: unknown, peerClosed = false) => {
+      if (s || terminal) return;
+      endSocket(undefined, peerClosed ? undefined : 1000);
       reject(error);
     };
     const timeout = setTimeout(() => failJoin(new Error('timeout')), 10000);
     ws.onmessage = (ev) => {
-      if (joinFailed) return;
+      if (terminal) return;
       let msg: { t: string; d: unknown };
       try { msg = JSON.parse(ev.data as string); } catch { return; }
       if (msg.t === 'snap') {
         const snap = msg.d as Snapshot;
         try { assertRulesVersion(snap.rulesVersion); }
-        catch (error) { if (s) { s.onClose((error as Error).message); ws.close(); } else failJoin(error); return; }
+        catch (error) { if (s) endSocket((error as Error).message, 1000); else failJoin(error); return; }
         s?.onSnapshot(snap);
       }
       else if (msg.t === 'welcome' && !s) {
@@ -145,16 +157,17 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
           map: getMap((msg.d as { map?: string }).map ?? opts.map),
           mapId: mapIdOf((msg.d as { map?: string }).map ?? opts.map),
           roomCode: opts.room,
+          get closeReason() { return closeReason; },
           send: (inputs) => {
-            if (ws.readyState !== WebSocket.OPEN) return;
+            if (terminal || ws.readyState !== WebSocket.OPEN) return;
             outbox.push(...inputs);
             if (outbox.length > 16) sendNow();
             else flush ??= setTimeout(sendNow, 30);
           },
           onSnapshot: () => {},
           onClose: () => {},
-          close: () => { clearQueued(); ws.close(1000); },
-          rematch: () => { clearQueued(); if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ t: 'rematch' })); },
+          close: () => endSocket(undefined, 1000),
+          rematch: () => { clearQueued(); if (!terminal && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ t: 'rematch' })); },
           setPaused: () => {},
         };
         resolve(s);
@@ -162,9 +175,8 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
     };
     ws.onerror = () => { if (!s) failJoin(new Error('无法连接服务器')); };
     ws.onclose = (ev) => {
-      clearQueued();
-      if (s) s.onClose(`disconnected (${ev.code})`);
-      else failJoin(new Error(`连接被关闭 (${ev.code})`));
+      if (s) endSocket(`disconnected (${ev.code})`);
+      else failJoin(new Error(`连接被关闭 (${ev.code})`), true);
     };
   });
 }

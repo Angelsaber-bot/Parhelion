@@ -169,19 +169,19 @@ export const ORLEANS_LIT_SITES=8;
 export const ORLEANS_PAVED_COURTS:readonly (readonly [number,number,number,number])[]=[[-685,-1552,20,12],[-800,-1350,23,18]];
 
 export interface ExpansionConnection {
-  id:string; from:WorldRegionId; to:ExpansionRegionId; name:string;
+  id:string; from:WorldRegionId; to:ExpansionRegionId; name:string; nameEn:string;
   /** World-space road across broad, continuous land; never the only crossing. */
   points: MapPoint2[]; width:number;
 }
 export const EXPANSION_CONNECTIONS: ExpansionConnection[] = [
   // Over the desert's western flank to the Loire, entering Orleans by its south gate road.
-  {id:'egypt-orleans',from:'egypt',to:'orleans',name:'沙海西境古道',points:[[-200,-1520],[-470,-1240],[-720,-1140],[-800,-1350]],width:18},
+  {id:'egypt-orleans',from:'egypt',to:'orleans',name:'沙海西境古道',nameEn:'Western Desert Road',points:[[-200,-1520],[-470,-1240],[-720,-1140],[-800,-1350]],width:18},
   // From the snowfield west of the city to Qin's post road (which faces 永冬 after the half turn).
-  {id:'winter-qin',from:'winter',to:'qin',name:'西境山河驿道',points:[[-140,-780],[-420,-800],[-535,-820]],width:18},
+  {id:'winter-qin',from:'winter',to:'qin',name:'西境山河驿道',nameEn:'Western Post Road',points:[[-140,-780],[-420,-800],[-535,-820]],width:18},
   // Both ends turned half a circle: the caravan road still runs from Kyoto's west gate to the oasis.
-  {id:'kyoto-egypt',from:'kyoto',to:'egypt',name:'沙海商队古道',points:[[600,-1440],[300,-1440],[165,-1550]],width:18},
+  {id:'kyoto-egypt',from:'kyoto',to:'egypt',name:'沙海商队古道',nameEn:'Desert Caravan Road',points:[[600,-1440],[300,-1440],[165,-1550]],width:18},
   // 幻日谷's old east pass now leads home.
-  {id:'alpha-home',from:'alpha',to:'home',name:'归乡大道',points:[[300,30],[420,30],[570,40]],width:18},
+  {id:'alpha-home',from:'alpha',to:'home',name:'归乡大道',nameEn:'Homeward Road',points:[[300,30],[420,30],[570,40]],width:18},
 ];
 
 export function distanceToLine(x:number,z:number,line:readonly MapPoint2[]):number {

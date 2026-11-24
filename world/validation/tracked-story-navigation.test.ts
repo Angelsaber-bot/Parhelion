@@ -1,31 +1,35 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { nextStoryPass, resolveTrackedStoryPoint, trackedStoryRouteBlocked } from '../src/story/trackedStoryNavigation';
-import { GATES } from '../src/map/regions';
+import { gateGuidePoint, GATE_LEAD, nextStoryPass, roadGuidePoint, trackedStoryRouteBlocked } from '../src/story/trackedStoryNavigation';
+import { GATES, regionAt } from '../src/map/regions';
+import { WORLD_REGION_IDS } from '../src/core/regionIdentity';
+import { EXPANSION_CONNECTIONS } from '../src/map/worldPlan';
 
 test('a local pin transitioning to a remote act falls back to the original story until the actual gate opens', () => {
-  const done = new Set<string>(), local = [10, 2, 30] as const;
-  assert.deepEqual(resolveTrackedStoryPoint('alpha', 'alpha', done, local), local);
-  assert.equal(resolveTrackedStoryPoint('alpha', 'blacksail', done, local), null);
-  assert.equal(resolveTrackedStoryPoint('alpha', 'winter', done, local), null);
+  const done = new Set<string>();
+  assert.equal(trackedStoryRouteBlocked('alpha', 'alpha', done), false);
+  assert.equal(nextStoryPass('alpha', 'blacksail', done), null);
+  assert.equal(nextStoryPass('alpha', 'winter', done), null);
   done.add('false_dawn_started'); done.add('false_dawn_route_harbor');
-  assert.equal(resolveTrackedStoryPoint('alpha', 'blacksail', done, local), null, 'story flags cannot unlock a main-route seam');
-  done.add('summon_circle'); assert.deepEqual(resolveTrackedStoryPoint('alpha', 'blacksail', done, local), GATES.winter.p);
-  done.delete('summon_circle'); assert.equal(resolveTrackedStoryPoint('alpha', 'blacksail', done, local), null);
+  assert.equal(trackedStoryRouteBlocked('alpha', 'blacksail', done), true, 'story flags cannot unlock a main-route seam');
+  done.add('summon_circle');
+  const pass = nextStoryPass('alpha', 'blacksail', done);
+  assert.ok(pass?.kind === 'gate'); assert.equal(pass.gate, GATES.winter);
+  done.delete('summon_circle'); assert.equal(nextStoryPass('alpha', 'blacksail', done), null);
 });
 test('direct-region saves can track local work but cannot be guided across a still-closed return seam', () => {
   const done = new Set<string>();
   assert.equal(trackedStoryRouteBlocked('winter', 'winter', done), false);
-  assert.deepEqual(resolveTrackedStoryPoint('winter', 'winter', done, [1, 2, 3]), [1, 2, 3]);
-  assert.equal(resolveTrackedStoryPoint('winter', 'alpha', done), null);
-  done.add('summon_circle'); assert.deepEqual(resolveTrackedStoryPoint('winter', 'blacksail', done), GATES.blacksail.p);
-  assert.equal(resolveTrackedStoryPoint('alpha', 'alpha', done), null);
-  const copy = resolveTrackedStoryPoint('winter', 'alpha', done)!; copy[0] = 999;
-  assert.notEqual(GATES.winter.p[0], 999);
+  assert.equal(trackedStoryRouteBlocked('winter', 'alpha', done), true);
+  assert.equal(trackedStoryRouteBlocked('home', 'alpha', done), false);
+  assert.equal(trackedStoryRouteBlocked('orleans', 'kyoto', done), false);
+  assert.equal(trackedStoryRouteBlocked('home', 'egypt', done), true, 'an open first road cannot bypass a closed later gate');
+  done.add('summon_circle');
+  assert.equal(nextStoryPass('winter', 'blacksail', done)?.toward, 'blacksail');
+  assert.equal(nextStoryPass('alpha', 'alpha', done), null);
+  assert.equal(nextStoryPass('sky', 'alpha', done), null, 'Sky Crown uses its authored launch and return markers');
 });
 
-import { gateGuidePoint, GATE_LEAD } from '../src/story/trackedStoryNavigation';
-import { readFileSync } from 'node:fs';
 test('a reached seam marker leads on into the next region instead of sitting under the player', () => {
   const gate = GATES.britain.p, toward: [number, number] = [-720, 0];
   assert.deepEqual(gateGuidePoint(gate, toward), [...gate], 'no player position: the marker itself');
@@ -43,25 +47,42 @@ test('a reached seam marker leads on into the next region instead of sitting und
   assert.deepEqual(gateGuidePoint(gate, toward, [NaN, 4, 0]), [...gate]);
   assert.deepEqual(gateGuidePoint(gate, [gate[0], gate[2]], [gate[0], 4, gate[2]]), [...gate], 'no direction to lead in');
   const copy = gateGuidePoint(gate, toward); copy[0] = 999; assert.notEqual(GATES.britain.p[0], 999, 'never hands out the shared tuple');
-  const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
-  assert.ok(main.includes('const y = grid.sampleHeight(q[0], q[2]);') && main.includes('return y === null ? q : [q[0], y, q[2]];'), 'shown on the ground, wherever it was authored');
-  assert.equal(main.split('resolveTrackedStoryPoint(here').length - 1, 1, 'every tracked story goes through the one seam-aware helper');
-  assert.ok(main.includes('seamGuidePoint(gate.p, here, o.region)'), 'legacy objective beacons also lead past a reached crossing');
 });
 
 test('all directions along the authored road converge without sending the player back to a previous region', () => {
-  const road = ['britain', 'alpha', 'winter', 'blacksail', 'kyoto'];
-  for (const start of road) for (const finish of road) {
+  for (const start of WORLD_REGION_IDS) for (const finish of WORLD_REGION_IDS) {
     let here = start;
     const visited = new Set<string>();
     while (here !== finish) {
       assert.ok(!visited.has(here)); visited.add(here);
       const passage = nextStoryPass(here, finish);
       assert.ok(passage);
-      assert.equal(Math.abs(road.indexOf(here) - road.indexOf(passage.toward)), 1);
+      if (passage.kind === 'road') {
+        assert.deepEqual([here, passage.toward].sort(), [passage.road.from, passage.road.to].sort());
+      }
       here = passage.toward;
     }
   }
   assert.equal(nextStoryPass('kyoto', 'britain')?.toward, 'blacksail');
   assert.equal(nextStoryPass('alpha', 'kyoto')?.toward, 'winter');
+  assert.equal(nextStoryPass('orleans', 'qin')?.toward, 'egypt');
+});
+
+test('the guide advances through each authored road in both directions and turns at bends', () => {
+  for (const road of EXPANSION_CONNECTIONS) for (const [from, to] of [[road.from, road.to], [road.to, road.from]]) {
+    const pass = nextStoryPass(from, to);
+    assert.ok(pass?.kind === 'road');
+    const [start, turn] = pass.points, end = pass.points.at(-1)!;
+    assert.equal(regionAt(...start).id, from);
+    assert.equal(regionAt(...end).id, to);
+    assert.deepEqual(roadGuidePoint(pass, 1060, 310), { point: start, onRoad: false, atEnd: false });
+    const ahead = roadGuidePoint(pass, ...start);
+    assert.ok(ahead.onRoad && !ahead.atEnd);
+    assert.equal(Math.round(Math.hypot(ahead.point[0] - start[0], ahead.point[1] - start[1])), 32);
+    const offset = 15 / Math.hypot(turn[0] - start[0], turn[1] - start[1]);
+    const beforeTurn = [turn[0] + (start[0] - turn[0]) * offset, turn[1] + (start[1] - turn[1]) * offset] as const;
+    assert.deepEqual(roadGuidePoint(pass, ...beforeTurn).point, turn, road.id);
+    assert.notDeepEqual(roadGuidePoint(pass, ...turn).point, turn, road.id);
+    assert.ok(roadGuidePoint(pass, ...end).atEnd);
+  }
 });

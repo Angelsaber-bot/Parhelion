@@ -189,8 +189,11 @@ let suppressMapError = false;
 let pageExited = false;
 function pickMap(id: string) {
   if (pageExited || starting) return;
-  const generation = ++mapGeneration; mapState = 'pending'; suppressMapError = false;
   showError('');
+  loadChosenMap(id);
+}
+function loadChosenMap(id: string) {
+  const generation = ++mapGeneration; mapState = 'pending'; suppressMapError = false;
   mapId = mapIdOf(id);
   renderMaps();
   mapReady = scene.loadMap(mapId, getMap(mapId).data.presentation?.preset ?? MAPS.find((m) => m.id === mapId)?.preset, getMap(mapId).data.presentation);
@@ -276,7 +279,7 @@ function showError(message: string | (() => string)) {
 
 type StartPhase = 'map' | 'models' | 'equipment' | 'join' | 'game';
 let attemptGeneration = 0;
-let activeStart: { id: number; phase: StartPhase; mode: typeof mode } | null = null;
+let activeStart: { id: number; phase: StartPhase; mode: typeof mode; closeSession: () => void } | null = null;
 function renderStartupStatus() {
   const phase = activeStart?.phase;
   $('loading-status').textContent = phase === 'join' ? activeStart?.mode==='online'?bilingual('正在连接服务器…', 'Connecting to server…'):bilingual('正在准备对局…','Preparing match…')
@@ -290,8 +293,10 @@ function restoreStartUi() {
   $<HTMLButtonElement>('play').disabled = false; $('loading').classList.add('hidden');
 }
 function cancelStart() {
-  if (!activeStart) return;
+  const cancelled = activeStart;
+  if (!cancelled) return;
   ++attemptGeneration; activeStart = null; suppressMapError = true;
+  cancelled.closeSession();
   restoreStartUi(); $('play').focus();
 }
 $('cancel-start').onclick = cancelStart;
@@ -317,7 +322,9 @@ $('play').onclick = async () => {
   }
   // A deliberate new Start retries a rejected asset load; an unresolved load is reused.
   if (mapState === 'failed') pickMap(mapId);
-  const attempt = { id: ++attemptGeneration, phase: 'map' as StartPhase, mode };
+  let ownedSession: Session | null = null;
+  const closeOwned = () => { const session = ownedSession; ownedSession = null; try { session?.close(); } catch { /* best effort for a failed/stale startup */ } };
+  const attempt = { id: ++attemptGeneration, phase: 'map' as StartPhase, mode, closeSession: closeOwned };
   activeStart = attempt; starting = true; $('lobby').inert = true;
   controls.blocked = true; controls.clearAll();
   $<HTMLButtonElement>('play').disabled = true;
@@ -333,8 +340,6 @@ $('play').onclick = async () => {
   if (attempt.mode === 'online' && roomCode) opts.room = roomCode;
   const recordDemo = attempt.mode !== 'range' && !lessonRequested && trainingConsent.checked;
   const current = () => activeStart?.id === attempt.id && !pageExited;
-  let ownedSession: Session | null = null;
-  const closeOwned = () => { const session = ownedSession; ownedSession = null; try { session?.close(); } catch { /* best effort for a failed/stale startup */ } };
   try { localStorage.setItem('arena-lobby', JSON.stringify(withSkinSelection({ name: opts.name, layout: opts.layout, char, heroId:CHARACTERS[char].id, server, map: mapId, room: roomCode ?? '' },skins))); } catch { /* private mode */ }
   try {
     sfx.unlock();
@@ -355,10 +360,14 @@ $('play').onclick = async () => {
     if (!current()) { closeOwned(); return; }
     // A private room plays the map its first player chose: show that one.
     if (ownedSession.mapId && ownedSession.mapId !== mapId) {
-      mapId = ownedSession.mapId; renderMaps(); attempt.phase = 'map'; renderStartupStatus();
-      mapReady = scene.loadMap(mapId, getMap(mapId).data.presentation?.preset ?? MAPS.find((m) => m.id === mapId)?.preset, getMap(mapId).data.presentation);
-      await mapReady; mapState = 'ready';
+      attempt.phase = 'map'; renderStartupStatus();
+      loadChosenMap(ownedSession.mapId);
+      await mapReady;
       if (!current()) { closeOwned(); return; }
+    }
+    if (ownedSession.closeReason) {
+      attempt.phase = 'join';
+      throw new Error(ownedSession.closeReason);
     }
     attempt.phase = 'game'; renderStartupStatus();
     const session = ownedSession;

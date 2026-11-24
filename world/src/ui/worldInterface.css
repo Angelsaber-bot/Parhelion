@@ -43,6 +43,7 @@ body:has(#start:not(.hidden)) :is(#objective,#minimap,#contract-card,#world-acti
 #contract-card{right:28px!important;top:44%!important;width:148px!important;padding:8px 12px!important;border:0;border-right:2px solid var(--world-accent);border-radius:0!important;background:linear-gradient(270deg,#10212c66,transparent)!important;color:#fff!important;font-size:12px!important;line-height:1.6!important;text-align:right;text-shadow:0 1px 4px #000a}
 #elite-hint{top:auto;bottom:160px;right:28px;background:linear-gradient(270deg,#10212c66,transparent);border:0;border-radius:0;font-size:11px;max-width:210px;text-align:right}
 #guide .label{display:none}
+#guide.travel .label{display:block;max-width:clamp(110px,23vw,220px);padding:2px 5px;border-radius:4px;background:#14212bd9;color:var(--world-accent);font-size:11px;line-height:1.25;white-space:normal;text-align:center}
 #guide .gem{width:10px;height:10px;border-width:1px;animation:none;box-shadow:0 0 8px #dfcc9e55;background:var(--world-accent)}
 #guide .dist{font-size:11px;padding:2px 5px;background:#14212b8c;border-radius:4px}
 #guide .arrow{border-left-width:6px;border-right-width:6px;border-bottom-width:11px;border-bottom-color:var(--world-accent)}

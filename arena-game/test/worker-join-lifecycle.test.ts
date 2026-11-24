@@ -44,4 +44,30 @@ it('healthy Worker join keeps normal input batching, rematch and server-close de
   vi.advanceTimersByTime(30); expect(JSON.parse(socket.sent[0]).t).toBe('input');
   session.rematch(); expect(JSON.parse(socket.sent[1]).t).toBe('rematch');
   socket.onclose!({ code: 1006 }); expect(closes).toBe(1); expect(vi.getTimerCount()).toBe(0);
+  expect(session.closeReason).toBe('disconnected (1006)');
+});
+
+it('remembers a dropped private room while assets load, and clears pending sends exactly once', async () => {
+  vi.useFakeTimers(); vi.stubGlobal('WebSocket', Socket);
+  const pending = joinOnline('wss://mock.invalid/arena', { layout: '1v1', team: 'A', name: 'Guest', char: 0, skins: [], map: 'aster', room: 'ABCDE' });
+  const socket = Socket.instances[0];
+  socket.message({ t: 'welcome', d: { id: 'live', rulesVersion: RULES_VERSION, map: 'blackflag' } });
+  const session = await pending;
+  expect(session.mapId).toBe('blackflag');
+  session.send([{ seq: 1, mx: 1, mz: 0, yaw: 0, pitch: 0, buttons: 0, weapon: 0, view: 0 }]);
+  const lateClose = socket.onclose!, lateMessage = socket.onmessage!;
+  lateClose({ code: 1006 });
+  expect(session.closeReason).toBe('disconnected (1006)');
+  session.onClose = vi.fn();
+  session.onSnapshot = vi.fn();
+  lateClose({ code: 1000 });
+  lateMessage({ data: JSON.stringify({ t: 'snap', d: { rulesVersion: RULES_VERSION } }) });
+  session.close();
+  session.rematch();
+  vi.advanceTimersByTime(30);
+  expect(session.onClose).not.toHaveBeenCalled();
+  expect(session.onSnapshot).not.toHaveBeenCalled();
+  expect(session.closeReason).toBe('disconnected (1006)');
+  expect(socket.sent).toEqual([]);
+  expect(vi.getTimerCount()).toBe(0);
 });

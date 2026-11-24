@@ -4,6 +4,7 @@ import { bilingual } from '../../../shared-client/i18n';
 import type { Layout } from '../core/types';
 import type { WorldGrid } from './grid';
 import { GATES } from './regions';
+import type { MapPoint2 } from './worldPlan';
 import { FULL_MAP_COLORS, fullMapPresentation, projectFullMapTarget } from './fullMapPresentation';
 import { collectMinimapLandmarks, minimapArea, MINIMAP_COLORS, MINIMAP_VIEW_RADIUS, projectMinimapTarget, selectMinimapLandmarks, type MapBox, type MinimapLandmark } from './minimapMarkers';
 
@@ -62,6 +63,7 @@ export class WorldMap {
   draw(ctx: CanvasRenderingContext2D, player: THREE.Vector3, yaw: number, opts: { full: boolean; done: Set<string>; found: Set<string>; target?: [number, number] | null; enemies?: ReadonlyArray<{ p: { x: number; z: number }; boss: boolean }>;
     /** co-op partner position, when paired */
     partner?: { x: number; z: number } | null;
+    route?: readonly MapPoint2[];
     /** optional full-map overlay (exploration icons); absent = the historical draw stream */
     overlay?: (ctx: CanvasRenderingContext2D, project: (x: number, z: number) => { x: number; y: number }, unit: number, width: number) => void }) {
     const W = ctx.canvas.width;
@@ -87,6 +89,18 @@ export class WorldMap {
     const target = opts.target ? { x: tx(opts.target[0]), y: tz(opts.target[1]) } : null;
     const miniTarget = target && !opts.full ? projectMinimapTarget(target, W) : null;
     const fullTarget = target && opts.full ? projectFullMapTarget(target, W, fullUnit) : null;
+
+    if (opts.full && opts.route?.length) {
+      const [[x, z], ...turns] = opts.route;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(tx(x), tz(z));
+      for (const [turnX, turnZ] of turns) ctx.lineTo(tx(turnX), tz(turnZ));
+      ctx.lineJoin = ctx.lineCap = 'round';
+      ctx.lineWidth = 4 * fullUnit; ctx.strokeStyle = FULL_MAP_COLORS.outline; ctx.stroke();
+      ctx.lineWidth = 2 * fullUnit; ctx.strokeStyle = '#f5d588'; ctx.stroke();
+      ctx.restore();
+    }
 
     // Both map modes are navigation views; ordinary interactions, discoveries,
     // spawn points and enemy dots never participate in presentation selection.
