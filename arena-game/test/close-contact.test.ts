@@ -25,6 +25,7 @@ it('counts actual damage and keeps identical fixtures for both actors and target
         expect(row.incumbent[metric]).toBe(row.directions.reduce((sum, d) => sum + d.incumbent[metric], 0));
       }
     }
+    expect(row.earlyMargins.reduce((a, b) => a + b, 0)).toBe(row.incumbent.byHalfSecond - row.candidate.byHalfSecond);
     expect(baseline[i].incumbentMargins).toEqual([0, 0]);
     expect(row.incumbentMargins.reduce((a, b) => a + b, 0)).toBe(row.incumbent.byTwoSeconds - row.candidate.byTwoSeconds);
     expect(row.incumbent).toEqual(baseline[i].candidate);
@@ -36,12 +37,14 @@ it('counts actual damage and keeps identical fixtures for both actors and target
 
 it('detects a consistent loss in either direction even when pooled damage is tied', () => {
   const totals = { byHalfSecond: 0, byTwoSeconds: 0 };
-  const passes = (starts: number, margin: number) => passesCloseMovingDamage([{
-    map: 'homeward', moving: true, incumbentMargins: Array(starts).fill(0),
+  const passes = (starts: number, margin: number, earlyMargin = 0) => passesCloseMovingDamage([{
+    map: 'homeward', moving: true, earlyMargins: Array(starts).fill(2 * earlyMargin), incumbentMargins: Array(starts).fill(0),
     directions: [-1, 1].map(mx => ({ mx, trials: 2 * starts, candidate: totals, incumbent: totals,
-      incumbentMargins: Array(starts).fill(mx * margin) })),
+      earlyMargins: Array(starts).fill(earlyMargin), incumbentMargins: Array(starts).fill(mx * margin) })),
   }]);
   expect(passes(8, 0)).toBe(true);
+  expect(passes(8, 0, 1)).toBe(false);
+  expect(passes(8, 0, -1)).toBe(true);
   expect(passes(2, 1)).toBe(true);
   expect(passes(8, 1)).toBe(false);
   expect(passes(8, -1)).toBe(false);

@@ -426,7 +426,7 @@ export function score(legs: { seed: number; map: string; margin: number }[]) {
     meanScoreMargin: legs.reduce((sum, l) => sum + l.margin, 0) / Math.max(1, legs.length) };
 }
 
-type ContactComparison = Pick<ReturnType<typeof closeContact>[number], 'map' | 'moving' | 'incumbentMargins' | 'directions'>;
+type ContactComparison = Pick<ReturnType<typeof closeContact>[number], 'map' | 'moving' | 'earlyMargins' | 'incumbentMargins' | 'directions'>;
 
 export function passesCloseMovingDamage(rows: ContactComparison[]) {
   const moving = rows.filter(row => row.moving);
@@ -434,7 +434,10 @@ export function passesCloseMovingDamage(rows: ContactComparison[]) {
   // Keep both seats together per start. Also test each direction so opposite regressions
   // cannot cancel. Split the directional significance budget across those two comparisons.
   const aggregate = moving.flatMap(row => blocks(row.map, row.incumbentMargins));
-  return score(aggregate).oneSidedP > .05 && [-1, 1].every(mx => {
+  // A reproducible delay can disappear from cumulative totals by two seconds.
+  // Pool directions within each start for the additional half-second screen.
+  const early = moving.flatMap(row => blocks(row.map, row.earlyMargins));
+  return score(early).oneSidedP > .01 && score(aggregate).oneSidedP > .05 && [-1, 1].every(mx => {
     const paired = moving.flatMap(row => row.directions.filter(d => d.mx === mx)
       .flatMap(d => blocks(row.map, d.incumbentMargins)));
     return paired.length === aggregate.length && score(paired).oneSidedP > .025;

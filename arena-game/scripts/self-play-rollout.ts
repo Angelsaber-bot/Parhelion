@@ -131,11 +131,11 @@ function encounterYaw(yaw: number, scenario: Scenario, focused: boolean, draw: n
 }
 
 // Start some episodes mid-round on walkable cells. Only the environment sees both positions.
-function placeEncounter(game: Match, scenario: Scenario, focused: boolean, rand: () => number): { scenario: Scenario; shortenedApproach?: boolean; smoke?: Smoke; smokeTick?: number } {
+export function placeEncounter(game: Match, scenario: Scenario, focused: boolean, rand: () => number): { scenario: Scenario; shortenedApproach?: boolean; smoke?: Smoke; smokeTick?: number } {
   if (scenario === 'spawn') return { scenario };
   if (scenario === 'waiting') {
     // Mix full-spawn failures with nearer opportunities to discover the same
-    // stationary rival. Keep the pilot's original heading in both cases.
+    // stationary rival. Shortened approaches keep the original map heading.
     if (focused && game.layout === '1v1' && rand() < .5) {
       const pilot = game.player('pilot')!;
       const node = waitingApproach(game.map, navFor(game), pilot, game.player('rival')!, rand);
@@ -143,6 +143,11 @@ function placeEncounter(game: Match, scenario: Scenario, focused: boolean, rand:
         Object.assign(pilot, { x: node.x, y: node.y, z: node.z });
         return { scenario, shortenedApproach: true };
       }
+    }
+    // Full-spawn remedial trials also cover looking away from the opening lane.
+    // Keep half at the map heading and never use the hidden rival's bearing.
+    if (focused && game.layout === '1v1' && rand() < .5) {
+      game.player('pilot')!.yaw += (rand() - .5) * Math.PI * 1.8;
     }
     if (!focused && game.layout === '1v1' && rand() < .65) {
       const nav = navFor(game), pilot = game.player('pilot')!, rival = game.player('rival')!;

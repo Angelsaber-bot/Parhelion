@@ -81,21 +81,23 @@ export function closeContact(candidate: NeuralPolicyModel, incumbent: NeuralPoli
       const score = (model: NeuralPolicyModel) => {
         let byHalfSecond = 0, byTwoSeconds = 0;
         const hitsByStart = starts.map(() => 0);
+        const earlyHitsByStart = starts.map(() => 0);
         for (const [i, f] of starts.entries()) for (const reverse of [false, true]) {
           const { game, pilot, target } = encounter(f, reverse, mx, model);
           for (let tick = 1; tick <= 2 * TICK_HZ && pilot.alive && target.alive; tick++) {
             game.step();
             if (game.snapshot().events.some(e => e.t === 'hit' && e.shooter === 'pilot' && e.victim === 'target' && e.dmg > 0)) {
               byTwoSeconds++; hitsByStart[i]++;
-              if (tick <= TICK_HZ / 2) byHalfSecond++;
+              if (tick <= TICK_HZ / 2) { byHalfSecond++; earlyHitsByStart[i]++; }
               break;
             }
           }
         }
-        return { totals: { byHalfSecond, byTwoSeconds }, hitsByStart };
+        return { totals: { byHalfSecond, byTwoSeconds }, hitsByStart, earlyHitsByStart };
       };
       const pilot = score(candidate), rival = score(incumbent);
       return { mx, trials: starts.length * 2, candidate: pilot.totals, incumbent: rival.totals,
+        earlyMargins: rival.earlyHitsByStart.map((hits, i) => hits - pilot.earlyHitsByStart[i]),
         incumbentMargins: rival.hitsByStart.map((hits, i) => hits - pilot.hitsByStart[i]) };
     });
     const [left, still, right] = byMotion;
@@ -105,9 +107,10 @@ export function closeContact(candidate: NeuralPolicyModel, incumbent: NeuralPoli
     });
     return [
       { map, reference, moving: false, trials: still.trials, candidate: still.candidate,
-        incumbent: still.incumbent, incumbentMargins: still.incumbentMargins, directions: [] },
+        incumbent: still.incumbent, earlyMargins: still.earlyMargins, incumbentMargins: still.incumbentMargins, directions: [] },
       { map, reference, moving: true, trials: left.trials + right.trials, candidate: movingTotals('candidate'),
         incumbent: movingTotals('incumbent'), directions: [left, right],
+        earlyMargins: left.earlyMargins.map((margin, i) => margin + right.earlyMargins[i]),
         incumbentMargins: left.incumbentMargins.map((margin, i) => margin + right.incumbentMargins[i]) },
     ];
   });
