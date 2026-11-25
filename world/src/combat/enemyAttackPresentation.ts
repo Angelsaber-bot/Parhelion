@@ -39,5 +39,5 @@ export function enemyAttackPose(e: Enemy, model: EnemyPoseModel): EnemyAttackPos
       stage: elapsed <= 1e-7 ? 'contact' : phase < 1 ? 'followThrough' : 'settle' };
   }
   if (e.mode === 'stagger') return { clip: 'Hit', sample: clamp(1 - e.timer / .9), stage: 'stagger' };
-  return e.mode === 'chase' ? { clip: 'Walk', stage: 'move' } : { clip: 'Idle', stage: 'idle' };
+  return e.mode === 'chase' && e.walking !== false ? { clip: 'Walk', stage: 'move' } : { clip: 'Idle', stage: 'idle' };
 }

@@ -137,6 +137,23 @@ test('enemy snapshots cover both players, nearest first, and skip host-only stor
   assert.deepEqual(enemySnapshot(state.enemies, { x: 0, y: 0, z: 0 }, null).map(e => e.id), ['near_host']);
 });
 
+test('co-op mirrors the host patrol goal through cover and on the way home', () => {
+  const spawn = { id: 'wild_patrol', kind: 'shade' as const, p: { x: 0, y: 0, z: 0 }, role: 'stalker' as const };
+  const host = new WorldCombatState([spawn], []), guest = new WorldCombatState([spawn], []);
+  guest.remoteEnemies = true;
+  const player = { x: 9, y: 0, z: 0 }, hidden = { x: -4, y: 0, z: 6 };
+  const cover = { ...flat, lineOfSight: () => false };
+  host.step(.1, player, true, flat);
+  host.step(.1, hidden, true, cover);
+  const sighting = decodeEnemies(enemySnapshot(host.enemies, hidden, null))!;
+  guest.applyRemoteEnemies(sighting);
+  assert.deepEqual(guest.enemies[0].chaseTarget, player);
+  assert.equal(guest.enemies[0].walking, true);
+  for (let i = 0; i < 32; i++) host.step(.1, hidden, true, cover);
+  guest.applyRemoteEnemies(decodeEnemies(enemySnapshot(host.enemies, hidden, null))!);
+  assert.deepEqual(guest.enemies[0].chaseTarget, spawn.p);
+});
+
 test('off-screen pings pin to the screen edge; behind the camera flips to the near edge', async () => {
   const { edgeClamp } = await import('../src/coop/pingMarkers.ts');
   assert.deepEqual(edgeClamp(.2, -.3, false), { x: .2, y: -.3, edge: false });

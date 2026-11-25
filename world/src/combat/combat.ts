@@ -21,6 +21,10 @@ export interface Enemy extends SpawnPoint {
   home: Point3; hp: number; maxHp: number; mode: EnemyMode; timer: number;
   active: boolean; phase: 1 | 2; attack: 'sweep' | 'burst' | 'shot' | 'thrust'; target: Point3;
   attackCount: number; contactSequence: number; hitTime: number; role: EnemyRole; staggerCooldown: number; pacified: boolean; blinkCooldown?: number;
+  /** Ordinary patrols investigate a fixed last sighting and return along walkable ground. */
+  field?: { lastSeen: Point3; memory: number; returning: boolean; blocked: number };
+  chaseTarget?: Point3;
+  walking?: boolean;
   /** An elite is performing its rarer signature move (see minibosses.ts). */
   signatureActive?: boolean;
   /** W08 最后方阵: the square's shield wall turns slowly; only its front blocks rifle fire. */
@@ -249,8 +253,10 @@ export const CREATURES = Object.freeze({
 });
 function makeEnemy(s: SpawnPoint): Enemy {
   const maxHp = s.creature ? CREATURES[s.creature].hp : s.storyPattern === 'echo-warden' ? ECHO_WARDEN.hp : s.kind === 'king' ? COMBAT.bossHp : minibossProfile(s)?.hp ?? (s.kind === 'crystal' ? 88 : 66);
+  const patrol = s.kind !== 'king' && !s.miniboss && !s.creature && !s.storyEncounter && !s.storyPattern && s.id !== KNIGHT_TRIAL_ID;
   return { ...s, p: clone(s.p), home: clone(s.p), maxHp, hp: maxHp, mode: 'idle', timer: 0,
-    active: false, phase: 1, attack: 'sweep', target: clone(s.p), attackCount: 0, contactSequence: 0, hitTime: 0, role: s.role ?? selectEnemyRole({ ...s, home: s.p }), staggerCooldown: 0, pacified: false };
+    active: false, phase: 1, attack: 'sweep', target: clone(s.p), attackCount: 0, contactSequence: 0, hitTime: 0, role: s.role ?? selectEnemyRole({ ...s, home: s.p }), staggerCooldown: 0, pacified: false,
+    ...(patrol ? { field: { lastSeen: clone(s.p), memory: 0, returning: false, blocked: 0 } } : {}) };
 }
 
 /** Shared deterministic role selection keeps the rendered weapon and damage behavior aligned. */
@@ -423,6 +429,10 @@ export class WorldCombatState {
     Object.assign(e.target, e.home); e.attack = 'sweep';
     e.phase = 1; e.attackCount = 0; e.contactSequence = 0; e.hitTime = 0; e.staggerCooldown = 0; if (e.role === 'shinobi') e.blinkCooldown = SHINOBI_BLINK.first; e.signatureActive = false;
     e.daze = 0; e.dazeIdle = 0; e.dazedFor = 0; e.shellBroken = false;
+    if (e.field) {
+      e.field.memory = 0; e.field.returning = false; e.field.blocked = 0;
+      e.chaseTarget = undefined; e.walking = false;
+    }
   }
   /** The Crow Seal's current burning curtain, if any (read by the view to draw it). */
   crowCurtain: CrowCurtain | null = null;
@@ -660,13 +670,19 @@ export class WorldCombatState {
   applyRemoteEnemies(list: readonly { id: string; p: readonly [number, number, number]; hp: number; mode: string; tm?: number; t?: readonly [number, number, number]; k?: string; ph?: number }[]) {
     for (const r of list) {
       const e = this.enemies.find(x => x.id === r.id); if (!e) continue;
+      if (e.field) e.walking = r.mode === 'chase' && Math.hypot(e.p.x - r.p[0], e.p.z - r.p[2]) > .02;
       e.p = { x: r.p[0], y: r.p[1], z: r.p[2] };
       // Only a fight seen here ends in a kill burst; idle or unseen foes just take the host's state.
       const wasFighting = e.mode !== 'dead' && e.mode !== 'idle';
       e.hp = Math.min(e.maxHp, r.hp);
       if (MODES.has(r.mode)) e.mode = r.mode as Enemy['mode'];
       if (typeof r.tm === 'number' && Number.isFinite(r.tm)) e.timer = r.tm;
-      if (r.t) e.target = { x: r.t[0], y: r.t[1], z: r.t[2] };
+      e.chaseTarget = undefined;
+      if (r.t) {
+        const target = { x: r.t[0], y: r.t[1], z: r.t[2] };
+        if (r.mode === 'chase') e.chaseTarget = target;
+        else e.target = target;
+      }
       if (r.k && ATTACKS.has(r.k)) e.attack = r.k as Enemy['attack'];
       if (r.ph === 1 || r.ph === 2) e.phase = r.ph;
       e.active = e.mode !== 'idle' && e.mode !== 'dead';
@@ -740,6 +756,21 @@ export class WorldCombatState {
       else { this.hurt(h.damage, false, h.at); if (this.defeated) return; }
     }
   }
+  private walkEnemy(e: Enemy, terrain: CombatTerrain, goal: Point3, step: number, retreat = false) {
+    if (step <= 0) return false;
+    const angle = Math.atan2(goal.z - e.p.z, goal.x - e.p.x) + (retreat ? Math.PI : 0);
+    const isBoss = e === this.boss;
+    const homeDistance = distanceXZ(e.p, e.home);
+    for (const turn of isBoss ? BOSS_TURNS : enemyWalkTurns(e)) {
+      const p = terrain.walk(e.p, e.p.x + Math.cos(angle + turn) * step, e.p.z + Math.sin(angle + turn) * step);
+      if (!p || distanceXZ(p, e.p) < 1e-5) continue;
+      const nextHomeDistance = distanceXZ(p, e.home);
+      if (!isBoss && nextHomeDistance > COMBAT.leash && !(e.field?.returning && nextHomeDistance < homeDistance)) continue;
+      e.p = p;
+      return true;
+    }
+    return false;
+  }
   step(dt: number, localPlayer: Point3, active: boolean, terrain: CombatTerrain) {
     const player = localPlayer;
     // Co-op host in a menu or loading: the world keeps fighting the partner, never the absent host.
@@ -790,18 +821,56 @@ export class WorldCombatState {
       }
       if (dist > COMBAT.hideRange) { this.resetEnemy(e); continue; }
       e.active = dist < COMBAT.activeRange;
+      const field = e.field;
+      if (field) {
+        e.walking = false;
+        if (!e.active) field.memory = 0;
+      }
       if (!e.active || e.pacified) continue;
+      // The nearby road pair yield the named duel.
+      if (dueling && (e.id === 'wild_56' || e.id === 'wild_56b')) {
+        e.mode = 'idle'; e.timer = 0;
+        if (field) { field.memory = 0; field.returning = false; field.blocked = 0; }
+        continue;
+      }
+      const role = ENEMY_ROLES[e.role];
+      const quietLane = this.quietKyotoRoute && e.encounter === 'akechi' && player.x > 933 && player.z > -1590; // Kyoto turned half a circle (legacy x<-213, z<870)
+      const aggroRange = e.encounter === 'akechi' ? quietLane ? 12 : 26
+        : field && role.attack === 'shot' ? role.range : COMBAT.aggroRange;
+      if (e.mode === 'idle' && dist >= aggroRange) continue;
       const heightOk = Math.abs(player.y - e.p.y) < (e === this.boss ? 8 : 3);
       const from = this.sightFrom, to = this.sightTo;
       from.x = e.p.x; from.y = e.p.y + 1.2; from.z = e.p.z;
       to.x = player.x; to.y = player.y + 1; to.z = player.z;
-      const sees = heightOk && terrain.lineOfSight(from, to);
-      // The nearby road pair yield the named duel; they do not pile onto its long tells.
-      if (dueling && (e.id === 'wild_56' || e.id === 'wild_56b')) { e.mode = 'idle'; e.timer = 0; continue; }
-      const quietLane = this.quietKyotoRoute && e.encounter === 'akechi' && player.x > 933 && player.z > -1590; // Kyoto turned half a circle (legacy x<-213, z<870)
-      const aggroRange = e.encounter === 'akechi' ? quietLane ? 12 : 26 : COMBAT.aggroRange;
-      if (e.mode === 'idle') { if (dist < aggroRange && sees) e.mode = 'chase'; else continue; }
-      if (e !== this.boss && (distanceXZ(e.home, player) > COMBAT.leash || distanceXZ(e.home, e.p) > COMBAT.leash)) {
+      const sight = heightOk && terrain.lineOfSight(from, to);
+      const outside = e !== this.boss && (distanceXZ(e.home, player) > COMBAT.leash || distanceXZ(e.home, e.p) > COMBAT.leash);
+      const sees = sight && (!field || !outside);
+      if (e.mode === 'idle') { if (sees) e.mode = 'chase'; else continue; }
+      if (field) {
+        if (sees && (!field.returning || dist < aggroRange)) {
+          Object.assign(field.lastSeen, player);
+          field.memory = ENEMY_TACTICS.sightMemory;
+          field.returning = false; field.blocked = 0;
+        } else {
+          field.memory = sight && outside ? 0 : Math.max(0, field.memory - dt);
+        }
+        if (e.mode === 'chase') {
+          e.chaseTarget = field.memory > 0 ? field.lastSeen : e.home;
+          if (!sees || field.returning) {
+            field.returning = field.memory <= 0;
+            threatened ||= !field.returning;
+            const left = distanceXZ(e.p, e.chaseTarget) - ENEMY_TACTICS.arrivalRadius;
+            e.walking = this.walkEnemy(e, terrain, e.chaseTarget, Math.min(role.speed * dt, left));
+            if (field.returning) {
+              field.blocked = e.walking ? 0 : field.blocked + dt;
+              if (left <= 0 || field.blocked >= ENEMY_TACTICS.returnBlocked) {
+                e.mode = 'idle'; e.timer = 0; e.chaseTarget = undefined;
+              }
+            } else e.timer = Math.max(0, e.timer - dt);
+            continue;
+          }
+        }
+      } else if (outside) {
         // Returning to the patrol boundary is not a respawn. Previously every ranged
         // hit from 35–82 m was erased on the next AI tick, with a one-tick immunity
         // window as well. Keep damage/eligibility until real despawn or death.
@@ -835,9 +904,14 @@ export class WorldCombatState {
         }
         continue;
       }
-      if (e.mode === 'recover' || e.mode === 'stagger') { if (e.timer <= 0) { e.mode = 'chase'; e.timer = enemyRangedSpacing(e) ? ENEMY_TACTICS.rangedReset : .25; } continue; }
+      if (e.mode === 'recover' || e.mode === 'stagger') {
+        if (e.timer <= 0) {
+          e.mode = 'chase'; e.timer = enemyRangedSpacing(e) ? ENEMY_TACTICS.rangedReset : .25;
+          if (field) e.chaseTarget = field.memory > 0 ? field.lastSeen : e.home;
+        }
+        continue;
+      }
       const isBoss = e === this.boss, elite = minibossProfile(e);
-      const role = ENEMY_ROLES[e.role];
       const meleeRange = e.creature === 'tide-limb' ? CREATURES['tide-limb'].reach : e.storyPattern === 'echo-warden' ? ECHO_WARDEN.range : isBoss ? 6 : elite?.range ?? role.range;
       if (e.role === 'shinobi' && !isBoss && !elite && (!e.storyPattern || e.phase === 2) && sees && e.timer <= 0 && !e.blinkCooldown && dist > SHINOBI_BLINK.min && dist < SHINOBI_BLINK.max && hasEnemyPressureSlot(e, this.enemies, player)) {
         // Vanish and reappear behind the player (far side of the approach), then a readable cut.
@@ -875,12 +949,8 @@ export class WorldCombatState {
         const drum = e.id === LAST_SQUARE.id ? .35 + 1.3 * Math.max(0, Math.sin((e.squareDrum = (e.squareDrum ?? 0) + dt) * LAST_SQUARE.drum)) : 1;
         const speed = (isBoss ? e.phase === 2 ? 5.0 : 3.8 : elite ? elite.speed * (e.phase === 2 ? ELITE_RALLY.speed : 1) : role.speed) * drum;
         const step = Math.min(speed * dt, retreat ? spacing - dist : Math.max(0, dist - 1.7));
-        const angle = Math.atan2(player.z - e.p.z, player.x - e.p.x) + (retreat ? Math.PI : 0);
-        // A few local alternatives let the king skirt ruined pillars; never phase through them.
-        for (const turn of isBoss ? BOSS_TURNS : enemyWalkTurns(e)) {
-          const p = terrain.walk(e.p, e.p.x + Math.cos(angle + turn) * step, e.p.z + Math.sin(angle + turn) * step);
-          if (p && (isBoss || distanceXZ(p, e.home) <= COMBAT.leash)) { e.p = p; break; }
-        }
+        const walked = this.walkEnemy(e, terrain, player, step, retreat);
+        if (field) e.walking = walked;
       }
     }
     this.stepHazards(dt, localPlayer);

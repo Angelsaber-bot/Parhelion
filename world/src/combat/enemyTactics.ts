@@ -9,6 +9,9 @@ export const ENEMY_TACTICS = {
   closePressureLimit: 2,
   pressureRadius: 8,
   maxWalkCandidates: 3,
+  sightMemory: 3,
+  arrivalRadius: .5,
+  returnBlocked: 2,
 } as const;
 const LEFT = [0, .65, -.65] as const, RIGHT = [0, -.65, .65] as const;
 export function enemyWalkTurns(e: Pick<Enemy, 'id'>): readonly number[] {

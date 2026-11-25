@@ -49,8 +49,10 @@ export function enemySnapshot(enemies: readonly Enemy[], local: Point3, partner:
   }
   return ranked.sort((a, b) => a.d - b.d).slice(0, max).map(({ e }) => {
     const wire = encodeEnemy(e);
-    // A chasing enemy faces the player it is after, on the guest's screen too.
-    if (e.mode === 'chase' && !wire.t) { const to = near(e.p, partner) < near(e.p, local) ? partner! : local; wire.t = [Math.round(to.x * 100) / 100, Math.round(to.y * 100) / 100, Math.round(to.z * 100) / 100]; }
+    if (e.mode === 'chase') {
+      const to = e.chaseTarget ?? (e.field ? e.home : near(e.p, partner) < near(e.p, local) ? partner! : local);
+      wire.t = [Math.round(to.x * 100) / 100, Math.round(to.y * 100) / 100, Math.round(to.z * 100) / 100];
+    }
     return wire;
   });
 }

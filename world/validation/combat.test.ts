@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldCombatState, COMBAT, BOSS_REQUIREMENTS, WILDERNESS_ZONES, makeWildernessSpawns, type CombatTerrain, type Point3 } from '../src/combat/combat.ts';
+import { WorldCombatState, COMBAT, BOSS_REQUIREMENTS, WILDERNESS_ZONES, distanceXZ, makeWildernessSpawns, type CombatTerrain, type Point3 } from '../src/combat/combat.ts';
+import { ENEMY_TACTICS } from '../src/combat/enemyTactics.ts';
 
 const ground: CombatTerrain = { walk: (_p, x, z) => ({ x, y: 0, z }), lineOfSight: () => true };
 const wall: CombatTerrain = { ...ground, lineOfSight: () => false };
@@ -37,7 +38,11 @@ test('wilderness aggro requires line of sight, leashes and only respawns away fr
   const s = make(), p = { x: 20, y: 0, z: 5 };
   advance(s, 2, p, wall); assert.equal(s.enemies[0].mode, 'idle'); assert.equal(s.hp, 100);
   advance(s, 1, p); assert.notEqual(s.enemies[0].mode, 'idle');
-  advance(s, 0.1, { x: 70, y: 0, z: 0 }); assert.equal(s.enemies[0].mode, 'idle'); assert.deepEqual(s.enemies[0].p, s.enemies[0].home);
+  const e = s.enemies[0], away = { x: 70, y: 0, z: 0 };
+  const committed = { ...e.p };
+  advance(s, .1, away); assert.deepEqual(e.p, committed, 'the active attack stays planted across the boundary');
+  advance(s, 6, away); assert.equal(e.mode, 'idle');
+  assert.ok(distanceXZ(e.p, e.home) <= ENEMY_TACTICS.arrivalRadius + 1e-6);
   advance(s, 0.1, p); s.hitEnemy('wild', 100);
   advance(s, 50, p); assert.equal(s.enemies[0].mode, 'dead', 'never respawn beside player');
   advance(s, 0.1, { x: 80, y: 0, z: 0 }); assert.equal(s.enemies[0].hp, s.enemies[0].maxHp);

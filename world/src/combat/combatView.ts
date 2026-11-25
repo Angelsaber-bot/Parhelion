@@ -459,16 +459,17 @@ export class WorldCombat {
         if (v.roleLabel && v.roleLabel.scale.x !== 2.6 * k) { v.roleLabel.scale.set(2.6 * k, .325 * k, 1); v.roleLabel.updateMatrix(); }
         if (v.nameLabel) v.nameLabel.scale.set(3 * k, .375 * k, 1);
       }
-      const moving = e.mode === 'chase';
+      const moving = e.mode === 'chase' && e.walking !== false;
       v.updateCreature?.(e.pacified ? 0 : this.time, moving, e.mode === 'windup', e.mode);
       // The limb's shell follows the simulation, including a reset that grows it back.
       const shellKit = v.fallback.userData.creature as { shellBroken?: boolean; breakShell?: () => void; restoreShell?: () => void } | undefined;
       if (shellKit?.breakShell && shellKit.shellBroken !== !!e.shellBroken) { if (e.shellBroken) shellKit.breakShell(); else shellKit.restoreShell?.(); }
       v.body.position.y = skinned || v.updateCreature ? 0 : 0.025 * Math.sin(this.time * (moving ? 10 : 3));
       v.body.rotation.z = !skinned && !v.updateCreature && moving ? Math.sin(this.time * 9) * 0.04 : 0;
-      // A co-op guest's enemies chase whichever player the host's game chose (sent as the target).
-      const facing = e.pacified ? e.home : (e.mode === 'windup' || e.mode === 'recover' || (this.state.remoteEnemies && e.mode === 'chase')) ? e.target : player;
-      v.body.rotation.y = e.squareYaw !== undefined && e.mode !== 'idle' && !e.pacified ? e.squareYaw : Math.atan2(facing.x - e.p.x, facing.z - e.p.z);
+      const facing = e.pacified ? e.home : e.mode === 'windup' || e.mode === 'recover' ? e.target
+        : e.mode === 'chase' && e.chaseTarget ? e.chaseTarget : e.field ? undefined : player;
+      if (e.squareYaw !== undefined && e.mode !== 'idle' && !e.pacified) v.body.rotation.y = e.squareYaw;
+      else if (facing && distanceXZ(facing, e.p) > 1e-4) v.body.rotation.y = Math.atan2(facing.x - e.p.x, facing.z - e.p.z);
       if (v.crowFx) {
         const fx = v.crowFx, f = e.hp / e.maxHp, alive = e.mode !== 'dead' && e.active;
         // Every fourth beat in phase two he smashes a lamp: one local dark patch, feet and blade still read.
