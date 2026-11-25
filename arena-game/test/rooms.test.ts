@@ -24,6 +24,16 @@ describe('quick match', () => {
     expect(reportRoom(rooms, live, 0, 41_000)).toBe(true); expect(rooms[live]).toBeUndefined();
     expect(reportRoom(rooms, 'code:v1:ABCDE', 1, 0)).toBe(false);
   });
+  it('rebuilds an empty lobby from its live rooms without resurrecting closed or private rooms', () => {
+    const rooms: Record<string, OpenRoom> = {}, queue = { key: 'v44|2v2|frostcourt|0', cap: 4 };
+    const live = `${queue.key}#live`;
+    expect(reportRoom(rooms, 'code:v44:ABCDE', 1, 100, queue)).toBe(false);
+    expect(reportRoom(rooms, `${queue.key}#closed`, 0, 100, queue)).toBe(false);
+    expect(reportRoom(rooms, live, 3, 100, queue)).toBe(true);
+    expect(assignRoom(rooms, 'v44|2v2|aster|0', 4, 101, id)).not.toBe(live);
+    expect(assignRoom(rooms, queue.key, queue.cap, 102, id)).toBe(live);
+    expect(assignRoom(rooms, queue.key, queue.cap, 103, id)).not.toBe(live);
+  });
 });
 
 describe('private room codes', () => {

@@ -12,7 +12,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { TEAM_CAPACITY, TICK_HZ, validateLoadout, validateUtility } from '../shared/content.ts';
 import { LAYOUTS, RULES_VERSION, RULES_MISMATCH, normalizeRoomCode, type JoinOptions } from '../shared/protocol.ts';
 import { RoomCore } from '../shared/room.ts';
-import { assignRoom, reportRoom, ROOM_HEARTBEAT_MS, type OpenRoom } from './lobbyRooms.ts';
+import { assignRoom, reportRoom, ROOM_HEARTBEAT_MS, type MatchQueue, type OpenRoom } from './lobbyRooms.ts';
 import { WorldRelayCore, WORLD_COOP_VERSION, validWorldRoomCode } from './worldRelay.ts';
 import { sanitizeRecord, type MatchRecord } from '../shared/weaponStats.ts';
 import { trainingRequest, trainingStore, type ArenaTraining } from './training.ts';
@@ -39,6 +39,10 @@ function parseOptions(url: URL): Partial<JoinOptions> {
 
 function roomKey(o: Partial<JoinOptions>) {
   return `v${o.rulesVersion ?? 0}|${o.layout ?? '1v1'}|${o.map ?? ''}|${o.bots ? 1 : 0}`;
+}
+function roomCapacity(o: Partial<JoinOptions>) {
+  const { A, B } = TEAM_CAPACITY[o.layout && LAYOUTS.includes(o.layout) ? o.layout : '1v1'];
+  return A + B;
 }
 
 export default {
@@ -94,8 +98,13 @@ export default {
     }
     const key = roomKey(opts);
     const lobby = env.LOBBY.get(env.LOBBY.idFromName('lobby'));
-    const cap = TEAM_CAPACITY[opts.layout && LAYOUTS.includes(opts.layout) ? opts.layout : '1v1'];
-    const room = await lobby.assign(key, cap.A + cap.B);
+    let room: string;
+    try {
+      room = await lobby.assign(key, roomCapacity(opts));
+    } catch (error) {
+      console.error('Arena quick-match assignment failed', error);
+      return new Response('quick-match assignment unavailable', { status: 503, headers: CORS });
+    }
     const fwd = new URL(req.url);
     fwd.searchParams.set('room', room);
     fwd.searchParams.set('key', key);
@@ -105,27 +114,17 @@ export default {
 
 
 
-/** Matchmaking: hands out a room with a free human seat (or a new one) per key. */
+/** Temporary seat reservations. Room heartbeats rebuild this index after an
+ * eviction. Matchmaking shares no storage reads or writes with training. */
 export class Lobby extends DurableObject<Env> {
-  private rooms: Record<string, OpenRoom> | null = null;
-
-  private async load() {
-    this.rooms ??= (await this.ctx.storage.get<Record<string, OpenRoom>>('rooms')) ?? {};
-    return this.rooms;
-  }
-  private save() { return this.ctx.storage.put('rooms', this.rooms); }
+  private readonly rooms: Record<string, OpenRoom> = {};
 
   async assign(key: string, cap: number): Promise<string> {
-    const rooms = await this.load();
-    const name = assignRoom(rooms, key, cap, Date.now(), () => crypto.randomUUID().slice(0, 8));
-    await this.save();
-    return name;
+    return assignRoom(this.rooms, key, cap, Date.now(), () => crypto.randomUUID().slice(0, 8));
   }
 
-  /** Called by a room whenever its human count changes (0 closes it) and as a heartbeat. */
-  async report(name: string, humans: number) {
-    const rooms = await this.load();
-    if (reportRoom(rooms, name, humans, Date.now())) await this.save();
+  async report(name: string, humans: number, queue?: MatchQueue) {
+    reportRoom(this.rooms, name, humans, Date.now(), queue);
   }
 }
 
@@ -133,6 +132,7 @@ export class Lobby extends DurableObject<Env> {
 export class ArenaRoomDO extends DurableObject<Env> {
   private core: RoomCore | null = null;
   private name = '';
+  private queue?: MatchQueue;
   private sockets = new Map<string, WebSocket>();
   private timer: ReturnType<typeof setInterval> | null = null;
   private seq = 0;
@@ -142,6 +142,8 @@ export class ArenaRoomDO extends DurableObject<Env> {
     const url = new URL(req.url);
     const opts = parseOptions(url);
     this.name = url.searchParams.get('room') ?? this.name;
+    const key = url.searchParams.get('key');
+    if (key !== null && !this.name.startsWith('code:')) this.queue = { key, cap: roomCapacity(opts) };
     const pair = new WebSocketPair();
     const [client, ws] = [pair[0], pair[1]];
     ws.accept();
@@ -162,7 +164,7 @@ export class ArenaRoomDO extends DurableObject<Env> {
     } catch (e) {
       ws.send(JSON.stringify({ t: 'error', d: (e as Error).message }));
       ws.close(4000, 'room full');
-      void this.report();
+      this.report();
       return new Response(null, { status: 101, webSocket: client });
     }
     ws.addEventListener('message', (ev) => {
@@ -175,7 +177,7 @@ export class ArenaRoomDO extends DurableObject<Env> {
     ws.addEventListener('close', gone);
     ws.addEventListener('error', gone);
     this.start();
-    void this.report();
+    this.report();
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -199,7 +201,7 @@ export class ArenaRoomDO extends DurableObject<Env> {
         }
       }
       this.saveStats(core);
-      if (now - this.reportedAt > ROOM_HEARTBEAT_MS) void this.report().catch(() => {});
+      if (now - this.reportedAt > ROOM_HEARTBEAT_MS) this.report();
     }, dt);
   }
 
@@ -220,14 +222,16 @@ export class ArenaRoomDO extends DurableObject<Env> {
       this.timer = null;
       this.core = null; // next player to get this room name starts fresh
     }
-    void this.report();
+    this.report();
   }
 
-  private async report() {
+  private report() {
     this.reportedAt = Date.now();
-    if (!this.name || this.name.startsWith('code:')) return; // private rooms are not matchmade
+    if (!this.queue) return;
     const lobby = this.env.LOBBY.get(this.env.LOBBY.idFromName('lobby'));
-    return lobby.report(this.name, this.sockets.size);
+    this.ctx.waitUntil(lobby.report(this.name, this.sockets.size, this.queue).catch(error => {
+      console.error('Arena lobby occupancy update failed', error);
+    }));
   }
 }
 

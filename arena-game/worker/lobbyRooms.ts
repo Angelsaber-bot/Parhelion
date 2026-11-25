@@ -2,6 +2,7 @@
 // imports so it can be tested directly.
 
 export interface OpenRoom { name: string; key: string; humans: number; cap: number; at: number }
+export type MatchQueue = Pick<OpenRoom, 'key' | 'cap'>;
 /** A running room reports its player count at least this often; the lobby forgets quieter ones. */
 export const ROOM_HEARTBEAT_MS = 4_000, ROOM_STALE_MS = 15_000;
 
@@ -23,10 +24,14 @@ export function assignRoom(rooms: Record<string, OpenRoom>, key: string, cap: nu
   return room.name;
 }
 
-/** A room's own count is the truth; 0 closes it. Unknown names (private rooms) are ignored. */
-export function reportRoom(rooms: Record<string, OpenRoom>, name: string, humans: number, now: number) {
+/** Live rooms can rebuild the lobby after an eviction. Zero closes a room. */
+export function reportRoom(rooms: Record<string, OpenRoom>, name: string, humans: number, now: number, queue?: MatchQueue) {
   const r = rooms[name];
-  if (!r) return false;
+  if (!r) {
+    if (humans <= 0 || !queue || !name.startsWith(`${queue.key}#`)) return false;
+    rooms[name] = { name, ...queue, humans, at: now };
+    return true;
+  }
   if (humans <= 0) delete rooms[name];
   else { r.humans = humans; r.at = now; }
   return true;
