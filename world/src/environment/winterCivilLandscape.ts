@@ -162,6 +162,45 @@ export function createWinterCivilLandscape(ground: (x: number, z: number, ceilin
   art.box([-51.5, cy + 1.9, 242], [5.4, 3.8, .7], '#a09b92', true);
   art.box([-53.8, cy + 1.2, 246.8], [.6, 2.4, 3], '#a09b92', true);
   art.beam([-54, cy + 3.9, 242], [-48.7, cy + 3.9, 246], .3, char, true);
+  // A charred wall plate catches the surviving rafter over the broken side wall.
+  for (const z of [244.8, 247]) art.box([-48.89, cy + 2.95, z], [.23, 1.5, .24], '#595456');
+  art.box([-48.89, cy + 3.73, 245.89], [.44, .21, 2.59], char);
+  art.beam([-48.89, cy + 2.92, 247], [-48.89, cy + 3.69, 246.2], .13, wood);
+  // Exposed chimney breast. Corbelled shoulders narrow into an open brick
+  // flue. The windward rim has failed a course below the sheltered snow cap.
+  const chimneyX = -53.04, chimneyZ = 242, brick = ['#84645b', '#997369', '#6b5856', '#9e8072'];
+  art.box([chimneyX, cy + .12, chimneyZ], [1.86, .24, 1.12], '#817f7c');
+  art.box([chimneyX, cy + .84, chimneyZ - .36], [1.43, 1.28, .1], '#434244');
+  for (const side of [-1, 1]) {
+    for (let row = 0; row < 6; row++) {
+      const w = row < 3 ? .35 : .35 + (row - 2) * .095;
+      art.box([chimneyX + side * (.87 - w / 2), cy + .365 + row * .255, chimneyZ], [w, .253, 1.04], brick[(row + (side + 1)) % 4]);
+    }
+  }
+  for (const [h, w, depth] of [[1.84, 1.79, 1.10], [2.02, 1.60, 1.03], [2.20, 1.37, .96], [2.38, 1.12, .91]]) {
+    art.box([chimneyX, cy + h, chimneyZ], [w, .2, depth], '#827067');
+  }
+  // The existing north wall carries the stack. Keeping each brick exposed
+  // above its plaster also gives the torn roofline a readable scale.
+  art.box([chimneyX, cy + 3.28, chimneyZ], [1.04, 1.62, .86], '#82716b');
+  for (let row = 0; row < 11; row++) {
+    const h = cy + 2.59 + row * .232;
+    for (const side of [-1, 1]) {
+      if (row === 10 && side === -1) continue;
+      const front = chimneyZ + side * .371;
+      const joint = (row % 2 ? .17 : -.14) * side;
+      const left = .54 + joint, right = .54 - joint;
+      art.box([chimneyX - .54 + left / 2, h, front], [left - .012, .225, .19], brick[(row + side + 1) % 4]);
+      art.box([chimneyX + .54 - right / 2, h, front], [right - .012, .225, .19], brick[(row * 3 + 2) % 4]);
+      art.box([chimneyX + side * .444, h, chimneyZ], [.19, .225, .56], brick[(row + 2) % 4]);
+    }
+  }
+  art.box([chimneyX, cy + 5.047, chimneyZ + .371], [1.09, .052, .20], snow);
+  art.box([chimneyX + .444, cy + 5.043, chimneyZ + .04], [.19, .047, .49], '#d5dfe2');
+  for (const [x, width, capHeight] of [[-51.83, 1.35, .38], [-50.67, 1.0, .22], [-49.83, .68, .12]]) {
+    art.box([x, cy + 3.8 + capHeight / 2, 242], [width, capHeight, .65], '#96908b');
+    art.box([x, cy + 3.8 + capHeight + .035, 242.03], [width + .02, .08, .67], snow);
+  }
   art.box([-51.4, cy + .85, 243.2], [3.7, .16, 1.2], wood, true);
   art.paper(-51.4, cy + .96, 243.2, .8, .5);
   // Pedestrians can use the repaired inner strip of the damaged north bridge;

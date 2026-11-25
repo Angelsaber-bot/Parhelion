@@ -27,7 +27,7 @@ export function createBlackSailCivilLandscape(ground: (x: number, z: number, cei
     }
     route(sampled, width);
   }
-  function roof(x: number, y: number, z: number, width: number, depth: number, rise: number, color: string) {
+  function roof(x: number, y: number, z: number, width: number, depth: number, rise: number, color: string, tiled = false) {
     const half = width / 2, angle = Math.atan2(rise, half), span = Math.hypot(half, rise);
     for (const s of [-1, 1]) art.box([x + s * half / 2, y + rise / 2, z], [span + .5, .2, depth + 1.2], color, true, 'body', [0, 0, -s * angle]);
     const shape = new THREE.Shape(); shape.moveTo(-half + .5, 0); shape.lineTo(half - .5, 0); shape.lineTo(0, rise - .12); shape.closePath();
@@ -36,12 +36,35 @@ export function createBlackSailCivilLandscape(ground: (x: number, z: number, cei
       const zz = z + side * depth / 2;
       art.add(gable, plaster, [x, y, zz - .15], [1, 1, 1], true);
       art.box([x, y + .08, zz + side * .2], [width - .7, .23, .15], dark);
-      for (const dx of [-.55, 0, .55]) art.box([x + dx, y + rise * .4, zz + side * .2], [.32, rise * .28, .04], dark);
+      const face = zz + side * .2, vent = y + rise * .45;
+      art.box([x,vent,face],[width * .21,rise * .54,.16],dark);
+      for (let slat = 0; slat < 4; slat++) {
+        art.box([x,vent + (slat - 1.5) * rise * .115,face + side * .105],
+          [width * .20,rise * .073,.19], slat % 2 ? '#7b7054' : '#8f8062',false,'body',[-side * .36,0,0]);
+      }
+      for (const sign of [-1,1]) {
+        art.box([x + sign * width * .106,vent,face + side * .08],[.15,rise * .62,.22],timber);
+        art.beam([x + sign * (half - .48),y + .06,face], [x,y + rise - .03,face],.16,dark);
+      }
     }
     gable.dispose();
-    // Roof seams follow the pitch; the closed gables keep the store weather-tight.
-    for (let zz = z - depth / 2; zz <= z + depth / 2; zz += 1.1) for (const s of [-1, 1])
-      art.beam([x + s * (half + .16), y + .08, zz], [x, y + rise + .12, zz], .055, '#735143');
+    if (tiled) {
+      // Rounded terracotta covers alternate with the flat pans. Their open mouths
+      // and rafter tails show under the eave when approached from the pier.
+      const caps = new THREE.CylinderGeometry(.135,.135,span + .48,6,1,true,0,Math.PI);
+      caps.rotateZ(Math.PI / 2);
+      const clay = ['#af684a','#a36248','#b97552','#985b43'];
+      for (let lane = 0; lane <= 30; lane++) for (const s of [-1,1]) {
+        const zz = z - depth / 2 - .42 + lane * (depth + .84) / 30;
+        art.add(caps,clay[(lane * 7 + (s > 0 ? 1 : 0)) % clay.length],[x + s * half / 2,y + rise / 2 + .10,zz],
+          [1,1,1],false,'body',[0,0,-s * angle]);
+        if (lane % 3 === 0) art.box([x + s * (half - .12),y - .08,zz],[.81,.21,.17],timber,false,'body',[0,0,-s * angle]);
+      }
+      caps.dispose();
+    } else {
+      for (let zz = z - depth / 2; zz <= z + depth / 2; zz += 1.1) for (const s of [-1,1])
+        art.beam([x + s * (half + .16),y + .08,zz],[x,y + rise + .12,zz],.055,'#54706b');
+    }
     art.beam([x, y + rise, z - depth / 2 - .5], [x, y + rise, z + depth / 2 + .5], .28, dark);
     for (const zz of [z - depth / 2, z, z + depth / 2]) for (const s of [-1, 1])
       art.beam([x + s * half, y, zz], [x, y + rise, zz], .25, dark, true);
@@ -68,7 +91,16 @@ export function createBlackSailCivilLandscape(ground: (x: number, z: number, cei
     art.box([x, y + .4, z], [.5, .8, .22], stone);
   }
   for (const z of [55.65, 74.35]) art.box([-80, y + 4.65, z], [20, .24, .18], dark);
-  roof(-80, y + 4.8, 65, 21, 18, 2.7, '#a05b42');
+  roof(-80, y + 4.8, 65, 21, 18, 2.7, '#a05b42', true);
+  // Wall plates spread the weight of the gable across the wide wagon entrance.
+  for (const sign of [-1,1]) {
+    const face = 65 + sign * 9.39;
+    for (const bay of [-1,1]) {
+      const jamb = -80 + bay * 2.4;
+      art.beam([jamb,y+3.22,face], [jamb + bay * 1.43,y+4.53,face],.20,timber);
+      for (const level of [1.15,2.47]) art.box([jamb,y+level,face],[.44,.13,.16],iron,false,'metal');
+    }
+  }
   for (let z = 57; z < 74; z += 1.1) for (const x of [-90.32, -69.68])
     art.box([x, y + .5, z], [.05, .45, .9], '#b09f85');
   // Salt sacks on ventilated pallets; a central 5 m aisle is kept open.

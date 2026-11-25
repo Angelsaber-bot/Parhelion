@@ -66,11 +66,27 @@ export const GATES: Record<string, { p: [number, number, number]; via: string }>
 export const GRID = { x0: -1080, z0: -1800, span: 2160, spanZ: 2160, cell: 2 };
 
 /** Geographical ownership; transport/grid squares do not define a region's shape. */
-export function regionAt(x: number, z = 0): RegionDef {
-  // Curved climate/ownership transitions do not constrain movement or ground meshes.
-  const wx=x+35*Math.sin(z*.008),wz=z+35*Math.sin(x*.007);
-  const distance=(r:RegionDef)=>Math.hypot(wx-r.offset[0],wz-r.offset[1]);
-  return REGIONS.reduce((a,b)=>distance(b)<distance(a)?b:a);
+export function regionAt(x: number, z = 0, climateWeights?: Float64Array): RegionDef {
+  const wx = x + 35 * Math.sin(z * .008), wz = z + 35 * Math.sin(x * .007);
+  let closest = 0, minimum = Infinity;
+  for (let i = 0; i < REGIONS.length; i++) {
+    const [cx, cz] = REGIONS[i].offset;
+    const d2 = (wx - cx) ** 2 + (wz - cz) ** 2;
+    if (d2 < minimum) { closest = i; minimum = d2; }
+    if (climateWeights) climateWeights[i] = d2;
+  }
+  if (climateWeights) {
+    // Across centres 720 m apart, the squared-distance difference grows by
+    // 2 * 720 per metre from their bisector. Fade the neighbour over 65 m.
+    let sum = 0;
+    for (let i = 0; i < REGIONS.length; i++) {
+      const across = (climateWeights[i] - minimum) / (2 * 720);
+      climateWeights[i] = 1 - THREE.MathUtils.smoothstep(across, 0, 65);
+      sum += climateWeights[i];
+    }
+    for (let i = 0; i < REGIONS.length; i++) climateWeights[i] /= sum;
+  }
+  return REGIONS[closest];
 }
 export function regionContains(r:RegionDef,x:number,z:number):boolean {
   return x>=GRID.x0&&x<=GRID.x0+GRID.span&&z>=GRID.z0&&z<=GRID.z0+GRID.spanZ&&regionAt(x,z).id===r.id;

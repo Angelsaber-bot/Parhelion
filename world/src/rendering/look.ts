@@ -5,6 +5,7 @@ import {egyptToonMaterial} from '../environment/egyptMaterials';
 // (the "parhelion" the game is named after).
 import * as THREE from 'three';
 import { groundGrimeUniforms } from './groundGrime';
+import { terrainGrainTexture } from './surfaceGrain';
 import { kyotoToonMaterial } from '../environment/kyotoMaterials.js';
 import { winterToonMaterial } from '../environment/winterMaterials.js';
 import { blackSailToonMaterial } from '../environment/blackSailMaterials.js';
@@ -58,6 +59,7 @@ type Kind = 'default' | 'terrain' | 'foliage' | 'water';
 function celify(mat: THREE.MeshToonMaterial, kind: Kind) {
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uTime = timeUniform; sh.uniforms.uCloud = cloudShadowUniform; sh.uniforms.uSea = seaLevelUniform;
+    if (kind === 'terrain') sh.uniforms.uTerrainGrain = { value: terrainGrainTexture() };
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', `#include <common>\nuniform float uTime;\nvarying vec3 vWPos;`)
       .replace('#include <begin_vertex>', kind === 'foliage' ? `#include <begin_vertex>
@@ -70,17 +72,28 @@ function celify(mat: THREE.MeshToonMaterial, kind: Kind) {
         }` : '#include <begin_vertex>')
       .replace('#include <project_vertex>', `#include <project_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', `#include <common>\nuniform float uTime;\nuniform float uCloud;\nuniform float uSea;\nvarying vec3 vWPos;\n${NOISE_GLSL}`)
+      .replace('#include <common>', `#include <common>\nuniform float uTime;\nuniform float uCloud;\nuniform float uSea;\nvarying vec3 vWPos;\n${kind === 'terrain' ? 'uniform sampler2D uTerrainGrain; float terrainRelief;' : ''}\n${NOISE_GLSL}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         ${kind === 'terrain' ? `{
           float n = fbm(vWPos.xz * 0.045);
           float g = fbm(vWPos.xz * 0.6);
           diffuseColor.rgb *= 0.86 + 0.26 * n;
           diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.08, 1.12, 0.82), smoothstep(0.55, 0.75, g) * 0.6);
-          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.9, 0.95, 1.1), smoothstep(0.4, 0.2, g) * 0.35);
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.9, 0.95, 1.1), (1.0 - smoothstep(0.2, 0.4, g)) * 0.35);
+          // World metres keep gravel, grass fibres and wind-packed sand/snow the same size across terrain tiles.
+          vec4 grain = texture2D(uTerrainGrain, vWPos.xz * 0.26 + vec2(n, g) * 0.21);
+          vec3 paint = diffuseColor.rgb / max(max(diffuseColor.r, diffuseColor.g), max(diffuseColor.b, .01));
+          float meadow = smoothstep(.02, .22, paint.g - paint.r);
+          float sand = smoothstep(.33, .62, paint.r - paint.b) * smoothstep(.25, .54, diffuseColor.r);
           // Wet shore: ground within reach of the waterline darkens and cools, with a lapping upper edge.
           // Snow and ice at the waterline (cool near-white paint) stay dry-looking.
           float icy = smoothstep(0.5, 0.68, min(diffuseColor.r, min(diffuseColor.g, diffuseColor.b))) * step(diffuseColor.r * 0.97, diffuseColor.b);
+          float windPacked = max(sand, icy);
+          float grainHeight = mix(mix(grain.r, grain.g, meadow), grain.b, windPacked);
+          float textureFade = 1.0 - smoothstep(16.0, 64.0, length(vViewPosition));
+          float grainContrast = mix(.43, .24, icy);
+          diffuseColor.rgb *= 1.0 + textureFade * ((grainHeight - .48) * grainContrast + (grain.a - .5) * .14);
+          terrainRelief = (grainHeight - .48) * mix(.021, .012, icy) * textureFade;
           float lapEdge = uSea + ${WET_SHORE.height.toFixed(2)} + sin(uTime * 0.9 + vnoise(vWPos.xz * 0.35) * 6.0) * ${WET_SHORE.lap.toFixed(2)};
           float wet = (1.0 - smoothstep(uSea + 0.03, lapEdge, vWPos.y)) * (1.0 - icy);
           diffuseColor.rgb *= mix(vec3(1.0), vec3(${WET_SHORE.tint.map(v => v.toFixed(2)).join(', ')}), wet);
@@ -89,6 +102,15 @@ function celify(mat: THREE.MeshToonMaterial, kind: Kind) {
           diffuseColor.rgb *= 0.88 + 0.24 * n;
           diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.15, 1.1, 0.7), smoothstep(0.6, 0.8, n) * 0.5);
         }` : `diffuseColor.rgb *= 0.94 + 0.1 * fbm(vWPos.xz * 0.3 + vWPos.y * 0.3);`}`)
+      .replace('#include <normal_fragment_maps>', kind === 'terrain' ? `#include <normal_fragment_maps>
+        {
+          // The height field bends the lighting normal only; silhouettes, roads and collision keep their authored shape.
+          vec3 dx = dFdx(-vViewPosition), dy = dFdy(-vViewPosition);
+          vec3 acrossX = cross(dy, normal), acrossY = cross(normal, dx);
+          float area = dot(dx, acrossX);
+          vec3 slope = (acrossX * dFdx(terrainRelief) + acrossY * dFdy(terrainRelief)) * sign(area) / max(abs(area), 0.0000001);
+          normal = normalize(normal - slope / max(1.0, 4.0 * length(slope)));
+        }` : '#include <normal_fragment_maps>')
       .replace('#include <opaque_fragment>', `
         {
           vec3 base = diffuseColor.rgb + 1e-4;
@@ -130,16 +152,18 @@ function celify(mat: THREE.MeshToonMaterial, kind: Kind) {
 export const WATER_DEPTH = Object.freeze({ shallow: 3.2, foam: .45 });
 /** Stylised water: banded depth colour, scrolling caustic glints, foam-ish fresnel edge, real-depth shallows and shore foam. */
 function waterMaterial(name: string) {
-  const mat = new THREE.MeshToonMaterial({ color: '#3fc4e4', transparent: true, opacity: 0.84, gradientMap: toonGradient(), emissive: '#1580b0', emissiveIntensity: 0.3 });
+  const mat = new THREE.MeshToonMaterial({ color: '#329ba5', transparent: true, opacity: 0.84, gradientMap: toonGradient(), emissive: '#10323b', emissiveIntensity: 0.13 });
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uTime = timeUniform;
+    sh.uniforms.uWaterTop = { value: new THREE.Color('#397ac2') };
+    sh.uniforms.uWaterHorizon = { value: new THREE.Color('#dbe8e7') };
     // The baked terrain height (groundGrime.ts) gives the water its real depth: shallows, shore foam.
     sh.uniforms.uGround = groundGrimeUniforms.parhelionGround; sh.uniforms.uGroundBox = groundGrimeUniforms.parhelionGroundBox;
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', `#include <common>\nvarying vec3 vWPos;`)
       .replace('#include <project_vertex>', `#include <project_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', `#include <common>\nuniform float uTime;\nuniform sampler2D uGround;\nuniform vec4 uGroundBox;\nvarying vec3 vWPos;\n${NOISE_GLSL}`)
+      .replace('#include <common>', `#include <common>\nuniform float uTime;\nuniform sampler2D uGround;\nuniform vec3 uWaterTop, uWaterHorizon;\nuniform vec4 uGroundBox;\nvarying vec3 vWPos;\n${NOISE_GLSL}`)
       .replace('#include <opaque_fragment>', `
         {
           // Depth below the surface from the baked terrain (off the map or no terrain: deep water).
@@ -147,29 +171,39 @@ function waterMaterial(name: string) {
           float gy = texture2D(uGround, clamp(guv, 0.0, 1.0)).r;
           float depth = (gy < -5000.0 || guv.x < 0.0 || guv.y < 0.0 || guv.x > 1.0 || guv.y > 1.0) ? 99.0 : max(vWPos.y - gy, 0.0);
           float shallow = 1.0 - smoothstep(0.0, ${WATER_DEPTH.shallow.toFixed(2)}, depth);
-          // Shallows run lighter and more turquoise; deep water keeps the banded sea colour. Opacity is
-          // unchanged: the seabed is grass-painted terrain and must not show through as a lawn.
-          outgoingLight = mix(outgoingLight, outgoingLight * vec3(0.86, 1.04, 1.06) + vec3(0.03, 0.09, 0.1), shallow * 0.6);
-          // Shore foam: a broken, slowly breathing band where the water meets the land.
-          float lap = sin(uTime * 1.1 + vnoise(vWPos.xz * 0.35) * 6.0) * 0.5 + 0.5;
-          float foamEdge = 1.0 - smoothstep(0.0, ${WATER_DEPTH.foam.toFixed(2)} * (0.6 + 0.6 * lap), depth);
-          float foam = foamEdge * smoothstep(0.35, 0.6, vnoise(vWPos.xz * 1.6 + vec2(uTime * 0.12, -uTime * 0.08)) + foamEdge * 0.35);
-          outgoingLight = mix(outgoingLight, vec3(0.95, 0.99, 1.0), foam * 0.85);
-          diffuseColor.a = mix(diffuseColor.a, 0.95, foam);
-        }
-        {
-          vec2 p = vWPos.xz * 0.18;
-          float a = vnoise(p + vec2(uTime * 0.25, uTime * 0.1));
-          float b = vnoise(p * 1.7 - vec2(uTime * 0.18, -uTime * 0.22));
-          float ridge = 1.0 - abs(a + b - 1.0) * 2.0;
-          float glint = smoothstep(0.86, 0.96, ridge);
-          float tint = fbm(vWPos.xz * 0.02);
-          outgoingLight = mix(outgoingLight, outgoingLight * vec3(0.7, 0.92, 1.05), smoothstep(0.35, 0.65, tint) * 0.5);
-          outgoingLight += vec3(0.85, 1.0, 1.0) * glint * 0.55;
-          vec3 vd = normalize(vViewPosition);
-          float fres = pow(1.0 - clamp(dot(normal, vd), 0.0, 1.0), 4.0);
-          outgoingLight = mix(outgoingLight, vec3(0.86, 0.96, 1.0), fres * 0.55);
-          diffuseColor.a = mix(diffuseColor.a, 0.96, fres);
+          vec2 p = vWPos.xz;
+          float t = uTime;
+          // Meter-scale swells with shorter crosswind ripples. Filter out subpixel waves at grazing angles.
+          float footprint = max(length(dFdx(p)), length(dFdy(p)));
+          float ripple = 1.0 - smoothstep(0.12, 0.65, footprint);
+          float swell = cos(dot(p, vec2(0.42, 0.22)) - t * 0.83);
+          float crossSwell = cos(dot(p, vec2(-0.27, 0.63)) + t * 0.64);
+          float capillary = cos(dot(p, vec2(2.35, 1.13)) + swell * 1.7 - t * 1.65);
+          vec2 slope = vec2(0.088, 0.046) * swell + vec2(-0.035, 0.082) * crossSwell
+                     + vec2(0.061, 0.03) * capillary * ripple;
+          vec3 waterNormal = normalize(vec3(-slope.x, 1.0, -slope.y));
+          vec3 eye = normalize(cameraPosition - vWPos);
+          vec3 skyRay = reflect(-eye, waterNormal);
+          float facing = saturate(dot(waterNormal, eye));
+          float fresnel = 0.045 + 0.90 * pow(1.0 - facing, 4.0);
+          vec3 skyLight = mix(uWaterHorizon, uWaterTop, smoothstep(0.0, 0.72, skyRay.y));
+          outgoingLight *= mix(vec3(0.46, 0.72, 0.88), vec3(1.07, 1.20, 1.08), shallow);
+          outgoingLight = mix(outgoingLight, skyLight, fresnel);
+          #if NUM_DIR_LIGHTS > 0
+            vec3 waveView = normalize(mat3(viewMatrix) * waterNormal);
+            vec3 halfway = normalize(normalize(vViewPosition) + directionalLights[0].direction);
+            float spec = pow(saturate(dot(waveView, halfway)), mix(85.0, 230.0, ripple));
+            float lit = saturate(dot(reflectedLight.directDiffuse, vec3(0.45, 0.95, 0.45)) * 5.0);
+            outgoingLight += directionalLights[0].color * (spec * lit * 0.65);
+          #endif
+          // Shore foam follows the sounding rather than a tiled white pattern on the open sea.
+          float shoreNoise = vnoise(p * 0.52 + vec2(t * 0.07, -t * 0.04));
+          float phase = depth * 4.8 - t * 1.1 + shoreNoise * 2.6;
+          float foamEdge = 1.0 - smoothstep(0.0, ${WATER_DEPTH.foam.toFixed(2)} * (0.45 + shoreNoise), depth);
+          float wash = (1.0 - smoothstep(0.35, 1.85, depth)) * smoothstep(0.79, 0.98, sin(phase));
+          float foam = max(foamEdge, wash * 0.52) * smoothstep(0.22, 0.68, shoreNoise + 0.18 * swell);
+          outgoingLight = mix(outgoingLight, uWaterHorizon * 0.64 + skyLight * 0.27, foam);
+          diffuseColor.a = mix(diffuseColor.a, 0.97, max(fresnel, foam));
         }
         #include <opaque_fragment>`);
   };
@@ -213,6 +247,7 @@ export function toonMaterial(src: THREE.Material): THREE.Material {
       const m = new THREE.MeshToonMaterial({
         vertexColors: s.vertexColors, color: s.color, gradientMap: toonGradient(),
         map: s.map ?? null, alphaMap: s.alphaMap ?? null,
+        ...(s.normalMap ? { normalMap: s.normalMap, normalMapType: s.normalMapType, normalScale: s.normalScale } : {}),
         emissive: s.emissive ?? 0x000000, emissiveMap: s.emissiveMap ?? null,
         emissiveIntensity: s.emissiveIntensity ?? 1,
         side: s.side, transparent: s.transparent, opacity: s.opacity, alphaTest: s.alphaTest,
@@ -268,6 +303,8 @@ export function makeSky(): THREE.Mesh {
     fog: false,
     uniforms: {
       sunDir: { value: SUN_DIR },
+      keyColor: { value: new THREE.Color('#ffe5bb') },
+      cloudCover: { value: .01 },
       uTime: timeUniform,
       top: { value: new THREE.Color('#2a74dc') },
       mid: { value: new THREE.Color('#7cc4f5') },
@@ -281,42 +318,50 @@ export function makeSky(): THREE.Mesh {
         gl_Position = p.xyww;
       }`,
     fragmentShader: /* glsl */ `
-      uniform vec3 sunDir, top, mid, horizon;
-      uniform float uTime;
+      uniform vec3 sunDir, top, mid, horizon, keyColor;
+      uniform float uTime, cloudCover;
       varying vec3 vDir;
       ${NOISE_GLSL}
       void main() {
         vec3 d = normalize(vDir);
         float h = clamp(d.y, -0.2, 1.0);
-        vec3 col = mix(horizon, mid, smoothstep(0.0, 0.25, h));
-        col = mix(col, top, smoothstep(0.25, 0.9, h));
+        float forwardScatter = max(0.0, dot(d, sunDir));
+        float nearHorizon = 1.0 - smoothstep(0.0, 0.42, abs(h));
+        vec3 skyHaze = mix(horizon, horizon * keyColor * 1.18, nearHorizon * forwardScatter * 0.45);
+        vec3 col = mix(skyHaze, mid, smoothstep(-0.03, 0.38, h));
+        col = mix(col, top, smoothstep(0.22, 0.96, h));
         float a = acos(clamp(dot(d, sunDir), -1.0, 1.0));
-        col += vec3(1.0, 0.97, 0.85) * smoothstep(0.05, 0.035, a);           // sun disk
-        col += vec3(1.0, 0.95, 0.8) * 0.35 * exp(-a * 10.0);                  // glow
+        col += keyColor * (2.4 * (1.0 - smoothstep(0.012, 0.017, a)) + 0.48 * exp(-a * 13.0));
         float halo = exp(-pow((a - 0.384) / 0.012, 2.0));                     // 22° halo
         col += mix(vec3(1.0, 0.75, 0.6), vec3(0.75, 0.85, 1.0), smoothstep(0.37, 0.4, a)) * halo * 0.28;
         // sundogs: two bright spots on the halo, level with the sun
         vec3 right = normalize(cross(sunDir, vec3(0.0, 1.0, 0.0)));
-        vec3 up = cross(right, sunDir);
         for (int i = 0; i < 2; i++) {
           float s = i == 0 ? 1.0 : -1.0;
           vec3 dog = normalize(sunDir * cos(0.384) + right * s * sin(0.384));
           float ad = acos(clamp(dot(d, dog), -1.0, 1.0));
           col += vec3(1.0, 0.85, 0.7) * exp(-ad * 70.0) * 0.6;
         }
-        // anime cumulus: projected fbm sheet, hard-ish edge, lavender undersides, sun-lit rims
+        // A stretched upper veil behind the lower banks. Both layers inherit
+        // the local sky and key colours, so clouds also fall into shadow at night.
         if (d.y > 0.0) {
           vec2 uv = d.xz / (d.y + 0.12) * 1.6 + vec2(uTime * 0.012, uTime * 0.004);
-          float c = fbm(uv * 0.8) + 0.45 * fbm(uv * 2.7 + 3.1) - 0.84;
-          float cov = smoothstep(0.0, 0.04, c) * smoothstep(0.0, 0.12, d.y);
-          float thick = smoothstep(0.02, 0.22, c);
-          float lit = clamp(dot(normalize(vec3(d.x, 0.0, d.z)), normalize(vec3(sunDir.x, 0.0, sunDir.z))) * 0.5 + 0.5, 0.0, 1.0);
-          vec3 cloud = mix(vec3(1.0, 0.99, 0.97), vec3(0.72, 0.76, 0.92), thick * 0.75);
-          cloud += vec3(1.0, 0.92, 0.78) * smoothstep(0.1, 0.02, c - 0.02) * 0.25 * lit;
-          col = mix(col, cloud, cov * 0.92);
+          float veil = vnoise(vec2(uv.x * 1.3 + uv.y * 4.1, uv.y * 0.65) + vec2(uTime * 0.003, 11.0));
+          col = mix(col, mix(mid, horizon, 0.65), 0.17 * smoothstep(0.52, 0.86, veil) * smoothstep(0.05, 0.3, h));
+          float body = fbm(uv * 0.8);
+          float detail = fbm(uv * 2.7 + 3.1);
+          float c = body + 0.40 * detail - 0.82 + cloudCover;
+          float cov = smoothstep(-0.012, 0.065, c) * smoothstep(0.015, 0.13, d.y);
+          float thick = smoothstep(0.015, 0.25, c);
+          vec3 shaded = mix(mid, top, 0.34) * 0.87;
+          vec3 lit = horizon * (0.89 + 0.23 * detail) + keyColor * 0.17;
+          vec3 cloud = mix(lit, shaded, thick * (0.81 - 0.31 * forwardScatter));
+          cloud += keyColor * forwardScatter * (1.0 - smoothstep(0.025, 0.14, c)) * 0.32;
+          col = mix(col, cloud, cov * 0.94);
         }
-        col = mix(col, horizon * vec3(1.0, 0.97, 0.94), smoothstep(0.08, 0.0, abs(d.y)) * 0.5);
         gl_FragColor = vec4(col, 1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
       }`,
   });
   const sky = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), mat);

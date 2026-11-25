@@ -8,6 +8,51 @@ import { VT } from '../story/valleyTownSetPieces';
 import { landscapeWalkway } from './landscapeWalkway';
 
 type V3 = [number, number, number];
+
+function buildLookbackGate(art: SiteArt, ground: (x: number, z: number) => number) {
+  const x = -263, centre = -27.6;
+  const piers = [centre - 6, centre + 6];
+  const lintel = Math.max(...piers.map(z => ground(x, z))) + 5.15;
+  const masonry = ['#a69c85', '#b1a98f', '#a49982', '#bcb29a'];
+  const oak = '#65513d', slate = '#4b6669', brass = '#c39a5c';
+  for (const z of piers) {
+    const base = ground(x, z), course = (lintel - base - .77) / 8;
+    art.box([x, (base + lintel) / 2, z], [1.18, lintel - base, 1.18], '#777260', true);
+    art.box([x, base + .28, z], [1.65, .56, 1.65], masonry[0], true);
+    for (let row = 0; row < 8; row++) {
+      const yy = base + .56 + course * (row + .5), cut = row % 2 ? .19 : -.18;
+      for (const [a, b] of [[-.62, cut - .011], [cut + .011, .62]]) {
+        const s = (a + b) / 2, len = b - a;
+        art.box([x + (row % 2 ? s : 0), yy, z + (row % 2 ? 0 : s)],
+          [row % 2 ? len : 1.24, course - .018, row % 2 ? 1.24 : len], masonry[(row + (a < -.6 ? 0 : 1)) % 4]);
+      }
+    }
+    art.box([x, lintel - .11, z], [1.58, .25, 1.58], masonry[3]);
+    const inward = Math.sign(centre - z);
+    art.beam([x, lintel - .98, z + inward * .52], [x, lintel + .12, z + inward * 1.69], .22, oak);
+    for (const side of [-1, 1]) {
+      art.box([x + side * .65, lintel - 1.51, z], [.075, .83, .39], slate);
+      art.cyl([x + side * .71, lintel - 1.42, z], .13, .06, brass, false, 'metal', [0, 0, Math.PI / 2]);
+    }
+  }
+  art.box([x, lintel + .22, centre], [1.32, .45, 13.7], oak);
+  const eave = lintel + .49, ridge = eave + .88, pitch = Math.atan2(.88, 1.42);
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 12; i++) {
+      const z = centre + (i - 5.5) * 1.18;
+      art.box([x + side * .71, (eave + ridge) / 2, z],
+        [Math.hypot(1.42, .88), .105, 1.18], i % 3 === 1 ? '#587678' : slate, false, 'metal', [0, 0, -side * pitch]);
+      if (i < 11) art.beam([x, ridge + .073, z + .59], [x + side * 1.42, eave + .073, z + .59], .065, '#68817b', false, 'metal');
+    }
+    art.box([x + side * 1.39, eave - .025, centre], [.13, .18, 14.22], oak);
+  }
+  for (const z of [centre - 6.95, ...piers, centre, centre + 6.95]) {
+    art.box([x, eave - .08, z], [2.82, .17, .14], oak);
+    for (const side of [-1, 1]) art.beam([x, ridge - .07, z], [x + side * 1.42, eave - .07, z], .14, oak);
+  }
+  art.box([x, ridge + .064, centre], [.19, .12, 14.25], '#79908a', false, 'metal');
+}
+
 /** Valley and Homeward Town formal set pieces with real collision, placed at load on the reviewed maps:
  * V01 Lookback Bridge (stream abutments, rails, town north gate, under-bridge steps and old path),
  * V06 West Ridge (breach rock slopes, local camp, lookout), T02 kitchen annex with its back door,
@@ -34,16 +79,13 @@ export function createValleyTownArchitecture(ground: (x: number, z: number) => n
     for (let x = west - .6; x <= east + .6; x += 1.6) bridge.box([x, ground(x, z) + .55, z], [.12, 1.1, .12], darkTimber, true);
     bridge.box([c.x, ground(c.x - 3, z) + 1.08, z], [east - west + 1.4, .1, .1], timber, true);
   }
-  for (const z of [-33.6, -21.6]) {
-    const p = at(-263, z); bridge.box([p[0], p[1] + 2.6, z], [1.2, 5.2, 1.2], stone, true);
-    bridge.box([p[0], p[1] + .3, z], [1.6, .6, 1.6], darkStone, true);
-  }
-  { const p = at(-263, -27.6); bridge.box([p[0], p[1] + 5.45, -27.6], [1.4, .5, 13.4], darkTimber); bridge.box([p[0], p[1] + 6, -27.6], [2.2, .25, 14.2], roof); }
+  buildLookbackGate(bridge, ground);
   // Steps from the south walk down the west bank to the stream bed, then the old path under the bridge.
   for (let i = 0; i < 4; i++) { const x = west - .2 + i * .45, z = -21.2; bridge.box([x, ground(x, z) + .1, z], [.45, .2, 1.2], stone, true); }
   for (let z = -22; z >= -36; z -= 2) { const x = c.x - c.halfWidth + .7; bridge.box([x, ground(x, z) + .06, z], [1.3, .12, 1.9], darkStone, true); }
   bridge.box([c.x, ground(c.x, -40) + .32, -28], [c.halfWidth * 2 - .2, .04, 40], '#5d8fa0');
   finish(bridge, 'ValleyLookbackBridge');
+  for (const mesh of bridge.layers.values()) mesh.castShadow = true;
 
   // H13: the footbridge residents finish while the player is away (enabled by state).
   const foot = new SiteArt(), fz = -41;

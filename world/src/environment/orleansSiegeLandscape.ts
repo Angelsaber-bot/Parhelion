@@ -46,15 +46,52 @@ export function createOrleansSiegeLandscape(ground: Ground) {
   function tent(p: Point, w: number, depth: number, color: string) {
     const [x, y, z] = p, h = 3.2;
     for (const side of [-1, 1]) {
-      art.box([x + side * w / 4, y + h / 2 + .45, z], [Math.hypot(w / 2, h - .9), .075, depth], color, false, 'body', [0, 0, -side * Math.atan2(h - .9, w / 2)]);
+      // Bias-cut panels take tension at their seams, and belly between the ridge and guy line.
+      const clothPoint = (u: number, v: number): Point => {
+        const baySag = Math.abs(Math.sin(v * Math.PI * 5));
+        const belly = Math.sin(Math.PI * u) * (.12 + baySag * .14) + u * .09 * baySag;
+        return [x + side * w * .5 * u, y + h - u * (h - .9) - belly, z + (v - .5) * depth];
+      };
+      const panels = new THREE.PlaneGeometry(1, 1, 4, 10);
+      const positions = panels.attributes.position;
+      for (let i = 0; i < positions.count; i++) {
+        const u = positions.getX(i) + .5, v = .5 - positions.getY(i);
+        positions.setXYZ(i, ...clothPoint(u, side > 0 ? v : 1 - v));
+      }
+      panels.computeVertexNormals();
+      art.add(panels, color, [0, 0, 0]);
+      // The back face is visible through the entry, where the ceiling should read as cloth.
+      const index = panels.getIndex()!;
+      for (let i = 0; i < index.count; i += 3) {
+        const first = index.getX(i);
+        index.setX(i, index.getX(i + 2)); index.setX(i + 2, first);
+      }
+      panels.computeVertexNormals();
+      art.add(panels, new THREE.Color(color).multiplyScalar(.78).getStyle(), [0, 0, 0]);
+      panels.dispose();
+      for (let seam = 0; seam <= 5; seam++) {
+        for (let j = 1; j <= 4; j++) art.beam(clothPoint((j - 1) / 4, seam / 5),
+          clothPoint(j / 4, seam / 5), .037, linen);
+      }
       for (const end of [-1, 1]) {
-        art.beam([x, y + h, z + end * depth / 2], [x + side * (w / 2 + 1), y, z + end * (depth / 2 + .7)], .035, linen);
-        art.box([x + side * (w / 2 + 1), y + .18, z + end * (depth / 2 + .7)], [.07, .5, .07], dark);
+        const px = x + side * (w / 2 + 1), pz = z + end * (depth / 2 + .7), peg = floor(px, pz);
+        art.beam(clothPoint(1, (end + 1) / 2), [px, peg + .16, pz], .042, linen);
+        art.box([px, peg + .14, pz], [.085, .5, .085], dark);
       }
     }
-    for (const end of [-1, 1]) art.beam([x, y, z + end * depth / 2], [x, y + h + .15, z + end * depth / 2], .12, oak, true);
+    for (const end of [-1, 1]) {
+      const pz = z + end * depth / 2;
+      art.beam(point(x, pz), [x, y + h + .15, pz], .14, oak, true);
+    }
     art.beam([x, y + h, z - depth / 2], [x, y + h, z + depth / 2], .14, oak);
-    for (const side of [-1, 1]) art.box([x + side * w * .23, y + .25, z], [w * .3, .16, depth * .65], '#8b7f68', true);
+    for (const side of [-1, 1]) {
+      const cotX = x + side * w * .23, cotY = Math.max(...[-1, 1].map(end => floor(cotX, z + end * depth * .28))) + .36;
+      art.box([cotX, cotY, z], [w * .3, .16, depth * .65], '#8b7f68', true);
+      for (const end of [-1, 1]) {
+        const pz = z + end * depth * .28;
+        for (const dx of [-.48, .48]) art.beam(point(cotX + dx, pz), [cotX + dx, cotY, pz], .13, dark);
+      }
+    }
   }
   function basket(p: Point) {
     const [x, y, z] = p;
@@ -90,10 +127,17 @@ export function createOrleansSiegeLandscape(ground: Ground) {
     art.beam([-23.7, bridgeY, z], [-23.7, bridgeY + 7.4, z], .42, dark, true);
     art.beam([-23.7, bridgeY + 7.4, z], [-19, bridgeY + 7.4, z], .32, oak);
     art.beam([-23.7, bridgeY + 4, z], [-19, bridgeY + 7.4, z], .22, dark);
+    art.beam([-19, bridgeY + 7.42, z], [-19, bridgeY + 6.72, z], .12, iron, false, 'metal');
     art.box([-19, bridgeY + 5.7, z], [1.1, 2.2, 1.1], stone);
+    for (const dx of [-.43, .43]) art.box([-19 + dx, bridgeY + 5.7, z], [.11, 2.28, 1.16], iron, false, 'metal');
   }
   art.beam([-23.7, bridgeY + 7.4, 11.2], [-23.7, bridgeY + 7.4, 16.8], .36, dark);
   art.cyl([-21.2, bridgeY + 1.1, 17.3], .6, 1.3, oak, true, 'body', [Math.PI / 2, 0, 0]);
+  for (const z of [16.62, 17.96]) {
+    const bed = floor(-21.2, z);
+    art.box([-21.2, bed + .17, z], [1.32, .36, .76], stone);
+    for (const dx of [-.46, .46]) art.beam([-21.2 + dx, bed + .3, z], [-21.2, bridgeY + 1.08, z], .21, oak);
+  }
   art.ring([-21.2, bridgeY + 1.1, 18], .83, .085, iron);
   for (let k = 0; k < 6; k++) {
     const t = k * Math.PI / 3;
@@ -102,7 +146,7 @@ export function createOrleansSiegeLandscape(ground: Ground) {
 
   // West: enemy casualty assembly, facing AWAY from the city, with a landward exit.
   const enemy = point(-77, 31);
-  tent([enemy[0] - 5, enemy[1], enemy[2]], 6, 9, '#8d6653');
+  tent(point(enemy[0] - 5, enemy[2]), 6, 9, '#8d6653');
   tent(point(-83, 47), 6, 7, '#8b8067');
   banner(-69, 29, '#853f39', -1);
   ramp(point(-63, 18), point(-67, 31), 4.8, false);
@@ -112,14 +156,24 @@ export function createOrleansSiegeLandscape(ground: Ground) {
   for (let i = 0; i < 3; i++) {
     const [x, y, z] = point(-75 + i * 2.2, 41);
     art.box([x, y + .42, z], [1.1, .13, 2.5], linen, true);
-    for (const side of [-1, 1]) art.beam([x + side * .6, y + .45, z - 1.65], [x + side * .6, y + .45, z + 1.65], .07, oak);
+    for (const side of [-1, 1]) art.beam([x + side * .575, y + .45, z - 1.65], [x + side * .575, y + .45, z + 1.65], .07, oak);
+    for (const end of [-.91, .91]) for (const dx of [-.4, .4])
+      art.beam(point(x + dx, z + end), [x - dx, y + .4, z + end], .07, dark);
   }
   // East: separate allied engineer/boat staging, never reused as the enemy safe area.
   tent(point(37, 31), 7, 9, '#727e96');
   banner(29, 26, '#536e99', 1);
-  for (let i = 0; i < 5; i++) {
-    const [x, y, z] = point(39, 19 + i * .45);
-    art.box([x, y + .4 + (i % 2) * .2, z], [9.2, .25, .32], oak, true);
+  const bedZ = 19.9;
+  const stackY = Math.max(...[-4.6, -3.3, 0, 3.3, 4.6].flatMap(dx =>
+    [-1, 0, 1].map(dz => floor(39 + dx, bedZ + dz)))) + .18;
+  for (const dx of [-3.3, 3.3]) {
+    const y = Math.min(floor(39 + dx, bedZ - 1), floor(39 + dx, bedZ + 1)) - .12;
+    art.box([39 + dx, (stackY + y) / 2, bedZ], [.42, stackY - y, 2.24], dark, true);
+    art.box([39 + dx, stackY + .29, bedZ], [.19, .08, 1.95], dark);
+  }
+  for (let i = -2; i <= 2; i++) {
+    art.box([39, stackY + .125, bedZ + i * .44], [9.2, .25, .39], oak, true);
+    if (i % 2 === 0) art.box([38.84, stackY + .455, bedZ + i * .4], [8.68, .25, .39], '#96704c', true);
   }
   for (const x of [27, 29, 31]) basket(point(x, 39));
   const table = point(32, 32);

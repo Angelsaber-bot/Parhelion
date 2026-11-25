@@ -226,7 +226,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { MsaaScenePass } from './rendering/msaaScenePass';
-import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts } from './rendering/fx';
+import { makeGrassField, makeSunShafts, bindWaterEnvironment, makeUpdrafts } from './rendering/fx';
 import { settlementGrassClearance } from './map/grassClearance';
 import {createArmoryWorkshop,ARMORY_WORKSHOP} from './story/armoryWorkshop';
 import { makeRegionWeather } from './map/regionWeather';
@@ -924,7 +924,7 @@ addEventListener('pagehide',e=>{if(!e.persisted)residentEventScene.dispose();});
 staticGeos.length = 0; existingPropGeos.length = 0;
 const consumedSourceReceipt = detachConsumedSourceNodes(world, colliders.map(collider => collider.bvh.geometry));
 
-if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world.waterLevel);
+bindWaterEnvironment(waterMesh.material as THREE.Material, sky, grid);
 const homeGrassRoutes=HOME_GRASS_PATHS;
 const homeGrassBuildings=HOME_BUILDINGS.map(h=>[h.p[0]+720-h.w/2-1,h.p[2]-h.d/2-1,h.p[0]+720+h.w/2+1,h.p[2]+h.d/2+1] as const);
 const homeGrassCourts=HOME_SITES.filter(s=>['square','garden','practice','park'].includes(s.id)).map(s=>[s.position[0]+720,s.position[2],s.radius,s.radius] as const);
@@ -5195,7 +5195,8 @@ function frame(now: number) {
   homeResidentLife.update(dt,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,gameplayActive()||!!narrative?.open,regionVisuals.ready('home'));
   sky.position.copy(eye);
   twilight.update(dt, player.pos.x, done.has('sun_core') && !done.has(KW.recall), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'),
-    done.has(F.nightStart) && !done.has(F.nightDone), done.has(KW.bell));
+    done.has(F.nightStart) && !done.has(F.nightDone), done.has(KW.bell), insideSkyCrown(player.pos));
+  grass?.setLighting(twilight.direction, sun, hemisphere);
   matchServantLighting();
   updateCold(dt);
   // Shadow frame snaps to whole shadow texels in light space: walking no longer makes every

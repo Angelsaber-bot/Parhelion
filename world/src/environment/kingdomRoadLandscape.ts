@@ -88,6 +88,34 @@ export function createKingdomRoadLandscape(ground: (x: number, z: number) => num
       for (const height of [1, 7.8, 12.4, 16.4]) gantry.beam(gatePoint(s, out, height), gatePoint(sign * 5, 15, height), .22, iron);
     }
   }
+  // The shutter head sits under a slate hoist roof. Its tie beams land on the two
+  // stone piers; the narrow gable ends expose the king posts and paired rafters.
+  const gateYaw = Math.PI / 4;
+  for (const s of [-5, 5]) {
+    for (const height of [3.1, 7.2, 11.3, 15.4]) {
+      gantry.box(gatePoint(s, 15, height), [1.02,.19,1.02], '#a8a58f', false, 'body', [0,gateYaw,0]);
+    }
+    gantry.box(gatePoint(s,15,16.63),[1.26,.4,1.26],pale,false,'body',[0,gateYaw,0]);
+    gantry.beam(gatePoint(s,12.86,17.12),gatePoint(s,17.14,17.12),.32,wood);
+    gantry.beam(gatePoint(s,15,16.8),gatePoint(s,15,18.55),.25,wood);
+    for (const direction of [-1,1]) {
+      gantry.beam(gatePoint(s,15,15.92),gatePoint(s,15 + direction * 1.57,17.12),.21,wood);
+      gantry.beam(gatePoint(s,15,18.55),gatePoint(s,15 + direction * 2.13,17.08),.23,wood);
+    }
+  }
+  const roofPitch = Math.atan2(1.47, 2.13);
+  const slate = ['#4f6062','#586968','#546565','#627171'];
+  for (const direction of [-1,1]) {
+    const rotation = new THREE.Euler().setFromQuaternion(new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(direction * roofPitch, gateYaw, 0, 'YXZ')));
+    for (let course = 0; course < 4; course++) {
+      const offset = (course + .5) * .54;
+      gantry.box(gatePoint(0,15 + direction * offset,18.72 - offset * Math.tan(roofPitch)),
+        [11.58,.13,.54 / Math.cos(roofPitch) + .025],slate[course],false,'body',[rotation.x,rotation.y,rotation.z]);
+    }
+    gantry.beam(gatePoint(-5.7,15 + direction * 2.13,17.10),gatePoint(5.7,15 + direction * 2.13,17.10),.24,wood);
+  }
+  gantry.beam(gatePoint(-5.86,15,18.73),gatePoint(5.86,15,18.73),.26,'#697974');
   finish(gantry, 'COL_KingdomOuterGateGantry', false);
   const shutter = new SiteArt();
   for (let n = 0; n < 12; n++) {

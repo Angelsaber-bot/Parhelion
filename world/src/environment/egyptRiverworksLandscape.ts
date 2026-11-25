@@ -43,16 +43,45 @@ export function createEgyptRiverworksLandscape(ground: Ground) {
   }
   function warehouse(x: number, z: number, w: number, d: number, cargo: 'grain' | 'rigging') {
     const y = pad(x, z, w + 3, d + 3);
+    const paint = cargo === 'grain' ? '#ae6547' : '#527d79';
     // Two opposing doors keep this a traversable courtyard building.
     for (const side of [-1, 1]) {
-      art.box([x + side * w / 2, y + 2.5, z], [.7, 5, d], stone, true);
+      const wallX = x + side * w / 2;
+      art.box([wallX, y + 1.63, z], [.7, 3.26, d], stone, true);
+      art.box([wallX, y + 4.59, z], [.7, .82, d], stone, true);
+      // Deep wind openings bring a strip of sky into the loft. Reeds sit
+      // inside the wall reveal, behind the painted limestone sill.
+      const bay = d / 3, vent = 1.55;
+      let previous = z - d / 2;
+      for (let i = -1; i <= 1; i++) {
+        const centre = z + i * bay, edge = centre - vent / 2;
+        art.box([wallX, y + 3.72, (previous + edge) / 2], [.7, .92, edge - previous], stone, true);
+        previous = centre + vent / 2;
+        art.box([wallX, y + 3.24, centre], [.88, .14, vent + .26], pale);
+        for (const dz of [-.49, 0, .49])
+          art.box([wallX, y + 3.72, centre + dz], [.14, .94, .095], dark);
+      }
+      art.box([wallX, y + 3.72, (previous + z + d / 2) / 2], [.7, .92, z + d / 2 - previous], stone, true);
       for (const wing of [-1, 1]) art.box([x + wing * (w + 3.2) / 4, y + 2.5, z + side * d / 2],
         [(w - 3.2) / 2, 5, .65], stone, true);
       art.box([x, y + 4.3, z + side * d / 2], [3.3, 1.4, .78], pale, true);
+      for (const dx of [-1.82, 1.82]) {
+        art.box([x + dx, y + 1.84, z + side * (d / 2 + .34)], [.43, 3.68, .22], pale);
+        art.box([x + dx, y + 3.52, z + side * (d / 2 + .46)], [.44, .18, .05], paint);
+      }
+      art.box([x, y + 3.9, z + side * (d / 2 + .4)], [4.2, .18, .14], paint);
       ramp(x, z + side * (d / 2 + 1.5), y, x, z + side * (d / 2 + 12), 3.6);
       for (const dx of [-w / 2 + 1, w / 2 - 1]) art.box([x + dx, y + 5.35, z + side * (d / 2 - 1)], [1.6, .7, 1.6], pale);
     }
     art.box([x, y + 5.15, z], [w + 1, .45, d + 1], pale, true);
+    // A flared plaster cornice catches direct sun above its recessed, painted neck.
+    const cornice = new THREE.CylinderGeometry(1, .97, .36, 4, 1, true).rotateY(Math.PI / 4);
+    art.add(cornice, pale, [x, y + 4.94, z], [(w + 1.12) / Math.SQRT2, 1, (d + 1.12) / Math.SQRT2]);
+    cornice.dispose();
+    for (const side of [-1, 1]) {
+      art.box([x + side * (w / 2 + .35), y + 4.72, z], [.12, .13, d + .76], paint);
+      art.box([x, y + 4.72, z + side * (d / 2 + .35)], [w + .76, .13, .12], paint);
+    }
     // The grain store has measured jars and a raised drying rack. The loft
     // at the rope store instead carries a lifting arm directly over its door.
     if (cargo === 'grain') {
@@ -62,13 +91,20 @@ export function createEgyptRiverworksLandscape(ground: Ground) {
       }
       for (const dx of [-1.25, 1.25]) art.box([rackX + dx, y + 6.32, z], [.22, .18, 4.75], timber);
       for (let dz = -2; dz <= 2; dz += .5) art.box([rackX, y + 6.47, z + dz], [2.88, .13, .37], reed, true);
+      const jar = new THREE.LatheGeometry([[.26, 0], [.34, .09], [.46, .36], [.48, .74], [.40, 1.02],
+        [.24, 1.14], [.23, 1.22], [.28, 1.23], [.28, 1.28], [.21, 1.28], [.19, 1.18]]
+        .map(([radius, height]) => new THREE.Vector2(radius, height)), 12);
       for (let i = 0; i < 5; i++) {
         const sx = x - w / 2 + 1.7, sz = z - d / 2 + 1.6 + i * 1.7;
-        art.cyl([sx, y + .63, sz], .48, 1.26, i % 2 ? '#b98758' : '#a68b63', true);
-        art.cyl([sx, y + 1.27, sz], .29, .08, dark);
+        art.add(jar, i % 2 ? '#b98758' : '#a68b63', [sx, y, sz]);
+        // A low-poly solid protects the jar without putting its moulding in the BVH.
+        const solid = new THREE.CylinderGeometry(.45, .32, 1.21, 8).translate(sx, y + .605, sz);
+        art.solids.push(solid.toNonIndexed()); solid.dispose();
+        art.cyl([sx, y + 1.195, sz], .21, .025, i % 2 ? dark : '#bc9b65');
         art.box([x + w / 2 - 1.7, y + .55, sz], [1.45, 1.1, 1.3], timber, true);
         for (const dz of [-.45, .45]) art.box([x + w / 2 - 1.7, y + .56, sz + dz], [1.49, 1.15, .06], bronze);
       }
+      jar.dispose();
     } else {
       const front = z + d / 2, px = x + w / 2 - 1.2;
       art.box([px, y + 6.35, front - .95], [.38, 2.0, .38], timber, true);

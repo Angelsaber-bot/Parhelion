@@ -73,8 +73,24 @@ export function createKyotoStreetLandscape(ground: (x: number, z: number, ceilin
     for (const h of [.55, 1.15]) a.box(P(spec.x, spec.y + h, spec.z), [.2, .16, spec.width], wood, true);
     for (const sign of [-1, 1]) art.box(P(spec.x, spec.y + .75, spec.z + sign * spec.width / 2), [.24, 1.5, .24], dark, true);
     const { collider } = solid(a, `COL_KyotoCheckpoint_${spec.permit}`);
+    // The roadside signal stays in its cypress housing when the barrier opens.
+    const signZ = spec.z + spec.width / 2;
+    const stand = (dx: number, h: number, dz: number) => P(spec.x + dx, spec.y + h, signZ + dz);
+    art.box(stand(0, .16, 0), [.41, .32, .41], '#798077');
+    art.box(stand(0, 1.48, 0), [.19, 2.6, .19], '#695040');
+    for (const side of [-1, 1]) {
+      art.beam(stand(0, 2.23, 0), stand(0, 2.61, side * .52), .084, wood);
+      art.box(stand(.15, 2.625, side * .50), [1.23, .082, .094], '#765941');
+      art.box(stand(.29, 1.95, side * .39), [.22, .98, .084], '#6e4b37');
+      const pitch = Math.atan2(.29, .62);
+      art.box(stand(.15 + side * .31, 2.78, 0), [Math.hypot(.62, .29), .08, 1.58], '#586966', false, 'body', [0, 0, side * pitch]);
+      art.box(stand(.15 + side * .61, 2.60, 0), [.08, .08, 1.64], '#414c4b');
+    }
+    for (const h of [1.55, 2.35]) art.box(stand(.20, h, 0), [.4, .112, .91], dark);
+    art.box(stand(.12, 2.57, 0), [.60, .13, 1.34], '#84694e');
+    art.box(stand(.15, 2.947, 0), [.14, .10, 1.64], '#74837b');
     const signal = new THREE.Mesh(new THREE.BoxGeometry(.7, .7, .14), new THREE.MeshStandardMaterial({ color: '#c4baa0' }));
-    signal.position.fromArray(P(spec.x + .3, spec.y + 1.95, spec.z + spec.width / 2)); signal.rotation.y = Math.PI / 2; root.add(signal);
+    signal.position.fromArray(stand(.3, 1.95, 0)); signal.rotation.y = Math.PI / 2; root.add(signal);
     return { ...spec, art: a, collider, signal };
   });
   solid(art, 'COL_KyotoStreetFixtures');
@@ -100,10 +116,36 @@ export function createKyotoStreetLandscape(ground: (x: number, z: number, ceilin
   }
   repair.finish('kyoto'); root.add(repair.root);
   const ordinary = new SiteArt(); arts.push(ordinary);
-  for (const x of [180, 188]) {
-    ordinary.box(P(x, 9.1, 49.75), [3.5, .5, .055], '#7d9390');
-    for (let n = 0; n < 6; n++) ordinary.box(P(x - 1.45 + n * .58, 8.98, 49.7), [.018, .62, .025], '#e3d7b5');
+  // The indigo noren are suspended from the gallery columns. Dye stripes
+  // follow the same folds as the fabric and the hem breaks into separate panels.
+  function curtainBand(top: number, bottom: number) {
+    const positions: number[] = [], indices: number[] = [];
+    const steps = 8;
+    for (let i = 0; i <= steps; i++) {
+      const u = i / steps;
+      for (const drop of [top, bottom]) {
+        const fold = Math.cos(u * Math.PI * 3);
+        positions.push((u - .5) * .85, -drop * (.82 - .036 * fold), fold * (.028 + .045 * drop));
+      }
+      if (i < steps) {
+        const n = i * 2;
+        indices.push(n, n + 1, n + 2, n + 2, n + 1, n + 3);
+      }
+    }
+    const g = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    g.setIndex(indices); g.computeVertexNormals(); return g;
   }
+  const cloth = [curtainBand(0, .79), curtainBand(.79, .85), curtainBand(.85, 1)];
+  for (const x of [180, 188]) {
+    for (const side of [-1, 1]) ordinary.box(P(x + side * 2, 9.45, 49.78), [.13, .15, .52], dark);
+    ordinary.cyl(P(x, 9.52, 49.57), .052, 4.23, '#9d7852', false, 'body', [0, 0, Math.PI / 2]);
+    for (let panel = 0; panel < 4; panel++) {
+      const anchor = P(x + (panel - 1.5) * .89, 9.55, 49.54);
+      const dye = panel % 2 ? '#526f77' : '#4b6872';
+      cloth.forEach((g, band) => ordinary.add(g, band === 1 ? '#c6c5aa' : dye, anchor));
+    }
+  }
+  cloth.forEach(g => g.dispose());
   ordinary.finish('kyoto'); root.add(ordinary.root);
   const sealedSigns = new SiteArt(); arts.push(sealedSigns);
   for (const x of [180, 188]) {

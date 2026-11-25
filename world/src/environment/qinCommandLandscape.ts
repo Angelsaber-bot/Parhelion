@@ -41,21 +41,48 @@ export function createQinCommandLandscape() {
     art.box([x, 10.5, -229], [.24, .18, 2.95], wood);
   art.box([6, 11.15, -229], [7, .21, 4], wood, true);
   art.box([6, 11.25, -229], [7.2, .1, 4.2], bronze);
+  art.box([6, 11.305, -229], [6.8, .03, 3.82], '#796248');
   for (let n = 0; n < 12; n++) {
-    art.box([3.1 + n * .53, 11.34, -229], [.36, .08, 3.5], '#c3b38d');
-    art.box([3.1 + n * .53, 11.42, -229 + Math.sin(n * .75)], [.26, .12, .36], n % 3 ? red : stone);
+    art.box([3.1 + n * .53, 11.34, -229], [.51, .08, 3.56], n % 4 === 1 ? '#baa985' : '#c3b38d');
   }
+  // The bronze watercourse and clay ridge give the table a topographic relief.
+  const river = [[2.98, -229.7], [3.95, -229.44], [5.1, -229.65], [6.22, -229.15], [7.4, -229.3], [8.93, -228.58]];
+  for (let i = 1; i < river.length; i++)
+    art.beam([river[i - 1][0], 11.39, river[i - 1][1]], [river[i][0], 11.39, river[i][1]], .083, '#4d786c', false, 'metal');
+  const ridge = new THREE.IcosahedronGeometry(1);
+  for (const [dx, dz, height, width] of [[-1.94, .85, .35, .88], [-1.12, .93, .52, .73], [-.52, 1.16, .31, .58], [1.44, -1.15, .28, .75]]) {
+    art.add(ridge, '#a57957', [6 + dx, 11.38, -229 + dz], [width, height, .43]);
+  }
+  ridge.dispose();
+  for (const [px, pz] of [[3.65, -229.05], [5.2, -230.15], [6.53, -228.65], [8.0, -229.93]]) {
+    art.box([px, 11.43, pz], [.3, .1, .32], red);
+    art.box([px, 11.51, pz], [.13, .09, .17], bronze, false, 'metal');
+  }
+  // A pair of notched, flaring arms transfers roof weight from the tie beams
+  // into each red column. The profile is extruded once and shared by all capitals.
+  const bracketProfile = new THREE.Shape();
+  bracketProfile.moveTo(-.43, 0);
+  for (const [bx, by] of [[.43, 0], [.7, .18], [.96, .18], [1.12, .38], [1.41, .38],
+    [1.41, .6], [-1.41, .6], [-1.41, .38], [-1.12, .38], [-.96, .18], [-.7, .18]])
+    bracketProfile.lineTo(bx, by);
+  bracketProfile.closePath();
+  const bracket = new THREE.ExtrudeGeometry(bracketProfile, { depth: .56, bevelEnabled: false }).translate(0, 0, -.28);
   for (const x of [-6, 18]) for (const z of [-216, -236]) {
     art.box([x, 15.2, z], [.7, 10.4, .7], red, true);
     art.box([x, 10.19, z], [1.15, .38, 1.15], stone, true);
     art.box([x, 18.92, z], [.81, .19, .81], bronze);
-    art.box([x, 20.5, z], [1.8, .35, 1.8], bronze);
-    art.box([x, 20.9, z], [2.8, .48, .73], wood);
-    art.box([x, 21.25, z], [1.05, .36, 2.5], red);
+    art.box([x, 20.28, z], [1.19, .36, 1.19], '#61413b');
+    art.add(bracket, wood, [x, 20.42, z]);
+    art.add(bracket, red, [x, 20.83, z], [1, 1, 1], false, 'body', [0, Math.PI / 2, 0]);
+    for (const sign of [-1, 1]) {
+      art.box([x + sign * 1.15, 21.19, z], [.52, .37, .69], red);
+      art.box([x + sign * 1.15, 21.37, z], [.63, .11, .77], bronze, false, 'metal');
+    }
     art.beam([x, 13.87, z], [x, 13.87, z + .7], .1, wood);
     art.beam([x, 13.87, z + .7], [x, 13.33, z + .7], .035, bronze);
     art.lantern(x, 13, z + .7, bronze);
   }
+  bracket.dispose();
   // The outer tie beams key into the excavated walls. Rising webs connect the
   // lower chords to the roof saddles; there is no column in the processional aisle.
   for (const z of [-216, -236]) {

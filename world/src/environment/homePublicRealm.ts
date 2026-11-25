@@ -109,6 +109,65 @@ function fountain() {
   return art;
 }
 
+// The market opens towards the square. Each dyed panel follows the same bowed
+// profile and wraps over the front rail into a short scalloped valance.
+function marketAwning(art: SiteArt, x: number, eave: number, z: number) {
+  const width = 6.82, strips = 11;
+  const back = z + 2.32, front = z + 3.43, lip = eave - .48;
+  for (const dx of [-3.06, 0, 3.06]) {
+    art.beam([x + dx, eave - .78, z + 1.88], [x + dx, lip - .015, front], .09, DARK_TIMBER);
+    art.beam([x + dx, eave + .02, back], [x + dx, lip - .015, front], .085, TIMBER);
+  }
+  art.box([x, lip - .045, front], [width + .16, .085, .10], DARK_TIMBER);
+  const cloth = (vertices: Point[], color: string) => {
+    face(art, vertices, color);
+    face(art, [...vertices].reverse(), color);
+  };
+  for (let i = 0; i < strips; i++) {
+    const left = x - width / 2 + width * i / strips, right = left + width / strips;
+    const color = i % 2 ? '#dfcdaa' : '#ad6850';
+    const profile = [[back, eave + .08], [back + .45, eave - .19], [front, lip + .055]] as const;
+    for (let j = 1; j < profile.length; j++) {
+      const [bz, by] = profile[j - 1], [fz, fy] = profile[j];
+      cloth([[left, by, bz], [left, fy, fz], [right, fy, fz], [right, by, bz]], color);
+    }
+    const zz = front + .056;
+    cloth([[left, lip + .055, front], [left, lip - .13, zz],
+      [right, lip - .13, zz], [right, lip + .055, front]], color);
+    cloth([[left, lip - .13, zz], [left + .11, lip - .24, zz],
+      [right - .11, lip - .24, zz], [right, lip - .13, zz]], color);
+  }
+}
+
+// A cordon-trained vine grows up the end posts and spans the back lintel.
+// Its arched canes establish the silhouette before the leaf clusters are added.
+function gardenArbor(art: SiteArt, x: number, eave: number, z: number, floor: Surface) {
+  const back = z - 1.96;
+  const leaf = new THREE.IcosahedronGeometry(1, 0);
+  const greens = ['#607349', '#859252', '#6d884d', '#9b9f65'];
+  for (const side of [-1, 1]) {
+    const start = x + side * 3.15, base = floor(start, back);
+    const trunk: Point[] = [[start, base, back], [start - side * .19, base + 1.28, back - .045],
+      [start + side * .05, eave - .56, back], [start - side * .53, eave - .16, back]];
+    for (let i = 1; i < trunk.length; i++) art.beam(trunk[i - 1], trunk[i], .115 - .015 * i, '#68543d');
+    let tip = trunk[3];
+    for (let i = 0; i < 5; i++) {
+      const next: Point = [tip[0] - side * .49, eave - .18 + .10 * Math.sin(i * 1.7), back - .06];
+      art.beam(tip, next, .065, '#73623f');
+      const shoot: Point = [next[0] + side * .10, next[1] + (i % 2 ? .18 : -.25), back - .19];
+      art.beam(next, shoot, .036, '#848252');
+      art.add(leaf, greens[(i + (side < 0 ? 1 : 0)) % greens.length], shoot,
+        [.29, .19, .20], false, 'body', [.24, i * .8, side * .58]);
+      if (i % 2 === 0) {
+        const grapes: Point = [shoot[0], shoot[1] - .20, shoot[2] - .04];
+        art.add(leaf, '#786377', grapes, [.085, .14, .075], false, 'body', [.12, i * .64, -.13]);
+      }
+      tip = next;
+    }
+  }
+  leaf.dispose();
+}
+
 function shelter(site: readonly [number, number, number], pitch: number, garden: boolean, floor: Surface) {
   const art = new SiteArt();
   const [x, , z] = homeWorld(site);
@@ -162,6 +221,8 @@ function shelter(site: readonly [number, number, number], pitch: number, garden:
   for (const dy of [.18, .78, .99])
     art.cyl(at(downpipeX, potY + dy, downpipeZ), .375, .073, METAL, false, 'metal');
   art.beam(at(downpipeX, potY + .98, downpipeZ + .23), at(downpipeX, eave - .03, downpipeZ + .23), .085, METAL);
+  if (garden) gardenArbor(art, x, eave, z, floor);
+  else marketAwning(art, x, eave, z);
   return art;
 }
 

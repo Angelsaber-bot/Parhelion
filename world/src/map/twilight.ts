@@ -1,117 +1,157 @@
 import * as THREE from 'three';
 import { SUN_DIR } from '../rendering/look';
-import { regionAt } from './regions';
+import type { WorldRegionId } from '../core/regionIdentity';
+import { regionAt, REGIONS } from './regions';
 
-/** Blend across the western seam rather than switching the whole world's palette abruptly. */
 export function twilightWeight(worldX: number, restored = false): number {
   const x = THREE.MathUtils.clamp((-worldX - 300) / 160, 0, 1);
   return x * x * (3 - 2 * x) * (restored ? .45 : 1);
 }
-
-const DAY = {
-  top: new THREE.Color('#2a74dc'), mid: new THREE.Color('#7cc4f5'), horizon: new THREE.Color('#f2f6ff'),
-  fog: new THREE.Color('#c4e2f6'), sun: new THREE.Color('#fff0d2'), sky: new THREE.Color('#d6ecff'), ground: new THREE.Color('#9aa98a'),
-};
-const DUSK = {
-  top: new THREE.Color('#34386c'), mid: new THREE.Color('#b46b9a'), horizon: new THREE.Color('#ffc38a'),
-  fog: new THREE.Color('#ba92a8'), sun: new THREE.Color('#ffd0a0'), sky: new THREE.Color('#d2c5ee'), ground: new THREE.Color('#a798a9'),
-};
-const DUSK_SUN = new THREE.Vector3(-.91, .18, .36).normalize();
-/** 黑帆尽头: a grey-green storm sky over the pirate sea; clears to a bright sea day once the core is lit. */
 export function stormWeight(worldX: number, restored = false): number {
   const x = THREE.MathUtils.clamp((worldX - 330) / 170, 0, 1);
   return x * x * (3 - 2 * x) * (restored ? .3 : 1);
 }
-const STORM = {
-  top: new THREE.Color('#2f4458'), mid: new THREE.Color('#6f8fa0'), horizon: new THREE.Color('#d8e4e0'),
-  fog: new THREE.Color('#a9bcc6'), sun: new THREE.Color('#e8f0ff'), sky: new THREE.Color('#c9d8e6'), ground: new THREE.Color('#7f8f8a'),
-};
-const STORM_SUN = new THREE.Vector3(.55, .42, -.72).normalize();
-/** 永冬之城: a pale, low winter sky to the north; the sun comes back once the winter core burns. */
 export function snowWeight(worldZ: number, restored = false): number {
   const z = THREE.MathUtils.clamp((-worldZ - 330) / 170, 0, 1);
   return z * z * (3 - 2 * z) * (restored ? .35 : 1);
 }
-const SNOW = {
-  top: new THREE.Color('#6f8db8'), mid: new THREE.Color('#b9cbe2'), horizon: new THREE.Color('#f1f4f9'),
-  fog: new THREE.Color('#dce5f0'), sun: new THREE.Color('#f2f6ff'), sky: new THREE.Color('#e2eaf6'), ground: new THREE.Color('#c3cbd8'),
-};
-const SNOW_SUN = new THREE.Vector3(-.2, .22, -.95).normalize();
-/** 业火京都: a smoky, fire-lit night sky to the south; dawn breaks once the core is relit. */
 export function fireWeight(worldZ: number, restored = false): number {
   const z = THREE.MathUtils.clamp((worldZ - 330) / 170, 0, 1);
   return z * z * (3 - 2 * z) * (restored ? .3 : 1);
 }
-const FIRE = {
-  top: new THREE.Color('#1d1a3a'), mid: new THREE.Color('#6a2f4a'), horizon: new THREE.Color('#ff8a4a'),
-  fog: new THREE.Color('#7a4a52'), sun: new THREE.Color('#ffb070'), sky: new THREE.Color('#8f7ab8'), ground: new THREE.Color('#8a6058'),
-};
-const FIRE_SUN = new THREE.Vector3(.3, .2, .93).normalize();
-const NIGHT = {
-  top: new THREE.Color('#253960'), mid: new THREE.Color('#4a6381'), horizon: new THREE.Color('#8b9bae'),
-  fog: new THREE.Color('#72839b'), sun: new THREE.Color('#a4b9ed'), sky: new THREE.Color('#9eaed0'), ground: new THREE.Color('#717b75'),
-};
-const EXPANSION_SKIES = [
-  {id:'orleans',top:'#536c99',mid:'#aab9cc',horizon:'#f6ddbd',fog:'#cbd1cb',sun:'#ffe4bb',sky:'#e0e5f0',ground:'#969b7a',direction:new THREE.Vector3(-.6,.55,.35).normalize()},
-  {id:'egypt',top:'#347bb0',mid:'#9dcddd',horizon:'#ffe5b7',fog:'#e3d0aa',sun:'#fff1ce',sky:'#e1edeb',ground:'#bca16a',direction:new THREE.Vector3(.3,.9,.2).normalize()},
-  {id:'qin',top:'#5b8291',mid:'#bed3cb',horizon:'#eee7cf',fog:'#ccd8cc',sun:'#f8edc9',sky:'#dbe8dc',ground:'#829175',direction:new THREE.Vector3(.4,.65,-.4).normalize()},
-].map(p=>({...p,top:new THREE.Color(p.top),mid:new THREE.Color(p.mid),horizon:new THREE.Color(p.horizon),fog:new THREE.Color(p.fog),sun:new THREE.Color(p.sun),sky:new THREE.Color(p.sky),ground:new THREE.Color(p.ground)}));
 
-/** Reuses the existing sky, sunlight and fog; adds no passes, particles or shadow maps. */
+type AtmosphereOptions = {
+  sky: [string, string, string];
+  light: [string, string, string];
+  direction: [number, number, number];
+  sunlight: number;
+  skylight: number;
+  fog: [string, number, number];
+  cloudCover: number;
+};
+
+function atmosphere(p: AtmosphereOptions) {
+  return {
+    top: new THREE.Color(p.sky[0]), mid: new THREE.Color(p.sky[1]), horizon: new THREE.Color(p.sky[2]),
+    sun: new THREE.Color(p.light[0]), fill: new THREE.Color(p.light[1]), bounce: new THREE.Color(p.light[2]),
+    direction: new THREE.Vector3(...p.direction).normalize(), sunlight: p.sunlight, skylight: p.skylight,
+    fog: new THREE.Color(p.fog[0]), near: p.fog[1], far: p.fog[2], cloudCover: p.cloudCover,
+  };
+}
+type Atmosphere = ReturnType<typeof atmosphere>;
+
+const valleyDay: AtmosphereOptions = {
+  sky: ['#376da6', '#91c2e3', '#e8e5cf'], light: ['#ffe5bb', '#c7e4ff', '#9b946e'],
+  direction: SUN_DIR.toArray(), sunlight: 2.82, skylight: 1.07, fog: ['#c1d7dd', 108, 710], cloudCover: .01,
+};
+
+const skies: Record<WorldRegionId, Atmosphere> = {
+  alpha: atmosphere(valleyDay),
+  britain: atmosphere({
+    sky: ['#424675', '#ac7d96', '#ffd198'], light: ['#ffcb94', '#c8cbed', '#97776c'],
+    direction: [-.91, .23, .36], sunlight: 2.22, skylight: 1.2, fog: ['#bea6aa', 104, 665], cloudCover: -.025,
+  }),
+  blacksail: atmosphere({
+    sky: ['#304955', '#71949d', '#d1dad0'], light: ['#dfeced', '#c0d7e1', '#74847c'],
+    direction: [.55, .4, -.72], sunlight: 2.13, skylight: 1.26, fog: ['#a5bebf', 78, 600], cloudCover: .13,
+  }),
+  winter: atmosphere({
+    sky: ['#597ba6', '#b4c9e0', '#eee7dc'], light: ['#ffecd0', '#d2e4ff', '#aebed3'],
+    direction: [-.2, .26, -.95], sunlight: 2.25, skylight: 1.2, fog: ['#c4d5e4', 84, 620], cloudCover: .055,
+  }),
+  kyoto: atmosphere({
+    sky: ['#282841', '#79505f', '#dc956b'], light: ['#ffae79', '#b1aad5', '#896253'],
+    direction: [.3, .22, .93], sunlight: 1.87, skylight: 1.21, fog: ['#9a7375', 70, 565], cloudCover: .115,
+  }),
+  orleans: atmosphere({
+    sky: ['#647ca0', '#bbc4ce', '#f3d8b3'], light: ['#ffe2ba', '#d0ddf1', '#9b9175'],
+    direction: [-.71, .45, .35], sunlight: 2.56, skylight: 1.1, fog: ['#c8c7bc', 100, 720], cloudCover: .06,
+  }),
+  egypt: atmosphere({
+    sky: ['#387b9f', '#a7cbd0', '#f4ddb4'], light: ['#fff0c9', '#d1e2e4', '#bea272'],
+    direction: [.55, .78, .24], sunlight: 2.94, skylight: 1.04, fog: ['#dfcba9', 148, 825], cloudCover: -.15,
+  }),
+  qin: atmosphere({
+    sky: ['#547482', '#a9c2bb', '#e9e3c9'], light: ['#f9e5bd', '#cfdfde', '#85947e'],
+    direction: [.52, .48, -.63], sunlight: 2.43, skylight: 1.11, fog: ['#bccbc0', 82, 695], cloudCover: .045,
+  }),
+  home: atmosphere({
+    sky: ['#537aa1', '#a9cfda', '#f2dec1'], light: ['#ffdfae', '#d3e4f2', '#aba07c'],
+    direction: [-.64, .43, .51], sunlight: 2.56, skylight: 1.15, fog: ['#c6d2cc', 108, 705], cloudCover: -.065,
+  }),
+};
+const nightSky = atmosphere({
+  sky: ['#203151', '#485a79', '#8495a8'], light: ['#afc0ed', '#a9b5d3', '#6f797e'],
+  direction: [-.6, .52, .45], sunlight: .85, skylight: 1.15, fog: ['#77879c', 75, 415], cloudCover: -.045,
+});
+const highSky = atmosphere({
+  sky: ['#294978', '#81a8ca', '#f5dab0'], light: ['#ffe5b7', '#cfddf5', '#8c93af'],
+  direction: [-.78, .36, -.24], sunlight: 2.87, skylight: 1.12, fog: ['#d1c9c7', 180, 960], cloudCover: -.14,
+});
+
 export class KingdomTwilight {
   readonly direction = SUN_DIR.clone();
-  private blend = 0;
-  private storm = 0;
-  private snow = 0;
-  private fire = 0;
+  private readonly weights = new Float64Array(REGIONS.length);
   private night = 0;
-  /** 0 by day, 1 at full night (the evening chapters in the valley and Britain). */
-  get nightAmount() { return this.night; }
-  private expansionWeights = [0,0,0];
+  private upperCourt = 0;
+  private readonly color = atmosphere(valleyDay);
+  private initialized = false;
   private readonly uniforms: Record<string, THREE.IUniform>;
+  get nightAmount() { return this.night; }
+
   constructor(sky: THREE.Mesh, private sun: THREE.DirectionalLight,
     private hemisphere: THREE.HemisphereLight, private scene: THREE.Scene) {
     this.uniforms = (sky.material as THREE.ShaderMaterial).uniforms;
     this.uniforms.sunDir.value = this.direction;
+    this.uniforms.keyColor.value = this.sun.color;
   }
-  update(dt: number, x: number, restored: boolean, stormRestored = false, z = 0, snowRestored = false, fireRestored = false, valleyTrial = false, kingdomEvening = false) {
-    this.blend = THREE.MathUtils.damp(this.blend, twilightWeight(x, restored), 1.8, dt);
-    this.storm = THREE.MathUtils.damp(this.storm, stormWeight(x, stormRestored), 1.8, dt);
-    this.snow = THREE.MathUtils.damp(this.snow, snowWeight(z, snowRestored), 1.8, dt);
-    this.fire = THREE.MathUtils.damp(this.fire, fireWeight(z, fireRestored), 1.8, dt);
-    const a = this.blend, b = this.storm, c = this.snow, f = this.fire;
-    for (const key of ['top', 'mid', 'horizon'] as const) (this.uniforms[key].value as THREE.Color).copy(DAY[key]).lerp(DUSK[key], a).lerp(STORM[key], b).lerp(SNOW[key], c).lerp(FIRE[key], f);
-    this.direction.copy(SUN_DIR).lerp(DUSK_SUN, a).lerp(STORM_SUN, b).lerp(SNOW_SUN, c).lerp(FIRE_SUN, f).normalize();
-    this.sun.color.copy(DAY.sun).lerp(DUSK.sun, a).lerp(STORM.sun, b).lerp(SNOW.sun, c).lerp(FIRE.sun, f);
-    this.sun.intensity = THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(2.7, 2.05, a), 2.1, b), 2.2, c), 1.7, f);
-    this.hemisphere.color.copy(DAY.sky).lerp(DUSK.sky, a).lerp(STORM.sky, b).lerp(SNOW.sky, c).lerp(FIRE.sky, f);
-    this.hemisphere.groundColor.copy(DAY.ground).lerp(DUSK.ground, a).lerp(STORM.ground, b).lerp(SNOW.ground, c).lerp(FIRE.ground, f);
-    // Keep the battle floor and silhouettes readable even at deepest twilight.
-    this.hemisphere.intensity = THREE.MathUtils.lerp(1.15, 1.32, Math.max(a, b, c, f));
-    if (this.scene.fog instanceof THREE.Fog) {
-      this.scene.fog.color.copy(DAY.fog).lerp(DUSK.fog, a).lerp(STORM.fog, b).lerp(SNOW.fog, c).lerp(FIRE.fog, f);
-      this.scene.fog.near = THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(120, 145, a), 120, b), 100, c), 110, f);
-      this.scene.fog.far = THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(720, 680, a), 640, b), 600, c), 620, f);
+
+  private blend(p: Atmosphere, t: number) {
+    for (const key of ['top', 'mid', 'horizon', 'sun', 'fill', 'bounce', 'fog'] as const) this.color[key].lerp(p[key], t);
+    for (const key of ['sunlight', 'skylight', 'near', 'far', 'cloudCover'] as const)
+      this.color[key] = THREE.MathUtils.lerp(this.color[key], p[key], t);
+    this.color.direction.lerp(p.direction, t);
+  }
+
+  update(dt: number, x: number, restored: boolean, stormRestored = false, z = 0, snowRestored = false, fireRestored = false, valleyTrial = false, kingdomEvening = false, inSkyCourt = false) {
+    const region = regionAt(x, z, this.weights).id;
+    // Mix actual neighbours at seams, even where four realms meet. Restored realms
+    // recover their daylight while retaining a little of their own atmosphere.
+    let total = 0, daylight = 0;
+    for (let i = 0; i < REGIONS.length; i++) {
+      const id = REGIONS[i].id, weight = this.weights[i];
+      if (!weight) continue;
+      let recovery = 0;
+      if (id === 'britain' && restored) recovery = .55;
+      if (id === 'blacksail' && stormRestored) recovery = .7;
+      if (id === 'winter' && snowRestored) recovery = .65;
+      if (id === 'kyoto' && fireRestored) recovery = .7;
+      daylight += weight * recovery;
+      const remaining = weight * (1 - recovery);
+      total += remaining;
+      this.blend(skies[id], remaining / total);
     }
-    // Corner domains own their atmosphere; axis-based legacy era blends alone
-    // would make Egypt inherit Kyoto's fire and Qin inherit the winter storm.
-    const region=regionAt(x,z).id;
-    for(const [i,preset] of EXPANSION_SKIES.entries()) {
-      const weight=this.expansionWeights[i]=THREE.MathUtils.damp(this.expansionWeights[i],region===preset.id?1:0,1.8,dt);
-      for(const key of ['top','mid','horizon'] as const)(this.uniforms[key].value as THREE.Color).lerp(preset[key],weight);
-      this.direction.lerp(preset.direction,weight).normalize();this.sun.color.lerp(preset.sun,weight);this.sun.intensity=THREE.MathUtils.lerp(this.sun.intensity,2.7,weight);
-      this.hemisphere.color.lerp(preset.sky,weight);this.hemisphere.groundColor.lerp(preset.ground,weight);
-      if(this.scene.fog instanceof THREE.Fog){this.scene.fog.color.lerp(preset.fog,weight);this.scene.fog.near=THREE.MathUtils.lerp(this.scene.fog.near,150,weight);this.scene.fog.far=THREE.MathUtils.lerp(this.scene.fog.far,780,weight);}
-    }
+    if (daylight > 0) this.blend(skies.alpha, daylight);
     const afterDark = (valleyTrial && region === 'alpha') || (kingdomEvening && region === 'britain');
-    this.night = THREE.MathUtils.damp(this.night, Number(afterDark), 1.65, dt);
-    const night = this.night;
-    for (const key of ['top', 'mid', 'horizon'] as const) (this.uniforms[key].value as THREE.Color).lerp(NIGHT[key], night);
-    this.sun.color.lerp(NIGHT.sun, night); this.sun.intensity = THREE.MathUtils.lerp(this.sun.intensity, .85, night);
-    this.hemisphere.color.lerp(NIGHT.sky, night); this.hemisphere.groundColor.lerp(NIGHT.ground, night);
+    this.night = THREE.MathUtils.damp(this.night, Number(afterDark && !inSkyCourt), 1.65, dt);
+    this.upperCourt = THREE.MathUtils.damp(this.upperCourt, Number(inSkyCourt), 1.8, dt);
+    if (this.night > .0001) this.blend(nightSky, this.night);
+    if (this.upperCourt > .0001) this.blend(highSky, this.upperCourt);
+
+    const t = this.initialized ? 1 - Math.exp(-2.8 * dt) : 1;
+    this.initialized = true;
+    for (const key of ['top', 'mid', 'horizon'] as const) this.uniforms[key].value.lerp(this.color[key], t);
+    this.uniforms.cloudCover.value = THREE.MathUtils.lerp(this.uniforms.cloudCover.value, this.color.cloudCover, t);
+    this.direction.lerp(this.color.direction.normalize(), t).normalize();
+    this.sun.color.lerp(this.color.sun, t);
+    this.sun.intensity = THREE.MathUtils.lerp(this.sun.intensity, this.color.sunlight, t);
+    this.hemisphere.color.lerp(this.color.fill, t);
+    this.hemisphere.groundColor.lerp(this.color.bounce, t);
+    this.hemisphere.intensity = THREE.MathUtils.lerp(this.hemisphere.intensity, this.color.skylight, t);
     if (this.scene.fog instanceof THREE.Fog) {
-      this.scene.fog.color.lerp(NIGHT.fog, night);
-      this.scene.fog.far = THREE.MathUtils.lerp(this.scene.fog.far, 410, night);
+      this.scene.fog.color.lerp(this.color.fog, t);
+      this.scene.fog.near = THREE.MathUtils.lerp(this.scene.fog.near, this.color.near, t);
+      this.scene.fog.far = THREE.MathUtils.lerp(this.scene.fog.far, this.color.far, t);
     }
   }
 }

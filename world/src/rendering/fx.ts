@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { MeshBVH } from 'three-mesh-bvh';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { timeUniform, cloudShadowUniform, NOISE_GLSL, SUN_DIR } from './look';
+import { groundGrimeUniforms } from './groundGrime';
 import type { WorldGrid } from '../map/grid';
 
 function mulberry32(seed: number) {
@@ -26,7 +27,6 @@ function mulberry32(seed: number) {
  * in `1/seedShare` of the taller patches is a seed head half as tall again. The protagonist parts blades
  * between `pushInner` (fully laid over) and `pushOuter` (untouched). */
 export const GRASS_BLADE = Object.freeze({ halfWidths: [.05, .042, .028] as const, length: .62, patch: .11, seedShare: .06, pushInner: .3, pushOuter: 1.5 });
-const SUN_XZ = (() => { const l = Math.hypot(SUN_DIR.x, SUN_DIR.z) || 1; return [SUN_DIR.x / l, SUN_DIR.z / l] as const; })();
 export function makeGrassField(grid: WorldGrid, builtBvh: MeshBVH, waterLevel: number, opts: { count: number; size: number; excluded?: Uint8Array }) {
   const n = grid.nx, nz = grid.nz;
   // bake colour+mask texture on the world grid (height comes from the grid's own texture)
@@ -67,6 +67,8 @@ export function makeGrassField(grid: WorldGrid, builtBvh: MeshBVH, waterLevel: n
     uCam: { value: new THREE.Vector3() },
     uPlayer: { value: new THREE.Vector3(0, -1e4, 0) },
     uSize: { value: opts.size },
+    uSunXZ: { value: new THREE.Vector2(SUN_DIR.x, SUN_DIR.z).normalize() },
+    uGrassLight: { value: new THREE.Color(1, 1, 1) },
     uOrigin: { value: new THREE.Vector2(grid.x0, grid.z0) },
     uSpan: { value: new THREE.Vector2(grid.span, grid.spanZ) },
     uN: { value: new THREE.Vector2(n, nz) },
@@ -82,6 +84,7 @@ export function makeGrassField(grid: WorldGrid, builtBvh: MeshBVH, waterLevel: n
       uniform float uTime, uSize, uCloud;
       uniform vec2 uOrigin, uSpan, uN;
       uniform vec3 uCam, uPlayer;
+      uniform vec2 uSunXZ;
       uniform sampler2D tH, tC;
       attribute vec4 aRand;
       varying vec2 vUv;
@@ -132,12 +135,13 @@ export function makeGrassField(grid: WorldGrid, builtBvh: MeshBVH, waterLevel: n
         // The land's drifting cloud shadow (look.ts celify), taken once at the blade's root: it is far too broad
         // to vary along a blade, and doing it per pixel paid for the noise on every overdrawn fragment.
         vCloud = smoothstep(0.5, 0.68, fbm(wxz * 0.0105 + vec2(uTime * 0.016, uTime * 0.008))) * uCloud;
-        vLook = vec3(gust, 0.92 + 0.14 * abs(ca * ${SUN_XZ[0].toFixed(3)} + sa * ${SUN_XZ[1].toFixed(3)}), seed);
+        vLook = vec3(gust, 0.92 + 0.14 * abs(ca * uSunXZ.x + sa * uSunXZ.y), seed);
         vec4 mvPosition = viewMatrix * vec4(wp, 1.0);
         gl_Position = projectionMatrix * mvPosition;
         #include <fog_vertex>
       }`,
     fragmentShader: /* glsl */ `
+      uniform vec3 uGrassLight;
       varying vec2 vUv;
       varying vec3 vCol;
       varying float vCloud;
@@ -153,15 +157,30 @@ export function makeGrassField(grid: WorldGrid, builtBvh: MeshBVH, waterLevel: n
         c += vec3(0.11, 0.12, 0.05) * smoothstep(0.55, 1.0, vLook.x) * vUv.y * vUv.y;
         // The same drifting cloud shadows as the land under it (computed at the blade's root).
         c *= mix(vec3(1.0), vec3(0.74, 0.78, 0.9), vCloud);
-        gl_FragColor = vec4(c, 1.0);
+        gl_FragColor = vec4(c * uGrassLight, 1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
         #include <fog_fragment>
       }`,
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.frustumCulled = false;
   mesh.name = 'GrassField';
-  /** `player`: where the protagonist's feet are, so nearby blades part (omit to leave the grass undisturbed). */
-  return { mesh, update: (cam: THREE.Vector3, player?: THREE.Vector3) => { (uniforms.uCam.value as THREE.Vector3).copy(cam); if (player) (uniforms.uPlayer.value as THREE.Vector3).copy(player); else (uniforms.uPlayer.value as THREE.Vector3).set(0, -1e4, 0); } };
+  return {
+    mesh,
+    setLighting(direction: THREE.Vector3, key: THREE.DirectionalLight, fill: THREE.HemisphereLight) {
+      uniforms.uSunXZ.value.set(direction.x, direction.z).normalize();
+      uniforms.uGrassLight.value.copy(fill.color).multiplyScalar(fill.intensity * 0.46);
+      const tint = uniforms.uGrassLight.value;
+      const direct = key.intensity * 0.21;
+      tint.r += key.color.r * direct; tint.g += key.color.g * direct; tint.b += key.color.b * direct;
+    },
+    update(cam: THREE.Vector3, player?: THREE.Vector3) {
+      uniforms.uCam.value.copy(cam);
+      if (player) uniforms.uPlayer.value.copy(player);
+      else uniforms.uPlayer.value.set(0, -1e4, 0);
+    },
+  };
 }
 
 /** Screen-space god rays from the sun: radial blur of the bright sky/cloud pixels toward the sun. */
@@ -207,39 +226,24 @@ export function makeSunShafts() {
   return { pass, update };
 }
 
-/**
- * Depth-aware water on top of look.ts's toon water: turquoise shallows over sand, deep blue
- * offshore, a foam line hugging every shore and wave bands rolling in toward the beach.
- */
-export function enhanceWater(mat: THREE.Material, grid: WorldGrid, waterLevel: number) {
-  const tex = grid.heightTexture();
-  const prev = mat.onBeforeCompile.bind(mat);
-  mat.onBeforeCompile = (sh, r) => {
-    prev(sh, r);
-    sh.uniforms.tWaterH = { value: tex };
-    sh.uniforms.uTOrigin = { value: new THREE.Vector2(grid.x0, grid.z0) };
-    sh.uniforms.uTSpan = { value: new THREE.Vector2(grid.span, grid.spanZ) };
-    sh.uniforms.uWL = { value: waterLevel };
-    sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D tWaterH;\nuniform vec2 uTOrigin, uTSpan;\nuniform float uWL;')
-      .replace('#include <opaque_fragment>', /* glsl */ `
-        {
-          vec2 tuv = (vWPos.xz - uTOrigin) / uTSpan;
-          float inside = step(0.0, tuv.x) * step(tuv.x, 1.0) * step(0.0, tuv.y) * step(tuv.y, 1.0);
-          float depth = mix(14.0, uWL - texture2D(tWaterH, clamp(tuv, 0.0, 1.0)).r, inside);
-          float dn = vnoise(vWPos.xz * 0.35 + vec2(uTime * 0.3, -uTime * 0.2));
-          float dk = smoothstep(0.2, 7.0, depth);
-          outgoingLight *= mix(vec3(1.22, 1.2, 0.96), vec3(0.55, 0.74, 1.02), dk);
-          float edge = smoothstep(0.5, 0.05, depth + (dn - 0.5) * 0.35);
-          float wave = smoothstep(0.72, 0.96, sin(depth * 4.5 - uTime * 1.7 + dn * 2.5)) * smoothstep(2.2, 0.5, depth);
-          float foam = max(edge, wave * 0.75) * step(0.0, depth);
-          outgoingLight = mix(outgoingLight, vec3(1.0, 1.0, 0.98), foam * 0.85);
-          diffuseColor.a = mix(diffuseColor.a * mix(0.5, 1.0, smoothstep(0.0, 1.8, depth)), 1.0, foam);
-        }
-        #include <opaque_fragment>`);
+// Water and sky use the same animated palette at every quality level.
+export function bindWaterEnvironment(mat: THREE.Material, sky: THREE.Mesh, grid: WorldGrid) {
+  const skyUniforms = (sky.material as THREE.ShaderMaterial).uniforms;
+  const box = groundGrimeUniforms.parhelionGroundBox.value;
+  // Float render targets may be unavailable. In that case sample the existing terrain grid at texel centres.
+  const fallback = box.z <= 1 ? grid.heightTexture() : null;
+  const gridBox = new THREE.Vector4(grid.x0 - grid.cell / 2, grid.z0 - grid.cell / 2, grid.nx * grid.cell, grid.nz * grid.cell);
+  const prior = mat.onBeforeCompile.bind(mat);
+  mat.onBeforeCompile = (sh, renderer) => {
+    prior(sh, renderer);
+    sh.uniforms.uWaterTop = skyUniforms.top;
+    sh.uniforms.uWaterHorizon = skyUniforms.horizon;
+    if (fallback) {
+      sh.uniforms.uGround = { value: fallback };
+      sh.uniforms.uGroundBox = { value: gridBox };
+    }
   };
-  mat.customProgramCacheKey = () => 'cel-water-depth';
-  mat.needsUpdate = true;
+  if (fallback) mat.addEventListener('dispose', () => fallback.dispose());
 }
 
 /** Updraft columns: spiralling wind motes and a faint scrolling wind sheath. */

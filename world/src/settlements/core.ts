@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { mergeParts } from './merge';
+import { scaleCraftUvs } from './craftSurface';
 import type { WorldGrid } from '../map/grid';
 import type { Layout } from '../core/types';
 import { REGIONS, regionToWorld } from '../map/regions';
@@ -93,6 +94,7 @@ export function batchSettlementVisuals(group: THREE.Group) {
     if(materials.length!==1) throw new Error(`Settlement mesh needs one material: ${o.name}`);
     let g=o.geometry.clone();if(g.index)g=g.toNonIndexed();
     g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inverse,o.matrixWorld));
+    if (materials[0].userData.craftSurface) scaleCraftUvs(g, materials[0].userData.craftSurface);
     if(!g.attributes.normal)g.computeVertexNormals();
     // Uniform attribute layout within each material bucket.
     if(!g.attributes.uv)g.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count*2),2));

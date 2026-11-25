@@ -11,6 +11,29 @@ import { PROLOGUE_LABELS, VALLEY_PROLOGUE as P, VALLEY_SURVEY_HEIGHT, type Valle
 
 type Point = [number, number, number];
 
+function dressRadioDesk(art: SiteArt, court: (x: number, y: number, z: number) => Point) {
+  const brass = '#ab8851', enamel = '#476760';
+  for (const x of [-7.65, -6.85]) {
+    art.box(court(x, 1.12, -10.978), [.745, .3, .045], '#634b3b');
+    art.box(court(x, 1.12, -10.95), [.66, .226, .017], '#826955');
+    for (const dx of [-.083, .083]) art.box(court(x + dx, 1.15, -10.924), [.025, .032, .051], brass, false, 'metal');
+    art.box(court(x, 1.15, -10.89), [.196, .028, .031], brass, false, 'metal');
+  }
+  // A weighted enamel lamp arches over the ledger, leaving the radio's face in sight.
+  art.cyl(court(-7.89, 1.475, -11.53), .114, .05, enamel, false, 'metal');
+  art.cyl(court(-7.89, 1.512, -11.53), .055, .03, brass, false, 'metal');
+  art.beam(court(-7.89, 1.521, -11.53), court(-7.92, 1.92, -11.54), .028, brass, false, 'metal');
+  art.beam(court(-7.92, 1.92, -11.54), court(-7.72, 2.012, -11.36), .029, brass, false, 'metal');
+  const shade = new THREE.LatheGeometry(
+    [[.157, 0], [.16, .014], [.145, .03], [.09, .086], [.046, .103], [.043, .132], [0, .132]].map(([r, h]) => new THREE.Vector2(r, h)), 16,
+  );
+  art.add(shade, enamel, court(-7.72, 1.886, -11.36), undefined, false, 'metal');
+  shade.dispose();
+  art.cyl(court(-7.72, 1.888, -11.36), .153, .01, '#f1dfb2');
+  art.beam(court(-7.48, 1.466, -11.36), court(-7.4, 1.466, -11.11), .017, '#a17b47');
+  art.box(court(-6.84, 1.457, -11.22), [.7, .014, .45], '#59645b');
+}
+
 export function createValleyPrologueScene(residence: SettlementPlacement, ground: (x: number, z: number) => number | null) {
   const [ox, oy, oz] = residence.position;
   const court = (x: number, y: number, z: number): Point => [ox + x, oy + y, oz + z];
@@ -34,12 +57,19 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
   }
   art.box(court(-7.25, .97, -11.3), [1.7, .78, .62], wood, true);
   art.box(court(-7.25, 1.39, -11.3), [1.82, .12, .73], cream);
+  dressRadioDesk(art, court);
   art.paper(ox - 7.75, oy + 1.458, oz - 11.25, .43, .32);
   art.box(roomRadio(0, 0, 0), [.59, .29, .34], slate, false, 'choiceB');
+  for (const side of [-1, 1]) {
+    art.box(roomRadio(side * .284, 0, 0), [.04, .3, .349], '#795943', false, 'choiceB');
+    art.beam(roomRadio(side * .142, .14, .025), roomRadio(side * .12, .224, .025), .027, '#876c4e', false, 'choiceB');
+  }
+  art.box(roomRadio(0, .225, .025), [.25, .03, .037], '#705541', false, 'choiceB');
   art.beam(roomRadio(-.24, .11, -.06), roomRadio(-.33, .56, -.18), .028, steel, false, 'choiceB');
   art.box(roomRadio(-.095, 0, .173), [.32, .19, .014], dark, false, 'choiceB');
   for (const y of [-.06, -.02, .02, .06]) art.box(roomRadio(-.095, y, .184), [.28, .012, .014], steel, false, 'choiceB');
   art.box(roomRadio(.16, .066, .174), [.16, .04, .015], amber, false, 'choiceB');
+  for (let i = 0; i < 5; i++) art.box(roomRadio(.105 + i * .026, .068, .184), [.006, i % 2 ? .013 : .023, .006], dark, false, 'choiceB');
   art.cyl(roomRadio(.16, -.04, .185), .047, .038, cream, false, 'choiceB', [Math.PI / 2, 0, 0]);
   const [mx, my, mz] = repair;
   art.box([mx, my + .46, mz - .77], [1.22, .91, .49], wood);

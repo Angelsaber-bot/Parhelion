@@ -197,13 +197,32 @@ export function addSkyCrownArchitecture(a: SiteArt, decks: Decks) {
   const dome = new THREE.SphereGeometry(8.7, 32, 12, .16, Math.PI * 2 - .32, 0, Math.PI / 2);
   a.add(dome, C.plate, at(hall, 0, 9.8, -7), [1, .65, 1], true); dome.dispose();
   a.ring(at(hall, 0, 9.8, -7), 8.8, .24, C.steel, 'metal', [Math.PI / 2, 0, 0]);
-  for (let i = 0; i < 8; i++) {
-    const theta = i * Math.PI / 4;
-    a.beam(at(hall, Math.cos(theta) * 8.6, 9.8, -7 + Math.sin(theta) * 8.6), at(hall, 0, 15.4, -7), .12, C.edge);
+  // Ribs follow the ellipsoid's surface; straight chords disappear into the porcelain.
+  const domePoint = (phi: number, elevation: number): Point => {
+    const r = 8.78 * Math.cos(elevation);
+    return at(hall, -Math.cos(phi) * r, 9.8 + 5.71 * Math.sin(elevation), -7 + Math.sin(phi) * r);
+  };
+  for (let rib = 0; rib <= 8; rib++) {
+    const phi = .16 + (2 * Math.PI - .32) * rib / 8;
+    for (let joint = 0; joint < 8; joint++)
+      a.beam(domePoint(phi, joint * Math.PI / 16), domePoint(phi, (joint + 1) * Math.PI / 16),
+        rib === 0 || rib === 8 ? .22 : .11, rib === 0 || rib === 8 ? C.steel : C.edge, false, 'metal');
   }
+  // Flanged turret, fork and lens cell share the same optical axis.
   a.cyl(at(hall, 0, 16, -7), .7, 1.8, C.steel, true);
-  a.cyl(at(hall, 0, 17.3, -7), .56, 6.5, C.blue, false, 'body', [Math.PI / 2 - .5, 0, 0]);
-  a.ring(at(hall, 0, 18.85, -4.15), .61, .1, C.edge, 'metal', [-.5, 0, 0]);
+  a.cyl(at(hall, 0, 15.43, -7), 1.02, .24, C.edge, false, 'metal');
+  for (const side of [-1, 1]) {
+    a.beam(at(hall, side * .44, 16.38, -7), at(hall, side * .69, 17.3, -7), .28, C.steel, false, 'metal');
+    a.cyl(at(hall, side * .66, 17.3, -7), .38, .32, C.edge, false, 'metal', [0, 0, Math.PI / 2]);
+  }
+  const axisPoint = (distance: number) => at(hall, 0, 17.3 + distance * Math.sin(.5), -7 + distance * Math.cos(.5));
+  const tubeRotation: Point = [Math.PI / 2 - .5, 0, 0];
+  a.cyl(axisPoint(0), .56, 6.5, C.blue, false, 'body', tubeRotation);
+  for (const distance of [-2.8, -1.04, .96, 2.73])
+    a.cyl(axisPoint(distance), .59, .14, C.edge, false, 'metal', tubeRotation);
+  a.cyl(axisPoint(3.16), .66, .34, C.steel, false, 'metal', tubeRotation);
+  a.cyl(axisPoint(3.34), .53, .04, '#487c84', false, 'metal', tubeRotation);
+  a.ring(axisPoint(3.36), .585, .07, C.edge, 'metal', [-.5, 0, 0]);
   for (const side of [-1, 1]) {
     console(hall, side * 11, -10, side < 0 ? '#b28f62' : C.teal);
     bench(hall, side * 12, -1, 5);
