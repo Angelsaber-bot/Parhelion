@@ -468,8 +468,12 @@ export class WorldCombat {
       v.body.rotation.z = !skinned && !v.updateCreature && moving ? Math.sin(this.time * 9) * 0.04 : 0;
       const facing = e.pacified ? e.home : e.mode === 'windup' || e.mode === 'recover' ? e.target
         : e.mode === 'chase' && e.chaseTarget ? e.chaseTarget : e.field ? undefined : player;
+      const detour = e.field?.detour;
       if (e.squareYaw !== undefined && e.mode !== 'idle' && !e.pacified) v.body.rotation.y = e.squareYaw;
-      else if (facing && distanceXZ(facing, e.p) > 1e-4) v.body.rotation.y = Math.atan2(facing.x - e.p.x, facing.z - e.p.z);
+      else if (moving && detour && !detour.retreat && Number.isFinite(dt) && dt > 0) {
+        const turn = Math.PI / 2 - detour.heading - v.body.rotation.y;
+        v.body.rotation.y += Math.atan2(Math.sin(turn), Math.cos(turn)) * (1 - Math.exp(-14 * dt));
+      } else if (facing && distanceXZ(facing, e.p) > 1e-4) v.body.rotation.y = Math.atan2(facing.x - e.p.x, facing.z - e.p.z);
       if (v.crowFx) {
         const fx = v.crowFx, f = e.hp / e.maxHp, alive = e.mode !== 'dead' && e.active;
         // Every fourth beat in phase two he smashes a lamp: one local dark patch, feet and blade still read.

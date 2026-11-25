@@ -13,8 +13,12 @@ export const ENEMY_TACTICS = {
   arrivalRadius: .5,
   returnBlocked: 2,
   returnProgress: .25,
+  returnTimeout: 14,
+  returnDetourStallScale: .22,
   detourDistance: 2.6,
   detourGoalChange: 2,
+  wallFollowDistance: 30,
+  wallProbe: 1.05,
 } as const;
 const LEFT = [0, .65, -.65] as const, RIGHT = [0, -.65, .65] as const;
 export function enemyWalkTurns(e: Pick<Enemy, 'id'>): readonly number[] {

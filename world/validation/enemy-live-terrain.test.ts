@@ -40,10 +40,10 @@ test('spawn-only roof filter rejects inaccessible roofs while retaining low rais
   assert.equal(makeCombatTerrain(colliders,lay,()=>null).safeSpawn(0,0),null,'unknown terrain cannot place an enemy on a roof');
 });
 
-test('a patrol rounds a solid barricade on pursuit and returns through real terrain checks', () => {
+for (const length of [4.8, 10, 18]) test(`a patrol rounds a ${length} m barricade and walks back to its post`, () => {
   const lay = { world: { waterLevel: -2 }, areas: [], markers: [] } as unknown as Layout;
   const floor = new THREE.BoxGeometry(100, 1, 100).translate(0, -.5, 0);
-  const barricade = new THREE.BoxGeometry(.8, .95, 4.8).translate(0, .475, 0);
+  const barricade = new THREE.BoxGeometry(.8, .95, length).translate(0, .475, 0);
   const q = makeCombatTerrain([
     { name: 'floor', enabled: true, bvh: new MeshBVH(floor) },
     { name: 'barricade', enabled: true, bvh: new MeshBVH(barricade) },
@@ -57,7 +57,7 @@ test('a patrol rounds a solid barricade on pursuit and returns through real terr
     const moved = distanceXZ(before, e.p);
     assert.ok(moved <= ENEMY_ROLES.stalker.speed * .05 + 1e-5);
     if (moved > 1e-5) assert.deepEqual(q.terrain.walk(before, e.p.x, e.p.z), e.p);
-    assert.ok(Math.abs(e.p.x) > .4 || Math.abs(e.p.z) > 2.4);
+    assert.ok(Math.abs(e.p.x) > .4 || Math.abs(e.p.z) > length / 2);
   };
   for (let i = 0; i < 140 && e.mode !== 'windup'; i++) tick(player);
   assert.equal(e.mode, 'windup', 'a visible target across the barricade is reachable');
@@ -67,6 +67,49 @@ test('a patrol rounds a solid barricade on pursuit and returns through real terr
   assert.equal(e.mode, 'idle');
   assert.ok(distanceXZ(e.p, e.home) <= ENEMY_TACTICS.arrivalRadius + 1e-5, 'patrol clears the same obstacle on its way home');
   floor.dispose(); barricade.dispose();
+});
+
+test('a patrol rounds the two faces of an inside corner and returns without teleporting', () => {
+  const lay = { world: { waterLevel: -2 }, areas: [], markers: [] } as unknown as Layout;
+  const pieces = [new THREE.BoxGeometry(100, 1, 100).translate(0, -.5, 0),
+    new THREE.BoxGeometry(.8, .95, 10).translate(0, .475, 0),
+    new THREE.BoxGeometry(5, .95, .8).translate(-2.5, .475, 0)];
+  try {
+    const { terrain } = makeCombatTerrain(pieces.map((geometry, i) => ({ name: `corner_${i}`, enabled: true, bvh: new MeshBVH(geometry) })), lay);
+    const s = new WorldCombatState([{ id: 'barricade-patrol', p: { x: -4, y: .04, z: -2 }, kind: 'shade', role: 'stalker' }], []);
+    const enemy = s.enemies[0], player = { x: 5, y: .04, z: 2 };
+    const tick = (target: typeof player) => {
+      const before = enemy.p;
+      s.step(.05, target, true, terrain);
+      const movement = distanceXZ(before, enemy.p);
+      assert.ok(movement <= ENEMY_ROLES.stalker.speed * .05 + 1e-5);
+      if (movement > 1e-5) assert.deepEqual(terrain.walk(before, enemy.p.x, enemy.p.z), enemy.p);
+    };
+    for (let i = 0; i < 140 && enemy.mode !== 'windup'; i++) tick(player);
+    assert.equal(enemy.mode, 'windup');
+    assert.ok(enemy.p.x > 0);
+    const outside = { x: 32, y: .04, z: 0 };
+    for (let i = 0; i < 240 && enemy.mode !== 'idle'; i++) tick(outside);
+    assert.equal(enemy.mode, 'idle');
+    assert.ok(distanceXZ(enemy.p, enemy.home) <= ENEMY_TACTICS.arrivalRadius + 1e-5);
+  } finally { pieces.forEach(geometry => geometry.dispose()); }
+});
+
+test('patrols in Black Sail and the valley can reach previously stalled positions on shipped terrain', () => {
+  const cases = [
+    { id: 'wild_34', x: 558.515, z: -523.680 },
+    { id: 'wild_52b', x: 42.793, z: -57.482 },
+    { id: 'wild_52b', x: 40.463, z: -57.789 },
+  ];
+  for (const { id, x, z } of cases) {
+    const spawn = spawns.find(e => e.id === id)!;
+    const floor = q.ground(x, z, spawn.p.y + 2.15);
+    assert.ok(floor && q.clear(floor.point, .40, 1.65), `${id}: reachable player footing`);
+    const player = { x, y: floor.point.y + .04, z };
+    const sim = new WorldCombatState([spawn], []), enemy = sim.enemies[0];
+    for (let i = 0; i < 120 && enemy.mode !== 'windup'; i++) sim.step(.05, player, true, q.terrain);
+    assert.equal(enemy.mode, 'windup', `${id}: reaches ${x}, ${z} within six seconds`);
+  }
 });
 
 test('actual runtime map with settlements has moderately denser grounded encounters and five reachable elites',()=>{

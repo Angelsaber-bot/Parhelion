@@ -24,8 +24,8 @@ export interface Enemy extends SpawnPoint {
   /** Ordinary patrols investigate a fixed last sighting and return along walkable ground. */
   field?: {
     lastSeen: Point3; memory: number; returning: boolean;
-    closestHome: number; stalled: number;
-    detour?: { heading: number; remaining: number; goal: Point3; retreat: boolean };
+    closestHome: number; stalled: number; returnTime: number;
+    detour?: { heading: number; remaining: number; goal: Point3; retreat: boolean; side: number; inwardTurn: number };
   };
   chaseTarget?: Point3;
   walking?: boolean;
@@ -260,12 +260,13 @@ function makeEnemy(s: SpawnPoint): Enemy {
   const patrol = s.kind !== 'king' && !s.miniboss && !s.creature && !s.storyEncounter && !s.storyPattern && s.id !== KNIGHT_TRIAL_ID;
   return { ...s, p: clone(s.p), home: clone(s.p), maxHp, hp: maxHp, mode: 'idle', timer: 0,
     active: false, phase: 1, attack: 'sweep', target: clone(s.p), attackCount: 0, contactSequence: 0, hitTime: 0, role: s.role ?? selectEnemyRole({ ...s, home: s.p }), staggerCooldown: 0, pacified: false,
-    ...(patrol ? { field: { lastSeen: clone(s.p), memory: 0, returning: false, closestHome: Infinity, stalled: 0 } } : {}) };
+    ...(patrol ? { field: { lastSeen: clone(s.p), memory: 0, returning: false, closestHome: Infinity, stalled: 0, returnTime: 0 } } : {}) };
 }
 function clearPatrolReturn(field: NonNullable<Enemy['field']>) {
   field.returning = false;
   field.closestHome = Infinity;
   field.stalled = 0;
+  field.returnTime = 0;
 }
 
 /** Shared deterministic role selection keeps the rendered weapon and damage behavior aligned. */
@@ -771,8 +772,9 @@ export class WorldCombatState {
     const isBoss = e === this.boss, field = e.field;
     const homeDistance = distanceXZ(e.p, e.home);
     const goalDistance = retreat ? distanceXZ(e.p, goal) : 0;
+    const probe = (heading: number, length: number) => terrain.walk(e.p, e.p.x + Math.cos(heading) * length, e.p.z + Math.sin(heading) * length);
     const move = (heading: number, length: number) => {
-      const p = terrain.walk(e.p, e.p.x + Math.cos(heading) * length, e.p.z + Math.sin(heading) * length);
+      const p = probe(heading, length);
       if (!p || distanceXZ(p, e.p) < 1e-5) return false;
       const nextHomeDistance = distanceXZ(p, e.home);
       if (!isBoss && nextHomeDistance > COMBAT.leash && !(field?.returning && nextHomeDistance < homeDistance)) return false;
@@ -783,11 +785,30 @@ export class WorldCombatState {
     const detour = field?.detour;
     if (field && detour && detour.retreat === retreat && distanceXZ(detour.goal, goal) < ENEMY_TACTICS.detourGoalChange) {
       const length = Math.min(step, detour.remaining);
-      if (move(detour.heading, length)) {
-        detour.remaining -= length;
+      // Eye-height sight can clear a low wall while the feet still cannot cross it.
+      if (!retreat && terrain.lineOfSight({ ...e.p, y: e.p.y + .7 }, { ...goal, y: goal.y + .7 }) && move(angle, step)) {
+        field.detour = undefined;
+        if (field.returning) {
+          field.closestHome = distanceXZ(e.p, e.home);
+          field.stalled = 0;
+        }
+        return true;
+      }
+      const alongside = !retreat && !!probe(detour.heading - detour.side * Math.PI / 2, ENEMY_TACTICS.wallProbe);
+      // An opening permits a quarter turn. Without this cap a distant wall can
+      // keep pulling the actor into a tight circle instead of past the corner.
+      const inward = alongside ? Math.min(.40, Math.PI / 2 - detour.inwardTurn) : 0;
+      const turns = retreat ? [0] : inward > 1e-5 ? [-inward, 0, .65, 1.28, 1.90] : [0, .65, 1.28, 1.90];
+      for (const turn of turns) {
+        const heading = detour.heading + turn * detour.side;
+        if (!move(heading, length)) continue;
+        detour.inwardTurn = !alongside || turn > 0 ? 0 : detour.inwardTurn - turn;
+        detour.heading = heading; detour.remaining -= length;
         if (detour.remaining <= 1e-5) field.detour = undefined;
         return true;
       }
+      // Resume probing on the next tick if the terrain changed under this route.
+      if (!retreat) { field.detour = undefined; return false; }
     }
     if (field) field.detour = undefined;
     for (const turn of isBoss ? BOSS_TURNS : enemyWalkTurns(e)) {
@@ -797,8 +818,9 @@ export class WorldCombatState {
       for (const turn of enemyDetourTurns(e)) {
         const heading = angle + (retreat ? Math.sign(turn) * Math.PI / 2 : turn);
         if (!move(heading, step)) continue;
-        // Hold the sidestep across ticks so a glancing direct ray can't send the feet back into the corner.
-        field.detour = { heading, remaining: ENEMY_TACTICS.detourDistance - step, goal: clone(goal), retreat };
+        // Keep the same obstacle side around corners until the lower route reopens.
+        const budget = retreat ? ENEMY_TACTICS.detourDistance : ENEMY_TACTICS.wallFollowDistance;
+        field.detour = { heading, remaining: budget - step, goal: clone(goal), retreat, side: Math.sign(turn), inwardTurn: 0 };
         return true;
       }
     }
@@ -898,11 +920,12 @@ export class WorldCombatState {
             const left = distanceXZ(e.p, e.chaseTarget) - ENEMY_TACTICS.arrivalRadius;
             e.walking = this.walkEnemy(e, terrain, e.chaseTarget, Math.min(role.speed * dt, left));
             if (field.returning) {
+              field.returnTime += dt;
               const homeDistance = distanceXZ(e.p, e.home);
               if (homeDistance <= field.closestHome - ENEMY_TACTICS.returnProgress) {
                 field.closestHome = homeDistance; field.stalled = 0;
-              } else field.stalled += dt;
-              if (homeDistance <= ENEMY_TACTICS.arrivalRadius + 1e-5 || field.stalled >= ENEMY_TACTICS.returnBlocked) {
+              } else field.stalled += e.walking && field.detour ? dt * ENEMY_TACTICS.returnDetourStallScale : dt;
+              if (homeDistance <= ENEMY_TACTICS.arrivalRadius + 1e-5 || field.stalled >= ENEMY_TACTICS.returnBlocked || field.returnTime >= ENEMY_TACTICS.returnTimeout) {
                 e.mode = 'idle'; e.timer = 0; e.chaseTarget = undefined;
                 field.detour = undefined;
               }
