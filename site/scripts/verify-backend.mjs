@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { Client } from '../../arena-game/node_modules/@colyseus/sdk/build/index.mjs';
 import WebSocket from '../../arena-game/node_modules/ws/wrapper.mjs';
-import { RULES_VERSION } from '../../arena-game/shared/protocol.ts';
+import { PRIVATE_ROOM_NAME, RULES_VERSION } from '../../arena-game/shared/protocol.ts';
 const source = fileURLToPath(new URL('../dist/', import.meta.url));
 const root = await fs.mkdtemp(path.join(os.tmpdir(), 'Parhelion 中文 smoke '));
 await fs.cp(source, path.join(root, 'dist'), { recursive: true });
@@ -52,6 +52,19 @@ try {
   assert.equal(a.roomId,b.roomId);
   const snap=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('snapshot timeout')),3000);a.onMessage('snap',s=>{clearTimeout(timer);resolve(s)});});
   assert.equal(snap.players.length,2);assert.equal(snap.players.filter(p=>p.bot).length,0);console.log('PASS same-origin live 1v1 two-client match',a.roomId);
+  const privateOptions = { rulesVersion: RULES_VERSION, layout: '1v1', room: 'ABCDE', bots: false };
+  const host = await new Client(url).joinOrCreate(PRIVATE_ROOM_NAME, { ...privateOptions, team: 'A', name: 'Private host', map: 'blackflag' });
+  rooms.push(host); host.onMessage('welcome', () => {}); host.onMessage('snap', () => {});
+  const guest = await new Client(url).joinOrCreate(PRIVATE_ROOM_NAME, { ...privateOptions, team: 'B', name: 'Private guest', map: 'aster' });
+  rooms.push(guest); guest.onMessage('snap', () => {});
+  assert.equal(host.roomId, guest.roomId);
+  assert.notEqual(host.roomId, a.roomId);
+  const privateWelcome = await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('private welcome timeout')), 3000);
+    guest.onMessage('welcome', welcome => { clearTimeout(timer); resolve(welcome); });
+  });
+  assert.equal(privateWelcome.map, 'blackflag');
+  console.log('PASS same-origin private room uses the host battlefield', host.roomId);
   const botRoom=await new Client(url).joinOrCreate('arena',{rulesVersion:RULES_VERSION,layout:'2v2',team:'A',bots:true,name:'Smoke Bot'}); rooms.push(botRoom); botRoom.onMessage('welcome',()=>{}); const botSnap=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('bot snapshot timeout')),3000);botRoom.onMessage('snap',s=>{clearTimeout(timer);resolve(s)});}); assert.equal(botSnap.players.length,4);assert.equal(botSnap.players.filter(p=>p.bot).length,3);console.log('PASS same-origin 2v2 one human + three bots');
   const occupied=fork(path.join(root,'dist/server.cjs'),[root,String(port)],{cwd:root,env:{...process.env,NODE_PATH:''},silent:true});
   const occupiedResult=await new Promise((resolve,reject)=>{let diagnostic;const timer=setTimeout(()=>{occupied.kill();reject(new Error('occupied timeout'))},4000);occupied.on('message',m=>diagnostic=m);occupied.once('exit',code=>{clearTimeout(timer);resolve({code,diagnostic})});});

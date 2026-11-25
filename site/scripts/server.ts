@@ -3,8 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Server } from '@colyseus/core';
 import { WebSocketTransport } from '@colyseus/ws-transport';
-import { ArenaRoom } from '../../arena-game/server/ArenaRoom.ts';
-import { ROOM_NAME } from '../../arena-game/shared/protocol.ts';
+import { registerArenaRooms } from '../../arena-game/server/ArenaRoom.ts';
 import { createStaticHandler, isLocalRequest } from './http.mjs';
 
 async function main() {
@@ -41,7 +40,7 @@ async function main() {
       });
     },
   });
-  game.define(ROOM_NAME, ArenaRoom).filterBy(['layout', 'map', 'bots']);
+  registerArenaRooms(game);
 
   // Complete Colyseus route registration *before* wrapping its request handlers.
   // A plain createServer(staticHandler) would otherwise compete with matchmaking.

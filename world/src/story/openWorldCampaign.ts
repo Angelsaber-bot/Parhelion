@@ -48,6 +48,7 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
   if(region==='alpha'&&done.has('adventure_escaped')&&dramaReported(done).length===4&&!dramaDecision(done))return person('alpha',['与岚商量下一班由谁值守，把四域的回执送到观测所。','Settle the next watch with Lan and take the four regions’ receipts to the Observatory.']);
   if(region==='alpha'&&JOURNEY_REGIONS.every(r=>adventureChapterComplete(r,done))){const missing=JOURNEY_REGIONS.find(r=>!done.has(JOURNEY_DRAMA.report(r)));if(missing)return getAdventureGuide(missing,done);}
  }
+ if(region!=='alpha'&&adventureChapterComplete(region,done))return null;
  if(region==='alpha'){
   if(done.has(ADVENTURE.ending))return null;
   const title:Localized=['让明天继续','Let Tomorrow Continue'];

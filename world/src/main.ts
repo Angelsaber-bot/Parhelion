@@ -2638,6 +2638,7 @@ journalOpen.addEventListener('click', event => { event.stopPropagation(); campai
 addEventListener('pagehide', event => { if (!event.persisted) { campaignJournal?.dispose(); journalOpen.remove(); unsubscribeJournalButton(); } });
 questCatalog = createQuestGuideCatalog({
   markers: [...markers.values()], objectives: layout.objectives,
+  fieldChapters: FIELD_CHAPTER_CONTENT.map(content => content.set),
   npcs: [...settlements.npcs,...campaignSites.npcs],
   enemies: combat.state.enemies.filter(enemy=>enemy.id==='elite_oath_knight').map(enemy=>({id:enemy.id,region:'britain' as const,position:[enemy.home.x,enemy.home.y,enemy.home.z] as [number,number,number],label:['失誓骑士','Oathless Knight'] as [string,string]})),
 });

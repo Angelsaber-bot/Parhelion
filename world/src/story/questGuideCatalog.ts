@@ -24,6 +24,7 @@ import {ERA_IDS,ERA_STORIES,ERA_OPTIONALS,ERA_KNIGHT_DEFEATED,getEraStoryGuide,g
 import {getValleyStoryGuide,VALLEY_STORY} from './valleyStory';
 import {getCampaignClosureState,CAMPAIGN_CLOSURE} from './campaignClosure';
 import {COMPACT_RELAY,COMPACT_RELAY_TITLE,getCompactRelayGuide,getCompactRelayState,type CompactRelayContext} from './compactRelayCampaign';
+import { fieldChapterGuide, type FieldChapterSet } from './fieldChapters';
 
 export type QuestCategory='main'|'side'|'discovery';
 export type QuestPoint=[number,number,number];
@@ -43,6 +44,7 @@ export interface QuestCatalogInput {
  objectives:readonly {region:string;objective:Layout['objective']}[];
  npcs:readonly {id:string;region:RegionId;position:QuestPoint;label?:Localized}[];
  enemies?:readonly {id:string;region:RegionId;position:QuestPoint;label:Localized}[];
+ fieldChapters?: readonly FieldChapterSet[];
 }
 const translations=new Map<string,string>(TEXT_PAIRS);
 const pair=(text:string):Localized=>{
@@ -99,10 +101,12 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
  const npcs=new Map(input.npcs.map(n=>[n.id,n]));
  const enemies=new Map((input.enemies??[]).map(n=>[n.id,n]));
  const objectives=new Map(input.objectives.map(o=>[o.region,o.objective]));
+ const fieldChapters = new Map(input.fieldChapters?.map(set => [set.region, set]));
+ const fieldActions = new Map(input.fieldChapters?.flatMap(set => set.actions.map(action => [action.id, action] as const)));
  const point=(id:string):Pick<QuestGuide,'targetKind'|'region'|'position'|'targetLabel'>|null=>{
   const npc=npcs.get(id);if(npc&&!npc.position.every(Number.isFinite))return null;if(npc)return{targetKind:'npc',region:npc.region,position:[...npc.position],targetLabel:npc.label??specialLabels.get(id)??pair(id)};
   const enemy=enemies.get(id);if(enemy&&!enemy.position.every(Number.isFinite))return null;if(enemy)return{targetKind:'enemy',region:enemy.region,position:[...enemy.position],targetLabel:enemy.label};
-  const marker=markers.get(id);if(marker&&!marker.p.every(Number.isFinite))return null;const region=marker&&regionAt(marker.p[0],marker.p[2]).id;return marker&&region&&(isCampaignRegion(region)||MODEL_CLAIM_POINTS.some(point=>point.marker.id===id)||marker.type==='discovery'||EGYPT_GAUGE_BY_ID.has(id)||FIELD_SIDE_STEPS.has(id)||CULTURAL_STEPS.has(id)||ORLEANS_WORK_ACTIONS.some(a=>a.id===id)||HOME_CIVIC_ACTIONS.some(a=>a.id===id)||HOME_ACTIONS.some(a=>a.id===id))?{targetKind:'marker',region,position:[...marker.p],targetLabel:specialLabels.get(id)??pair(marker.label)}:null;
+  const marker=markers.get(id);if(marker&&!marker.p.every(Number.isFinite))return null;const region=marker&&regionAt(marker.p[0],marker.p[2]).id;return marker&&region&&(isCampaignRegion(region)||MODEL_CLAIM_POINTS.some(point=>point.marker.id===id)||marker.type==='discovery'||EGYPT_GAUGE_BY_ID.has(id)||FIELD_SIDE_STEPS.has(id)||CULTURAL_STEPS.has(id)||ORLEANS_WORK_ACTIONS.some(a=>a.id===id)||HOME_CIVIC_ACTIONS.some(a=>a.id===id)||HOME_ACTIONS.some(a=>a.id===id))?{targetKind:'marker',region,position:[...marker.p],targetLabel:fieldActions.get(id)?.label??specialLabels.get(id)??pair(marker.label)}:null;
  };
  const instruction=(id:string):Localized=>{
   const marker=markers.get(id),label=specialLabels.get(id)??(marker?pair(marker.label):pair(id));
@@ -130,16 +134,31 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
  const build=(done:ReadonlySet<string>,found:ReadonlySet<string>,context:QuestGuideContext={}):QuestEntry[]=>{
   const entries:QuestEntry[]=[];
   const add=(id:string,region:WorldRegionId,category:QuestCategory,title:Localized,complete:boolean,next:QuestGuide|null)=>entries.push({id,region,category,title,complete,guide:complete?null:next,...(!complete&&!next?{unavailable}: {})});
+  const inAdventure = adventureActive(done);
+  const activeAdventureGuide = (region: RegionId) => {
+   const set = fieldChapters.get(region);
+   const action = set && fieldChapterGuide(set, done);
+   if (action && markers.has(action.id)) {
+    const title: Localized = [`${action.chapter} · ${set.title[0]}`, `${action.chapter} · ${set.title[1]}`];
+    return { title, text: action.label, targetId: action.id };
+   }
+   return getAdventureGuide(region, done);
+  };
   for(const region of REGIONS){
    if(region==='alpha'){
     const objective=objectives.get(region),title:Localized=['幻日谷 · 重启幻日塔','Parhelion Valley · Restart the tower'];
-    const adventure=getAdventureGuide('alpha',done);
-    if(adventureActive(done)){add('main:alpha',region,'main',adventure?.title??['让明天继续','Let Tomorrow Continue'],!adventure,adventure?guide(adventure.title,adventure.text,adventure.targetId,done,context):null);continue;}
+    if(inAdventure){
+     const adventure = activeAdventureGuide(region);
+     add('main:alpha',region,'main',adventure?.title??['让明天继续','Let Tomorrow Continue'],!adventure,adventure?guide(adventure.title,adventure.text,adventure.targetId,done,context):null);
+     continue;
+    }
     const intro=getValleyStoryGuide(done),step=objective?.steps.find(s=>s.done.some(id=>!done.has(id)));
     const id=step?.done.find(id=>!done.has(id));
     add('main:alpha',region,'main',title,!!objective&&!intro&&!step,intro?guide(title,intro.text,intro.targetId,done,context):id?guide(title,pair(step!.text),id,done,context):null);
    }else{
-    const next=dramaActive(done)?getAdventureGuide(region,done):getEraStoryGuide(region,done),title=dramaActive(done)?JOURNEY_CAST[region].chapter:ERA_STORIES[region].title;
+    const adventure = inAdventure ? activeAdventureGuide(region) : null;
+    const next = inAdventure ? adventure : getEraStoryGuide(region,done);
+    const title = adventure?.title ?? (dramaActive(done) ? JOURNEY_CAST[region].chapter : ERA_STORIES[region].title);
     add(`main:${region}`,region,'main',title,!next,next?guide(title,next.text,next.targetId,done,context):null);
    }
   }

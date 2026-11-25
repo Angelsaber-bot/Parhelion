@@ -8,6 +8,9 @@ import {createQuestGuideCatalog} from '../src/story/questGuideCatalog';
 import {REGIONS,mergeLayouts} from '../src/map/regions';
 import {ERA_OPTIONALS,ERA_IDS,ERA_BOSS_REQUIREMENTS} from '../src/story/eraStories';
 import {COMPACT_RELAY} from '../src/story/compactRelayCampaign';
+import {ADVENTURE} from '../src/story/openWorldCampaign';
+import {HARBOR_RELIEF} from '../src/story/harborRelief';
+import {WINTER_CHAPTERS, WC} from '../src/story/winterChapters';
 import type {Marker} from '../src/core/types';
 const parts=REGIONS.map(def=>({def,layout:JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`,import.meta.url),'utf8'))}));
 const layout=mergeLayouts(parts);
@@ -80,6 +83,28 @@ test('missing main layout and nonfinite target data are unavailable, never false
  assert.equal(state.complete,false);assert.equal(state.guide,null);assert.ok(state.unavailable);
  const invalid=createQuestGuideCatalog({markers:[{id:'secret',type:'discovery',label:'发现',p:[NaN,0,0]}],objectives:[],npcs:[]});
  assert.equal(invalid.resolve('discovery:secret',new Set(),new Set()),null);
+});
+
+test('an adventure save tracks the live chapter without requiring the newer drama flags', () => {
+ const done = new Set([ADVENTURE.started, ADVENTURE.online, ADVENTURE.harborSide, 'armory_rack', 'blackbeard_meet']);
+ const found = new Set<string>();
+ assert.equal(catalog.resolve('main:blacksail', done, found)?.targetId, ADVENTURE.records);
+ done.add(HARBOR_RELIEF.reserve);
+ assert.equal(catalog.resolve('main:blacksail', done, found)?.targetId, HARBOR_RELIEF.lookout);
+ done.add(ADVENTURE.departed); done.add('blackbeard_contract');
+ assert.equal(catalog.resolve('main:blacksail', done, found), null);
+});
+
+test('a journal chapter tracks the same ready field action and bilingual label as the world', () => {
+ const set = WINTER_CHAPTERS.set, entry = set.actions.find(action => action.id === WC.lights)!;
+ const anchor = layout.markers.find(marker => marker.id === entry.near)!;
+ const fieldMarker: Marker = { id: entry.id, label: entry.label[0], p: anchor.p, type: 'interact' };
+ const guide = createQuestGuideCatalog({ markers: [...layout.markers, fieldMarker], objectives: layout.objectives, npcs: [], fieldChapters: [set] });
+ const done = new Set([ADVENTURE.started, ADVENTURE.online, 'armory_rack', 'napoleon_meet']);
+ const result = guide.resolve('main:winter', done, new Set());
+ assert.equal(result?.targetId, WC.lights);
+ assert.deepEqual(result?.targetLabel, entry.label);
+ assert.deepEqual(result?.text, entry.label);
 });
 
 test('compact exercise guides actual equipment then field and retains earned deployment tracking',()=>{

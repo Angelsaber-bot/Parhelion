@@ -4,10 +4,10 @@
 // The public site uses the same RoomCore inside a Cloudflare Durable Object (worker/index.ts).
 
 import { appendFile } from 'node:fs/promises';
-import { Room, type Client } from '@colyseus/core';
+import { Room, type Client, type Server } from '@colyseus/core';
 import { TICK_HZ, validateLoadout } from '../shared/content.ts';
 import type { Match } from '../shared/match.ts';
-import { assertRulesVersion, normalizeRoomCode, type JoinOptions } from '../shared/protocol.ts';
+import { assertRulesVersion, normalizeRoomCode, PRIVATE_ROOM_NAME, ROOM_NAME, type JoinOptions } from '../shared/protocol.ts';
 import { LOCAL_TRAINER, PUBLIC_TRAINER, releasedBotPolicies } from '../shared/releasedBotPolicy.ts';
 import { RoomCore } from '../shared/room.ts';
 
@@ -64,4 +64,10 @@ export class ArenaRoom extends Room {
   onLeave(client: Client) {
     this.core.leave(client.sessionId);
   }
+}
+
+/** The standalone server and the local launcher offer the same matchmaking routes. */
+export function registerArenaRooms(server: Server) {
+  server.define(ROOM_NAME, ArenaRoom).filterBy(['layout', 'map', 'bots']);
+  server.define(PRIVATE_ROOM_NAME, ArenaRoom).filterBy(['room']);
 }

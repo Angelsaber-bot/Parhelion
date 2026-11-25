@@ -81,7 +81,16 @@ test('channel authored durations do not change with frame rate or allow hidden t
  for(const dt of[1/120,1/60,.05]){const c=new RelayChannel(2),frame={dt,held:false,active:true,playable:true,inRange:true,grounded:true,moving:false,attacking:false,damageRevision:0};c.update(frame);let seconds=0;while(c.progress<1&&seconds<3){c.update({...frame,held:true});seconds+=dt;}assert.ok(Math.abs(seconds-2)<.051);}
 });
 
-test('default guide advances after a local chapter and preparation tracks only remaining actions',()=>{const done=new Set([A.started,A.online,'armory_rack','saber_contract','sun_core']);assert.equal(getCurrentAdventureGuide('britain',done)?.targetId,'blackbeard_meet');done.add('napoleon_meet');done.add('beacon_1');assert.equal(getAdventureGuide('winter',done)?.targetId,'beacon_2');done.add('blackbeard_meet');done.add('fort_cannon');done.add('ghost_boat_1');assert.equal(getAdventureGuide('blacksail',done)?.targetId,'ghost_boat_2');});
+test('default guide recommends Winter after Britain and honors local preparation in either realm', () => {
+ const done = new Set([A.started,A.online,'armory_rack','saber_contract','sun_core']);
+ assert.equal(getCurrentAdventureGuide('britain',done)?.targetId,'napoleon_meet');
+ done.add('napoleon_meet'); done.add('beacon_1');
+ assert.equal(getCurrentAdventureGuide('winter',done)?.targetId,'beacon_2');
+ done.add('blackbeard_meet'); done.add('fort_cannon'); done.add('ghost_boat_1');
+ assert.equal(getCurrentAdventureGuide('blacksail',done)?.targetId,'ghost_boat_2');
+ done.add(A.arrived); done.add('napoleon_contract');
+ assert.equal(getCurrentAdventureGuide('winter',done)?.targetId,'ghost_boat_2');
+});
 
 test('adventure respects contract-only legacy victories without requiring another first-clear boss',()=>{const harbor=setup(['blackbeard_meet','blackbeard_contract',A.records]);assert.equal(getAdventureGuide('blacksail',harbor.done)?.targetId,'adventure_harbor_exit');harbor.runtime.interact('adventure_harbor_exit');assert.ok(harbor.done.has(A.exited));const winter=setup(['napoleon_meet','napoleon_contract','shard_bell',A.road]);assert.equal(getAdventureGuide('winter',winter.done)?.targetId,'adventure_winter_convoy');const kyoto=setup(['musashi_meet','musashi_contract','kikyo_banner_1','kikyo_banner_2','kikyo_banner_3']);assert.equal(getAdventureGuide('kyoto',kyoto.done)?.targetId,A.evidence);});
 

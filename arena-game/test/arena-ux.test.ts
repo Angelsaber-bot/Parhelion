@@ -77,6 +77,16 @@ it('plain weapon names localize without changing stable IDs, stats or skin catal
   setLanguage('en'); expect(WEAPONS.map((w) => displayWeaponName(w.id))).toEqual(['Assault Rifle AR','Shotgun','Marksman Rifle DMR','Submachine Gun SMG','Sniper Rifle','Sword','Spear','War Hammer']);
   expect(displayWeaponName('unknown')).toBe('Unknown weapon'); expect(WEAPONS).toEqual(before);
 });
+
+it('Arena startup requests the selected battlefield again after practice and leaves lobby selection intact after a private match', () => {
+  const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
+  const startup = main.slice(main.indexOf("$('play').onclick = async"), main.indexOf('// ---------- training range menu'));
+  expect(startup).toContain('const selectedBattlefield = mapId;');
+  expect(startup).toContain('await loadBattlefield(attempt.mode === \'range\' ? RANGE_MAP_ID : selectedBattlefield);');
+  expect(startup).toContain('map: selectedBattlefield');
+  expect(startup).toContain('await loadBattlefield(ownedSession.mapId);');
+  expect(startup).not.toMatch(/\b(?:pickMap|loadChosenMap)\s*\(/);
+});
 for (const weapon of [5,6,7]) it(`melee ${weapon} prepares, reaches continuous impact and returns exactly to idle over its unchanged recovery`, () => {
   const idle = meleeMotion(weapon, 0, 0, true), prep = meleeMotion(weapon, .6, 0, true);
   expect(prep).not.toEqual(idle);

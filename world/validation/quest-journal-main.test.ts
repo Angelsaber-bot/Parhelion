@@ -3,6 +3,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
+import { ADVENTURE } from '../src/story/openWorldCampaign';
+import { BC } from '../src/story/blacksailChapters';
 
 test('actual main quest browser only pins deliberately, advances saved steps, and preserves modal/locale/remap gates',async()=>{
  const h=await bootWorldWithoutGpu({deterministic:true}),w=h.world,d=h.window.document;let time=0;
@@ -53,4 +55,36 @@ test('actual main quest browser only pins deliberately, advances saved steps, an
   d.getElementById('view')!.dispatchEvent(new h.window.Event('webglcontextlost',{cancelable:true}));open();assert.equal(panel.hidden,true,'lost graphics cannot open another gameplay modal');
   assert.deepEqual(h.errors,[]);
  }finally{await h.close()}
+});
+
+test('a restored adventure follows the active harbor field chapter in the live journal', async () => {
+ const done = [ADVENTURE.started, ADVENTURE.online, ADVENTURE.harborSide, 'armory_rack', 'blackbeard_meet'];
+ const h = await bootWorldWithoutGpu({ deterministic: true, initialStorage: {
+  'parhelion.world.progress.v2': JSON.stringify({ done, found: [] }),
+ } });
+ const d = h.window.document;
+ const panel = d.getElementById('world-quest-journal')!;
+ const open = () => {
+  d.getElementById('world-quest-journal-open')!.click();
+  assert.equal(panel.hidden, false);
+  const region = panel.querySelector('select')!;
+  region.value = 'blacksail';
+  region.dispatchEvent(new h.window.Event('change'));
+ };
+ const entry = () => panel.querySelector('[data-quest-id="main:blacksail"] .quest-target')?.textContent ?? '';
+ try {
+  const language = d.querySelector<HTMLSelectElement>('#world-settings .parhelion-language select')!;
+  language.value = 'en';
+  language.dispatchEvent(new h.window.Event('change', { bubbles: true }));
+  open();
+  assert.match(entry(), /Crane dock/);
+  d.body.dispatchEvent(new h.window.KeyboardEvent('keydown', { code: 'Escape', key: 'Escape', bubbles: true }));
+  assert.equal(panel.hidden, true);
+  h.world.done.add(BC.observe);
+  open();
+  assert.match(entry(), /Crate line/);
+  assert.deepEqual(h.errors, []);
+ } finally {
+  await h.close();
+ }
 });

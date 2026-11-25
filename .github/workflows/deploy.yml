@@ -39,12 +39,20 @@ jobs:
         run: |
           if [ -n "$BEFORE" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ]; then
             if git cat-file -e "$BEFORE^{commit}" 2>/dev/null || git fetch --no-tags --depth=1 origin "$BEFORE"; then
-            if git diff --quiet "$BEFORE" HEAD -- arena arena-game arena-maps shared-client .github/workflows/deploy.yml; then
-                echo "worker=false" >> "$GITHUB_OUTPUT"
-                exit 0
+              if git diff --quiet "$BEFORE" HEAD -- site/scripts arena-game/server arena-game/shared .github/workflows/deploy.yml; then
+                echo "backend=false" >> "$GITHUB_OUTPUT"
+              else
+                echo "backend=true" >> "$GITHUB_OUTPUT"
               fi
+              if git diff --quiet "$BEFORE" HEAD -- arena arena-game arena-maps shared-client .github/workflows/deploy.yml; then
+                echo "worker=false" >> "$GITHUB_OUTPUT"
+              else
+                echo "worker=true" >> "$GITHUB_OUTPUT"
+              fi
+              exit 0
             fi
           fi
+          echo "backend=true" >> "$GITHUB_OUTPUT"
           echo "worker=true" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v5
         with:
@@ -61,6 +69,9 @@ jobs:
 
       - name: Build site (typechecks Arena + World)
         run: npm run build --prefix site
+      - name: Smoke test the bundled local launcher
+        if: steps.scope.outputs.backend == 'true'
+        run: npm run test:backend --prefix site
       - name: Check the build points at the public Arena server
         run: grep -rqF "$ARENA_URL" site/dist/public/arena
 

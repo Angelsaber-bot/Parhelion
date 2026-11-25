@@ -182,24 +182,23 @@ function renderMaps() {
  $('title').textContent = mode==='range'?bilingual('训练场','Training range'):getLanguage()==='en'&&chosenMap.englishName?chosenMap.englishName:localizeText(chosenMap.name);
 }
 let starting = false;
-let mapReady: Promise<void>;
 let mapGeneration = 0;
-let mapState: 'pending' | 'ready' | 'failed' = 'pending';
 let suppressMapError = false;
 let pageExited = false;
+function loadBattlefield(id: string) {
+  if (id === RANGE_MAP_ID) return scene.loadMap(id, 'day');
+  const presentation = getMap(id).data.presentation;
+  return scene.loadMap(id, presentation?.preset ?? MAPS.find(map => map.id === id)?.preset, presentation);
+}
 function pickMap(id: string) {
   if (pageExited || starting) return;
   showError('');
-  loadChosenMap(id);
-}
-function loadChosenMap(id: string) {
-  const generation = ++mapGeneration; mapState = 'pending'; suppressMapError = false;
+  const generation = ++mapGeneration;
+  suppressMapError = false;
   mapId = mapIdOf(id);
   renderMaps();
-  mapReady = scene.loadMap(mapId, getMap(mapId).data.presentation?.preset ?? MAPS.find((m) => m.id === mapId)?.preset, getMap(mapId).data.presentation);
-  mapReady.then(() => { if (generation === mapGeneration) mapState = 'ready'; }, (e) => {
+  void loadBattlefield(mapId).catch(e => {
     if (generation !== mapGeneration) return;
-    mapState = 'failed';
     if (!starting && !pageExited && !suppressMapError) showError(() => bilingual(`地图加载失败：${localizeText(String(e?.message ?? e))}。可点击开始重试，或另选地图。`, `Map failed to load: ${localizeText(String(e?.message ?? e))}. Press Start to retry, or choose another map.`));
   });
 }
@@ -320,8 +319,7 @@ $('play').onclick = async () => {
     $('room-code').focus();
     return;
   }
-  // A deliberate new Start retries a rejected asset load; an unresolved load is reused.
-  if (mapState === 'failed') pickMap(mapId);
+  const selectedBattlefield = mapId;
   let ownedSession: Session | null = null;
   const closeOwned = () => { const session = ownedSession; ownedSession = null; try { session?.close(); } catch { /* best effort for a failed/stale startup */ } };
   const attempt = { id: ++attemptGeneration, phase: 'map' as StartPhase, mode, closeSession: closeOwned };
@@ -333,7 +331,7 @@ $('play').onclick = async () => {
     layout: $<HTMLSelectElement>('layout').value as TeamLayout,
     team: $<HTMLSelectElement>('team').value as JoinOptions['team'],
     name,
-    char, heroId:CHARACTERS[char].id, skins: skins.slice(), loadout: loadoutStore.value, utility: loadoutStore.utility, map: mapId,
+    char, heroId:CHARACTERS[char].id, skins: skins.slice(), loadout: loadoutStore.value, utility: loadoutStore.utility, map: selectedBattlefield,
     bots: $<HTMLInputElement>('bots').checked || undefined,
   };
   const server = $<HTMLInputElement>('server').value.trim();
@@ -344,7 +342,9 @@ $('play').onclick = async () => {
   try {
     sfx.unlock();
     const release = attempt.mode === 'offline' ? botPolicies.refresh() : undefined;
-    await (attempt.mode === 'range' ? scene.loadMap(RANGE_MAP_ID, 'day') : mapReady);
+    // A previous range or private room may have replaced the displayed map.
+    // Request this match's map again; the scene reuses its parsed asset.
+    await loadBattlefield(attempt.mode === 'range' ? RANGE_MAP_ID : selectedBattlefield);
     if (!current()) return;
     attempt.phase = 'models'; renderStartupStatus();
     await prepareWorldHeroes();
@@ -359,10 +359,9 @@ $('play').onclick = async () => {
     if (attempt.mode === 'offline' && !localHost) ownedSession.onStats = postStats;
     if (!current()) { closeOwned(); return; }
     // A private room plays the map its first player chose: show that one.
-    if (ownedSession.mapId && ownedSession.mapId !== mapId) {
+    if (ownedSession.mapId && ownedSession.mapId !== selectedBattlefield) {
       attempt.phase = 'map'; renderStartupStatus();
-      loadChosenMap(ownedSession.mapId);
-      await mapReady;
+      await loadBattlefield(ownedSession.mapId);
       if (!current()) { closeOwned(); return; }
     }
     if (ownedSession.closeReason) {
