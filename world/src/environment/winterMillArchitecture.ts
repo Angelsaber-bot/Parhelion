@@ -3,6 +3,7 @@ import { MeshBVH } from 'three-mesh-bvh';
 import { SiteArt } from '../story/campaignSites';
 import { mergeParts } from '../settlements/merge';
 import { landscapeWalkway, type LandscapePoint as Point } from './landscapeWalkway';
+import { buildFrozenMillRace } from './winterMillRace';
 import type { Collider } from '../player/player';
 
 /** The mill fork is a place to work and recover, visible before choosing a
@@ -39,9 +40,35 @@ export function createWinterMillArchitecture(north: Point, ground: (x: number, z
   }
   box(0, 5.2, 7.27, 11.7, .24, .12, timber);
   box(5.87, 5.2, 0, .12, .24, 14.3, timber);
+  const stoneCourse = ['#878e91', '#929694', '#9e9d96', '#81878a'];
+  for (let col = 0; col < 10; col++) {
+    const dz = -6.46 + col * 1.43, dx = -5.2 + col * 1.15;
+    const color = stoneCourse[col % stoneCourse.length];
+    box(-5.87, .36, dz, .24, .72, 1.40, color);
+    box(dx, .36, -7.30, 1.12, .72, .23, color);
+  }
+  for (const side of [-1, 1]) for (let col = 0; col < 4; col++) {
+    const color = stoneCourse[(col + side + 1) % stoneCourse.length];
+    box(side * (2.34 + col * .96), .36, 7.31, .92, .72, .22, color);
+    box(5.90, .36, side * (3.01 + col * 1.15), .22, .72, 1.11, color);
+  }
+  for (const dz of [-6.9, -3.4, .4, 3.77, 6.9]) box(-5.863, 2.9, dz, .21, 4.45, .22, timber);
+  box(-5.885, 4.97, 0, .24, .27, 14.2, dark);
+  box(-5.944, 2.69, -1.5, .19, .81, .84, dark);
+  const slab = new THREE.BoxGeometry(1, 1, 1);
   for (const side of [-1, 1]) {
-    a.box(at(side * 3.1, 6.6, 0), [7.1, .2, 16], dark, false, 'body', [0, 0, -side * .43]);
-    a.box(at(side * 3.1, 6.76, 0), [7.12, .14, 16.05], snow, false, 'body', [0, 0, -side * .43]);
+    const pitch = .43, rotation: Point = [0, 0, -side * pitch];
+    const roof = (dx: number) => 6.6 + (3.1 - dx) * Math.tan(pitch) + .1 / Math.cos(pitch);
+    a.add(slab, '#64594d', at(side * 3.1, 6.6, 0), [7.1, .2, 16], false, 'body', rotation);
+    for (let section = 0; section < 12; section++) {
+      const dz = -7.31 + section * 1.33;
+      const eave = 5.33 + ((section * 7 + side + 1) % 6) * .13;
+      const middle = (.10 + eave) / 2;
+      a.add(slab, section % 3 ? snow : '#c6d7df', at(side * middle, roof(middle) + .058, dz), [(eave - .1) / Math.cos(pitch), .115, 1.33], false, 'body', rotation);
+      const rafter = (eave + 6.32) / 2;
+      a.add(slab, timber, at(side * rafter, roof(rafter) + .018, dz + .41), [(6.32 - eave) / Math.cos(pitch), .056, .08], false, 'body', rotation);
+    }
+    box(side * 6.31, roof(6.31) - .06, 0, .18, .26, 16.1, dark);
     for (const end of [-1, 1]) a.beam(at(side * 6.2, 5.23, end * 7.9), at(0, 8.04, end * 7.9), .2, timber);
   }
   // The loft carries grain. Both ends stop driving snow while a louvred
@@ -71,6 +98,7 @@ export function createWinterMillArchitecture(north: Point, ground: (x: number, z
     box(xx, 2.8, 7.39, .08, 1.4, .05, timber);
     box(xx, 2.8, 7.39, 1.4, .08, .05, timber);
   }
+  a.lantern(...at(0, 4.01, 7.48));
   // Ground-floor millstones, open aisle, a carpenter's bench and real flour shelves.
   for (const dx of [-3, .5]) {
     a.cyl(at(dx, .35, -3.2), 1.15, .7, stone, true);
@@ -85,43 +113,48 @@ export function createWinterMillArchitecture(north: Point, ground: (x: number, z
   for (const dz of [-5.7, -1, 4.6]) a.lantern(...at(-5.1, 3.4, dz));
   // A usable loading porch leads north to the road. The river door keeps a short stoop that
   // stops before the convoy road; the bridge's north landing is a short walk across open ground.
-  const front: Point = at(0, 0, 10.8), road: Point = [x, ground(x, z + 20, y + 4) ?? y, z + 20];
-  landscapeWalkway(a, [at(0, 0, 6.7), front, road], { width: 3.4, floor: timber, edge: dark, supports: (px, pz, c) => ground(px, pz, c) });
-  landscapeWalkway(a, [at(5.3, 0, 0), at(7.6, 0, 0)],
-    { width: 3.6, floor: timber, edge: dark, supports: (px, pz, c) => ground(px, pz, c) });
+  function landing(dx: number, dz: number, crossX: number, crossZ: number): Point {
+    const px = x + dx, pz = z + dz;
+    const heights = [-1, 0, 1].map(side => ground(px + crossX * side, pz + crossZ * side, y + 1.4) ?? y);
+    return [px, Math.max(...heights) + .055, pz];
+  }
+  const front = [at(0, 0, 6.7), ...[9, 12.7, 16.5, 20].map(dz => landing(0, dz, 1.55, 0))];
+  const side = [at(5.3, 0, 0), landing(7.6, 0, 0, 1.65)];
+  function loadingWalk(points: Point[], width: number) {
+    landscapeWalkway(a, points, { width, floor: timber, edge: dark, continuousCorners: true, supports: ground });
+    for (let n = 1; n < points.length; n++) {
+      const start = new THREE.Vector3(...points[n - 1]), end = new THREE.Vector3(...points[n]);
+      const delta = end.clone().sub(start), length = delta.length(), count = Math.ceil(length / .56);
+      const turn = new THREE.Euler().setFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), delta.normalize()));
+      for (let plank = 0; plank < count; plank++) {
+        const p = start.clone().lerp(end, (plank + .5) / count); p.y += .005;
+        const shade = (plank + n) % 5 < 2 ? '#867160' : '#7c695a';
+        a.add(slab, shade, p.toArray(), [width - .045, .025, length / count - .022], false, 'body', [turn.x, turn.y, turn.z]);
+      }
+    }
+  }
+  loadingWalk(front, 3.4);
+  loadingWalk(side, 3.6);
+  slab.dispose();
 
-  // A wheel with open spokes, rim bands, paddles and a visible axle to the millstones.
-  const wheel = new THREE.Group(); wheel.name = 'WinterMillWaterwheel'; wheel.position.fromArray(at(-7.1, 2.1, -1.5));
-  root.add(wheel);
-  const wood = new THREE.MeshStandardMaterial({ color: timber, roughness: .93 });
-  const metal = new THREE.MeshStandardMaterial({ color: '#62696c', roughness: .62, metalness: .32 });
-  const geos: THREE.BufferGeometry[] = [];
-  const part = (geo: THREE.BufferGeometry, p: Point, material: THREE.Material = wood) => {
-    geos.push(geo); const mesh = new THREE.Mesh(geo, material); mesh.position.fromArray(p); wheel.add(mesh); return mesh;
-  };
+  buildFrozenMillRace(a, at, ground);
+  // The spare sled sits beside the loading track, clear of both thresholds.
+  const sledY = (ground(x + 3, z + 12.35, y + 1.4) ?? y) - y;
   for (const side of [-1, 1]) {
-    part(new THREE.TorusGeometry(2.65, .15, 5, 26).rotateY(Math.PI / 2), [side * .7, 0, 0], metal);
-    for (let i = 0; i < 8; i++) part(new THREE.BoxGeometry(.14, 5.1, .18), [side * .7, 0, 0]).rotation.x = i * Math.PI / 8;
+    a.beam(at(side * .55 + 3, sledY + .15, 10.2), at(side * .55 + 3, sledY + .15, 14), .13, dark);
+    a.beam(at(side * .55 + 3, sledY + .15, 14), at(side * .55 + 3, sledY + .46, 14.6), .13, dark);
   }
-  for (let i = 0; i < 16; i++) {
-    const t = i * Math.PI / 8;
-    part(new THREE.BoxGeometry(1.65, .12, .68), [0, Math.sin(t) * 2.52, Math.cos(t) * 2.52]).rotation.x = -t;
+  for (let i = 0; i < 7; i++) {
+    box(3, sledY + .315, 10.5 + i * .45, 1.35, .12, .38, timber);
+    if (i === 0 || i === 6) box(3, sledY + .237, 10.5 + i * .45, 1.28, .14, .21, dark);
   }
-  part(new THREE.CylinderGeometry(.2, .2, 4.8, 10).rotateZ(Math.PI / 2), [1.3, 0, 0], metal);
-  // Broken panes and a spare sled tell why this is an engineering refuge, not a second fortress.
-  for (const side of [-1, 1]) {
-    a.beam(at(side * .55 + 3, .2, 10.2), at(side * .55 + 3, .2, 14), .13, dark);
-    a.beam(at(side * .55 + 3, .2, 14), at(side * .55 + 3, .5, 14.6), .13, dark);
-  }
-  for (let i = 0; i < 7; i++) box(3, .45, 10.5 + i * .45, 1.35, .12, .38, timber);
   const collision = mergeParts(a.solids); a.solids.forEach(g => g.dispose());
   const collider: Collider = { name: 'COL_WinterMillWorkshop', bvh: new MeshBVH(collision), enabled: true };
   a.finish('winter'); root.name = 'WinterMillWorkshop';
   return {
     root, collider,
-    update(dt: number) { wheel.rotation.x += Math.max(0, Math.min(.1, dt)) * .15; },
     dispose() {
-      collider.enabled = false; collision.dispose(); for (const geo of geos) geo.dispose(); wood.dispose(); metal.dispose();
+      collider.enabled = false; collision.dispose();
       for (const mesh of a.layers.values()) mesh.geometry.dispose(); for (const material of Object.values(a.materials)) material.dispose(); root.removeFromParent();
     },
   };

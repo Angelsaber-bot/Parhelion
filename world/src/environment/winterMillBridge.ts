@@ -17,10 +17,37 @@ export function createWinterMillBridge(rally: [number, number, number], ground: 
   const r: [number, number, number] = [e.x, e.y, e.z];
   const deck = new THREE.PlaneGeometry(B.width, length).rotateX(-Math.PI / 2).applyQuaternion(rotation).translate(center.x, center.y, center.z);
   const collider: Collider = { name: 'COL_WinterMillBridge', bvh: new MeshBVH(deck), enabled: false };
+  const point = (d: number, offset: number, height: number): [number, number, number] => {
+    const p = north.clone().addScaledVector(forward, d).addScaledVector(side, offset);
+    return [p.x, p.y + height, p.z];
+  };
+  const oak = '#746151', endGrain = '#534a43', band = '#4c575d';
   const plankCount = Math.ceil(length / .85);
+  const stride = length / plankCount;
   for (let i = 0; i < plankCount; i++) {
-    const p = north.clone().lerp(south, (i + .5) / plankCount); p.y -= .11;
-    art.box(p.toArray(), [B.width, .22, length / plankCount - .035], i % 3 === 0 ? '#8c7b6a' : '#6d5b4c', false, 'body', r);
+    const d = (i + .5) * stride;
+    art.box(point(d, 0, -.11), [B.width, .22, stride - .027], i % 7 < 2 ? '#938173' : oak, false, 'body', r);
+    for (const sign of [-1, 1]) {
+      const edge = sign * (B.width / 2 - .37);
+      art.box(point(d, edge, .006), [.062, .017, .072], band, false, 'metal', r);
+      if (i % 9 < 3) art.box(point(d, edge - sign * .17, .012), [.31, .028, stride - .10], '#c8d5d9', false, 'body', r);
+    }
+  }
+  // Four stringers distribute the deck load to the trestles under the crossing.
+  for (const offset of [-2.4, -.8, .8, 2.4]) art.beam(point(0, offset, -.36), point(length, offset, -.36), .30, endGrain);
+  for (let d = 6; d < length - 4; d += 7) {
+    const shoulder = 2.48, cap = -.59;
+    art.beam(point(d, -3.3, cap), point(d, 3.3, cap), .27, oak);
+    for (const sign of [-1, 1]) {
+      const top = point(d, sign * shoulder, cap);
+      const bottom = ground(top[0], top[2], top[1] + 1);
+      if (bottom === null || bottom >= top[1] - .15) continue;
+      const foot: [number, number, number] = [top[0], bottom - .09, top[2]];
+      art.beam(foot, top, .34, oak);
+      art.box([foot[0], bottom + .055, foot[2]], [.55, .25, .58], '#85898a', false, 'body', [0, e.y, 0]);
+      art.beam([foot[0], bottom + .17, foot[2]], point(d, sign * .46, cap), .17, endGrain);
+      art.box([top[0], top[1] - .23, top[2]], [.37, .12, .37], band, false, 'metal');
+    }
   }
   for (const sign of [-1, 1]) {
     const offset = (B.width / 2 - .18) * sign;
@@ -29,10 +56,6 @@ export function createWinterMillBridge(rally: [number, number, number], ground: 
     for (let d = 2; d < length; d += 3.4) {
       const p = north.clone().addScaledVector(forward, d).addScaledVector(side, offset);
       art.box([p.x, p.y + .44, p.z], [.16, 1.14, .18], '#5f5348', false, 'body', r);
-      if (d % 6.8 < 3.5) {
-        const foot = p.clone().addScaledVector(side, -sign * 1.25); foot.y = .95;
-        art.beam([p.x, p.y - .2, p.z], foot.toArray(), .27, '#837a72');
-      }
     }
   }
   art.finish('winter'); art.root.name = 'WinterMillWithdrawalBridge';
@@ -57,7 +80,6 @@ export function createWinterMillBridge(rally: [number, number, number], ground: 
   return {
     root, collider, workshopCollider: workshop.collider,
     apply(done: ReadonlySet<string>, dt: number) {
-      workshop.update(dt);
       art.root.visible = collider.enabled = done.has(W.mill);
       signal.visible = done.has(W.redoubt) || done.has(W.mill);
       gun.visible = done.has(W.redoubt);

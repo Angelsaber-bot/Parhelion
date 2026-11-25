@@ -3,12 +3,14 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { createKingdomRoadLandscape } from '../src/environment/kingdomRoadLandscape';
 import { createWinterMillArchitecture } from '../src/environment/winterMillArchitecture';
+import { createWinterMillBridge } from '../src/environment/winterMillBridge';
 import { createWinterCivilLandscape } from '../src/environment/winterCivilLandscape';
 import { WINTER_CUSTOMS, WINTER_FLAG_RAIL, WINTER_SCHOOL } from '../src/map/winterCivilPlan';
 import { buildBritainSettlement } from '../src/settlements/britain';
 import { buildWinterSettlement } from '../src/settlements/winter';
 import { gatePoint } from '../src/story/kingdomGate';
 import { KINGDOM_ROAD as K } from '../src/story/kingdomRoad';
+import { WINTER_MILL_BRIDGE as B, WINTER_WITHDRAWAL as W } from '../src/story/winterWithdrawal';
 
 type Point = [number, number, number];
 const down: Point = [0, -1, 0];
@@ -86,6 +88,58 @@ test('the school awning has a roof over each post, and the stove pipe reaches da
     const chimney = first(school.root,[9,y+8,worldZ(-87.3)],down);
     assert.ok(chimney && chimney.point.y > y+6.15);
   } finally { school.dispose(); }
+});
+
+test('the mill race carries the mill axle while both door ramps stay usable on sloping terrain', () => {
+  const ground = (x: number, z: number) => .04 * z + .012 * x;
+  const mill = createWinterMillArchitecture([32, 0, 9], ground);
+  try {
+    const ice = first(mill.root, [-7.4, .82, 1.79], down);
+    assert.ok(ice && Math.abs(ice.point.y - .4485) < .005, 'ice is contained within the channel');
+    const outer = first(mill.root, [-10, 2.69, -1.5], [1, 0, 0]);
+    assert.ok(outer && Math.abs(outer.point.x + 8.94) < .02, 'the outer bearing surrounds the axle');
+    const shaft = first(mill.root, [-8.34, 3, -1.5], down);
+    assert.ok(shaft && Math.abs(shaft.point.y - 2.86) < .01, 'the axle spans the gap between the rotor and its bearing');
+    for (const dx of [-8.79, -5.91]) {
+      const probe: Point = [dx, 2.1, -1.5];
+      const bearing = mill.collider.bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(...probe), new THREE.Vector3(0, 1, 0)), THREE.DoubleSide);
+      assert.ok(bearing && bearing.point.y < 2.5, 'both bearings are supported by posts');
+    }
+    for (const [x, z] of [[0, 12.7], [0, 16.5], [7.45, 0]]) {
+      const origin = new THREE.Vector3(x, 2, z);
+      const walking = mill.collider.bvh.raycastFirst(new THREE.Ray(origin, new THREE.Vector3(...down)), THREE.DoubleSide);
+      const drawn = first(mill.root, [x, 2, z], down);
+      assert.ok(walking && drawn && walking.point.y > ground(x, z));
+      assert.ok(Math.abs(walking.point.y - drawn.point.y) < .026, 'wooden approach covers its collision ramp');
+    }
+  } finally { mill.dispose(); }
+});
+
+test('withdrawal bridge trestles seat on uneven ice and the unlocked cart deck remains flush', () => {
+  const bed = (x: number) => x < 64 ? 1.18 : 1.65;
+  const bridge = createWinterMillBridge([90, 3, -580], bed);
+  try {
+    const deck = bridge.root.getObjectByName('WinterMillWithdrawalBridge')!;
+    bridge.apply(new Set(), 0);
+    assert.equal(deck.visible, false);
+    assert.equal(bridge.collider.enabled, false);
+    bridge.apply(new Set([W.mill]), 0);
+    assert.equal(deck.visible, true);
+    assert.equal(bridge.collider.enabled, true);
+    const forward = new THREE.Vector3(...B.south).sub(new THREE.Vector3(...B.north)).normalize();
+    const side = new THREE.Vector3(forward.z, 0, -forward.x);
+    const center = new THREE.Vector3(...B.north).addScaledVector(forward, 20);
+    for (const sign of [-1, 1]) {
+      const foot = center.clone().addScaledVector(side, sign * 2.48);
+      const height = bed(foot.x);
+      const contact = first(deck, [foot.x, height - .2, foot.z], [0, 1, 0]);
+      assert.ok(contact && contact.point.y >= height - .10 && contact.point.y <= height, 'each pier reaches its own bed');
+    }
+    const origin = center.clone().add(new THREE.Vector3(0, 1, 0));
+    const visible = first(deck, origin.toArray(), down);
+    const level = bridge.collider.bvh.raycastFirst(new THREE.Ray(origin, new THREE.Vector3(...down)), THREE.DoubleSide);
+    assert.ok(visible && level && Math.abs(visible.point.y - level.point.y) < .01, 'the played deck matches the timber planks');
+  } finally { bridge.dispose(); }
 });
 
 test('winter civic models sit on the existing routes: roof snow, dressed pavement and bridge bents', () => {
