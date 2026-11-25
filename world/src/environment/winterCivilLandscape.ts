@@ -6,12 +6,14 @@ import { SiteArt } from '../story/campaignSites';
 import { mergeParts } from '../settlements/merge';
 import { WINTER_SCHOOL as S, WINTER_CUSTOMS as C, WINTER_FLAG_RAIL as rail } from '../map/winterCivilPlan';
 import { landscapeWalkway, type LandscapePoint as Point } from './landscapeWalkway';
+import { braceWinterPedestrianStrip, dressWinterCustoms, dressWinterSchool } from './winterCivicArt';
 
 /** The school is a quiet, open interior; the tax square has a broad entry,
  * two side loops and two distinct crossing exits. No quest completion is
  * inferred from arriving at these architectural spaces. */
 export function createWinterCivilLandscape(ground: (x: number, z: number, ceiling: number) => number | null) {
   const art = new SiteArt(), wood = '#72685e', char = '#484547', plaster = '#c4beb0', snow = '#e1e8ea', iron = '#535b61';
+  const roofSlab = new THREE.BoxGeometry(1, 1, 1);
   const floor = (x: number, z: number) => ground(x, z - 720, 20) ?? 8;
   const at = (x: number, z: number): Point => [x, floor(x, z) + .14, z];
   const route = (points: Point[], width = 3.8, rails = false) => landscapeWalkway(art, points,
@@ -53,9 +55,7 @@ export function createWinterCivilLandscape(ground: (x: number, z: number, ceilin
     art.beam([7, y + 4.6, z], [17.5, y + 6.7, z], .27, char, true);
     art.beam([17.5, y + 6.7, z], [29, y + 4.6, z], .27, char, true);
   }
-  art.box([12.2, y + 5.72, -92], [10.8, .26, 15], wood, true, 'body', [0, 0, .197]);
-  art.box([12.2, y + 5.92, -92], [10.9, .12, 15.1], snow, false, 'body', [0, 0, .197]);
-  for (let z = -99; z < -84; z += .65) art.box([12.2, y + 5.94, z], [10.9, .025, .045], '#a4a7a5', false, 'body', [0, 0, .197]);
+  art.add(roofSlab, wood, [12.2, y + 5.72, -92], [10.8, .26, 15], true, 'body', [0, 0, .197]);
   for (const z of [-98.7, -85.3]) art.beam([17.5, y + 6.7, z], [23.4, y + 5.7, z], .38, char, true);
   for (const z of [-99.34, -84.66]) for (const x of [8, 10, 22, 24, 27]) {
     art.box([x, y + .35, z], [1.8, .7, .06], '#8c8277');
@@ -103,7 +103,8 @@ export function createWinterCivilLandscape(ground: (x: number, z: number, ceilin
     }
     art.box([x,y+shoulder+.095,-81.5], [.24,.19,6.1], wood);
   }
-  art.box([25.2, y + 3.3, -81.5], [7.9, .15, 6.3], '#b3afa0', true, 'body', [0, 0, -.06]);
+  art.box([25.2, y + 3.3, -81.5], [7.9, .15, 6.3], '#7b8487', true, 'body', [0, 0, -.06]);
+  dressWinterSchool(art, y);
   art.box([9.5, y + .8, -80], [3.5, .18, 1.2], wood, true);
   for (const x of [8.4, 10.7]) art.box([x, y + .38, -80], [.16, .76, .9], char, true);
   art.lantern(9, y + 2.2, -85.8); art.lantern(25, y + 2.2, -84.6);
@@ -127,10 +128,12 @@ export function createWinterCivilLandscape(ground: (x: number, z: number, ceilin
     for (const x of [-102, -94]) art.box([x, cy + 2, z], [3.5, 4, .65], wood, true);
     art.box([-98, cy + 3.7, z], [4.6, .6, .65], wood, true);
   }
-  art.box([-98, upper - .2, 245], [12.8, .4, 27], wood, true);
+  // Continuous roof slabs own both the visible plane and its collision.
+  art.add(roofSlab, wood, [-98, upper - .2, 245], [12.8, .4, 27], true);
+  roofSlab.dispose();
   for (const x of [-104.05, -91.95]) {
-    for (let z = 233; z < 258; z += .85) art.box([x, cy + 1.9, z], [.07, 3.8, .035], '#595b5a');
-    art.box([x, cy + .42, 245], [.08, .5, 26], '#625e58');
+    for (const z of [232.4, 238.7, 246.68, 253.2, 257.6])
+      art.box([x, cy + 1.9, z], [.13, 3.8, .21], '#595b5a');
     art.box([x, cy + 3.8, 245], [.12, .25, 26], '#aaa394');
   }
   route([[-98, upper, 232], [-98, upper, 258]], 11.6, true);
@@ -167,6 +170,7 @@ export function createWinterCivilLandscape(ground: (x: number, z: number, ceilin
     width: 3.1, floor: wood, edge: iron, rails: true,
     railOpenings: [{ p: [rail.x, rail.deck, rail.z], radius: rail.halfLength - .4 }],
   });
+  braceWinterPedestrianStrip(art, rail.deck, (x, z, ceiling) => ground(x, z - 720, ceiling));
   for (const x of [rail.x - rail.halfLength, rail.x + rail.halfLength]) {
     art.box([x, rail.deck + .47, rail.z], [.17, .94, .17], char, true);
     art.box([x, rail.deck + .89, rail.z], [.25, .14, .25], iron);
@@ -185,6 +189,7 @@ export function createWinterCivilLandscape(ground: (x: number, z: number, ceilin
   art.lantern(-82.7, cy + 2.6, 244.9); art.lantern(-65.3, cy + 2.6, 244.9);
   art.cyl([-80, cy + .45, 245], .48, .9, iron, true);
   art.cyl([-80, cy + .93, 245], .37, .08, '#cf9957', false, 'glow');
+  dressWinterCustoms(art, cy, upper);
   const frame = new THREE.Matrix4().makeTranslation(0, 0, -720); art.relocate(frame);
   const geometry = mergeParts(art.solids); art.solids.forEach(g => g.dispose());
   const collider: Collider = { name: 'COL_WinterSchoolAndCustoms', bvh: new MeshBVH(geometry), enabled: true };

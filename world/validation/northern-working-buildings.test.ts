@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { createKingdomRoadLandscape } from '../src/environment/kingdomRoadLandscape';
 import { createWinterMillArchitecture } from '../src/environment/winterMillArchitecture';
 import { createWinterCivilLandscape } from '../src/environment/winterCivilLandscape';
-import { WINTER_SCHOOL } from '../src/map/winterCivilPlan';
+import { WINTER_CUSTOMS, WINTER_FLAG_RAIL, WINTER_SCHOOL } from '../src/map/winterCivilPlan';
 import { buildBritainSettlement } from '../src/settlements/britain';
 import { buildWinterSettlement } from '../src/settlements/winter';
 import { gatePoint } from '../src/story/kingdomGate';
@@ -86,4 +86,40 @@ test('the school awning has a roof over each post, and the stove pipe reaches da
     const chimney = first(school.root,[9,y+8,worldZ(-87.3)],down);
     assert.ok(chimney && chimney.point.y > y+6.15);
   } finally { school.dispose(); }
+});
+
+test('winter civic models sit on the existing routes: roof snow, dressed pavement and bridge bents', () => {
+  const bed = (z: number) => z < -492 ? 1.09 : 1.25;
+  const scene = createWinterCivilLandscape((_x, z, ceiling) => z > -494 && z < -490 && ceiling < 3 ? bed(z) : WINTER_SCHOOL.ground);
+  const ray = (origin: Point, direction: Point, far = Infinity) =>
+    scene.collider.bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(...origin), new THREE.Vector3(...direction)), THREE.DoubleSide, 0, far);
+  try {
+    const roof = (x: number, z: number) => {
+      const origin: Point = [x, 20, z - 720];
+      const snow = first(scene.root, origin, down)!;
+      const boards = ray(origin, down)!;
+      assert.ok(snow && boards);
+      return snow.point.y - boards.point.y;
+    };
+    assert.ok(roof(10.1, -98.7) > .014, 'the snow lies on the intact roof slope');
+    assert.ok(Math.abs(roof(17.35, -98.7)) < .005, 'the torn ridge exposes the original roof boards');
+    assert.ok(ray([25.4, 20, -812], down)!.point.y < WINTER_SCHOOL.floor + 2.5, 'the burnt bay stays open to the sky');
+    const paving: Point = [-77.4, WINTER_CUSTOMS.floor + .8, 229.2 - 720];
+    assert.ok(Math.abs(first(scene.root, paving, down)!.point.y - WINTER_CUSTOMS.floor - .037) < .003);
+    assert.ok(Math.abs(ray(paving, down)!.point.y - WINTER_CUSTOMS.floor) < .003);
+    // The shutters belong to the side walls, and both shop doors still open at floor level.
+    assert.equal(ray([-98, WINTER_CUSTOMS.floor + 1.4, 230 - 720], [0, 0, 1], 3.4), null);
+    assert.equal(ray([-98, WINTER_CUSTOMS.floor + 1.4, 260 - 720], [0, 0, -1], 3.4), null);
+    const gallery = WINTER_CUSTOMS.floor + 4.4;
+    for (const x of [-104.23, -91.79]) for (const z of [233.1, 244.1, 257.02]) {
+      assert.ok(Math.abs(ray([x, gallery + .5, z - 720], down)!.point.y - gallery) < .002, 'the snowed roof edges have a continuous solid deck');
+    }
+    for (const z of [226.84 - 720, 229.16 - 720]) {
+      const ground = bed(z);
+      const foot = ray([-4.7, ground - .18, z], [0, 1, 0], .34);
+      assert.ok(foot && Math.abs(foot.point.y - ground + .075) < .002, 'each post seats on its own ice height');
+    }
+    const deck = ray([-4.7, WINTER_FLAG_RAIL.deck + .5, -492], down);
+    assert.ok(deck && Math.abs(deck.point.y - WINTER_FLAG_RAIL.deck) < .002, 'the supported crown remains the walking height');
+  } finally { scene.dispose(); }
 });
