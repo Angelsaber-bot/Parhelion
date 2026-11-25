@@ -26,6 +26,7 @@ export interface Enemy extends SpawnPoint {
     lastSeen: Point3; memory: number; returning: boolean;
     closestHome: number; stalled: number; returnTime: number;
     detour?: { heading: number; remaining: number; goal: Point3; retreat: boolean; side: number; inwardTurn: number };
+    attackTarget?: 'local' | 'partner';
   };
   chaseTarget?: Point3;
   walking?: boolean;
@@ -441,6 +442,7 @@ export class WorldCombatState {
     e.daze = 0; e.dazeIdle = 0; e.dazedFor = 0; e.shellBroken = false;
     if (e.field) {
       e.field.memory = 0; e.field.detour = undefined; clearPatrolReturn(e.field);
+      e.field.attackTarget = undefined;
       e.chaseTarget = undefined; e.walking = false;
     }
   }
@@ -680,7 +682,10 @@ export class WorldCombatState {
   applyRemoteEnemies(list: readonly { id: string; p: readonly [number, number, number]; hp: number; mode: string; tm?: number; t?: readonly [number, number, number]; k?: string; ph?: number }[]) {
     for (const r of list) {
       const e = this.enemies.find(x => x.id === r.id); if (!e) continue;
-      if (e.field) e.walking = r.mode === 'chase' && Math.hypot(e.p.x - r.p[0], e.p.z - r.p[2]) > .02;
+      if (e.field) {
+        e.walking = r.mode === 'chase' && Math.hypot(e.p.x - r.p[0], e.p.z - r.p[2]) > .02;
+        e.field.attackTarget = undefined;
+      }
       e.p = { x: r.p[0], y: r.p[1], z: r.p[2] };
       // Only a fight seen here ends in a kill burst; idle or unseen foes just take the host's state.
       const wasFighting = e.mode !== 'dead' && e.mode !== 'idle';
@@ -826,6 +831,14 @@ export class WorldCombatState {
     }
     return false;
   }
+  private enemyHasSight(e: Enemy, player: Point3, terrain: CombatTerrain) {
+    const heightOk = Math.abs(player.y - e.p.y) < (e === this.boss ? 8 : 3);
+    if (!heightOk) return false;
+    const from = this.sightFrom, to = this.sightTo;
+    from.x = e.p.x; from.y = e.p.y + 1.2; from.z = e.p.z;
+    to.x = player.x; to.y = player.y + 1; to.z = player.z;
+    return terrain.lineOfSight(from, to);
+  }
   step(dt: number, localPlayer: Point3, active: boolean, terrain: CombatTerrain) {
     const player = localPlayer;
     // Co-op host in a menu or loading: the world keeps fighting the partner, never the absent host.
@@ -863,12 +876,13 @@ export class WorldCombatState {
       // Co-op guest: the host's game moves and fights with every enemy (applyRemoteEnemies).
       // Story actors exist only in their own player's game and keep local AI on both sides.
       if (this.remoteEnemies && !e.storyEncounter) continue;
-      // Co-op host: each enemy fights whichever player is nearer to it.
+      // Keep activation and despawn based on the nearest available player.
       if (away && e.storyEncounter) continue;
-      const player = this.partner && !e.storyEncounter && (away || distanceXZ(e.p, this.partner) < distanceXZ(e.p, localPlayer)) ? this.partner : localPlayer;
+      const partner = e.storyEncounter ? null : this.partner;
+      let player = partner && (away || distanceXZ(e.p, partner) < distanceXZ(e.p, localPlayer)) ? partner : localPlayer;
       if (this.bosses.includes(e) && !(this.bossStarted && e === this.boss)) { e.active = false; continue; }
       if (BOSS_FRONTS[e.id] && e.active && e.mode !== 'dead') turnLastSquare(e, e.mode === 'chase' ? player : e.target, dt);
-      const dist = distanceXZ(e.p, player);
+      let dist = distanceXZ(e.p, player);
       if (e.mode === 'dead') {
         e.timer -= dt;
         if (e !== this.boss && e.timer <= 0 && distanceXZ(e.home, player) > 30) this.resetEnemy(e);
@@ -881,6 +895,7 @@ export class WorldCombatState {
         e.walking = false;
         if (!e.active) { field.memory = 0; field.detour = undefined; }
         if (e.mode !== 'chase') field.detour = undefined;
+        if (e.mode !== 'windup') field.attackTarget = undefined;
       }
       if (!e.active || e.pacified) continue;
       // The nearby road pair yield the named duel.
@@ -894,12 +909,20 @@ export class WorldCombatState {
       const aggroRange = e.encounter === 'akechi' ? quietLane ? 12 : 26
         : field && role.attack === 'shot' ? role.range : COMBAT.aggroRange;
       if (e.mode === 'idle' && dist >= aggroRange) continue;
-      const heightOk = Math.abs(player.y - e.p.y) < (e === this.boss ? 8 : 3);
-      const from = this.sightFrom, to = this.sightTo;
-      from.x = e.p.x; from.y = e.p.y + 1.2; from.z = e.p.z;
-      to.x = player.x; to.y = player.y + 1; to.z = player.z;
-      const sight = heightOk && terrain.lineOfSight(from, to);
-      const outside = e !== this.boss && (distanceXZ(e.home, player) > COMBAT.leash || distanceXZ(e.home, e.p) > COMBAT.leash);
+      const committed = field?.attackTarget;
+      const aimedPlayer = committed === 'partner' ? partner : committed === 'local' && !away ? localPlayer : null;
+      if (aimedPlayer && aimedPlayer !== player) { player = aimedPlayer; dist = distanceXZ(e.p, player); }
+      let sight = (!committed || !!aimedPlayer) && this.enemyHasSight(e, player, terrain);
+      const outsidePost = e !== this.boss && distanceXZ(e.home, e.p) > COMBAT.leash;
+      let outside = e !== this.boss && (outsidePost || distanceXZ(e.home, player) > COMBAT.leash);
+      // A closer player behind cover or outside the patrol can leave the other in plain sight.
+      if (field && e.mode !== 'windup' && partner && !away && !outsidePost && (!sight || outside)) {
+        const other = player === localPlayer ? partner : localPlayer;
+        const otherDist = distanceXZ(e.p, other);
+        if ((e.mode !== 'idle' || otherDist < aggroRange) && distanceXZ(e.home, other) <= COMBAT.leash && this.enemyHasSight(e, other, terrain)) {
+          player = other; dist = otherDist; sight = true; outside = false;
+        }
+      }
       const sees = sight && (!field || !outside);
       if (e.mode === 'idle') { if (sees) e.mode = 'chase'; else continue; }
       if (field) {
@@ -984,6 +1007,7 @@ export class WorldCombatState {
           const from = clone(e.p); e.p = p;
           this.events.push({ type: 'blink', id: e.id, from, to: clone(p) });
           e.attack = e.storyPattern ? 'sweep' : role.attack; Object.assign(e.target, player); e.attackCount++;
+          if (field) field.attackTarget = player === localPlayer ? 'local' : 'partner';
           e.mode = 'windup'; e.timer = enemyAttackTiming(e).windup;
           continue;
         }
@@ -1001,6 +1025,7 @@ export class WorldCombatState {
         e.signatureActive = false;
         e.attack = e.storyPattern === 'echo-warden' ? chooseEchoWardenAttack(e, dist) : elite?.attack ?? (isBoss ? chooseBossAttack(e, dist) : role.attack);
         Object.assign(e.target, player); e.attackCount++;
+        if (field) field.attackTarget = player === localPlayer ? 'local' : 'partner';
         e.mode = 'windup'; e.timer = enemyAttackTiming(e).windup;
         continue;
       }
@@ -1012,7 +1037,7 @@ export class WorldCombatState {
         continue;
       }
       // The Tide-Eater limb is rooted in the riverbed: it turns and swings, never walks.
-      if (e.creature !== 'tide-limb' && (dist > 1.7 || retreat) && (sees || isBoss && heightOk)) {
+      if (e.creature !== 'tide-limb' && (dist > 1.7 || retreat) && (sees || isBoss && Math.abs(player.y - e.p.y) < 8)) {
         // 最后方阵 advances on the drum: a step on each beat, a held line between beats.
         const drum = e.id === LAST_SQUARE.id ? .35 + 1.3 * Math.max(0, Math.sin((e.squareDrum = (e.squareDrum ?? 0) + dt) * LAST_SQUARE.drum)) : 1;
         const speed = (isBoss ? e.phase === 2 ? 5.0 : 3.8 : elite ? elite.speed * (e.phase === 2 ? ELITE_RALLY.speed : 1) : role.speed) * drum;

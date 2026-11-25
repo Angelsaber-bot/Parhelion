@@ -97,6 +97,69 @@ test('host enemies fight the nearer player; a hit on the partner is sent, not ta
   assert.ok(!events.some(e => e.type === 'hurt'));
 });
 
+test('a patrol acquires the visible player when the nearer player is behind cover', () => {
+  const spawn = { id: 'wild_patrol', kind: 'shade' as const, p: { x: 0, y: 0, z: 0 }, role: 'stalker' as const };
+  const hidden = { x: -2, y: 0, z: 0 }, visible = { x: 8, y: 0, z: 0 };
+  const cover: CombatTerrain = { ...flat, lineOfSight: (_from, to) => to.x > 0 };
+  for (const [local, partner] of [[hidden, visible], [visible, hidden]]) {
+    const state = new WorldCombatState([spawn], []), enemy = state.enemies[0];
+    state.partner = partner;
+    state.step(.1, local, true, cover);
+    assert.equal(enemy.mode, 'chase');
+    assert.deepEqual(enemy.chaseTarget, visible);
+    assert.ok(enemy.p.x > 0);
+  }
+});
+
+test('a patrol near the leash can still engage the player inside its territory', () => {
+  const state = new WorldCombatState([{ id: 'wild_rifle', kind: 'shade', p: { x: 0, y: 0, z: 0 }, role: 'musketeer' }], []);
+  const enemy = state.enemies[0];
+  enemy.p = { x: 33, y: 0, z: 0 };
+  state.partner = { x: 25, y: 0, z: 0 };
+  state.step(.1, { x: 36, y: 0, z: 0 }, true, flat);
+  assert.equal(enemy.mode, 'windup');
+  assert.deepEqual(enemy.target, state.partner);
+});
+
+test('a patrol commits each attack to the player it aimed at through a change in nearest player', () => {
+  const spawn = { id: 'wild_rifle', kind: 'shade' as const, p: { x: 0, y: 0, z: 0 }, role: 'musketeer' as const };
+  for (const targetIsPartner of [true, false]) {
+    const state = new WorldCombatState([spawn], []), enemy = state.enemies[0];
+    const aimed = { x: 16, y: 0, z: 0 }, other = { x: 30, y: 0, z: 0 };
+    const local = targetIsPartner ? other : aimed;
+    state.partner = targetIsPartner ? aimed : other;
+    state.step(.1, local, true, flat);
+    assert.equal(enemy.mode, 'windup');
+    assert.deepEqual(enemy.target, aimed);
+    other.x = 8;
+    for (let i = 0; i < 15; i++) state.step(.1, local, true, flat);
+    const events = state.drainEvents();
+    assert.equal(events.filter(event => event.type === 'attackContact').length, 1);
+    assert.deepEqual(events.filter(event => event.type === 'partnerHurt' || event.type === 'hurt').map(event => event.type),
+      [targetIsPartner ? 'partnerHurt' : 'hurt']);
+  }
+});
+
+test('a patrol finishes its tell without redirecting damage when the aimed-at player leaves', () => {
+  const spawn = { id: 'wild_rifle', kind: 'shade' as const, p: { x: 0, y: 0, z: 0 }, role: 'musketeer' as const };
+  for (const targetIsPartner of [true, false]) {
+    const state = new WorldCombatState([spawn], []), enemy = state.enemies[0];
+    const aimed = { x: 8, y: 0, z: 0 }, other = { x: 16, y: 0, z: 0 };
+    const local = targetIsPartner ? other : aimed;
+    state.partner = targetIsPartner ? aimed : other;
+    state.step(.1, local, true, flat);
+    assert.equal(enemy.mode, 'windup');
+    other.x = aimed.x;
+    if (targetIsPartner) state.partner = null;
+    else state.localAbsent = true;
+    for (let i = 0; i < 15; i++) state.step(.1, local, !state.localAbsent, flat);
+    const events = state.drainEvents();
+    assert.equal(enemy.mode, 'recover');
+    assert.equal(events.filter(event => event.type === 'attackContact').length, 1);
+    assert.ok(!events.some(event => event.type === 'partnerHurt' || event.type === 'hurt'));
+  }
+});
+
 test('guest mirrors host enemies, reports its hits, and the host applies them without double bonuses', () => {
   const guest = new WorldCombatState([{ id: 'wild_t', kind: 'shade', p: { x: 5, y: 0, z: 0 } }], []);
   guest.remoteEnemies = true;
