@@ -141,7 +141,7 @@ jobs:
     needs: train
     if: needs.train.result == 'success' && needs.train.outputs.selfplay_completed == 'true' && vars.ARENA_TRAINING_PAUSED != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
     permissions:
       actions: write
     steps:
@@ -150,12 +150,25 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # A scheduled run or new push may already be waiting for this training slot.
-          pending=$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/arena-training.yml/runs" \
-            -f branch=main -f head_sha="$GITHUB_SHA" -F per_page=20 --jq '[.workflow_runs[] | select(.status == "pending" or .status == "queued" or .status == "requested" or .status == "waiting")] | length')
-          if [[ "$pending" -eq 0 ]]; then
-            gh workflow run arena-training.yml --repo "$GITHUB_REPOSITORY" --ref main
-            echo "Queued the next Arena training batch."
-          else
-            echo "Another Arena training batch is already waiting."
-          fi
+          workflow="repos/$GITHUB_REPOSITORY/actions/workflows/arena-training.yml"
+          # A dispatch can be accepted even when the response is lost. Recheck all
+          # pending main runs before each attempt, including pushes at a newer SHA.
+          for delay in 0 10 30 60; do
+            sleep "$delay"
+            if ! pending=$(gh api --method GET "$workflow/runs" -f branch=main -F per_page=100 \
+              --jq '[.workflow_runs[] | select(.status == "pending" or .status == "queued" or .status == "requested" or .status == "waiting")] | length'); then
+              continue
+            fi
+            if [[ "$pending" -gt 0 ]]; then
+              echo "Another Arena training batch is already waiting."
+              exit 0
+            fi
+            # The last poll only verifies an ambiguous dispatch response.
+            if [[ "$delay" -eq 60 ]]; then break; fi
+            if gh api --method POST "$workflow/dispatches" -f ref=main; then
+              echo "Queued the next Arena training batch."
+              exit 0
+            fi
+          done
+          echo "::error::Could not confirm a queued Arena training batch after three attempts."
+          exit 1
