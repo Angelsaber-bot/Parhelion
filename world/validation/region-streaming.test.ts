@@ -23,6 +23,38 @@ test('aborted and late region downloads cannot install after departure or dispos
  const s=new RegionVisualStreaming({parent,outlines:false,lowQuality:true,eager:true});
  try{const request=s.ensure('kyoto');s.dispose();assert.ok(signal?.aborted);finish(new Response(tinyGlb()));assert.equal(await request,false);assert.equal(parent.children.length,0);assert.equal(s.diagnostics.installs,0);assert.deepEqual(s.diagnostics.pending,[]);assert.equal(await s.ensure('alpha'),false);}finally{s.dispose();globalThis.fetch=original;}
 });
+test('crossing into an unloaded region starts its art before a stale approach request settles', async () => {
+  const original = globalThis.fetch, parent = new THREE.Group();
+  let finishBritain: ((response: Response) => void) | undefined, britainSignal: AbortSignal | null | undefined;
+  const requested: string[] = [];
+  globalThis.fetch = async (input, options) => {
+    const url = String(input); requested.push(url);
+    if (url.includes('world_britain')) {
+      britainSignal = options?.signal;
+      return new Promise<Response>(resolve => { finishBritain = resolve; });
+    }
+    return new Response(tinyGlb());
+  };
+  const stream = new RegionVisualStreaming({ parent, outlines: false, lowQuality: true });
+  try {
+    assert.equal(await stream.ensure('alpha'), true);
+    const west = new THREE.Vector3(-345, 0, 0);
+    stream.update(west, west);
+    const old = stream.ensure('britain');
+    assert.ok(finishBritain);
+    const north = new THREE.Vector3(0, 0, -370);
+    stream.update(north, north);
+    assert.equal(britainSignal?.aborted, true);
+    assert.ok(requested.at(-1)?.includes('world_winter'));
+    assert.equal(await stream.ensure('winter'), true);
+    finishBritain(new Response(tinyGlb()));
+    assert.equal(await old, false);
+    assert.deepEqual(stream.diagnostics.resident.sort(), ['alpha', 'winter']);
+  } finally {
+    stream.dispose();
+    globalThis.fetch = original;
+  }
+});
 test('new region art compiles first, then reaches the GPU under a per-frame byte budget, nearest first',async()=>{
  const original=globalThis.fetch,parent=new THREE.Group();globalThis.fetch=async()=>new Response(tinyGlb());
  const warmed:THREE.Object3D[]=[];

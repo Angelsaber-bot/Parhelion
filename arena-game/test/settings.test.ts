@@ -81,8 +81,8 @@ for (const mode of ['arena', 'world'] as const) describe(`${mode} alternate bind
     expect(disk.values.get(`parhelion-input-${mode}-v1`)).toBe(JSON.stringify(old));
     expect(new SettingsStore(mode, disk).value).toEqual(store.value);
     if (mode === 'world') {
-      expect(store.value.bindings.interact).toBe('KeyF'); expect(store.value.bindings.fly).toBe('KeyV');
-      expect('descend' in store.value.bindings).toBe(false); expect('ascend' in store.value.bindings).toBe(false);
+      expect(store.value.bindings.interact).toBe('KeyF');
+      for (const removed of ['fly', 'descend', 'ascend']) expect(removed in store.value.bindings).toBe(false);
     }
   });
   it('custom E binding wins migration; only conflicting default is repaired and a notice explains it', () => {

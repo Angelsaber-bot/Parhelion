@@ -1,4 +1,4 @@
-import { cameFromWorld, heroFromWorld, WORLD_RETURN_HREF } from './worldLink.ts';
+import { heroFromWorld, worldReturnHref } from './worldLink.ts';
 import {heroIcon} from './ui/heroIcon.ts';
 import {mountLobbyShell,heroShell,modeShell} from './ui/lobbyShell.ts';
 import { prepareWorldHeroes } from './player/worldHero.ts';
@@ -128,9 +128,17 @@ let char = typeof saved.heroId==='string' && CHARACTERS.some(c=>c.id===saved.her
 char = playableHero(heroFromWorld(params) ?? char);
 let mapId = mapIdOf(params.get('map') ?? saved.map);
 // Opened from the World's Echo Hall: offer the way back in the lobby, pause menu and results.
-const fromWorld = cameFromWorld(params);
-for (const id of ['to-world', 'pause-world', 'end-world']) document.getElementById(id)?.classList.toggle('hidden', !fromWorld);
-for (const id of ['pause-world', 'end-world']) { const b = document.getElementById(id); if (b) b.onclick = () => { game?.stop(); location.assign(WORLD_RETURN_HREF); }; }
+const worldReturn = worldReturnHref(params);
+if (worldReturn) {
+  const back = $<HTMLAnchorElement>('to-world');
+  back.href = worldReturn;
+  back.classList.remove('hidden');
+  for (const id of ['pause-world', 'end-world']) {
+    const button = $(id);
+    button.classList.remove('hidden');
+    button.onclick = () => { game?.stop(); location.assign(worldReturn); };
+  }
+}
 const skins = readSkinSelection(saved);
 const nameInput = $<HTMLInputElement>('name');
 nameInput.value = typeof saved.name === 'string' ? saved.name.trim() : '';
@@ -185,10 +193,17 @@ let starting = false;
 let mapGeneration = 0;
 let suppressMapError = false;
 let pageExited = false;
+let requestedBattlefield: { id: string; ready: Promise<void> } | undefined;
 function loadBattlefield(id: string) {
-  if (id === RANGE_MAP_ID) return scene.loadMap(id, 'day');
-  const presentation = getMap(id).data.presentation;
-  return scene.loadMap(id, presentation?.preset ?? MAPS.find(map => map.id === id)?.preset, presentation);
+  if (requestedBattlefield?.id === id) return requestedBattlefield.ready;
+  const presentation = id === RANGE_MAP_ID ? undefined : getMap(id).data.presentation;
+  const preset = id === RANGE_MAP_ID ? 'day' : presentation?.preset ?? MAPS.find(map => map.id === id)?.preset;
+  const ready = scene.loadMap(id, preset, presentation).catch(error => {
+    if (requestedBattlefield?.ready === ready) requestedBattlefield = undefined;
+    throw error;
+  });
+  requestedBattlefield = { id, ready };
+  return ready;
 }
 function pickMap(id: string) {
   if (pageExited || starting) return;
@@ -320,6 +335,7 @@ $('play').onclick = async () => {
     return;
   }
   const selectedBattlefield = mapId;
+  const selectedLoadout = loadoutStore.value, selectedUtility = loadoutStore.utility, selectedSkins = skins.slice();
   let ownedSession: Session | null = null;
   const closeOwned = () => { const session = ownedSession; ownedSession = null; try { session?.close(); } catch { /* best effort for a failed/stale startup */ } };
   const attempt = { id: ++attemptGeneration, phase: 'map' as StartPhase, mode, closeSession: closeOwned };
@@ -331,7 +347,7 @@ $('play').onclick = async () => {
     layout: $<HTMLSelectElement>('layout').value as TeamLayout,
     team: $<HTMLSelectElement>('team').value as JoinOptions['team'],
     name,
-    char, heroId:CHARACTERS[char].id, skins: skins.slice(), loadout: loadoutStore.value, utility: loadoutStore.utility, map: selectedBattlefield,
+    char, heroId:CHARACTERS[char].id, skins: selectedSkins, loadout: selectedLoadout, utility: selectedUtility, map: selectedBattlefield,
     bots: $<HTMLInputElement>('bots').checked || undefined,
   };
   const server = $<HTMLInputElement>('server').value.trim();
@@ -342,15 +358,15 @@ $('play').onclick = async () => {
   try {
     sfx.unlock();
     const release = attempt.mode === 'offline' ? botPolicies.refresh() : undefined;
-    // A previous range or private room may have replaced the displayed map.
-    // Request this match's map again; the scene reuses its parsed asset.
+    // Reuse the lobby load when it owns this battlefield. A previous range or
+    // private room can instead have replaced the displayed map.
     await loadBattlefield(attempt.mode === 'range' ? RANGE_MAP_ID : selectedBattlefield);
     if (!current()) return;
     attempt.phase = 'models'; renderStartupStatus();
     await prepareWorldHeroes();
     if (!current()) return;
     attempt.phase='equipment';renderStartupStatus();
-    await scene.prepareLoadout(loadoutStore.value.map(weaponIndex),skins);
+    await scene.prepareLoadout(selectedLoadout.map(weaponIndex), selectedSkins);
     if (!current()) return;
     attempt.phase = 'join'; renderStartupStatus();
     const { neural } = release ? await botPolicies.forMatch(release) : {};
@@ -371,7 +387,7 @@ $('play').onclick = async () => {
     attempt.phase = 'game'; renderStartupStatus();
     const session = ownedSession;
     rangeSession = session.practice ? session : null;
-    if (rangeSession) { rangeChoice = { loadout: loadoutStore.value, utility: loadoutStore.utility, skins: skins.slice() }; renderRangePanel(); }
+    if (rangeSession) { rangeChoice = { loadout: selectedLoadout, utility: selectedUtility, skins: selectedSkins }; renderRangePanel(); }
     const receipt = $('training-receipt');
     if (recordDemo) receipt.classList.add('hidden');
     game = new Game(session, scene, controls, hud, (reason) => backToLobby(reason), recordDemo ? new HumanDemo(session.mapId ?? mapId, (batch, startedAt) => {

@@ -26,8 +26,12 @@ export const ECHO_RETURN_KEY = 'parhelion.world.returnTo';
 /** World companion ids → Arena hero ids. */
 export const ARENA_HERO: Record<CompanionId, string> = { saber: 'saber', blackbeard: 'blackbeard', napoleon: 'napoleon', musashi: 'musashi', jeanne: 'jeanne', ozymandias: 'ozymandias', qinShiHuang: 'qin' };
 
-export function echoHallHref(hero: CompanionId | null, region: WorldRegionId = 'home'): string {
-  const q = new URLSearchParams({ mode: 'offline', from: 'world', map: ECHO_DESTINATIONS[region].map });
+export function echoHallHref(hero: CompanionId | null, region: WorldRegionId = 'home', sameTab = true): string {
+  const q = new URLSearchParams({ mode: 'offline', map: ECHO_DESTINATIONS[region].map });
+  if (sameTab) {
+    q.set('from', 'world');
+    q.set('station', echoMarkerId(region));
+  }
   if (hero && ARENA_HERO[hero]) q.set('hero', ARENA_HERO[hero]);
   return `/arena/?${q}`;
 }
@@ -36,13 +40,14 @@ type TabStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const tabStorage = (): TabStorage | null => { try { return typeof sessionStorage === 'undefined' ? null : sessionStorage; } catch { return null; } };
 /** Remember (for this tab only) the station the player left through. */
 export function markEchoDeparture(storage: TabStorage | null = tabStorage(), region: WorldRegionId = 'home') { try { storage?.setItem(ECHO_RETURN_KEY, echoMarkerId(region)); } catch { /* private mode: the player simply starts at the usual spawn */ } }
-/** Consume the station note only as a return destination for an Arena visit. */
+/** New links carry the station through reloads. Older links consume the tab's departure note. */
 export function takeEchoReturn(params: URLSearchParams, storage: TabStorage | null = tabStorage()): WorldRegionId | undefined {
+  let noted: string | null = null;
   try {
-    const noted = storage?.getItem(ECHO_RETURN_KEY);
+    noted = storage?.getItem(ECHO_RETURN_KEY) ?? null;
     if (noted) storage?.removeItem(ECHO_RETURN_KEY);
-    return params.get('from') === 'arena' ? echoMarkerRegion(noted ?? null) : undefined;
-  } catch { return undefined; }
+  } catch { /* The return link also works without browser storage. */ }
+  return params.get('from') === 'arena' ? echoMarkerRegion(params.get('station') ?? noted) : undefined;
 }
 
 export interface EchoHallHost {

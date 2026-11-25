@@ -18,9 +18,9 @@ test('spec retries use private mutable copies',()=>{
  const next=getCompactRelayEncounterSpec();assert.equal(next.anchor.x,COMPACT_RELAY_SITE.anchor[0]);assert.notEqual(next.actors[0].offset[0],999);assert.notEqual(next.actors[0].title![0],'changed');
 });
 test('Arena link is supported offline lobby only, without autostart or authority transfer',()=>{
- const u=new URL(echoHallHref(null,'alpha'),'https://example.invalid');assert.equal(u.pathname,'/arena/');assert.deepEqual([...u.searchParams],[['mode','offline'],['from','world'],['map','aster']]);
+ const u=new URL(echoHallHref(null,'alpha'),'https://example.invalid');assert.equal(u.pathname,'/arena/');assert.deepEqual([...u.searchParams],[['mode','offline'],['map','aster'],['from','world'],['station','arena_echo_alpha']]);
  const source=readFileSync(new URL('../../arena-game/src/main.ts',import.meta.url),'utf8');assert.match(source,/params\.get\('mode'\) === 'online' \? 'online' : 'offline'/);
- const b=arenaTrainingBriefing(a=>`WORLD_${a}`,a=>`ARENA_${a}`);assert.equal(b.rows.length,5);assert.match(b.rows.find(r=>r.id==='melee')!.arena[1],/ARENA_weapon3.*ARENA_fire/);assert.match(b.warning[1],/WORLD_reset/);assert.match(b.warning[1],/WORLD_teleport3/);assert.match(b.fairness[1],/no Arena damage or equipment advantage/);assert.match(b.practice[1][1],/not automatic objectives or rewards/);
+ const b=arenaTrainingBriefing(a=>`WORLD_${a}`,a=>`ARENA_${a}`);assert.equal(b.rows.length,5);assert.match(b.rows.find(r=>r.id==='melee')!.arena[1],/ARENA_weapon3.*ARENA_fire/);assert.match(b.warning[1],/Controls are saved separately.*WORLD_nextWeapon/);assert.match(b.fairness[1],/no Arena damage or equipment advantage/);assert.match(b.practice[1][1],/not automatic objectives or rewards/);
 });
 test('labels refresh from caller settings without caching either mode',()=>{
  let key='First';const label=(a:string)=>`${key}_${a}`;const before=arenaTrainingBriefing(label,label);key='Remapped';const after=arenaTrainingBriefing(label,label);assert.match(before.rows[0].world[0],/First_aim/);assert.match(after.rows[0].world[0],/Remapped_aim/);

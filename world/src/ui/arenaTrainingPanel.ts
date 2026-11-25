@@ -2,7 +2,7 @@ import { arenaTrainingBriefing, type BridgeText } from '../story/arenaTrainingBr
 import { bilingual, onLanguageChange } from '../../../shared-client/i18n';
 export interface ArenaTrainingPanelOptions {
   destination(): BridgeText;
-  href(): string;
+  href(sameTab: boolean): string;
   worldKey(action: string): string;
   arenaKey(action: string): string;
   canOpen(): boolean;
@@ -22,14 +22,15 @@ export function createArenaTrainingPanel(options: ArenaTrainingPanelOptions) {
   links.append(launch,explanation,fallback);root.append(title,intro,rows,practice,warning,fairness,status,links,close);document.body.append(root);
   function render(){
     const info=arenaTrainingBriefing(options.worldKey,options.arenaKey);
-    launch.href=fallback.href=options.href();
+    launch.href=options.href(false);
+    fallback.href=options.href(true);
     title.textContent=bilingual(...info.title)+' · '+bilingual(...options.destination());intro.textContent=bilingual(...info.introduction);
     rows.replaceChildren(...info.rows.map(row=>{const p=document.createElement('p');p.textContent=`${bilingual(...row.title)} — World: ${bilingual(...row.world)} / Arena: ${bilingual(...row.arena)}`;return p;}));
     practice.replaceChildren(...info.practice.map(line=>{const li=document.createElement('li');li.textContent=bilingual(...line);return li;}));
     warning.textContent=bilingual(...info.warning);fairness.textContent=bilingual(...info.fairness);
     launch.textContent=bilingual('保存世界进度，在新标签打开 Arena 离线大厅','Save World progress and open the Arena offline lobby in a new tab');
     explanation.textContent=bilingual('到大厅后自行点开始。保留这张世界标签，练习后切回来；若新标签被阻止，可使用下方本页入口。','Choose Start in the lobby. Keep this World tab and switch back after practice. If a new tab is blocked, use the same-tab link below.');
-    fallback.textContent=bilingual('备用：保存后在本页打开（世界现场将退出）','Fallback: save and open here (leave this World session)');
+    fallback.textContent=bilingual('备用：保存后在本页打开，返回时抵达本地区演武台','Fallback: save and open here, then return to this region’s Echo station');
     close.textContent=bilingual('返回世界','Return to World');
   }
   function admit(event:MouseEvent){

@@ -9,27 +9,42 @@ import {build} from 'esbuild';
 import {JSDOM} from 'jsdom';
 const root=resolve('../arena-game');
 const mocks:Record<string,string>={
- 'scene.ts':`export class ArenaScene { prepareLoadout(){}  setQuality(value){window.__qa.graphics.push(value)}loadMap(id){return window.__qa.loadMap(id)}setView(){}render(){}disposeCombatEffects(){} }`,
+ 'scene.ts':`export class ArenaScene { prepareLoadout(indices,skins){window.__qa.warm.push({indices,skins})} setQuality(value){window.__qa.graphics.push(value)}loadMap(id){return window.__qa.loadMap(id)}setView(){}render(){}disposeCombatEffects(){} }`,
  'game.ts':`export class Game { constructor(session){window.__qa.games++;if(window.__qa.throwGame)throw Error('view construction failed');this.session=session}stop(){this.session.close()}setPaused(){} }`,
  'session.ts':`export function startRange(){throw Error('unexpected training range start')}export function startOffline(opts){window.__qa.offline++;window.__qa.offlineInputs.push(opts);return window.__qa.session(opts)}export function joinOnline(url,opts){return window.__qa.join(url,opts)}`,
  'audio.ts':`export const sfx={unlock(){}}`, 'armory.ts':`export function openArmory(options){window.__qa.armory=options}`,
 };
 const bundle=build({entryPoints:[resolve(root,'src/main.ts')],bundle:true,write:false,format:'iife',define:{'import.meta.url':'"http://localhost/arena-game/src/main.ts"'},platform:'browser',target:'es2022',loader:{'.webp':'dataurl','.css':'empty'},plugins:[arenaAssetStub,arenaHeroStub,{name:'startup-boundaries',setup(b){b.onResolve({filter:/^\.\/(?:(?:rendering|network|weapons)\/)?(scene|game|session|audio|armory)\.ts$/},a=>({path:a.path.split('/').at(-1)!,namespace:'startup-boundary'}));b.onLoad({filter:/.*/,namespace:'startup-boundary'},a=>({contents:mocks[a.path],loader:'js'}));}}]});
 function deferred(){let resolve!:(value?:any)=>void,reject!:(error:Error)=>void;const promise=new Promise<any>((a,b)=>{resolve=a;reject=b});return{promise,resolve,reject};}
-async function boot(saved:unknown={name:'Startup QA'}){
- const dom=new JSDOM(readFileSync(resolve(root,'index.html'),'utf8'),{url:'https://arena.test/',pretendToBeVisual:true,runScripts:'outside-only'}),w=dom.window,d=w.document;
+async function boot(saved:unknown={name:'Startup QA'},path='/'){
+ const dom=new JSDOM(readFileSync(resolve(root,'index.html'),'utf8'),{url:new URL(path,'https://arena.test/').href,pretendToBeVisual:true,runScripts:'outside-only'}),w=dom.window,d=w.document;
  if(saved!==undefined)w.localStorage.setItem('arena-lobby',JSON.stringify(saved));
- const qa={graphics:[]as string[],armory:null as any,maps:[]as {id:string;task:ReturnType<typeof deferred>}[],joins:[]as {url:string;opts:any;task:ReturnType<typeof deferred>}[],games:0,offline:0,offlineInputs:[]as any[],closed:0,throwGame:false,
+ const qa={graphics:[]as string[],warm:[]as {indices:number[];skins:number[]}[],armory:null as any,maps:[]as {id:string;task:ReturnType<typeof deferred>}[],joins:[]as {url:string;opts:any;task:ReturnType<typeof deferred>}[],games:0,offline:0,offlineInputs:[]as any[],closed:0,throwGame:false,
   loadMap(id:string){const task=deferred();this.maps.push({id,task});return task.promise},join(url:string,opts:any){const task=deferred();this.joins.push({url,opts,task});return task.promise},session(opts?:any){return{opts,close:()=>{qa.closed++}}}};
  (w as any).__qa=qa;w.requestAnimationFrame=()=>1;(w as any).matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});
  (w as any).fetch=()=>{throw Error('real network forbidden')};(w as any).WebSocket=class{constructor(){throw Error('real network forbidden')}};
  (w.HTMLCanvasElement.prototype as any).requestPointerLock=()=>Promise.resolve();
+ w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
+ w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
  w.eval((await bundle).outputFiles[0].text);
  const flush=async()=>{for(let i=0;i<12;i++)await Promise.resolve()};
  const click=(selector:string)=>{const el=d.querySelector<HTMLButtonElement>(selector);assert.ok(el,`missing ${selector}`);el.click()};
  const language=d.querySelector<HTMLSelectElement>('.parhelion-language select')!;language.value='en';language.dispatchEvent(new w.Event('change',{bubbles:true}));
  return{dom,w,d,qa,flush,click};
 }
+test('Arena offers the regional same-tab return after switching maps, while a standalone visit omits it',async()=>{
+ const h=await boot(undefined,'/arena/?mode=offline&map=frostcourt&from=world&station=arena_echo_winter');
+ try{
+  assert.equal(h.qa.maps[0].id,'frostcourt');
+  h.click('[data-id="blackflag"]');
+  const back=h.d.querySelector<HTMLAnchorElement>('#to-world')!;
+  assert.equal(back.getAttribute('href'),'/world/?from=arena&station=arena_echo_winter');
+  for(const id of ['to-world','pause-world','end-world'])assert.equal(h.d.getElementById(id)!.classList.contains('hidden'),false);
+ }finally{h.dom.window.close()}
+ const direct=await boot(undefined,'/arena/?mode=offline&map=frostcourt');
+ try{for(const id of ['to-world','pause-world','end-world'])assert.equal(direct.d.getElementById(id)!.classList.contains('hidden'),true);}
+ finally{direct.dom.window.close()}
+});
 test('first-time Arena players must enter a name before starting',async()=>{const h=await boot(null);let saved;try{
  const name=h.d.querySelector<HTMLInputElement>('#name')!;
  assert.equal(name.value,'');assert.equal(name.placeholder,'Enter your name');
@@ -123,6 +138,7 @@ for(const mode of['offline','online'])test(`production ${mode} startup snapshots
  h.qa.maps[1].task.resolve();await h.flush();
  const requests=mode==='online'?h.qa.joins.map(j=>j.opts):h.qa.offlineInputs;assert.equal(requests.length,1);
  const opts=requests[0];assert.deepEqual(Array.from(opts.loadout),['firefly','halo','hammer']);assert.equal(opts.map,'blackflag');assert.equal(opts.layout,'1v2');assert.equal(opts.team,'B');assert.equal(opts.char,3);assert.equal(opts.name,'Selected fighter');assert.equal(opts.bots,true);
+ assert.deepEqual(Array.from(h.qa.warm[0].indices),[3,2,7]);assert.deepEqual(Array.from(h.qa.warm[0].skins),Array.from(opts.skins));
  for(const i of[3,2,7])assert.equal(opts.skins[i],skinSnapshot[i]); assert.equal(h.d.querySelector('#wslots kbd')!.textContent,'I');
  if(mode==='online'){assert.equal(h.qa.joins[0].url,'ws://192.168.1.44:2567');h.qa.joins[0].task.resolve(h.qa.session(opts));await h.flush();}
  assert.equal(h.qa.games,1);h.click('#play');await h.flush();assert.equal(h.qa.offline+h.qa.joins.length,1,'active game rejects another start');

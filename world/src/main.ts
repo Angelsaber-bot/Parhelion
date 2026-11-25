@@ -281,7 +281,7 @@ const baseFov = THREE.MathUtils.clamp(params.has('fov') && Number.isFinite(reque
 // 业火京都 (south torii seam). ?region=britain|blacksail|winter|kyoto starts there.
 // Load the departure region before placing the player at its Echo station.
 const echoReturn = takeEchoReturn(params);
-const startRegion = REGIONS.find((r) => r.id === params.get('region'))?.id ?? (echoReturn ?? 'alpha');
+const startRegion = echoReturn ?? REGIONS.find((r) => r.id === params.get('region'))?.id ?? 'alpha';
 // Quality: ?q=low | med (default) | high. high adds GTAO + 4x MSAA + denser grass.
 const quality = (['low', 'med', 'high'] as const).find((q) => q === params.get('q')) ?? 'med';
 const lowQ = quality === 'low', highQ = quality === 'high';
@@ -472,8 +472,8 @@ const roaming = (prologueStage === 'complete' || prologueStage === 'legacy') && 
 const resumeCamp = roaming && savedCamp && found.has('travel_'+savedCamp) &&
   (savedCamp === 'alpha' || savedCamp === 'home' || adventureTravelOpen(done)) &&
   !['region','spawn','cam','lit'].some(key=>params.has(key)) && !echoReturn ? savedCamp : undefined;
-const initialVisualRegion = params.get('region') ?? echoReturn ?? resumeCamp ?? 'alpha';
-if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(REGIONS.some(r=>r.id===initialVisualRegion)?initialVisualRegion:'alpha')))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
+const initialVisualRegion = resumeCamp ?? startRegion;
+if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(initialVisualRegion)))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
 // From here on, newly entered regions install a few milliseconds per frame instead of freezing on arrival.
 regionVisuals.sliceMs=8;
 document.title = 'Parhelion · World';
@@ -2553,7 +2553,7 @@ const travelPanel = createTravelPanel({
 const arenaRegion = () => regionAt(player.pos.x, player.pos.z).id;
 const arenaTrainingPanel=createArenaTrainingPanel({
   destination:()=>ECHO_DESTINATIONS[arenaRegion()].title,
-  href:()=>echoHallHref(contract.selected, arenaRegion()),
+  href:sameTab=>echoHallHref(contract.selected, arenaRegion(), sameTab),
   worldKey:action=>settings.label(action),
   arenaKey:action=>new SettingsStore('arena',{getItem:key=>progressStorage?.getItem(key)??null,setItem:()=>{}}).label(action),
   canOpen:()=>!bootFailed&&!worldExited&&!graphicsRecovery?.blocked&&!ultimateDirector?.active&&!compactRelayRuntime?.active,

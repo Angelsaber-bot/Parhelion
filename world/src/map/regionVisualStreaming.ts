@@ -85,8 +85,20 @@ export class RegionVisualStreaming{
   // At most current + one approach region; hysteresis avoids seam thrashing.
   const wanted=REGIONS.filter(d=>d.id===current||regionDistance(d,position)<120).sort((a,b)=>(a.id===current?-1:b.id===current?1:regionDistance(a,position)-regionDistance(b,position))).slice(0,2);
   for(const[id,r]of [...this.residents])if(!wanted.some(d=>d.id===id)&&now-r.lastUsed>12)this.evict(id);
-  for(const[id,request]of this.requests)if(!wanted.some(d=>d.id===id)&&id!==current)request.controller.abort();
-  if(!this.requests.size){const next=wanted.find(d=>!this.residents.has(d.id)&&(this.failures.get(d.id)?.retryAt??0)<=now);if(next){while(this.residents.size>=2){const victim=[...this.residents].filter(([id])=>id!==current).sort((a,b)=>a[1].lastUsed-b[1].lastUsed)[0];if(!victim)break;this.evict(victim[0]);}void this.ensure(next.id);}}
+  const needsCurrent = !this.residents.has(current);
+  for (const [id, request] of this.requests) {
+    if (id !== current && (needsCurrent || !wanted.some(d => d.id === id))) request.controller.abort();
+  }
+  // Crossing a seam can pause play until the current map is resident. Do not
+  // leave it queued behind an interrupted download for a different approach.
+  const next = needsCurrent ? current : !this.requests.size ? wanted.find(d => !this.residents.has(d.id) && (this.failures.get(d.id)?.retryAt ?? 0) <= now)?.id : undefined;
+  if (!next || this.requests.has(next) || (this.failures.get(next)?.retryAt ?? 0) > now) return;
+  while (this.residents.size >= 2) {
+    const victim = [...this.residents].filter(([id]) => id !== current).sort((a, b) => a[1].lastUsed - b[1].lastUsed)[0];
+    if (!victim) break;
+    this.evict(victim[0]);
+  }
+  void this.ensure(next);
  }
  retry(id:string){this.failures.delete(id);return this.ensure(id);}
  private evict(id:string){const r=this.residents.get(id);if(!r)return;this.releaseResources(r.root,r.geometries,r.materials);r.culler.items.length=0;r.pending.length=0;r.uploaded.clear();this.residents.delete(id);this.counters.evictions++;}
