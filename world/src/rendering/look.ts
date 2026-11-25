@@ -332,15 +332,15 @@ export function makeSky(): THREE.Mesh {
         col = mix(col, top, smoothstep(0.22, 0.96, h));
         float a = acos(clamp(dot(d, sunDir), -1.0, 1.0));
         col += keyColor * (2.4 * (1.0 - smoothstep(0.012, 0.017, a)) + 0.48 * exp(-a * 13.0));
-        float halo = exp(-pow((a - 0.384) / 0.012, 2.0));                     // 22° halo
+        float haloOffset = (a - 0.384) / 0.012;                               // 22° halo
+        float halo = exp(-haloOffset * haloOffset);
         col += mix(vec3(1.0, 0.75, 0.6), vec3(0.75, 0.85, 1.0), smoothstep(0.37, 0.4, a)) * halo * 0.28;
         // sundogs: two bright spots on the halo, level with the sun
         vec3 right = normalize(cross(sunDir, vec3(0.0, 1.0, 0.0)));
         for (int i = 0; i < 2; i++) {
           float s = i == 0 ? 1.0 : -1.0;
           vec3 dog = normalize(sunDir * cos(0.384) + right * s * sin(0.384));
-          float ad = acos(clamp(dot(d, dog), -1.0, 1.0));
-          col += vec3(1.0, 0.85, 0.7) * exp(-ad * 70.0) * 0.6;
+          col += vec3(1.0, 0.85, 0.7) * exp(-length(d - dog) * 70.0) * 0.6;
         }
         // A stretched upper veil behind the lower banks. Both layers inherit
         // the local sky and key colours, so clouds also fall into shadow at night.

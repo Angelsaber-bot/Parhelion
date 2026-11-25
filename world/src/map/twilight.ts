@@ -133,8 +133,9 @@ export class KingdomTwilight {
     }
     if (daylight > 0) this.blend(skies.alpha, daylight);
     const afterDark = (valleyTrial && region === 'alpha') || (kingdomEvening && region === 'britain');
-    this.night = THREE.MathUtils.damp(this.night, Number(afterDark && !inSkyCourt), 1.65, dt);
-    this.upperCourt = THREE.MathUtils.damp(this.upperCourt, Number(inSkyCourt), 1.8, dt);
+    const nightTarget = Number(afterDark && !inSkyCourt), courtTarget = Number(inSkyCourt);
+    this.night = this.initialized ? THREE.MathUtils.damp(this.night, nightTarget, 1.65, dt) : nightTarget;
+    this.upperCourt = this.initialized ? THREE.MathUtils.damp(this.upperCourt, courtTarget, 1.8, dt) : courtTarget;
     if (this.night > .0001) this.blend(nightSky, this.night);
     if (this.upperCourt > .0001) this.blend(highSky, this.upperCourt);
 
