@@ -33,6 +33,13 @@ function summarizeContact(hits: { byHalfSecond: number; byTwoSeconds: number }, 
   return { ...hits, fractionByHalfSecond: hits.byHalfSecond / trials, fractionByTwoSeconds: hits.byTwoSeconds / trials };
 }
 
+function summarizeMatch(reference: ReturnType<typeof closeContact>[number]['reference']) {
+  return {
+    map: reference.map, at: reference.at, humanScore: reference.humanScore, botScore: reference.botScore,
+    pilotLoadout: reference.kit, targetLoadout: reference.targetKit, targetUtility: reference.targetUtility,
+  };
+}
+
 const [candidatePath, incumbentPath, ...seedArgs] = process.argv.slice(2);
 if (!seedArgs.length) throw new Error('Usage: audit-spawn-contact.ts candidate.json incumbent.json seed [seed...]');
 const seeds = seedArgs.map(arg => {
@@ -44,6 +51,7 @@ if (new Set(seeds).size !== seeds.length) throw new Error('Campaign seeds must b
 
 const candidate = loadActor(candidatePath), incumbent = loadActor(incumbentPath);
 const seconds = 30, repeats = 10;
+const matchReferences = new Map<string, ReturnType<typeof summarizeMatch>>();
 const campaigns = seeds.map(seed => {
   const spawn = MAPS.flatMap(({ id: map }) => {
     const paired = fixtures([map], seed, repeats);
@@ -54,10 +62,19 @@ const campaigns = seeds.map(seed => {
         incumbent: summarizeSpawn(assess(incumbent.model, incumbent.model, trials, seconds), trials.length) };
     });
   });
-  const close = closeContact(candidate.model, incumbent.model, seed).map(row => ({
-    map: row.map, moving: row.moving, trials: row.trials,
-    candidate: summarizeContact(row.candidate, row.trials), incumbent: summarizeContact(row.incumbent, row.trials),
-  }));
+  const close = closeContact(candidate.model, incumbent.model, seed).map(row => {
+    const reference = summarizeMatch(row.reference);
+    matchReferences.set(reference.map, reference);
+    return {
+      map: row.map, moving: row.moving, trials: row.trials,
+      candidate: summarizeContact(row.candidate, row.trials), incumbent: summarizeContact(row.incumbent, row.trials),
+      directions: row.directions.map(direction => ({
+        mx: direction.mx, trials: direction.trials,
+        candidate: summarizeContact(direction.candidate, direction.trials),
+        incumbent: summarizeContact(direction.incumbent, direction.trials),
+      })),
+    };
+  });
   return { seed, spawn, close };
 });
-console.log(JSON.stringify({ candidate: candidate.sha256, incumbent: incumbent.sha256, seconds, repeats, campaigns }));
+console.log(JSON.stringify({ candidate: candidate.sha256, incumbent: incumbent.sha256, seconds, repeats, campaigns, matchReferences: [...matchReferences.values()] }));
