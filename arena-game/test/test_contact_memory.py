@@ -99,6 +99,27 @@ class ContactMemoryTest(unittest.TestCase):
         difference[0, 3] = 0
         self.assertEqual(torch.count_nonzero(difference).item(), 0)
 
+    def test_clear_path_forward_correction_tracks_demonstrated_speed(self):
+        states = torch.zeros(4, 4, bc.FEATURES)
+        states[:, :, 5] = 1
+        states[:, :, bc.OBSERVATIONS + 7] = .5
+        controls = torch.zeros(4, 3)
+        controls[:, 2] = torch.tensor([.8, .35, .35, .29])
+        logits = torch.zeros(4, bc.OUTPUTS)
+        logits[:, 3] = torch.tensor([.29, .29, .4, .1]).atanh()
+        logits.requires_grad_()
+
+        def forward_gradient(history):
+            loss = rl.search_imitation_loss(logits, controls, history)
+            return torch.autograd.grad(loss, logits)[0][:, 3]
+
+        blocked = states.clone()
+        blocked[:, -1, bc.OBSERVATIONS + 7] = 0
+        correction = forward_gradient(states) - forward_gradient(blocked)
+        self.assertLess(correction[0].item(), correction[1].item())
+        self.assertLess(correction[1].item(), 0)
+        torch.testing.assert_close(correction[2:], torch.zeros(2))
+
     def test_rollout_anchors_use_distinct_observable_states(self):
         source = Path(__file__).resolve().parents[1] / "shared/directPolicy.json"
         policy = json.loads(source.read_bytes())

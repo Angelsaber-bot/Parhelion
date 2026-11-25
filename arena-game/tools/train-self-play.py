@@ -96,14 +96,14 @@ def search_imitation_loss(logits, controls, states):
     errors = F.smooth_l1_loss(logits[:, SEARCH_AXES].tanh(), controls, beta=.2, reduction="none").mean(dim=1)
     history = states[:, -4:]
     stalled = stalled_search(history)
-    # In clear corridors a sustained retreat can cover ground while diverging
-    # from the forward action of the learned teacher. Correct that axis alone.
+    # On a clear approach, correct weak forward input up to the demonstrated
+    # action. A teacher that slows down must still be able to set the pace.
     center_depth = history[:, -2:, bc.OBSERVATIONS + 7]
     clear = (center_depth >= .25).all(dim=1) & (history[:, -2:, 5] > 0).all(dim=1)
     teacher_advances = controls[:, 2] > .3
-    shortfall = (.25 - logits[:, 3].tanh()).clamp_min(0)
-    retreat_loss = F.smooth_l1_loss(shortfall, torch.zeros_like(shortfall), beta=.2, reduction="none")
-    return (errors * (1 + stalled.float()) + retreat_loss * clear * teacher_advances).mean()
+    shortfall = (controls[:, 2] - logits[:, 3].tanh()).clamp_min(0)
+    forward_loss = F.smooth_l1_loss(shortfall, torch.zeros_like(shortfall), beta=.2, reduction="none")
+    return (errors * (1 + stalled.float()) + forward_loss * clear * teacher_advances).mean()
 
 
 def load_practice(path):
