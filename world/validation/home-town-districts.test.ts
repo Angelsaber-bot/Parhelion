@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
+import { makeCombatTerrain } from '../src/combat/combatTerrain';
 
 test('Homeward Town districts are solid and reachable; the Sky Crown carries its dark sun and open ring', async () => {
   const h = await bootWorldWithoutGpu({ deterministic: true });
@@ -30,6 +31,44 @@ test('Homeward Town districts are solid and reachable; the Sky Crown carries its
     // T04: the broadcast room's east door opens into the room; its north wall does not.
     place(X(-187), 15); assert.ok(move(west, 2).x < X(-196), 'through the broadcast room door');
     place(X(-187), 12); assert.ok(move(west, 2).x > X(-189.5), 'the wall beside the door blocks');
+    // The two new sheltered bays stand on the actual courtyard/terrain and remain open from the south.
+    const publicRealm = w.homeTownDistricts.root, T = w.THREE;
+    const baseTerrain = makeCombatTerrain(w.colliders.filter((collider: { name: string }) => !/^COL_Home(?:Square|SouthGarden)/.test(collider.name)), w.layout);
+    const groundRay = new T.Raycaster();
+    groundRay.layers.enableAll();
+    publicRealm.updateMatrixWorld(true);
+    for (const [name, x, z] of [['HomeSquareMarketShelter', -172.5, 43], ['HomeSouthGardenShelter', -90.5, 122]] as const) {
+      const shelter = publicRealm.getObjectByName(name);
+      const collider = w.colliders.find((c: { name: string }) => c.name === `COL_${name}`);
+      assert.ok(shelter && collider?.enabled, name);
+      assert.ok(shelter.children.some((child: { castShadow: boolean }) => child.castShadow));
+      const cornerX = X(x - 3.06), cornerZ = z + 1.88;
+      const floor = baseTerrain.ground(cornerX, cornerZ, 17)!.point.y;
+      const plinth = collider.bvh.raycastFirst(new T.Ray(new T.Vector3(cornerX, floor - .16, cornerZ), new T.Vector3(0, 1, 0)), T.DoubleSide);
+      assert.ok(plinth && Math.abs(plinth.point.y - floor + .08) < .025, `${name}: foot meets the courtyard`);
+      const middle = X(x + 1.45);
+      const roof = g.cast({ x: middle, y: floor + 1.65, z: z + .6 }, { x: 0, y: 1, z: 0 }, 3);
+      assert.ok(roof && roof.point.y - floor > 2.9, `${name}: standing clearance below solid roof`);
+      place(middle, z + 4.2);
+      const entered = move(0, .62);
+      assert.ok(entered.z < z + 1.4 && entered.z > z - .65 && Math.abs(entered.y - floor) < .3, `${name}: open public bay ${entered.toArray()}`);
+    }
+    // The arena of stone keeps the original court. The garden apron has its own
+    // shallow walk surface where it blends into the raised street.
+    for (const [name, x, z] of [['HomeSquareStoneApron', -149.52, 40.13], ['HomeSouthGardenPath', -90.7, 126.9]] as const) {
+      const model = publicRealm.getObjectByName(name)!;
+      groundRay.set(new T.Vector3(X(x), 18, z), new T.Vector3(0, -1, 0));
+      const surface = groundRay.intersectObject(model, true)[0]?.point.y;
+      const base = baseTerrain.ground(X(x), z, 18)!.point.y;
+      assert.ok(surface && surface > base + .006 && surface < base + .15, `${name}: stone ${surface} on floor ${base}`);
+      if (name === 'HomeSouthGardenPath') {
+        assert.ok(Math.abs(g.ground(X(x), z, 18)!.point.y - surface) < .004);
+      } else assert.ok(surface < base + .045);
+    }
+    for (const name of ['HomeSquareCisternStonework', 'HomeSquareTreePits', 'HomeSouthGardenFlowerBeds']) {
+      assert.ok(publicRealm.getObjectByName(name));
+      assert.ok(w.colliders.some((collider: { name: string; enabled: boolean }) => collider.name === `COL_${name}` && collider.enabled));
+    }
     // Sky Crown: dark sun core and rim, and an incomplete observation ring above the decks.
     const sky = w.skyCrownLandmarks.root;
     const core = sky.getObjectByName('DarkSunCore'), ring = sky.getObjectByName('ObservationRing');

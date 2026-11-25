@@ -4,6 +4,7 @@ import type { Collider } from '../player/player';
 import { SiteArt } from '../story/campaignSites';
 import { mergeParts } from '../settlements/merge';
 import { HOME_BUILDINGS, HOME_ROUTES } from '../map/homePlan';
+import { buildHomePublicRealm } from './homePublicRealm';
 import type { RegionId } from '../settlements/types';
 
 type V3 = [number, number, number];
@@ -12,7 +13,7 @@ type V3 = [number, number, number];
  * T07 rooftop walk (stair, laundry deck, two reliable jumps, stargazing post, backup signal line),
  * T08 old outstation and the south public slope; plus street lamps and rooftop water tanks, the town's
  * unifying materials (old concrete, metal roofs, timber patches). Lots were checked flat and clear. */
-export function createHomeTownDistricts(ground: (x: number, z: number) => number, roofTop: (x: number, z: number) => number | null) {
+export function createHomeTownDistricts(ground: (x: number, z: number) => number, solidTop: (x: number, z: number, ceiling?: number) => number | null) {
   const root = new THREE.Group(); root.name = 'HomewardTownDistricts';
   const millWheel = new SiteArt();
   const colliders: Collider[] = [];
@@ -24,6 +25,15 @@ export function createHomeTownDistricts(ground: (x: number, z: number) => number
     if (!a.solids.length) return;
     const geometry = mergeParts(a.solids); a.solids.forEach(g => g.dispose()); a.solids.length = 0;
     colliders.push({ name: `COL_${name}`, enabled: true, bvh: new MeshBVH(geometry) });
+  }
+  const pavement = (x: number, z: number) => {
+    const height = ground(x, z), ceiling = height + .29;
+    const top = solidTop(x, z, ceiling);
+    return top !== null && top >= height - .15 && top <= ceiling ? top : height;
+  };
+  for (const [art, name] of buildHomePublicRealm(pavement)) {
+    finish(art, name);
+    if (name.endsWith('Shelter') || name.endsWith('TreePits')) art.layers.get('body')!.castShadow = true;
   }
   /** A walled room with real door gaps on the given sides; roof is visual so ground queries skip it. */
   function room(a: SiteArt, cx: number, cz: number, w: number, d: number, h: number, wall: string, doors: Partial<Record<'n' | 's' | 'e' | 'w', number>>) {
@@ -218,11 +228,11 @@ export function createHomeTownDistricts(ground: (x: number, z: number) => number
           lamps.box([W(lx, lz), wy + 2.1, lz], [.14, 4.2, .14], metal); lamps.box([W(lx, lz), wy + 4.25, lz], [.5, .14, .5], metal); lamps.box([W(lx, lz), wy + 4.05, lz], [.3, .3, .3], warm, false, 'glow'); } } }
     for (const b of HOME_BUILDINGS) { if (b.kind === 'lodge') continue;
       const ox = W(b.p[0]-Math.sin(b.yaw)*b.d*.2,b.p[2]), oz=b.p[2]-Math.cos(b.yaw)*b.d*.2;
-      const top=roofTop(ox,oz);
+      const top=solidTop(ox,oz);
       if(top===null || top<b.p[1]+4)continue;
       // Two shoes seat the horizontal cradle on the actual pitched roof.
       for(const dx of[-.59,.59]){
-        const contact=roofTop(ox+dx,oz);
+        const contact=solidTop(ox+dx,oz);
         if(contact===null)continue;
         const bottom=Math.min(contact,top)-.035,upper=top+.17;
         lamps.box([ox+dx,(bottom+upper)/2,oz],[.17,upper-bottom,1.48],darkTimber);

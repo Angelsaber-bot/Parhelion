@@ -2367,7 +2367,7 @@ servantPacts=createServantPacts({scene,done,dialogue:narrative,prepareDialogue:(
 layout.markers.push(...servantPacts.markers);for(const marker of servantPacts.markers)markers.set(marker.id,marker);
 addEventListener('pagehide',e=>{if(!e.persisted)servantPacts?.dispose();});
 // Valley/Homeward formal set pieces (real collision) go in before the chapter markers are placed on them.
-const homeTownDistricts=createHomeTownDistricts((x,z)=>grid.sampleHeight(x,z)??0,(x,z)=>residentQueries.ground(x,z,80)?.point.y??null);
+const homeTownDistricts=createHomeTownDistricts((x,z)=>grid.sampleHeight(x,z)??0,(x,z,ceiling=80)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
 world.add(homeTownDistricts.root);colliders.push(...homeTownDistricts.colliders);
 addEventListener('pagehide',e=>{if(!e.persisted)homeTownDistricts.dispose();});
 const valleyTownArchitecture=createValleyTownArchitecture((x,z)=>grid.sampleHeight(x,z)??0);

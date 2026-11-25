@@ -40,9 +40,15 @@ export const HOME_ROUTES:ExpansionPlan['routes']=[
  {id:'coastwalk',name:'南岸散步道',kind:'flank',points:[[0,16,130],[30,14,185],[70,12,185],[110,10,185],[160,9,170]]},
  {id:'northlane',name:'北街',kind:'flank',points:[[-208,16,-90],[-165,16,-90],[-122,16,-90],[-90,16,-80]]},
 ];
+export const HOME_SHELTERS = {
+ square: [-172.5, 16, 43],
+ garden: [-90.5, 16, 122],
+} as const;
 /** Match the generated 7m/5m streets and each 3.5m threshold ramp. */
 export const HOME_GRASS_PATHS = [
  ...HOME_ROUTES.map(r=>({width:r.kind==='main'?7:5,points:r.points.map(homeWorld)})),
+ ...Object.values(HOME_SHELTERS).map(([x,y,z])=>({width:5.2,points:[homeWorld([x-3.58,y,z]),homeWorld([x+3.58,y,z])]})),
+ {width:3,points:[homeWorld(HOME_SHELTERS.garden),homeWorld([-90.5,16,129])]},
  ...HOME_BUILDINGS.map(h=>{
   const point=(z:number):[number,number,number]=>[h.p[0]+Math.sin(h.yaw)*z+720,h.p[1]+.12,h.p[2]+Math.cos(h.yaw)*z];
   return {width:3.5,points:[homeWorld(h.approach),point(h.d/2+2.5),point(h.d/2-1)]};
