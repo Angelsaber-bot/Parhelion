@@ -135,9 +135,11 @@ export function assess(model: NeuralPolicyModel, opponent: NeuralPolicyModel, tr
 }
 
 export function passesSpawnSearch(pilot: ReturnType<typeof assess>, rival: ReturnType<typeof assess>) {
+  // The tolerance is one discovery in identical fixtures. Compare whole trials at the boundary.
+  const found = (stats: ReturnType<typeof assess>) => Math.round(stats.waitingAcquired * stats.waitingTrials);
   return pilot.windows > 0 && rival.windows > 0 && pilot.waitingTrials > 0 && pilot.waitingTrials === rival.waitingTrials &&
     pilot.forwardMetersPerSecond >= Math.max(0, rival.forwardMetersPerSecond - .1 * Math.abs(rival.forwardMetersPerSecond)) &&
     pilot.reach >= .9 * rival.reach &&
     pilot.stalled / pilot.windows <= rival.stalled / rival.windows + .05 &&
-    pilot.waitingAcquired > 0 && pilot.waitingAcquired >= rival.waitingAcquired - 1 / pilot.waitingTrials;
+    pilot.waitingAcquired > 0 && found(pilot) + 1 >= found(rival);
 }

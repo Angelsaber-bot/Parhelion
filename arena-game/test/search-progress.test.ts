@@ -45,6 +45,9 @@ describe('self-play search outcomes', () => {
     expect(strafe.lateralMetersPerSecond).toBeGreaterThan(.2);
     const reference = { ...after, waitingAcquired: .5, forwardMetersPerSecond: 2 };
     expect(passesSpawnSearch(reference, reference)).toBe(true);
+    const twelveTrials = { ...reference, waitingTrials: 12, waitingAcquired: 3 / 12 };
+    expect(passesSpawnSearch({ ...twelveTrials, waitingAcquired: 2 / 12 }, twelveTrials)).toBe(true);
+    expect(passesSpawnSearch({ ...twelveTrials, waitingAcquired: 1 / 12 }, twelveTrials)).toBe(false);
     expect(passesSpawnSearch({ ...reference, forwardMetersPerSecond: .8 }, reference)).toBe(false);
     expect(passesSpawnSearch({ ...reference, waitingAcquired: 0 }, { ...reference, waitingAcquired: 0 })).toBe(false);
   });
