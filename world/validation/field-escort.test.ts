@@ -66,6 +66,12 @@ for (const { set, id, prerequisites } of pickups) {
     hold(along(16), 180, false);
     assert.equal(runtime.progress(id), atPause, 'paused time cannot move the party');
 
+    const beforeStop = runtime.escortPose(id);
+    runtime.interruptEscort();
+    hold(along(16));
+    assert.equal(runtime.progress(id), atPause, 'a stopped party keeps its in-session progress');
+    assert.deepEqual(runtime.escortGuide(set.region)?.p, beforeStop!.point);
+
     runtime.reset();
     runtime = makeRuntime();
     const resume = runtime.escortPose(id);

@@ -5,7 +5,7 @@ import { QX } from '../src/story/qinChapters';
 import { WC } from '../src/story/winterChapters';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
 
-test('a player can pick up both escorts with the interact key and walk the groups to a saved handoff', async () => {
+test('both escorts reach a saved handoff and the Winter party waits where a patrol hit interrupts it', async () => {
   const seed = ['armory_rack', 'adventure_v2', 'adventure_online', WC.w04, WC.crate, 'journey_qin_workers', QX.roster];
   const h = await bootWorldWithoutGpu({ deterministic: true, bootTimeoutMs: 150000, initialStorage: {
     [WORLD_PROGRESS_KEY]: JSON.stringify({ done: seed, found: [] }),
@@ -47,6 +47,7 @@ test('a player can pick up both escorts with the interact key and walk the group
       });
       let forward = false;
       let resumed = false;
+      let resumedAfterHit = false;
       try {
         for (let i = 0; i < 1000 && !world.done.has(id); i++) {
           if (id === WC.stretcher && !resumed && world.done.has(`${id}_1`)) {
@@ -68,13 +69,36 @@ test('a player can pick up both escorts with the interact key and walk the group
           if (Math.hypot(dx, dz) > .08) world.player.yaw = Math.atan2(-dx, -dz);
           const walking = Math.hypot(dx, dz) > .08 && i % 3 === 0;
           if (walking !== forward) key('KeyW', forward = walking);
+          const before = world.fieldChapters.escortPose(id);
+          const hp = world.combat.state.hp;
           frame();
+          if (id === WC.stretcher && !resumedAfterHit && world.combat.state.hp < hp) {
+            if (forward) key('KeyW', forward = false);
+            const stopped = world.fieldChapters.escortPose(id);
+            assert.equal(stopped.active, false, 'the carrier sets the stretcher down when hit');
+            assert.deepEqual(stopped.point, before.point, 'the stretcher stays where the patrol interrupted the escort');
+            const guide = world.fieldChapters.escortGuide('winter');
+            assert.deepEqual(guide?.p, stopped.point);
+            assert.equal(document.querySelector('#guide.on .label')?.textContent, guide.label[0]);
+            assert.match(document.getElementById('toast')!.textContent!, /护送中断|Escort interrupted/);
+            assert.equal(world.fieldChapters.escortGuide('qin'), null, 'a stopped party never takes over another realm’s waypoint');
+            // Clear the patrol through the normal damage system before picking up the stretcher again.
+            for (const enemy of world.combat.state.enemies) {
+              if (enemy.active && enemy.id.startsWith('wild_')) world.combat.state.hitEnemy(enemy.id, enemy.hp);
+            }
+            key(interact, true); key(interact, false); frame();
+            assert.ok(world.fieldChapters.escortPose(id).active, 'the party can resume where it stopped');
+            resumedAfterHit = true;
+          }
         }
       } finally {
         if (forward) key('KeyW', false);
       }
       assert.ok(world.done.has(id), `${id} stopped at ${world.player.pos.toArray()} with group ${JSON.stringify(world.fieldChapters.escortPose(id))}`);
-      if (id === WC.stretcher) assert.ok(resumed, 'the real-keyboard run included a drop and pickup at the first checkpoint');
+      if (id === WC.stretcher) {
+        assert.ok(resumed, 'the real-keyboard run included a drop and pickup at the first checkpoint');
+        assert.ok(resumedAfterHit, 'the real patrol interrupted the run, and the player recovered');
+      }
       assert.ok(Math.hypot(world.player.pos.x - start.destination[0], world.player.pos.z - start.destination[2]) < 1.8);
       frame();
       for (const { actor, from } of people) {

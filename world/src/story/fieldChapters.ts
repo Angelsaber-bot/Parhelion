@@ -95,6 +95,8 @@ export function createFieldChapters(h: FieldChapterHooks) {
     if (route) routes.set(id, route);
   }
   let escort: { id: string; distance: number; waiting: boolean } | null = null;
+  // Stopped parties wait in place during this visit. Saves still restore the last committed handoff.
+  const stoppedEscorts = new Map<string, number>();
   function finish(id: string) {
     const entry = byId.get(id); if (!entry) return false;
     const before = new Set(h.done);
@@ -107,9 +109,9 @@ export function createFieldChapters(h: FieldChapterHooks) {
   const escortPose = (id: string) => {
     const route = routes.get(id);
     if (!route) return null;
-    const active = escort?.id === id;
-    const pose = escortPoseAt(route, active ? escort!.distance : savedDistance(id, route), active);
-    pose.waiting = active && escort!.waiting;
+    const moving = escort?.id === id ? escort : null;
+    const pose = escortPoseAt(route, moving?.distance ?? stoppedEscorts.get(id) ?? savedDistance(id, route), !!moving);
+    pose.waiting = moving?.waiting ?? false;
     return pose;
   };
   function updateEscort(dt: number, player: [number, number, number]) {
@@ -135,8 +137,18 @@ export function createFieldChapters(h: FieldChapterHooks) {
   }
   return {
     escortPose,
-    escortGuide() {
-      if (!escort) return null;
+    escortGuide(region?: FieldRegion) {
+      if (!escort) {
+        if (!region) return null;
+        for (const [id, distance] of stoppedEscorts) {
+          const { a, set } = byId.get(id)!;
+          if (a.region === region && fieldActionReady(a, h.done, set.actions)) {
+            const label: Localized = ['队伍在这里等你。靠近后互动继续护送。', 'The party is waiting here. Approach and interact to resume the escort.'];
+            return { id, p: escortPoseAt(routes.get(id)!, distance, false).point, label };
+          }
+        }
+        return null;
+      }
       const a = byId.get(escort.id)!.a, route = routes.get(escort.id)!;
       const leg = route.legs.find(leg => escort!.distance < leg.start + leg.span - .0001) ?? route.legs[route.legs.length - 1];
       const distance = escort.waiting ? escort.distance : Math.min(leg.start + leg.span, escort.distance + 2.8);
@@ -145,7 +157,12 @@ export function createFieldChapters(h: FieldChapterHooks) {
     },
     escorting: () => escort?.id ?? null,
     carryingStretcher: () => !!(escort && !escort.waiting && byId.get(escort.id)?.a.escort?.carry),
-    interruptEscort() { escort = null; },
+    interruptEscort(line: Localized = ['队伍会在这里等你。回来互动即可继续。', 'The party will wait here. Return and interact to continue.']) {
+      if (!escort) return;
+      stoppedEscorts.set(escort.id, escort.distance);
+      escort = null;
+      h.toast(line);
+    },
     has: (id: string) => byId.has(id),
     action: (id: string) => byId.get(id)?.a,
     ready: (id: string) => { const e = byId.get(id); return !!e && fieldActionReady(e.a, h.done, e.set.actions); },
@@ -156,7 +173,10 @@ export function createFieldChapters(h: FieldChapterHooks) {
       if (e.a.kind === 'escort') {
         const route = routes.get(id);
         if (!route || !e.a.escort) return false;
-        if (escort?.id !== id) escort = { id, distance: savedDistance(id, route), waiting: false };
+        if (escort?.id !== id) {
+          escort = { id, distance: stoppedEscorts.get(id) ?? savedDistance(id, route), waiting: false };
+          stoppedEscorts.delete(id);
+        }
         working = null;
         h.toast(e.a.escort.instruction);
         return true;
@@ -200,9 +220,15 @@ export function createFieldChapters(h: FieldChapterHooks) {
       const flag = `${working}_${n + 1}`; h.done.add(flag);
       if (!h.save()) h.done.delete(flag); else h.changed();
     },
-    progress(id: string) { if (h.done.has(id)) return 1; if (escort?.id === id) return escort.distance / routes.get(id)!.length; const e = byId.get(id); return Math.min(1, (segments(id) + (working === id ? work / ((e?.a.seconds ?? 8) / 4) : 0)) / 4); },
+    progress(id: string) {
+      if (h.done.has(id)) return 1;
+      const distance = escort?.id === id ? escort.distance : stoppedEscorts.get(id);
+      if (distance !== undefined) return distance / routes.get(id)!.length;
+      const e = byId.get(id);
+      return Math.min(1, (segments(id) + (working === id ? work / ((e?.a.seconds ?? 8) / 4) : 0)) / 4);
+    },
     working: () => escort?.id ?? working,
-    reset() { pending = null; working = null; work = 0; escort = null; },
+    reset() { pending = null; working = null; work = 0; escort = null; stoppedEscorts.clear(); },
   };
 }
 

@@ -1114,12 +1114,12 @@ function valleyGuide() {
   return point ? { ...guide, p: point } : null;
 }
 function journeyGuide() {
-  const escort = fieldChapters?.escortGuide();
+  const here = insideSkyCrown(player.pos) ? 'sky' : regionAt(player.pos.x, player.pos.z).id;
+  const escort = fieldChapters?.escortGuide(here === 'sky' ? undefined : here);
   if (escort) {
     const action = fieldChapters!.action(escort.id)!;
     return { region: action.region, targetId: escort.id, p: escort.p, title: action.label, text: escort.label };
   }
-  const here = insideSkyCrown(player.pos) ? 'sky' : regionAt(player.pos.x, player.pos.z).id;
   if (typeof activeRealmClimax !== 'undefined' && activeRealmClimax) {
     const fight = activeRealmClimax;
     const station = (['west', 'east'] as const).find(id => fight.stationReady(id));
@@ -1439,9 +1439,9 @@ function routedGuide(here: string, destination: string, local: [number, number, 
   return local ? { p: local, label } : null;
 }
 function guideTarget(): GuideTarget | null {
-  const escort = fieldChapters?.escortGuide();
-  if (escort) return { p: escort.p, label: bilingual(...escort.label) };
   const here = insideSkyCrown(player.pos) ? 'sky' : regionAt(player.pos.x, player.pos.z).id;
+  const escort = fieldChapters?.escortGuide(here === 'sky' ? undefined : here);
+  if (escort) return { p: escort.p, label: bilingual(...escort.label) };
   const quest=trackedQuest();
   if(quest){
     const enemy = quest.targetKind === 'enemy' ? combat.state.enemies.find(enemy=>enemy.id===quest.targetId && enemy.active && enemy.hp>0) : undefined;
@@ -1456,7 +1456,9 @@ function guideTarget(): GuideTarget | null {
     else {
       const label = bilingual(`伪晓回声 · ${settings.label('mainRoute')}返回原主线`, `False Dawn · ${settings.label('mainRoute')} for original story`);
       const local = guide.targetKind === 'npc' ? settlementNpcs.getPosition(guide.targetId) : markers.get(guide.targetId)?.p;
-      const target = routedGuide(here, guide.region, local, label); if (target) return target;
+      const target = routedGuide(here, guide.region, local, label);
+      if (target?.passage) target.label = bilingual(`伪晓回声 · ${target.label}`, `False Dawn · ${target.label}`);
+      if (target) return target;
     }
   }
   if (campaignTrackedRegion) {
@@ -2123,11 +2125,7 @@ function press(binding: string, repeat = false) {
   if (repeat) return;
   if (fieldSideSites?.royalFerry?.riding) return;
   if (typeof fieldChapters !== 'undefined' && fieldChapters?.escorting()) {
-    if (action === 'interact') {
-      fieldChapters.interruptEscort();
-      toast(bilingual('队伍在最近的交接点等你。回来互动即可继续。', 'The party will wait at its last checkpoint. Interact there to continue.'));
-      return;
-    }
+    if (action === 'interact') { fieldChapters.interruptEscort(); return; }
     if (['fire','melee','skill','evade','ultimate','jump','fly'].includes(action) || action.startsWith('teleport')) fieldChapters.interruptEscort();
   }
   if (['fire','melee','skill','evade','ultimate','jump'].includes(action)) {orleansWorksRuntime?.interrupt(); compactRelayRuntime?.interrupt(); kingdomGateRuntime?.interrupt(); adventureRuntime?.interrupt(); }
@@ -2203,7 +2201,11 @@ const reducedEffects = () => reducedOverride ?? reducedMotion.matches;
 const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatToast, reducedEffects, groundHeight: (x, z) => grid.sampleHeight(x, z),
   onVictory(core) { done.add(core); save(); applyWorldState(); },
   onDamage(hit) { actions?.recordDamage(hit); audio.contact(); },
-  onHurt(damage, from) { fieldChapters?.interruptEscort(); relayDamageRevision++; audio.hurt(); if (from) anim.flinch(Math.atan2(from.x - player.pos.x, from.z - player.pos.z), Math.min(1, .45 + damage / 30)); },
+  onHurt(damage, from) {
+    fieldChapters?.interruptEscort(['护送中断。脱离危险后回到队伍身边，互动继续。', 'Escort interrupted. Get clear of danger, then return to the party and interact to continue.']);
+    relayDamageRevision++; audio.hurt();
+    if (from) anim.flinch(Math.atan2(from.x - player.pos.x, from.z - player.pos.z), Math.min(1, .45 + damage / 30));
+  },
   feedbackCues: { precise: () => audio.precise(), chain: n => audio.chain(n), heartbeat: () => audio.heartbeat() },
   onPartnerHurt(damage) { if (typeof coop !== 'undefined') coop.partnerHurt(damage); },
   onPerfectEvade() { perfectEvadeSlow = PERFECT_EVADE.slow; if (actions) actions.evade.cooldown = 0; audio.perfectEvade(); },
@@ -5247,7 +5249,7 @@ function frame(now: number) {
   if (escorting && gameplayActive()) {
     const key = settings.label('interact');
     interactionPrompt = escorting === WC.stretcher ? bilingual(`[${key}] 放下担架`, `[${key}] Set down the stretcher`)
-      : bilingual(`[${key}] 请家属在交接点等候`, `[${key}] Ask the families to wait`);
+      : bilingual(`[${key}] 请家属在这里等候`, `[${key}] Ask the families to wait`);
   }
   const prompt = $('prompt');
   if (prompt.textContent !== interactionPrompt) prompt.textContent = interactionPrompt;

@@ -30,7 +30,10 @@ test('all four False Dawn route/ending pairs require explicit keyboard choices a
    if(checkHud)assert.match(d.getElementById('world-tracked-story')!.textContent!,/召唤阵|summoning circle/,'blocked route explains gate without discarding pin');
    assert.equal(w.done.has('summon_circle'),false,'optional progression cannot invent route unlock');
    assert.doesNotMatch(d.querySelector('#guide .label')!.textContent!,/伪晓回声|False Dawn/,'remote locked pin falls back to original story');
-   w.done.add('summon_circle');frame();assert.match(d.querySelector('#guide .label')!.textContent!,/伪晓回声|False Dawn/,'pin intent resumes only after real route flag');
+   w.done.add('summon_circle');frame();
+   const passage=d.querySelector('#guide.travel .label')!.textContent!;
+   assert.match(passage,/伪晓回声|False Dawn/,'the unlocked passage names the pinned investigation');
+   assert.match(passage,/北方冰海断面|Northern Ice/i,'the pin still names the first crossing toward either branch');
    const station=route==='harbor'?F.harbor:F.winter;start(station,route==='harbor'?'false_dawn_harbor':'false_dawn_winter_1');victory();
    if(route==='winter'){start(station,'false_dawn_winter_2');victory();}
    inspect(station);choice('key_living');close();start(F.array,'false_dawn_array');
