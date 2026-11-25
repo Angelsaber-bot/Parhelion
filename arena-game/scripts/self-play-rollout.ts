@@ -7,7 +7,7 @@ import { navFor } from '../shared/botLocomotion.ts';
 import { directPolicy, learnedOpponent } from '../shared/learnedOpponent.ts';
 import { neuralBotControl, type NeuralAction } from '../shared/botNeuralControl.ts';
 import { randomBotHero, randomBotLoadout, randomBotUtility, SMOKE, TICK_HZ, type Team, type TeamLayout } from '../shared/content.ts';
-import { settleSmoke, type Smoke } from '../shared/grenade.ts';
+import { settleSmoke, smokeBlocks, type Smoke } from '../shared/grenade.ts';
 import { blockedAt, groundAt, insideMovementBounds, lineOfSight, type ArenaMap } from '../shared/map.ts';
 import { Match, type Controller } from '../shared/match.ts';
 import type { NavNode } from '../shared/nav.ts';
@@ -218,6 +218,12 @@ export function placeEncounter(game: Match, scenario: Scenario, focused: boolean
       const node = nav.nearest(x, a.y + (b.y - a.y) * depth, z);
       if (!node || Math.hypot(node.x - x, node.z - z) > 1 || Math.abs(node.y - a.y) > 1) continue;
       const smoke = settleSmoke(game.map, { id: -1, owner: 'rival', x: node.x, y: node.y, z: node.z, life: SMOKE.life });
+      // Some independent trials begin inside a blocked lane, before the pilot has seen the rival.
+      if (focused && game.layout === '1v1' && rand() < .5) {
+        const cloud = { ...smoke, life: SMOKE.clear + 3 * TICK_HZ };
+        if (smokeBlocks([cloud], [a.x, a.y + game.map.eye, a.z], [b.x, b.y + game.map.eye, b.z]))
+          return { scenario, smoke: cloud, smokeTick: 0 };
+      }
       return { scenario, smoke, smokeTick: Math.round((.5 + .7 * rand()) * TICK_HZ) };
     }
     return { scenario };
@@ -251,6 +257,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   game.phaseT = seconds * TICK_HZ;
   const start = placeEncounter(game, scenario, focused, rand);
   const firstTick = game.tick;
+  const initialSmokeLife = start.smoke?.life ?? 0;
   let openingDuel = layout === '1v1' && (start.scenario === 'encounter' || !!start.openingRange);
   // Some players hold their spawn. In this exercise the learner has to initiate contact.
   // The rival resumes its ordinary policy on first damage or when the sampled wait expires.
@@ -318,7 +325,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
     scoreContactDrill(seats[0].steps.slice(0, rivalLifeEnd), 'rear', 6 * TICK_HZ, EXPLORATION_TICKS);
   if (layout === '1v1' && start.smoke)
     scoreContactDrill(seats[0].steps.slice(0, rivalLifeEnd), 'smoke',
-      start.smokeTick! + SMOKE.life - SMOKE.clear + 3 * TICK_HZ, EXPLORATION_TICKS, smokeWindow);
+      start.smokeTick! + initialSmokeLife - SMOKE.clear + 3 * TICK_HZ, EXPLORATION_TICKS, smokeWindow);
   const trajectories = Object.fromEntries(seats.map(({ id, steps }) => [id, steps]));
   const opponentHash = opponent.mode === 'frozen' ? opponent.actor.hash : actor.hash;
   return { map, layout, seed, team, scenario: start.scenario, shortenedApproach: start.shortenedApproach,

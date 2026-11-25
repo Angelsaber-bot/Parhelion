@@ -10,7 +10,7 @@ const steps = (contact: number[]) => contact.map((confidence, index) => ({ obs: 
 it('scores first confirmed recovery on its preceding action and never credits a silhouette or respawn', () => {
   const trace = steps([1, 1, 0, 0, .5, 1, 1, 0, 0, 1, 1]);
   expect(scoreContactDrill(trace, 'smoke', 180, 12, { start: 2, end: 5 })).toBe(true);
-  expect(trace.map(step => step.reward)).toEqual([0, 0, 0, 0, 0, .05, 0, 0, 0, 0, 0]);
+  expect(trace.map(step => step.reward)).toEqual([0, 0, 0, 0, .05, 0, 0, 0, 0, 0, 0]);
   const respawn = steps([1, 1, 0, 0, .5, 1, 1]); respawn[5].reset = true;
   for (const invalid of [respawn, steps([1, 1, 0, 0, .5, .5]), steps([0, 0, 1, 1])]) {
     expect(scoreContactDrill(invalid, 'smoke', 180, 12, { start: 2, end: 5 })).toBe(false);
@@ -101,4 +101,14 @@ it('gives the distant opener bonus only while the opponent was clear and still a
   expect(sightlineDamageCredit([.5, 0, 0, 1], 1, 53, 45)).toBe(0);
   expect(sightlineDamageCredit([1, 0, 0, 1], 1, 44, 45)).toBe(0);
   expect(sightlineDamageCredit([1, 0, 0, .4], 1, 60, 45)).toBe(0);
+});
+
+it('credits first sight after a smoke-obscured spawn only after two clear observations in one life', () => {
+  const window = { start: 0, end: 3 };
+  const trace = steps([0, 0, .5, 1, 1]);
+  expect(scoreContactDrill(trace, 'smoke', 60, 12, window)).toBe(true);
+  expect(trace.map(s => s.reward)).toEqual([0, 0, .05, 0, 0]);
+  const reset = steps([0, 0, 1, 1]); reset[2].reset = true;
+  for (const invalid of [reset, steps([0, .5, 1]), steps([.5, .5, 1, 1])])
+    expect(scoreContactDrill(invalid, 'smoke', 60, 12, window)).toBe(false);
 });

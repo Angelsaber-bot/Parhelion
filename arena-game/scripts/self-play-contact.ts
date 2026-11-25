@@ -154,20 +154,22 @@ export function scoreContactDrill(steps: RewardStep[], drill: ContactDrill | 're
     }
     return false;
   }
+  const hiddenStart = drill === 'smoke' && smokeWindow?.start === 0 && steps[0]?.obs[0] === 0;
   for (let i = 0; i < end; i++) {
     if (i > 0 && steps[i].reset) break;
     if (steps[i].obs[0] !== 1) {
       // Only loss of contact during the smoke drill can qualify its recovery.
       if (drill !== 'smoke' || (smokeWindow && i >= smokeWindow.start && i < smokeWindow.end)) unseen++;
       clear = 0;
-      if (hadContact && unseen >= 2) lost = true;
+      if ((hadContact || hiddenStart) && unseen >= 2) lost = true;
       continue;
     }
     clear++; unseen = 0;
     if (clear < 2) continue;
     hadContact = true;
     if (lost || (drill === 'retreat' && clear * period >= 2.5 * TICK_HZ)) {
-      steps[i - 1].reward += .05;
+      // The second clear observation confirms the first. Reward the action that led to first sight.
+      steps[drill === 'smoke' ? i - 2 : i - 1].reward += .05;
       return true;
     }
   }

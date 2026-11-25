@@ -62,3 +62,23 @@ it('varies the pilot heading at full-spawn remedial starts on either seat', () =
     expect([pilot.x, pilot.z, rival.yaw]).toEqual([x, z, targetYaw]);
   }
 });
+
+it('mixes obscured and delayed starts in focused smoke duels', () => {
+  for (const side of ['A', 'B'] as const) {
+    const timing = new Set<boolean>();
+    for (let seed = 0; seed < 20; seed++) {
+      const game = new Match(getMap('frostcourt'), '1v1');
+      game.addPlayer('pilot', { team: side, name: 'pilot', char: 0, skins: [], bot: true });
+      game.addPlayer('rival', { team: side === 'A' ? 'B' : 'A', name: 'rival', char: 1, skins: [], bot: true });
+      const start = placeEncounter(game, 'smoke', true, rng(seed));
+      timing.add(start.smokeTick === 0);
+      if (start.smokeTick !== 0) continue;
+      game.smokes.push(start.smoke!);
+      const me = game.player('pilot')!, target = game.player('rival')!;
+      const [confidence] = humanObservation(game.map, me, [{ team: target.team,
+        crouched: false, feet: [target.x, target.y, target.z] }], (a, b) => game.heroes.visible(a, b), [0, 0]);
+      expect(confidence).toBe(0);
+    }
+    expect(timing.size).toBe(2);
+  }
+});
