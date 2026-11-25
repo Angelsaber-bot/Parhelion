@@ -3,7 +3,7 @@ import { HUMAN_FEATURES, humanObservation } from '../shared/humanCombat.ts';
 import { getMap } from '../shared/arenaMap.ts';
 import { navFor } from '../shared/botLocomotion.ts';
 import { Match } from '../shared/match.ts';
-import { escapeFor, openingDamageCredit, waitingApproach, rivalCourse, scoreContactDrill } from '../scripts/self-play-contact.ts';
+import { escapeFor, openingDamageCredit, waitingApproach, rivalCourse, scoreContactDrill, sightlineDamageCredit } from '../scripts/self-play-contact.ts';
 
 const steps = (contact: number[]) => contact.map((confidence, index) => ({ obs: [confidence], reset: index === 0, reward: 0 }));
 
@@ -93,4 +93,12 @@ it('uses inclusive first-damage deadlines only for initially visible close-range
   expect([1, 30, 31, 120, 121].map(tick => openingDamageCredit(close, tick))).toEqual([.08, .08, .04, .04, 0]);
   for (const view of [[0, 0, 0, 0], [.5, 0, 0, .1], [1, 0, 0, 13 / 45]])
     expect(openingDamageCredit(view, 1)).toBe(0);
+});
+
+it('gives the distant opener bonus only while the opponent was clear and still at range', () => {
+  expect(sightlineDamageCredit([1, 0, 0, 1], 180, 53, 45)).toBe(.08);
+  expect(sightlineDamageCredit([1, 0, 0, 1], 181, 53, 45)).toBe(0);
+  expect(sightlineDamageCredit([.5, 0, 0, 1], 1, 53, 45)).toBe(0);
+  expect(sightlineDamageCredit([1, 0, 0, 1], 1, 44, 45)).toBe(0);
+  expect(sightlineDamageCredit([1, 0, 0, .4], 1, 60, 45)).toBe(0);
 });

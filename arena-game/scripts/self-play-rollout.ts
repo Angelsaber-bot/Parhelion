@@ -16,14 +16,14 @@ import { RULES_VERSION } from '../shared/protocol.ts';
 import { EXPLORATION_TICKS } from '../shared/exploration.ts';
 import { scoreSearchProgress } from './search-progress.ts';
 import { creditWaitingSearch } from './waiting-search-credit.ts';
-import { courseRival, openingDamageCredit, rivalCourse, scoreContactDrill, waitingApproach } from './self-play-contact.ts';
+import { courseRival, openingDamageCredit, rivalCourse, scoreContactDrill, sightlineDamageCredit, sightlineStart, waitingApproach } from './self-play-contact.ts';
 import { opponentLeague } from './self-play-league.ts';
 import { seedVersion, trainingSeed } from './self-play-seeds.ts';
 
 const AXIS_STD = .35;
-const scenarios = ['spawn', 'encounter', 'rear', 'smoke', 'wall', 'retreat', 'corner', 'waiting'] as const;
+const scenarios = ['spawn', 'encounter', 'rear', 'smoke', 'wall', 'retreat', 'corner', 'waiting', 'sightline'] as const;
 type Scenario = typeof scenarios[number];
-type Focus = 'wall' | 'rear' | 'smoke' | 'waiting' | 'encounter';
+type Focus = 'wall' | 'rear' | 'smoke' | 'waiting' | 'encounter' | 'sightline';
 interface Step {
   obs: number[]; reset: boolean;
   axes: number[]; buttons: number[]; weapon: number;
@@ -131,8 +131,25 @@ function encounterYaw(yaw: number, scenario: Scenario, focused: boolean, draw: n
 }
 
 // Start some episodes mid-round on walkable cells. Only the environment sees both positions.
-export function placeEncounter(game: Match, scenario: Scenario, focused: boolean, rand: () => number): { scenario: Scenario; shortenedApproach?: boolean; smoke?: Smoke; smokeTick?: number } {
+export function placeEncounter(game: Match, scenario: Scenario, focused: boolean, rand: () => number): {
+  scenario: Scenario; shortenedApproach?: boolean; smoke?: Smoke; smokeTick?: number; openingRange?: { distance: number; minimum: number };
+} {
   if (scenario === 'spawn') return { scenario };
+  if (scenario === 'sightline') {
+    const pilot = game.player('pilot')!, rival = game.player('rival')!;
+    const occupied = (node: NavNode) => [...game.slots.values()].some(({ state }) =>
+      state !== pilot && state !== rival && Math.abs(node.y - state.y) < game.map.height &&
+      Math.hypot(node.x - state.x, node.z - state.z) < 2 * game.map.radius);
+    const lane = sightlineStart(game.map, navFor(game), rand, occupied);
+    if (!lane) return placeEncounter(game, 'encounter', focused, rand);
+    const { a, b, distance, minimum } = lane;
+    const yaw = Math.atan2(a.x - b.x, a.z - b.z);
+    const offCentre = () => (.15 + rand() * .4) * (rand() < .5 ? -1 : 1);
+    Object.assign(pilot, { x: a.x, y: a.y, z: a.z, yaw: yaw + offCentre(), pitch: 0 });
+    Object.assign(rival, { x: b.x, y: b.y, z: b.z, yaw: yaw + Math.PI + offCentre(), pitch: 0 });
+    for (const id of ['pilot', 'rival']) game.slots.get(id)!.spawnProtectedUntilTick = 0;
+    return { scenario, openingRange: { distance, minimum } };
+  }
   if (scenario === 'waiting') {
     // Mix full-spawn failures with nearer opportunities to discover the same
     // stationary rival. Shortened approaches keep the original map heading.
@@ -234,7 +251,7 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
   game.phaseT = seconds * TICK_HZ;
   const start = placeEncounter(game, scenario, focused, rand);
   const firstTick = game.tick;
-  let openingDuel = layout === '1v1' && start.scenario === 'encounter';
+  let openingDuel = layout === '1v1' && (start.scenario === 'encounter' || !!start.openingRange);
   // Some players hold their spawn. In this exercise the learner has to initiate contact.
   // The rival resumes its ordinary policy on first damage or when the sampled wait expires.
   const waitingTicks = scenario === 'waiting' ? Math.round((focused ? 30 : 12 + 18 * rand()) * TICK_HZ) : 0;
@@ -259,11 +276,14 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
     const events = game.snapshot().events;
     if (openingDuel) {
       const steps = seats[0].steps, elapsed = game.tick - firstTick;
-      if (steps.length && events.some(e => e.t === 'hit' && e.shooter === 'pilot' && e.victim === 'rival' && e.dmg > 0)) {
-        steps[steps.length - 1].reward += openingDamageCredit(steps[0].obs, elapsed);
+      const pilot = game.player('pilot')!, rival = game.player('rival')!, last = steps.at(-1);
+      if (last && events.some(e => e.t === 'hit' && e.shooter === 'pilot' && e.victim === 'rival' && e.dmg > 0)) {
+        last.reward += start.openingRange
+          ? sightlineDamageCredit(last.obs, elapsed, Math.hypot(pilot.x - rival.x, pilot.z - rival.z), start.openingRange.minimum)
+          : openingDamageCredit(steps[0].obs, elapsed);
         openingDuel = false;
       }
-      if (!game.player('pilot')!.alive || !game.player('rival')!.alive || elapsed >= 2 * TICK_HZ) openingDuel = false;
+      if (!pilot.alive || !rival.alive || elapsed >= (start.openingRange ? 3 : 2) * TICK_HZ) openingDuel = false;
     }
     if (waiting.length && (game.tick - firstTick >= waitingTicks || events.some(event => event.t === 'hit'))) {
       waitingDecisionCount = seats[0].steps.length;
@@ -301,7 +321,8 @@ function play(actor: FrozenActor, opponent: Opponent, map: string, layout: TeamL
       start.smokeTick! + SMOKE.life - SMOKE.clear + 3 * TICK_HZ, EXPLORATION_TICKS, smokeWindow);
   const trajectories = Object.fromEntries(seats.map(({ id, steps }) => [id, steps]));
   const opponentHash = opponent.mode === 'frozen' ? opponent.actor.hash : actor.hash;
-  return { map, layout, seed, team, scenario: start.scenario, shortenedApproach: start.shortenedApproach, opponent: opponentHash, opponentMode: opponent.mode,
+  return { map, layout, seed, team, scenario: start.scenario, shortenedApproach: start.shortenedApproach,
+    openingRange: start.openingRange, opponent: opponentHash, opponentMode: opponent.mode,
     score: game.score, outcome, clearRetreatWindows, ticks: game.tick - firstTick, trajectories };
 }
 
@@ -365,8 +386,8 @@ function main() {
   const version = seedVersion(values['seed-version']);
   const count = boundedInteger(values.episodes, 'episodes', 1, 256), seconds = boundedInteger(values.seconds, 'seconds', 1, 300);
   const focus = [...new Set(values.focus)].map(value => {
-    if (value === 'wall' || value === 'rear' || value === 'smoke' || value === 'waiting' || value === 'encounter') return value;
-    throw Error('Each --focus must be wall, rear, smoke, waiting or encounter');
+    if (value === 'wall' || value === 'rear' || value === 'smoke' || value === 'waiting' || value === 'encounter' || value === 'sightline') return value;
+    throw Error('Each --focus must be wall, rear, smoke, waiting, encounter or sightline');
   });
   const actor = readActor(values.model);
   if (actor.model.version !== 4 && actor.model.version !== 1) throw Error('Motor-assisted training is retired');
@@ -393,11 +414,13 @@ function main() {
     const rival = league.select(i, layout);
     appearances[layout][rival] = (appearances[layout][rival] ?? 0) + 1;
     const episode = play(actor, pool.get(rival)!, order[i % order.length].id, layout, team, scenario, focused, trainingSeed(random(), version), seconds);
-    if (scenario !== 'waiting' && !(scenario === 'encounter' && focused)) league.observe(rival, episode.outcome, layout);
+    if (scenario !== 'waiting' && scenario !== 'sightline' && !(scenario === 'encounter' && focused)) league.observe(rival, episode.outcome, layout);
     episodes.push({ ...episode, focused });
   }
   const remedial = episodes.filter(e => e.layout === '1v1' && e.focused && e.scenario === 'waiting');
   if (remedial.length) console.log('Shortened stationary approaches:', remedial.filter(e => e.shortenedApproach).length, '/', remedial.length);
+  const sightlines = episodes.flatMap(e => e.openingRange ? [e.openingRange.distance] : []);
+  if (sightlines.length) console.log('Live sightline starts (m):', sightlines.map(distance => distance.toFixed(1)).join(', '));
   console.log('Clear retreat windows excluded from novelty credit:', episodes.reduce((n, e) => n + e.clearRetreatWindows, 0));
   const payload = { version: 2, seedVersion: version, seed, rulesVersion: RULES_VERSION, actorHash: actor.hash, axisStd: AXIS_STD, focus, episodes };
   writeFileSync(values.output, JSON.stringify(payload), { mode: 0o600 });

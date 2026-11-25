@@ -8,9 +8,12 @@ import { humanObservation } from '../../shared/humanCombat.ts';
 import { directPolicy, learnedOpponent } from '../../shared/learnedOpponent.ts';
 import { Match } from '../../shared/match.ts';
 import { parseNeuralPolicy, type NeuralPolicyModel } from '../../shared/neuralPolicy.ts';
+import { trialSeed } from '../self-play-seeds.ts';
+
+type SightlineRow = { low: number; high: number; trials: number; fired: number; hit: number; blindShots: number; missedShots: number };
 
 export function sightlines(model: NeuralPolicyModel, seed: number, maps: string[], repeats: number) {
-  const rows = [];
+  const rows: SightlineRow[] = [];
   let state = Number(seed);
   const draw = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) + .5) / 2 ** 32;
   for (const [low, high] of [[8, 15], [30, 45], [45, 85]]) {
@@ -60,6 +63,35 @@ export function sightlines(model: NeuralPolicyModel, seed: number, maps: string[
   }
   return rows;
 }
+
+export function sightlineGates(current: readonly SightlineRow[], candidate: readonly SightlineRow[]) {
+  const paired = candidate.length === current.length && current.length === 3 && candidate.every((row, i) =>
+    row.low === current[i].low && row.high === current[i].high &&
+    row.trials >= 30 && row.trials === current[i].trials);
+  const hits = paired && candidate.every((row, i) => {
+    const baseline = current[i].hit;
+    // A low baseline is exactly where a trial-count tolerance could allow
+    // the candidate to lose all hits. Allow variance relative to actual hits.
+    return row.hit >= Math.max(Number(baseline > 0), baseline - Math.max(1, Math.floor(baseline * .12)));
+  });
+  const farHit = paired && candidate[2].hit >= current[2].hit;
+  const distantTrigger = paired && candidate.slice(1).every((row, i) =>
+    row.fired >= current[i + 1].fired - Math.max(2, Math.floor(current[i + 1].fired * .12)));
+  const blindFire = paired && candidate.every((row, i) =>
+    row.blindShots <= current[i].blindShots + Math.max(2, Math.floor(row.trials * .05)));
+  return { paired, hits, farHit, distantTrigger, blindFire };
+}
+
+function pairedSightlines(model: NeuralPolicyModel, seeds: readonly number[], maps: string[]) {
+  const [first, ...rest] = seeds.map(seed => sightlines(model, seed, maps, 12));
+  return first.map((row, i) => rest.reduce((total, cohort) => {
+    const additional = cohort[i];
+    return { low: total.low, high: total.high, trials: total.trials + additional.trials,
+      fired: total.fired + additional.fired, hit: total.hit + additional.hit,
+      blindShots: total.blindShots + additional.blindShots, missedShots: total.missedShots + additional.missedShots };
+  }, row));
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const [path, seed = '859243', opponent] = process.argv.slice(2);
   const load = (file: string) => {
@@ -71,11 +103,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   if (!opponent) {
     for (const row of sightlines(load(path), Number(seed), [...maps, 'aster'], 5)) console.log(JSON.stringify(row));
   } else {
-    const current = sightlines(load(opponent), Number(seed), maps, 12);
-    const candidate = sightlines(load(path), Number(seed), maps, 12);
-    const passed = candidate.every((row, i) => row.trials >= 30 && row.trials === current[i].trials
-      && row.hit >= current[i].hit - Math.ceil(row.trials * .10)
-      && (row.low < 30 || row.fired >= current[i].fired - Math.ceil(row.trials * .12)));
-    console.log(JSON.stringify({passed, current, candidate}));
+    const seeds = [0, 1].map(i => trialSeed(Number(seed), 'range-release', 'arena', i));
+    const current = pairedSightlines(load(opponent), seeds, maps);
+    const candidate = pairedSightlines(load(path), seeds, maps);
+    const gates = sightlineGates(current, candidate);
+    console.log(JSON.stringify({ passed: Object.values(gates).every(Boolean), gates, current, candidate, seeds }));
   }
 }

@@ -6,6 +6,20 @@ import { Match } from '../shared/match.ts';
 import { lineOfSight } from '../shared/map.ts';
 import { wrapAngle } from '../shared/humanCombat.ts';
 import { cameraLimitedScript, clearsWall, evaluationMaps, play, score } from '../scripts/evaluation/evaluate-self-play.ts';
+import { sightlineGates } from '../scripts/evaluation/evaluate-sightlines.ts';
+
+it('rejects paired candidates that lose distant hits or increase blind shots', () => {
+  const base = [[8, 15, 58, 40, 8], [30, 45, 42, 14, 5], [45, 85, 34, 9, 4]]
+    .map(([low, high, fired, hit, blindShots]) => ({ low, high, trials: 120, fired, hit, blindShots, missedShots: 60 }));
+  expect(Object.values(sightlineGates(base, base)).every(Boolean)).toBe(true);
+  const compare = (index: number, patch: Partial<typeof base[number]>) =>
+    sightlineGates(base, base.map((row, i) => i === index ? { ...row, ...patch } : row));
+  expect(compare(2, { hit: 8 }).farHit).toBe(false);
+  expect(compare(2, { hit: 0 }).hits).toBe(false);
+  expect(compare(2, { fired: 28 }).distantTrigger).toBe(false);
+  expect(compare(0, { blindShots: 16 }).blindFire).toBe(false);
+  expect(compare(1, { trials: 119 }).paired).toBe(false);
+});
 
 it('holds separate rotation maps for the tournament and can replay a campaign by seed', () => {
   const screened = new Set<string>(), heldBack = new Set<string>();

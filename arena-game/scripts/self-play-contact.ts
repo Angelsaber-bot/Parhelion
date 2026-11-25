@@ -11,6 +11,27 @@ export type ContactDrill = 'retreat' | 'corner' | 'smoke';
 export type Escape = 'left' | 'right' | 'reverse' | 'hold' | 'away';
 export interface RivalCourse { escape: Escape; route: NavNode[]; wait: number; duration: number }
 
+export const SIGHTLINE_BANDS = [[28, 45], [45, 80]] as const;
+
+/** Playable, unobstructed lanes at distances the close-contact drills cannot sample. */
+export function sightlineStart(map: ArenaMap, nav: NavGrid, random: () => number,
+                               occupied: (node: NavNode) => boolean) {
+  const first = random() < .5 ? 0 : 1;
+  for (const index of [first, 1 - first]) {
+    const [minimum, maximum] = SIGHTLINE_BANDS[index];
+    for (let attempt = 0; attempt < 600; attempt++) {
+      const a = nav.nodes[Math.floor(random() * nav.nodes.length)];
+      const b = nav.nodes[Math.floor(random() * nav.nodes.length)];
+      if (!a?.links.length || !b?.links.length) continue;
+      const distance = Math.hypot(a.x - b.x, a.z - b.z);
+      if (distance < minimum || distance >= maximum || occupied(a) || occupied(b)) continue;
+      if (!lineOfSight(map, [a.x, a.y + map.eye, a.z], [b.x, b.y + 1.1, b.z]) ||
+          !lineOfSight(map, [b.x, b.y + map.eye, b.z], [a.x, a.y + 1.1, a.z])) continue;
+      return { a, b, distance, minimum };
+    }
+  }
+}
+
 // Sample a shorter, still occluded approach along the real route between the two
 // spawns. Only the rollout initializer sees this route.
 export function waitingApproach(map: ArenaMap, nav: NavGrid, pilot: Pick<NavNode, 'x' | 'y' | 'z'>,
@@ -103,6 +124,11 @@ interface RewardStep { obs: readonly number[]; reward: number; reset: boolean }
 export function openingDamageCredit(initialView: readonly number[], elapsed: number) {
   if (initialView[0] !== 1 || !(initialView[3] <= 12 / 45) || elapsed < 1 || elapsed > 2 * TICK_HZ) return 0;
   return elapsed <= TICK_HZ / 2 ? .08 : .04;
+}
+
+export function sightlineDamageCredit(view: readonly number[], elapsed: number, distance: number, minimum: number) {
+  return view[0] === 1 && elapsed >= 1 && elapsed <= 3 * TICK_HZ &&
+    view[3] >= minimum / 45 && distance >= minimum ? .08 : 0;
 }
 
 /** One small contact bonus per probe. Two delayed clear observations confirm recovery;
