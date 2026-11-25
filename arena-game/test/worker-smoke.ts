@@ -1,5 +1,6 @@
 // Actual local/production Worker smoke. Intentionally opens temporary 1v1 clients, then leaves.
 // npx tsx test/worker-smoke.ts wss://parhelion-arena.lejiazhang-us.workers.dev/arena
+import { WebSocket } from 'ws';
 import { RULES_VERSION, newRoomCode, type JoinOptions } from '../shared/protocol.ts';
 import { BTN } from '../shared/sim.ts';
 import type { Snapshot } from '../shared/match.ts';
@@ -23,29 +24,61 @@ const releaseSkins = WEAPONS.map(weapon => {
   if (index < 0) throw new Error(`release finish missing from catalog: ${id}`);
   return index;
 });
+class JoinRejected extends Error {}
+
 function join(team: 'A' | 'auto', name: string, loadout: Loadout, version = RULES_VERSION, utility: UtilityId = 'frag', extra: Partial<JoinOptions> = {}) {
   return new Promise<{ ws: WebSocket; id: string; snaps: Snapshot[]; map: string }>((resolve, reject) => {
     const opts: JoinOptions = { rulesVersion: version, layout: '1v1', team, name, char: 0, skins: releaseSkins, map: 'aster', loadout, utility, ...extra };
-    const ws = new WebSocket(`${url}?o=${encodeURIComponent(JSON.stringify(opts))}`); sockets.push(ws);
+    const endpoint = new URL(url);
+    endpoint.searchParams.set('o', JSON.stringify(opts));
+    const stage = `${name} (${opts.room ? 'private room' : 'quick match'}, ${opts.map})`;
+    const ws = new WebSocket(endpoint); sockets.push(ws);
     const client = { ws, id: '', snaps: [] as Snapshot[], map: '' };
-    const timer = setTimeout(() => { ws.close(); reject(new Error('join timeout')); }, 10000);
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(String(e.data));
+    let settled = false;
+    const fail = (detail: string, rejected = false) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(rejected ? new JoinRejected(`${stage}: ${detail}`) : new Error(`${stage}: ${detail}`));
+      if (ws.readyState < WebSocket.CLOSING) ws.terminate();
+    };
+    const timer = setTimeout(() => fail(`join timeout (socket state ${ws.readyState})`), 10000);
+    ws.on('message', data => {
+      const msg = JSON.parse(data.toString());
       if (msg.t === 'welcome') {
+        if (msg.d.rulesVersion !== RULES_VERSION) { fail('rules version mismatch'); return; }
         clearTimeout(timer);
-        if (msg.d.rulesVersion !== RULES_VERSION) { ws.close(); reject(new Error('rules version mismatch')); return; }
+        settled = true;
         client.id = msg.d.id; client.map = msg.d.map; resolve(client);
       } else if (msg.t === 'snap') client.snaps.push(msg.d);
-      else if (msg.t === 'error') { clearTimeout(timer); ws.close(); reject(new Error(String(msg.d))); }
-    };
-    ws.onerror = () => { clearTimeout(timer); reject(new Error('WebSocket refused')); };
-    ws.onclose = () => { clearTimeout(timer); if (!client.id) reject(new Error('closed before welcome')); };
+      else if (msg.t === 'error') fail(String(msg.d), true);
+    });
+    ws.on('unexpected-response', (_request, response) => {
+      const status = response.statusCode ?? 0;
+      const ray = response.headers['cf-ray'];
+      const prefix = `WebSocket upgrade returned HTTP ${status}${ray ? ` (Cloudflare Ray ${ray})` : ''}`;
+      let preview = '';
+      response.setEncoding('utf8');
+      response.on('data', chunk => { if (preview.length < 2048) preview += String(chunk).slice(0, 2048 - preview.length); });
+      response.once('error', error => fail(`${prefix}: ${error.message}`));
+      response.once('end', () => {
+        const detail = /text\/html/i.test(response.headers['content-type'] ?? '')
+          ? preview.match(/<title>([^<]+)<\/title>/i)?.[1] ?? preview.match(/error code:\s*\d+/i)?.[0]
+          : preview.trim().replace(/\s+/g, ' ').slice(0, 240);
+        fail(detail ? `${prefix}: ${detail}` : prefix, status === 400 || status === 426);
+      });
+    });
+    ws.on('error', error => fail(`WebSocket error: ${error.message}`));
+    ws.on('close', (code, reason) => fail(`closed before welcome (${code}${reason.length ? ` ${reason.toString()}` : ''})`));
   });
 }
 async function refused(choice: Loadout, version = RULES_VERSION, extra: Partial<JoinOptions> = {}) {
-  let accepted = false;
-  try { await join('auto', 'InvalidSmoke', choice, version, 'frag', extra); accepted = true; } catch { /* expected handshake refusal */ }
-  if (accepted) throw new Error('server accepted invalid rules/loadout');
+  try { await join('auto', 'InvalidSmoke', choice, version, 'frag', extra); }
+  catch (error) {
+    if (error instanceof JoinRejected) return;
+    throw error;
+  }
+  throw new Error('server accepted invalid rules/loadout');
 }
 try {
   const choice: Loadout = ['firefly', 'longnight', 'hammer'];
