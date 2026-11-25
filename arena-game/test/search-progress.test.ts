@@ -97,6 +97,28 @@ describe('self-play search outcomes', () => {
     expect(route(-backing)).toBeCloseTo(.02);
     expect(route(backing, 1, 0, 1, true)).toBeCloseTo(.02);
   });
+  it('debits measured backward inputs only after an unsuccessful clear-lane retreat', () => {
+    function route(change?: (rows: ReturnType<typeof decision>[]) => void) {
+      const rows = Array.from({ length: 30 }, (_, i) => decision(i));
+      change?.(rows);
+      scoreSearchProgress(rows, bounds, 12, 60);
+      return rows.slice(0, 14).map(s => s.reward);
+    }
+    function decision(i: number) {
+      const obs = Array(HUMAN_FEATURES.length + 12).fill(0);
+      obs[5] = 1;
+      obs.splice(HUMAN_FEATURES.length, 10, Math.min(i, 14) * .5 / 20, 0, 0, 1, 0, 0, 1, 1, 1, 0);
+      return { obs, axes: [0, 0, 0, i === 8 ? 1 : -1], reset: i === 0, reward: 0 };
+    }
+    const rewards = route();
+    expect(rewards.reduce((a, b) => a + b)).toBeCloseTo(-.01);
+    expect(rewards[8]).toBe(0);
+    for (const preserved of [
+      route(rows => { rows[29].obs[0] = .5; }), route(rows => { rows[16].reset = true; }),
+      route(rows => { rows[5].obs[5] = .8; }), route(rows => { rows.length = 29; }),
+      route(rows => { rows[1].obs[HUMAN_FEATURES.length + 8] = .06; }),
+    ]) expect(preserved.every(value => value === 0)).toBe(true);
+  });
   it('keeps the scan penalty on idle decisions when the last step starts an escape', () => {
     const scan = (i: number) => Math.min(i, 12) * .23;
     const trace = measuredTrial(i => [i === 14 ? .8 : 0, scan(i), 0], 15);

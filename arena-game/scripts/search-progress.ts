@@ -7,7 +7,7 @@ interface Decision { obs: number[]; axes: number[]; reset: boolean; reward: numb
 const scene = HUMAN_FEATURES.length;
 
 // The pose at index j + 1 is the first observation after action j.
-function creditProgress(steps: Decision[], bounds: MapData['bounds'], start: number, end: number, reward: number, facing: boolean) {
+function creditProgress(steps: Decision[], bounds: MapData['bounds'], start: number, end: number, reward: number, direction: 'route' | 'forward' | 'backward') {
   const scaleX = (bounds.max[0] - bounds.min[0]) / 2, scaleZ = (bounds.max[2] - bounds.min[2]) / 2;
   const routeX = (steps[end].obs[scene] - steps[start].obs[scene]) * scaleX;
   const routeZ = (steps[end].obs[scene + 2] - steps[start].obs[scene + 2]) * scaleZ;
@@ -16,12 +16,16 @@ function creditProgress(steps: Decision[], bounds: MapData['bounds'], start: num
   for (let j = start; j < end; j++) {
     const before = steps[j].obs, after = steps[j + 1].obs;
     const dx = (after[scene] - before[scene]) * scaleX, dz = (after[scene + 2] - before[scene + 2]) * scaleZ;
-    const progress = facing ? -dx * after[scene + 3] - dz * after[scene + 4] : dx * routeX + dz * routeZ;
+    const forward = -dx * after[scene + 3] - dz * after[scene + 4];
+    let progress = dx * routeX + dz * routeZ;
+    if (direction === 'forward') progress = forward;
+    if (direction === 'backward') progress = Math.tanh(steps[j].axes[3]) < -.3 ? -forward : 0;
     const gain = Math.max(0, progress);
     gains.push(gain);
     total += gain;
   }
   if (total > 0) for (const [offset, gain] of gains.entries()) steps[start + offset].reward += reward * gain / total;
+  return total > 0;
 }
 
 // A stalled search can end with a useful escape. Prefer blocked forward
@@ -78,7 +82,7 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
             // Assign the bounded recovery reward to actions which actually moved
             // the player toward the exit, including a useful sideways step.
             const credits = Math.min(2, 12 - positiveCredits);
-            creditProgress(steps, bounds, recovery.start, i, .01 * credits, false);
+            creditProgress(steps, bounds, recovery.start, i, .01 * credits, 'route');
             positiveCredits += credits;
           }
         }
@@ -124,7 +128,7 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
       const pushing = forwardAttempts >= .75 * (horizon - 1);
       if (!recovery && range < 1.5 && (scanned || pushing)) recovery = { x, z, start: i, newGround: false, timedOut: false };
       // Credit and debit remain small compared with a frag or the match outcome.
-      if (newCells >= 2 && Math.hypot(x - startX, z - startZ) >= 4 && positiveCredits < 12) {
+      if (newCells >= 2 && Math.hypot(x - startX, z - startZ) >= 4) {
         // The same ground can be covered backing away from the camera. Reward
         // additional forward progress only on a genuinely new, displaced route.
         const start = i + 1 - count;
@@ -134,13 +138,23 @@ export function scoreSearchProgress(steps: Decision[], bounds: MapData['bounds']
         // sighting, retreat can be the useful way out.
         const clearRetreat = forwardMeters <= -4 && steps.slice(start, i).every(({ obs: view }) =>
           view[scene + 6] >= 0 && view[scene + 7] >= .25 && view[scene + 8] >= 0 && view[scene + 9] === 0);
-        if (clearRetreat) clearRetreatWindows++;
-        else {
-          creditProgress(steps, bounds, start, i, .01, false);
+        if (clearRetreat) {
+          clearRetreatWindows++;
+          // Wait for a full follow-up window: backing up can open a sightline.
+          const following = steps.slice(i + 1, i + 1 + horizon);
+          const unsuccessful = following.length === horizon && following.every(s => !s.reset && s.obs[0] === 0);
+          const clearAndUnhurt = steps.slice(start, i + 1).every(({ obs: view }) =>
+            view[5] >= steps[start].obs[5] && view[scene + 6] >= .125 && view[scene + 8] >= .125);
+          if (unsuccessful && clearAndUnhurt && negativeCredits < 8) {
+            const debited = creditProgress(steps, bounds, start, i, -.01, 'backward');
+            if (debited) negativeCredits++;
+          }
+        } else if (positiveCredits < 12) {
+          creditProgress(steps, bounds, start, i, .01, 'route');
           positiveCredits++;
         }
         if (forwardMeters >= 4 && positiveCredits < 12) {
-          creditProgress(steps, bounds, start, i, .01, true);
+          creditProgress(steps, bounds, start, i, .01, 'forward');
           positiveCredits++;
         }
       } else if (negativeCredits < 8 && (
