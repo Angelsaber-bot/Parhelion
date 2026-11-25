@@ -4,7 +4,7 @@ import {regionAt} from '../map/regions';
 import {adventureActive,adventureChapterComplete} from '../story/openWorldCampaign';
 import {WORLD_RIFLE,rifleDistanceMultiplier} from '../core/worldBalance';
 import { ECHO_WARDEN, chooseEchoWardenAttack, echoWardenTiming, echoWardenRadius, echoWardenDamage } from './echoWarden';
-import { ENEMY_TACTICS, enemyRangedSpacing, enemyWalkTurns, hasEnemyPressureSlot } from './enemyTactics';
+import { ENEMY_TACTICS, enemyDetourTurns, enemyRangedSpacing, enemyWalkTurns, hasEnemyPressureSlot } from './enemyTactics';
 import { KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR } from '../story/authoredEncounters';
 import { bossAttackTiming, chooseBossAttack, bossAttackDamage } from './bossPatterns';
 import { BOSS_HAZARDS, hazardContains, planBossHazards, type Hazard } from './bossHazards';
@@ -22,7 +22,11 @@ export interface Enemy extends SpawnPoint {
   active: boolean; phase: 1 | 2; attack: 'sweep' | 'burst' | 'shot' | 'thrust'; target: Point3;
   attackCount: number; contactSequence: number; hitTime: number; role: EnemyRole; staggerCooldown: number; pacified: boolean; blinkCooldown?: number;
   /** Ordinary patrols investigate a fixed last sighting and return along walkable ground. */
-  field?: { lastSeen: Point3; memory: number; returning: boolean; blocked: number };
+  field?: {
+    lastSeen: Point3; memory: number; returning: boolean;
+    closestHome: number; stalled: number;
+    detour?: { heading: number; remaining: number; goal: Point3; retreat: boolean };
+  };
   chaseTarget?: Point3;
   walking?: boolean;
   /** An elite is performing its rarer signature move (see minibosses.ts). */
@@ -256,7 +260,12 @@ function makeEnemy(s: SpawnPoint): Enemy {
   const patrol = s.kind !== 'king' && !s.miniboss && !s.creature && !s.storyEncounter && !s.storyPattern && s.id !== KNIGHT_TRIAL_ID;
   return { ...s, p: clone(s.p), home: clone(s.p), maxHp, hp: maxHp, mode: 'idle', timer: 0,
     active: false, phase: 1, attack: 'sweep', target: clone(s.p), attackCount: 0, contactSequence: 0, hitTime: 0, role: s.role ?? selectEnemyRole({ ...s, home: s.p }), staggerCooldown: 0, pacified: false,
-    ...(patrol ? { field: { lastSeen: clone(s.p), memory: 0, returning: false, blocked: 0 } } : {}) };
+    ...(patrol ? { field: { lastSeen: clone(s.p), memory: 0, returning: false, closestHome: Infinity, stalled: 0 } } : {}) };
+}
+function clearPatrolReturn(field: NonNullable<Enemy['field']>) {
+  field.returning = false;
+  field.closestHome = Infinity;
+  field.stalled = 0;
 }
 
 /** Shared deterministic role selection keeps the rendered weapon and damage behavior aligned. */
@@ -430,7 +439,7 @@ export class WorldCombatState {
     e.phase = 1; e.attackCount = 0; e.contactSequence = 0; e.hitTime = 0; e.staggerCooldown = 0; if (e.role === 'shinobi') e.blinkCooldown = SHINOBI_BLINK.first; e.signatureActive = false;
     e.daze = 0; e.dazeIdle = 0; e.dazedFor = 0; e.shellBroken = false;
     if (e.field) {
-      e.field.memory = 0; e.field.returning = false; e.field.blocked = 0;
+      e.field.memory = 0; e.field.detour = undefined; clearPatrolReturn(e.field);
       e.chaseTarget = undefined; e.walking = false;
     }
   }
@@ -757,17 +766,41 @@ export class WorldCombatState {
     }
   }
   private walkEnemy(e: Enemy, terrain: CombatTerrain, goal: Point3, step: number, retreat = false) {
-    if (step <= 0) return false;
+    if (step <= 1e-5) return false;
     const angle = Math.atan2(goal.z - e.p.z, goal.x - e.p.x) + (retreat ? Math.PI : 0);
-    const isBoss = e === this.boss;
+    const isBoss = e === this.boss, field = e.field;
     const homeDistance = distanceXZ(e.p, e.home);
-    for (const turn of isBoss ? BOSS_TURNS : enemyWalkTurns(e)) {
-      const p = terrain.walk(e.p, e.p.x + Math.cos(angle + turn) * step, e.p.z + Math.sin(angle + turn) * step);
-      if (!p || distanceXZ(p, e.p) < 1e-5) continue;
+    const goalDistance = retreat ? distanceXZ(e.p, goal) : 0;
+    const move = (heading: number, length: number) => {
+      const p = terrain.walk(e.p, e.p.x + Math.cos(heading) * length, e.p.z + Math.sin(heading) * length);
+      if (!p || distanceXZ(p, e.p) < 1e-5) return false;
       const nextHomeDistance = distanceXZ(p, e.home);
-      if (!isBoss && nextHomeDistance > COMBAT.leash && !(e.field?.returning && nextHomeDistance < homeDistance)) continue;
+      if (!isBoss && nextHomeDistance > COMBAT.leash && !(field?.returning && nextHomeDistance < homeDistance)) return false;
+      if (retreat && distanceXZ(p, goal) + 1e-5 < goalDistance) return false;
       e.p = p;
       return true;
+    };
+    const detour = field?.detour;
+    if (field && detour && detour.retreat === retreat && distanceXZ(detour.goal, goal) < ENEMY_TACTICS.detourGoalChange) {
+      const length = Math.min(step, detour.remaining);
+      if (move(detour.heading, length)) {
+        detour.remaining -= length;
+        if (detour.remaining <= 1e-5) field.detour = undefined;
+        return true;
+      }
+    }
+    if (field) field.detour = undefined;
+    for (const turn of isBoss ? BOSS_TURNS : enemyWalkTurns(e)) {
+      if (move(angle + turn, step)) return true;
+    }
+    if (field) {
+      for (const turn of enemyDetourTurns(e)) {
+        const heading = angle + (retreat ? Math.sign(turn) * Math.PI / 2 : turn);
+        if (!move(heading, step)) continue;
+        // Hold the sidestep across ticks so a glancing direct ray can't send the feet back into the corner.
+        field.detour = { heading, remaining: ENEMY_TACTICS.detourDistance - step, goal: clone(goal), retreat };
+        return true;
+      }
     }
     return false;
   }
@@ -824,13 +857,14 @@ export class WorldCombatState {
       const field = e.field;
       if (field) {
         e.walking = false;
-        if (!e.active) field.memory = 0;
+        if (!e.active) { field.memory = 0; field.detour = undefined; }
+        if (e.mode !== 'chase') field.detour = undefined;
       }
       if (!e.active || e.pacified) continue;
       // The nearby road pair yield the named duel.
       if (dueling && (e.id === 'wild_56' || e.id === 'wild_56b')) {
         e.mode = 'idle'; e.timer = 0;
-        if (field) { field.memory = 0; field.returning = false; field.blocked = 0; }
+        if (field) { field.memory = 0; field.detour = undefined; clearPatrolReturn(field); }
         continue;
       }
       const role = ENEMY_ROLES[e.role];
@@ -850,21 +884,27 @@ export class WorldCombatState {
         if (sees && (!field.returning || dist < aggroRange)) {
           Object.assign(field.lastSeen, player);
           field.memory = ENEMY_TACTICS.sightMemory;
-          field.returning = false; field.blocked = 0;
+          clearPatrolReturn(field);
         } else {
           field.memory = sight && outside ? 0 : Math.max(0, field.memory - dt);
         }
         if (e.mode === 'chase') {
           e.chaseTarget = field.memory > 0 ? field.lastSeen : e.home;
           if (!sees || field.returning) {
-            field.returning = field.memory <= 0;
+            const returning = field.memory <= 0;
+            if (returning !== field.returning) field.detour = undefined;
+            field.returning = returning;
             threatened ||= !field.returning;
             const left = distanceXZ(e.p, e.chaseTarget) - ENEMY_TACTICS.arrivalRadius;
             e.walking = this.walkEnemy(e, terrain, e.chaseTarget, Math.min(role.speed * dt, left));
             if (field.returning) {
-              field.blocked = e.walking ? 0 : field.blocked + dt;
-              if (left <= 0 || field.blocked >= ENEMY_TACTICS.returnBlocked) {
+              const homeDistance = distanceXZ(e.p, e.home);
+              if (homeDistance <= field.closestHome - ENEMY_TACTICS.returnProgress) {
+                field.closestHome = homeDistance; field.stalled = 0;
+              } else field.stalled += dt;
+              if (homeDistance <= ENEMY_TACTICS.arrivalRadius + 1e-5 || field.stalled >= ENEMY_TACTICS.returnBlocked) {
                 e.mode = 'idle'; e.timer = 0; e.chaseTarget = undefined;
+                field.detour = undefined;
               }
             } else e.timer = Math.max(0, e.timer - dt);
             continue;
@@ -943,6 +983,11 @@ export class WorldCombatState {
       }
       const spacing = enemyRangedSpacing(e);
       const retreat = spacing > 0 && dist < spacing && e.timer > 0;
+      // A ranged patrol already in range holds its line while waiting for a clear attack slot.
+      if (field && spacing > 0 && sees && dist < meleeRange && !retreat) {
+        field.detour = undefined;
+        continue;
+      }
       // The Tide-Eater limb is rooted in the riverbed: it turns and swings, never walks.
       if (e.creature !== 'tide-limb' && (dist > 1.7 || retreat) && (sees || isBoss && heightOk)) {
         // 最后方阵 advances on the drum: a step on each beat, a held line between beats.

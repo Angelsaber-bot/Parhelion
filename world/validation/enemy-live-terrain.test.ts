@@ -4,7 +4,9 @@ import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { WorldGrid } from '../src/map/grid.ts';
 import { makeCombatTerrain } from '../src/combat/combatTerrain.ts';
-import { COMBAT } from '../src/combat/combat.ts';
+import { COMBAT, distanceXZ, WorldCombatState } from '../src/combat/combat.ts';
+import { ENEMY_ROLES } from '../src/combat/enemyRoles.ts';
+import { ENEMY_TACTICS } from '../src/combat/enemyTactics.ts';
 import { REGIONS, regionAt } from '../src/map/regions.ts';
 import { isCampaignRegion } from '../src/core/regionIdentity';
 import { layout, grid, q, spawns, minis, campaignPaths } from './enemy-live-terrain.fixture.ts';
@@ -36,6 +38,35 @@ test('spawn-only roof filter rejects inaccessible roofs while retaining low rais
   const road=new THREE.BoxGeometry(20,.2,20).translate(0,1,0);
   assert.ok(makeCombatTerrain([{name:'raised-road',enabled:true,bvh:new MeshBVH(road)}],lay,()=>0).safeSpawn(0,0),'1.1m raised road permitted');
   assert.equal(makeCombatTerrain(colliders,lay,()=>null).safeSpawn(0,0),null,'unknown terrain cannot place an enemy on a roof');
+});
+
+test('a patrol rounds a solid barricade on pursuit and returns through real terrain checks', () => {
+  const lay = { world: { waterLevel: -2 }, areas: [], markers: [] } as unknown as Layout;
+  const floor = new THREE.BoxGeometry(100, 1, 100).translate(0, -.5, 0);
+  const barricade = new THREE.BoxGeometry(.8, .95, 4.8).translate(0, .475, 0);
+  const q = makeCombatTerrain([
+    { name: 'floor', enabled: true, bvh: new MeshBVH(floor) },
+    { name: 'barricade', enabled: true, bvh: new MeshBVH(barricade) },
+  ], lay);
+  const player = { x: 5, y: .04, z: 0 };
+  const s = new WorldCombatState([{ id: 'barricade-patrol', p: { x: -5, y: .04, z: 0 }, kind: 'shade', role: 'stalker' }], []);
+  const e = s.enemies[0];
+  const tick = (target: typeof player) => {
+    const before = e.p;
+    s.step(.05, target, true, q.terrain);
+    const moved = distanceXZ(before, e.p);
+    assert.ok(moved <= ENEMY_ROLES.stalker.speed * .05 + 1e-5);
+    if (moved > 1e-5) assert.deepEqual(q.terrain.walk(before, e.p.x, e.p.z), e.p);
+    assert.ok(Math.abs(e.p.x) > .4 || Math.abs(e.p.z) > 2.4);
+  };
+  for (let i = 0; i < 140 && e.mode !== 'windup'; i++) tick(player);
+  assert.equal(e.mode, 'windup', 'a visible target across the barricade is reachable');
+  assert.ok(e.p.x > 0);
+  const outside = { x: 31, y: .04, z: 0 };
+  for (let i = 0; i < 240 && e.mode !== 'idle'; i++) tick(outside);
+  assert.equal(e.mode, 'idle');
+  assert.ok(distanceXZ(e.p, e.home) <= ENEMY_TACTICS.arrivalRadius + 1e-5, 'patrol clears the same obstacle on its way home');
+  floor.dispose(); barricade.dispose();
 });
 
 test('actual runtime map with settlements has moderately denser grounded encounters and five reachable elites',()=>{

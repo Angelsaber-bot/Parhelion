@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { WorldCombatState, COMBAT, distanceXZ, type CombatTerrain } from '../src/combat/combat.ts';
 import { enemyAttackPose } from '../src/combat/enemyAttackPresentation.ts';
 import { ENEMY_ROLES } from '../src/combat/enemyRoles.ts';
-import { ENEMY_TACTICS, enemyWalkTurns } from '../src/combat/enemyTactics.ts';
+import { ENEMY_TACTICS, enemyDetourTurns, enemyWalkTurns } from '../src/combat/enemyTactics.ts';
 const p = (x = 0, z = 0) => ({ x, y: 0, z });
 const ground: CombatTerrain = { walk: (_from, x, z) => p(x, z), lineOfSight: () => true };
 const make = (role: 'musketeer' | 'jaeger' | 'bombardier' | 'stalker' = 'stalker') => new WorldCombatState([{ id: 'actor', kind: 'shade', p: p(), role }], []);
@@ -22,7 +22,7 @@ for (const role of ['musketeer', 'bombardier'] as const) test(`${role}: bounded 
   e.mode = 'recover'; e.timer = .5; s.step(.05, player, true, ground);
   assert.deepEqual(e.p, locked, 'punish windows remain physically stationary');
 });
-test('local obstacle sidestep uses stable handedness and at most three terrain-authorized candidates', () => {
+test('local obstacle sidestep uses stable handedness and bounds terrain queries', () => {
   const s = make(), e = s.enemies[0]; let calls = 0;
   const obstacle: CombatTerrain = { ...ground, walk: (_from, x, z) => { calls++; return Math.abs(z) > .02 ? p(x, z) : null; } };
   s.step(.05, p(10), true, obstacle);
@@ -30,8 +30,38 @@ test('local obstacle sidestep uses stable handedness and at most three terrain-a
   assert.deepEqual(enemyWalkTurns(e), enemyWalkTurns(e));
   calls = 0; const held = { ...e.p };
   s.step(.05, p(10), true, { ...ground, walk: () => { calls++; return null; } });
-  assert.equal(calls, ENEMY_TACTICS.maxWalkCandidates); assert.deepEqual(e.p, held);
+  assert.equal(calls, ENEMY_TACTICS.maxWalkCandidates + enemyDetourTurns(e).length); assert.deepEqual(e.p, held);
   assert.equal(enemyAttackPose(e, 'samurai').clip, 'Idle', 'blocked feet stop the walk cycle');
+});
+test('ranged patrols hold their firing distance when other enemies fill both attack slots', () => {
+  const s = new WorldCombatState([
+    { id: 'watch_a', kind: 'shade', p: p(12), role: 'stalker' },
+    { id: 'watch_b', kind: 'shade', p: p(12), role: 'stalker' },
+    { id: 'marksman', kind: 'shade', p: p(), role: 'musketeer' },
+  ], []);
+  const player = p(12), gunner = s.enemies[2];
+  for (const blocker of s.enemies.slice(0, 2)) {
+    blocker.mode = 'windup'; blocker.timer = .3; blocker.active = true; blocker.target = { ...player };
+  }
+  s.step(.05, player, true, ground);
+  assert.equal(gunner.mode, 'chase');
+  assert.deepEqual(gunner.p, p(), 'a waiting marksman holds the line');
+  assert.equal(gunner.walking, false);
+  for (let i = 0; i < 7; i++) s.step(.05, player, true, ground);
+  assert.equal(gunner.mode, 'windup');
+  assert.deepEqual(gunner.p, p(), 'the next available tell starts from its firing position');
+});
+test('a ranged patrol with a blocked retreat uses a lateral step without lunging toward the player', () => {
+  const s = make('musketeer'), e = s.enemies[0], player = p(4);
+  e.mode = 'chase'; e.timer = ENEMY_TACTICS.rangedReset;
+  const narrowLane = { ...ground, walk: (from: ReturnType<typeof p>, x: number, z: number) => Math.abs(x - from.x) < 1e-6 ? p(x, z) : null };
+  s.step(.1, player, true, narrowLane);
+  assert.ok(Math.abs(e.p.z) > .2);
+  assert.ok(distanceXZ(e.p, player) >= 4);
+  assert.equal(e.walking, true);
+  for (let i = 0; i < 8; i++) s.step(.1, player, true, narrowLane);
+  assert.equal(e.mode, 'windup');
+  assert.deepEqual(e.target, player);
 });
 test('breaking sight investigates only the last sighting, releases combat pressure and walks home', () => {
   const s = make(), e = s.enemies[0], player = p(5);

@@ -47,7 +47,7 @@ export function auditEvadeFrame(fps: number, playable = true) {
     locked: true, dragLook: false, narrative: { open: false }, document: { visibilityState: 'visible', hasFocus: () => true },
     // This flat-floor audit has no regional machinery or ferry. Keep those
     // dependencies explicit while executing the unchanged production tick.
-    fieldSideSites: null, done: new Set<string>(), HARBOR_WORKBOAT_ENCOUNTER: 'harbor_workboat',
+    fieldChapters: null, fieldSideSites: null, done: new Set<string>(), HARBOR_WORKBOAT_ENCOUNTER: 'harbor_workboat',
     egyptSolarBoat: { update() {}, arrival: null },
     egyptTempleMechanisms: { apply() {} }, egyptWaterwheel: { apply() {} },
     winterCustomsWorks: { apply() {} }, valleyMaintenanceLine: { update(dt: number) { machinerySeconds.valley += dt; } },

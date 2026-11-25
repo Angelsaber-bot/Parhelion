@@ -12,10 +12,17 @@ export const ENEMY_TACTICS = {
   sightMemory: 3,
   arrivalRadius: .5,
   returnBlocked: 2,
+  returnProgress: .25,
+  detourDistance: 2.6,
+  detourGoalChange: 2,
 } as const;
 const LEFT = [0, .65, -.65] as const, RIGHT = [0, -.65, .65] as const;
 export function enemyWalkTurns(e: Pick<Enemy, 'id'>): readonly number[] {
   return enemyIdHash(e.id) % 2 ? LEFT : RIGHT;
+}
+const WIDE_LEFT = [1.68, -1.68] as const, WIDE_RIGHT = [-1.68, 1.68] as const;
+export function enemyDetourTurns(e: Pick<Enemy, 'id'>): readonly number[] {
+  return enemyIdHash(e.id) % 2 ? WIDE_LEFT : WIDE_RIGHT;
 }
 export function enemyRangedSpacing(e: Pick<Enemy, 'kind' | 'miniboss' | 'role'>): number {
   if (e.kind === 'king' || e.miniboss) return 0;
